@@ -51,8 +51,8 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       example: ['player_id_here', 'Coach Name', '2024-01-15', '8', '7', '9', '8', '7', '8', 'Great ball control', 'Needs to work on positioning']
     },
     PhysicalAssessment: {
-      headers: ['player_id', 'assessment_date', 'speed', 'agility', 'power', 'endurance', 'sprint_time', 'vertical_jump', 'cooper_test', 'assessor', 'notes'],
-      example: ['player_id_here', '2024-01-15', '85', '78', '82', '90', '5.2', '65', '2800', 'Coach Name', 'Excellent performance']
+      headers: ['Name', 'Team', 'Date', 'Position', 'Age', '20 m linear', 'Speed Score', '20 m All Time Rank', 'vertical', 'Vertical Score', 'Vertical Rank', 'YIRT', 'YIRT Score', 'YIRT All Time Rank', '5-10-2005', '5-10-5 Score', '5-10-5 all time rank', 'Energy Score', 'All Time Rank', 'Jags Rank'],
+      example: ['John Doe', 'Elite Squad', '2024-01-15', 'Midfielder', '18', '3.2', '85', '5', '65', '82', '3', '2800', '90', '2', '4.5', '78', '4', '85', '3', '1']
     }
   };
 
@@ -136,19 +136,21 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       PhysicalAssessment: {
         type: 'object',
         properties: {
-          player_id: { type: 'string', description: 'The ID of the player being assessed' },
-          assessment_date: { type: 'string', description: 'Date of assessment in YYYY-MM-DD format' },
-          speed: { type: 'number', description: 'Speed score from 0 to 100' },
-          agility: { type: 'number', description: 'Agility score from 0 to 100' },
-          power: { type: 'number', description: 'Power score from 0 to 100' },
-          endurance: { type: 'number', description: 'Endurance score from 0 to 100' },
-          sprint_time: { type: 'number', description: '40m sprint time in seconds' },
-          vertical_jump: { type: 'number', description: 'Vertical jump height in centimeters' },
-          cooper_test: { type: 'number', description: '12-minute run distance in meters' },
-          assessor: { type: 'string', description: 'Name of the person conducting the assessment' },
-          notes: { type: 'string', description: 'Additional notes' }
+          player_name: { type: 'string', description: 'Full name of the player from the Name column' },
+          team_name: { type: 'string', description: 'Team name from the Team column' },
+          assessment_date: { type: 'string', description: 'Date from the Date column in any standard format' },
+          position: { type: 'string', description: 'Position from the Position column' },
+          age: { type: 'number', description: 'Age from the Age column' },
+          sprint_time: { type: 'number', description: '20m sprint time from the "20 m linear" column' },
+          speed: { type: 'number', description: 'Speed score from the "Speed Score" column (0-100)' },
+          vertical_jump: { type: 'number', description: 'Vertical jump from the "vertical" column in cm' },
+          power: { type: 'number', description: 'Power score from the "Vertical Score" column (0-100)' },
+          cooper_test: { type: 'number', description: 'YIRT distance from the "YIRT" column in meters' },
+          endurance: { type: 'number', description: 'Endurance score from the "YIRT Score" column (0-100)' },
+          agility_time: { type: 'number', description: '5-10-5 time from the "5-10-2005" column' },
+          agility: { type: 'number', description: 'Agility score from the "5-10-5 Score" column (0-100)' }
         },
-        required: ['player_id', 'assessment_date']
+        required: ['player_name', 'assessment_date']
       }
     };
     return schemas[type];
@@ -172,7 +174,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
             records: {
               type: 'array',
               items: schema,
-              description: `Array of ${entityType} records to import. Each record must match the exact schema provided.`
+              description: `Array of ${entityType} records extracted from the CSV. Map the CSV columns to the properties as described in the schema.`
             }
           },
           required: ['records']
@@ -180,10 +182,39 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       });
 
       if (extractResult.status === 'success' && extractResult.output?.records) {
-        const records = extractResult.output.records;
+        let records = extractResult.output.records;
         
         if (records.length === 0) {
-          throw new Error('No valid records found in the CSV file. Please check the format.');
+          throw new Error('No valid records found in the CSV file.');
+        }
+
+        // Special handling for PhysicalAssessment - need to lookup player IDs
+        if (entityType === 'PhysicalAssessment') {
+          const players = await base44.entities.Player.list();
+          
+          records = records.map(record => {
+            const player = players.find(p => 
+              p.full_name?.toLowerCase() === record.player_name?.toLowerCase()
+            );
+            
+            if (!player) {
+              throw new Error(`Player not found: ${record.player_name}. Please import players first.`);
+            }
+
+            return {
+              player_id: player.id,
+              assessment_date: record.assessment_date,
+              speed: record.speed || 0,
+              agility: record.agility || 0,
+              power: record.power || 0,
+              endurance: record.endurance || 0,
+              sprint_time: record.sprint_time || null,
+              vertical_jump: record.vertical_jump || null,
+              cooper_test: record.cooper_test || null,
+              assessor: record.team_name || null,
+              notes: record.position ? `Position: ${record.position}, Age: ${record.age || 'N/A'}` : null
+            };
+          });
         }
         
         let successCount = 0;
@@ -192,7 +223,6 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
         for (let i = 0; i < records.length; i++) {
           try {
             const record = records[i];
-            // Remove any undefined or null values
             const cleanRecord = Object.fromEntries(
               Object.entries(record).filter(([_, v]) => v !== undefined && v !== null && v !== '')
             );
@@ -215,7 +245,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           onSuccess();
         }
       } else {
-        throw new Error(extractResult.details || 'Failed to extract data from file. Please ensure your CSV matches the template format exactly.');
+        throw new Error(extractResult.details || 'Failed to extract data from file. Please check your CSV format.');
       }
     } catch (error) {
       setResult({
@@ -238,7 +268,16 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Important:</strong> Your CSV must use the exact column names from the template. Download the template below to see the required format with an example row.
+              {entityType === 'PhysicalAssessment' ? (
+                <div>
+                  <strong>Physical Assessment Import:</strong> Upload your CSV with the exact columns shown below. Player names will be matched automatically.
+                  <br /><strong>Note:</strong> Make sure to import Players first before importing assessments.
+                </div>
+              ) : (
+                <div>
+                  <strong>Important:</strong> Your CSV must use the exact column names from the template. Download the template to see the required format.
+                </div>
+              )}
             </AlertDescription>
           </Alert>
 
@@ -262,9 +301,9 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
             </Select>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-lg">
+          <div className="bg-slate-50 p-4 rounded-lg max-h-32 overflow-y-auto">
             <div className="text-sm font-medium text-slate-700 mb-2">Required Columns:</div>
-            <div className="text-xs text-slate-600 font-mono bg-white p-2 rounded">
+            <div className="text-xs text-slate-600 font-mono bg-white p-2 rounded whitespace-pre-wrap">
               {templateData[entityType].headers.join(', ')}
             </div>
           </div>
