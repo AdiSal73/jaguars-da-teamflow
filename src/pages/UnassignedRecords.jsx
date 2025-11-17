@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { UserPlus, Activity, ClipboardList } from 'lucide-react';
+import { UserPlus, Activity, ClipboardList, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ export default function UnassignedRecords() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [recordType, setRecordType] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -103,6 +104,63 @@ export default function UnassignedRecords() {
     }
   };
 
+  const handleAutoSync = async () => {
+    setSyncing(true);
+    let syncedCount = 0;
+
+    try {
+      // Sync evaluations
+      for (const record of unassignedEvals) {
+        const names = record.player_name.split(' ');
+        const firstName = names[0]?.toLowerCase();
+        const lastName = names[names.length - 1]?.toLowerCase();
+        
+        const matchedPlayer = players.find(p => {
+          const pNames = p.full_name.toLowerCase().split(' ');
+          const pFirstName = pNames[0];
+          const pLastName = pNames[pNames.length - 1];
+          return pFirstName === firstName && pLastName === lastName;
+        });
+
+        if (matchedPlayer) {
+          await assignEvaluationMutation.mutateAsync({ 
+            recordId: record.id, 
+            playerId: matchedPlayer.id 
+          });
+          syncedCount++;
+        }
+      }
+
+      // Sync physical assessments
+      for (const record of unassignedAssessments) {
+        const names = record.player_name.split(' ');
+        const firstName = names[0]?.toLowerCase();
+        const lastName = names[names.length - 1]?.toLowerCase();
+        
+        const matchedPlayer = players.find(p => {
+          const pNames = p.full_name.toLowerCase().split(' ');
+          const pFirstName = pNames[0];
+          const pLastName = pNames[pNames.length - 1];
+          return pFirstName === firstName && pLastName === lastName;
+        });
+
+        if (matchedPlayer) {
+          await assignAssessmentMutation.mutateAsync({ 
+            recordId: record.id, 
+            playerId: matchedPlayer.id 
+          });
+          syncedCount++;
+        }
+      }
+
+      alert(`Successfully synced ${syncedCount} records!`);
+    } catch (error) {
+      alert('Error during sync: ' + error.message);
+    }
+
+    setSyncing(false);
+  };
+
   const openAssignDialog = (record, type) => {
     setSelectedRecord(record);
     setRecordType(type);
@@ -110,9 +168,19 @@ export default function UnassignedRecords() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Unassigned Records</h1>
-        <p className="text-slate-600 mt-1">Assign imported records to players</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Unassigned Records</h1>
+          <p className="text-slate-600 mt-1">Assign imported records to players</p>
+        </div>
+        <Button 
+          onClick={handleAutoSync} 
+          disabled={syncing || (unassignedEvals.length === 0 && unassignedAssessments.length === 0)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : 'Auto-Sync by Name'}
+        </Button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -233,22 +301,21 @@ export default function UnassignedRecords() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="p-2 bg-red-50 rounded-lg text-center">
-                        <div className="text-xs text-red-600">Speed</div>
-                        <div className="text-lg font-bold text-red-700">{record.speed}</div>
+                    <div className="space-y-3 mb-4">
+                      <div className="p-3 bg-red-50 rounded-lg">
+                        <div className="text-xs text-red-600 mb-1">Speed (20m Linear)</div>
+                        <div className="text-xl font-bold text-red-700">{record.sprint_time?.toFixed(2) || 'N/A'} sec</div>
+                        <div className="text-xs text-slate-500">Lower is better (2.6s max)</div>
                       </div>
-                      <div className="p-2 bg-emerald-50 rounded-lg text-center">
-                        <div className="text-xs text-emerald-600">Agility</div>
-                        <div className="text-lg font-bold text-emerald-700">{record.agility}</div>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <div className="text-xs text-blue-600 mb-1">Power (Vertical Jump)</div>
+                        <div className="text-xl font-bold text-blue-700">{record.vertical_jump?.toFixed(1) || 'N/A'} inches</div>
+                        <div className="text-xs text-slate-500">Higher is better (50" max)</div>
                       </div>
-                      <div className="p-2 bg-blue-50 rounded-lg text-center">
-                        <div className="text-xs text-blue-600">Power</div>
-                        <div className="text-lg font-bold text-blue-700">{record.power}</div>
-                      </div>
-                      <div className="p-2 bg-pink-50 rounded-lg text-center">
-                        <div className="text-xs text-pink-600">Endurance</div>
-                        <div className="text-lg font-bold text-pink-700">{record.endurance}</div>
+                      <div className="p-3 bg-pink-50 rounded-lg">
+                        <div className="text-xs text-pink-600 mb-1">Endurance (YIRT Score)</div>
+                        <div className="text-xl font-bold text-pink-700">{record.endurance || 'N/A'}</div>
+                        <div className="text-xs text-slate-500">Higher is better (65 best)</div>
                       </div>
                     </div>
                     <Button

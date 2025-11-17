@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CircularChart from '../components/physical/CircularChart';
 import PerformanceTrendChart from '../components/analytics/PerformanceTrendChart';
 import RadarComparisonChart from '../components/analytics/RadarComparisonChart';
-import GoalTracker from '../components/goals/GoalTracker'; // New import
+import GoalTracker from '../components/goals/GoalTracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -202,11 +202,11 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-4"> {/* Changed from 3 to 4 */}
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="physical">Physical</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
-              <TabsTrigger value="goals">Goals</TabsTrigger> {/* New TabsTrigger */}
+              <TabsTrigger value="goals">Goals</TabsTrigger>
             </TabsList>
 
             <TabsContent value="physical" className="space-y-6">
@@ -222,31 +222,33 @@ export default function PlayerProfile() {
                 </CardHeader>
                 <CardContent className="p-8">
                   {latestAssessment ? (
-                    <div className="flex flex-col items-center">
+                    <div>
+                      <div className="grid grid-cols-3 gap-4 mb-8">
+                        <div className="p-4 bg-red-50 rounded-xl">
+                          <div className="text-sm text-red-600 mb-1">Speed (20m Linear)</div>
+                          <div className="text-3xl font-bold text-red-700">{latestAssessment.sprint_time?.toFixed(2) || 'N/A'}</div>
+                          <div className="text-xs text-slate-500 mt-1">sec (lower is better)</div>
+                          <div className="text-xs text-slate-400">Max: 2.6s</div>
+                        </div>
+                        <div className="p-4 bg-blue-50 rounded-xl">
+                          <div className="text-sm text-blue-600 mb-1">Power (Vertical)</div>
+                          <div className="text-3xl font-bold text-blue-700">{latestAssessment.vertical_jump?.toFixed(1) || 'N/A'}</div>
+                          <div className="text-xs text-slate-500 mt-1">inches (higher is better)</div>
+                          <div className="text-xs text-slate-400">Max: 50"</div>
+                        </div>
+                        <div className="p-4 bg-pink-50 rounded-xl">
+                          <div className="text-sm text-pink-600 mb-1">Endurance (YIRT)</div>
+                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.endurance || 'N/A'}</div>
+                          <div className="text-xs text-slate-500 mt-1">score (higher is better)</div>
+                          <div className="text-xs text-slate-400">Best: 65</div>
+                        </div>
+                      </div>
                       <CircularChart
                         speed={latestAssessment.speed || 0}
                         agility={latestAssessment.agility || 0}
                         power={latestAssessment.power || 0}
                         endurance={latestAssessment.endurance || 0}
                       />
-                      <div className="mt-8 grid grid-cols-4 gap-6 w-full">
-                        <div className="text-center">
-                          <div className="text-sm text-slate-600 mb-1">Speed</div>
-                          <div className="2xl font-bold text-red-500">{latestAssessment.speed}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-slate-600 mb-1">Agility</div>
-                          <div className="2xl font-bold text-emerald-500">{latestAssessment.agility}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-slate-600 mb-1">Power</div>
-                          <div className="2xl font-bold text-blue-500">{latestAssessment.power}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-slate-600 mb-1">Endurance</div>
-                          <div className="2xl font-bold text-pink-500">{latestAssessment.endurance}</div>
-                        </div>
-                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-slate-500">
@@ -265,16 +267,27 @@ export default function PlayerProfile() {
                     <div className="space-y-3">
                       {assessments.map(assessment => (
                         <div key={assessment.id} className="p-4 bg-slate-50 rounded-xl">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex justify-between items-start mb-3">
                             <span className="font-medium text-slate-900">
                               {new Date(assessment.assessment_date).toLocaleDateString()}
                             </span>
-                            <span className="text-sm text-slate-600">
-                              Avg: {Math.round((assessment.speed + assessment.agility + assessment.power + assessment.endurance) / 4)}
-                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div>
+                              <span className="text-slate-600">Speed: </span>
+                              <span className="font-semibold">{assessment.sprint_time?.toFixed(2) || 'N/A'}s</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Power: </span>
+                              <span className="font-semibold">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Endurance: </span>
+                              <span className="font-semibold">{assessment.endurance || 'N/A'}</span>
+                            </div>
                           </div>
                           {assessment.notes && (
-                            <p className="text-sm text-slate-600">{assessment.notes}</p>
+                            <p className="text-sm text-slate-600 mt-2">{assessment.notes}</p>
                           )}
                         </div>
                       ))}
@@ -292,7 +305,7 @@ export default function PlayerProfile() {
                 <CardContent>
                   {assessments.length > 1 ? (
                     <PerformanceTrendChart
-                      data={assessments.slice().reverse()} // Reverse to show chronologically on chart
+                      data={assessments.slice().reverse()}
                       metrics={[
                         { key: 'speed', label: 'Speed' },
                         { key: 'agility', label: 'Agility' },
@@ -356,7 +369,7 @@ export default function PlayerProfile() {
                 <CardContent>
                   {evaluations.length > 1 ? (
                     <PerformanceTrendChart
-                      data={evaluations.slice().reverse()} // Reverse to show chronologically on chart
+                      data={evaluations.slice().reverse()}
                       metrics={[
                         { key: 'technical_skills', label: 'Technical' },
                         { key: 'tactical_awareness', label: 'Tactical' },
@@ -448,7 +461,7 @@ export default function PlayerProfile() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="goals" className="space-y-6"> {/* New TabsContent */}
+            <TabsContent value="goals" className="space-y-6">
               {player && <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />}
             </TabsContent>
           </Tabs>
@@ -472,7 +485,7 @@ export default function PlayerProfile() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="speed_range">Speed (0-100): {newAssessment.speed}</Label>
+                <Label htmlFor="speed_range">Speed Rating (0-100): {newAssessment.speed}</Label>
                 <input
                   id="speed_range"
                   type="range"
@@ -484,7 +497,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="agility_range">Agility (0-100): {newAssessment.agility}</Label>
+                <Label htmlFor="agility_range">Agility Rating (0-100): {newAssessment.agility}</Label>
                 <input
                   id="agility_range"
                   type="range"
@@ -496,7 +509,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="power_range">Power (0-100): {newAssessment.power}</Label>
+                <Label htmlFor="power_range">Power Rating (0-100): {newAssessment.power}</Label>
                 <input
                   id="power_range"
                   type="range"
@@ -508,7 +521,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="endurance_range">Endurance (0-100): {newAssessment.endurance}</Label>
+                <Label htmlFor="endurance_range">Endurance Rating (0-100): {newAssessment.endurance}</Label>
                 <input
                   id="endurance_range"
                   type="range"
@@ -517,6 +530,40 @@ export default function PlayerProfile() {
                   value={newAssessment.endurance}
                   onChange={(e) => setNewAssessment({...newAssessment, endurance: parseInt(e.target.value)})}
                   className="w-full"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="sprint_time">Sprint Time (20m Linear, seconds)</Label>
+                <Input
+                  id="sprint_time"
+                  type="number"
+                  step="0.01"
+                  value={newAssessment.sprint_time}
+                  onChange={(e) => setNewAssessment({...newAssessment, sprint_time: parseFloat(e.target.value) || ''})}
+                  placeholder="e.g., 3.25"
+                />
+              </div>
+              <div>
+                <Label htmlFor="vertical_jump">Vertical Jump (inches)</Label>
+                <Input
+                  id="vertical_jump"
+                  type="number"
+                  step="0.1"
+                  value={newAssessment.vertical_jump}
+                  onChange={(e) => setNewAssessment({...newAssessment, vertical_jump: parseFloat(e.target.value) || ''})}
+                  placeholder="e.g., 30.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="cooper_test">Cooper Test (distance in meters)</Label>
+                <Input
+                  id="cooper_test"
+                  type="number"
+                  value={newAssessment.cooper_test}
+                  onChange={(e) => setNewAssessment({...newAssessment, cooper_test: parseInt(e.target.value) || ''})}
+                  placeholder="e.g., 2800"
                 />
               </div>
             </div>
