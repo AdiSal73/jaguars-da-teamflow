@@ -32,6 +32,15 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
     { value: 'PhysicalAssessment', label: 'Physical Assessments' }
   ];
 
+  // Template headers for each entity type
+  const templateHeaders = {
+    Player: 'full_name,email,phone,date_of_birth,position,team_id,jersey_number,height,weight,status',
+    Coach: 'full_name,email,phone,specialization,bio,session_duration,booking_enabled',
+    Team: 'name,age_group,division,head_coach_id,season,team_color',
+    Evaluation: 'player_id,evaluator_name,evaluation_date,technical_skills,tactical_awareness,physical_attributes,mental_attributes,teamwork,overall_rating,strengths,areas_for_improvement,notes',
+    PhysicalAssessment: 'player_id,assessment_date,speed,agility,power,endurance,sprint_time,vertical_jump,cooper_test,assessor,notes'
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
@@ -40,17 +49,92 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
     }
   };
 
-  const downloadTemplate = async () => {
-    const schema = await base44.entities[entityType].schema();
-    const headers = Object.keys(schema.properties).filter(key => key !== 'id');
-    
-    const csvContent = headers.join(',') + '\n';
+  const downloadTemplate = () => {
+    const headers = templateHeaders[entityType];
+    const csvContent = headers + '\n';
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `${entityType}_template.csv`;
     link.click();
+  };
+
+  const getEntitySchema = (type) => {
+    const schemas = {
+      Player: {
+        type: 'object',
+        properties: {
+          full_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          date_of_birth: { type: 'string' },
+          position: { type: 'string' },
+          team_id: { type: 'string' },
+          jersey_number: { type: 'number' },
+          height: { type: 'number' },
+          weight: { type: 'number' },
+          status: { type: 'string' }
+        }
+      },
+      Coach: {
+        type: 'object',
+        properties: {
+          full_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          specialization: { type: 'string' },
+          bio: { type: 'string' },
+          session_duration: { type: 'number' },
+          booking_enabled: { type: 'boolean' }
+        }
+      },
+      Team: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age_group: { type: 'string' },
+          division: { type: 'string' },
+          head_coach_id: { type: 'string' },
+          season: { type: 'string' },
+          team_color: { type: 'string' }
+        }
+      },
+      Evaluation: {
+        type: 'object',
+        properties: {
+          player_id: { type: 'string' },
+          evaluator_name: { type: 'string' },
+          evaluation_date: { type: 'string' },
+          technical_skills: { type: 'number' },
+          tactical_awareness: { type: 'number' },
+          physical_attributes: { type: 'number' },
+          mental_attributes: { type: 'number' },
+          teamwork: { type: 'number' },
+          overall_rating: { type: 'number' },
+          strengths: { type: 'string' },
+          areas_for_improvement: { type: 'string' },
+          notes: { type: 'string' }
+        }
+      },
+      PhysicalAssessment: {
+        type: 'object',
+        properties: {
+          player_id: { type: 'string' },
+          assessment_date: { type: 'string' },
+          speed: { type: 'number' },
+          agility: { type: 'number' },
+          power: { type: 'number' },
+          endurance: { type: 'number' },
+          sprint_time: { type: 'number' },
+          vertical_jump: { type: 'number' },
+          cooper_test: { type: 'number' },
+          assessor: { type: 'string' },
+          notes: { type: 'string' }
+        }
+      }
+    };
+    return schemas[type];
   };
 
   const handleImport = async () => {
@@ -61,7 +145,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
 
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const schema = await base44.entities[entityType].schema();
+      const schema = getEntitySchema(entityType);
       
       const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
@@ -78,22 +162,35 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
 
       if (extractResult.status === 'success' && extractResult.output?.records) {
         const records = extractResult.output.records;
-        await base44.entities[entityType].bulkCreate(records);
+        
+        // Create records one by one to handle any issues
+        let successCount = 0;
+        const errors = [];
+        
+        for (const record of records) {
+          try {
+            await base44.entities[entityType].create(record);
+            successCount++;
+          } catch (err) {
+            errors.push(err.message);
+          }
+        }
         
         setResult({
           success: true,
-          message: `Successfully imported ${records.length} ${entityType.toLowerCase()}(s)`,
-          count: records.length
+          message: `Successfully imported ${successCount} out of ${records.length} ${entityType.toLowerCase()}(s)`,
+          count: successCount,
+          errors: errors.length > 0 ? errors : null
         });
         
         if (onSuccess) onSuccess();
       } else {
-        throw new Error(extractResult.details || 'Failed to extract data');
+        throw new Error(extractResult.details || 'Failed to extract data from file');
       }
     } catch (error) {
       setResult({
         success: false,
-        message: error.message || 'Import failed'
+        message: error.message || 'Import failed. Please check your CSV format.'
       });
     }
 
@@ -168,7 +265,17 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
               ) : (
                 <AlertCircle className="h-4 w-4" />
               )}
-              <AlertDescription>{result.message}</AlertDescription>
+              <AlertDescription>
+                {result.message}
+                {result.errors && (
+                  <div className="mt-2 text-xs">
+                    <p className="font-semibold">Some records failed:</p>
+                    {result.errors.slice(0, 3).map((err, idx) => (
+                      <p key={idx}>• {err}</p>
+                    ))}
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
