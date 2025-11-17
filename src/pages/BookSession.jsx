@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
-import { User, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight, Settings, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -43,6 +43,11 @@ export default function BookSession() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings'],
     queryFn: () => base44.entities.Booking.list()
@@ -68,6 +73,19 @@ export default function BookSession() {
       setShowAvailabilityDialog(false);
     }
   });
+
+  const adminUsers = users.filter(u => u.role === 'admin');
+  const allCoachOptions = [
+    ...coaches,
+    ...adminUsers.map(admin => ({
+      id: admin.id,
+      full_name: admin.full_name,
+      specialization: 'Admin',
+      isAdmin: true,
+      session_duration: 60,
+      booking_enabled: true
+    }))
+  ];
 
   const coachBookings = selectedCoach
     ? bookings.filter(b => b.coach_id === selectedCoach.id)
@@ -99,7 +117,7 @@ export default function BookSession() {
   };
 
   const handleSaveAvailability = (availabilityData) => {
-    if (selectedCoach) {
+    if (selectedCoach && !selectedCoach.isAdmin) {
       updateCoachMutation.mutate({
         id: selectedCoach.id,
         data: availabilityData
@@ -125,7 +143,7 @@ export default function BookSession() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3">
-                {coaches.map(coach => (
+                {allCoachOptions.map(coach => (
                   <button
                     key={coach.id}
                     onClick={() => {
@@ -140,10 +158,13 @@ export default function BookSession() {
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-semibold text-slate-900">{coach.full_name}</div>
+                        <div className="font-semibold text-slate-900 flex items-center gap-2">
+                          {coach.full_name}
+                          {coach.isAdmin && <Shield className="w-4 h-4 text-slate-500" />}
+                        </div>
                         <div className="text-sm text-slate-600">{coach.specialization}</div>
                       </div>
-                      {selectedCoach?.id === coach.id && (
+                      {selectedCoach?.id === coach.id && !coach.isAdmin && (
                         <Button
                           variant="ghost"
                           size="icon"

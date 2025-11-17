@@ -42,8 +42,8 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       csvContent = 'Date,Player Name,Birth Year,Team Name,My Goals,Evaluator,Current Team Status,Growth Mindset,Resilience,Efficiency in execution,Adept Mover,Team Focus,Primary Position,Preferred Foot,Defending Organized:,Defending the final third,DEFENDING TRANSITION,Attacking Organized,Attacking The Final Third,Attacking in Transition,Player\'s Strengths,Areas of Growth,Training Focus\n';
       csvContent += '2024-01-15,John Doe,2005,Elite Squad,Improve passing,Coach Smith,Active,8,7,8,9,8,Midfielder,Right,7,8,8,9,8,9,Great vision,Work on defense,Tactical drills\n';
     } else if (entityType === 'PhysicalAssessment') {
-      csvContent = 'Name,Team,Date,Position,Age,20 m linear,Speed Score,20 m All Time Rank,vertical,Vertical Score,Vertical Rank,YIRT,YIRT Score,YIRT All Time Rank,5-10-2005,5-10-5 Score,5-10-5 all time rank,Energy Score,All Time Rank,Jags Rank\n';
-      csvContent += 'John Doe,Elite Squad,2024-01-15,Midfielder,18,3.2,85,5,65,82,3,2800,90,2,4.5,78,4,85,3,1\n';
+      csvContent = 'Name,Team,Date,Position,Age,20 m linear,Speed Score,20 m All Time Rank,vertical,Vertical Score,Vertical Rank,YIRT,5-10-2005,5-10-5 Score,5-10-5 all time rank,Energy Score,All Time Rank,Jags Rank\n';
+      csvContent += 'John Doe,Elite Squad,2024-01-15,Midfielder,18,3.2,85,5,65,82,3,90,4.5,78,4,85,3,1\n';
     } else if (entityType === 'Coach') {
       csvContent = 'full_name,email,phone,specialization,bio\n';
       csvContent += 'Mike Smith,coach@email.com,+1234567890,Technical Training,Experienced coach\n';
@@ -101,10 +101,14 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           const team = teams.find(t => t.name?.toLowerCase() === row['Team Name']?.toLowerCase());
           return {
             full_name: `${row['Player First Name'] || ''} ${row['Player Last Name'] || ''}`.trim(),
+            parent_name: row['Parent Name'],
             email: row['Email'],
             phone: row['Phone Number'],
             date_of_birth: row['Date of Birth'],
+            gender: row['Gender'],
+            grade: row['Grade'],
             position: row['Primary Position'],
+            secondary_position: row['Secondary Position'],
             team_id: team?.id,
             status: 'Active'
           };
@@ -164,7 +168,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
             speed: parseInt(row['Speed Score']) || 0,
             agility: parseInt(row['5-10-5 Score']) || 0,
             power: parseInt(row['Vertical Score']) || 0,
-            endurance: parseInt(row['YIRT Score']) || 0,
+            endurance: parseInt(row['YIRT']) || 0,
             sprint_time: parseFloat(row['20 m linear']) || null,
             vertical_jump: parseFloat(row['vertical']) || null,
             cooper_test: parseFloat(row['YIRT']) || null
