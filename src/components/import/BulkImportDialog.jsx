@@ -92,6 +92,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       }
 
       let records = [];
+      let unassignedRecords = [];
 
       if (entityType === 'Player') {
         const teams = await base44.entities.Team.list();
@@ -111,10 +112,9 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       } else if (entityType === 'Evaluation') {
         const players = await base44.entities.Player.list();
         
-        records = rows.map(row => {
+        for (const row of rows) {
           const player = players.find(p => p.full_name?.toLowerCase() === row['Player Name']?.toLowerCase());
-          if (!player) throw new Error(`Player not found: ${row['Player Name']}`);
-
+          
           const growthMindset = parseInt(row['Growth Mindset']) || 0;
           const resilience = parseInt(row['Resilience']) || 0;
           const efficiency = parseInt(row['Efficiency in execution']) || 0;
@@ -122,15 +122,10 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           const teamFocus = parseInt(row['Team Focus']) || 0;
           const defendingOrg = parseInt(row['Defending Organized:']) || 0;
           const defendingFinal = parseInt(row['Defending the final third']) || 0;
-          const defendingTrans = parseInt(row['DEFENDING TRANSITION']) || 0;
           const attackingOrg = parseInt(row['Attacking Organized']) || 0;
           const attackingFinal = parseInt(row['Attacking The Final Third']) || 0;
-          const attackingTrans = parseInt(row['Attacking in Transition']) || 0;
 
-          return {
-            player_id: player.id,
-            evaluator_name: row['Evaluator'],
-            evaluation_date: row['Date'],
+          const evaluationData = {
             technical_skills: Math.round((attackingOrg + attackingFinal) / 2),
             tactical_awareness: Math.round((defendingOrg + attackingOrg) / 2),
             physical_attributes: adeptMover,
@@ -141,28 +136,60 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
             areas_for_improvement: row['Areas of Growth'],
             notes: `Goals: ${row['My Goals'] || 'N/A'}. Training Focus: ${row['Training Focus'] || 'N/A'}`
           };
-        });
+
+          if (player) {
+            records.push({
+              player_id: player.id,
+              evaluator_name: row['Evaluator'],
+              evaluation_date: row['Date'],
+              ...evaluationData
+            });
+          } else {
+            unassignedRecords.push({
+              player_name: row['Player Name'],
+              date: row['Date'],
+              evaluator: row['Evaluator'],
+              ...evaluationData,
+              assigned: false
+            });
+          }
+        }
       } else if (entityType === 'PhysicalAssessment') {
         const players = await base44.entities.Player.list();
         
-        records = rows.map(row => {
+        for (const row of rows) {
           const player = players.find(p => p.full_name?.toLowerCase() === row['Name']?.toLowerCase());
-          if (!player) throw new Error(`Player not found: ${row['Name']}`);
 
-          return {
-            player_id: player.id,
-            assessment_date: row['Date'],
+          const assessmentData = {
             speed: parseInt(row['Speed Score']) || 0,
             agility: parseInt(row['5-10-5 Score']) || 0,
             power: parseInt(row['Vertical Score']) || 0,
             endurance: parseInt(row['YIRT Score']) || 0,
             sprint_time: parseFloat(row['20 m linear']) || null,
             vertical_jump: parseFloat(row['vertical']) || null,
-            cooper_test: parseFloat(row['YIRT']) || null,
-            assessor: row['Team'],
-            notes: `Position: ${row['Position'] || 'N/A'}, Age: ${row['Age'] || 'N/A'}`
+            cooper_test: parseFloat(row['YIRT']) || null
           };
-        });
+
+          if (player) {
+            records.push({
+              player_id: player.id,
+              assessment_date: row['Date'],
+              ...assessmentData,
+              assessor: row['Team'],
+              notes: `Position: ${row['Position'] || 'N/A'}, Age: ${row['Age'] || 'N/A'}`
+            });
+          } else {
+            unassignedRecords.push({
+              player_name: row['Name'],
+              team_name: row['Team'],
+              assessment_date: row['Date'],
+              position: row['Position'],
+              age: parseInt(row['Age']) || null,
+              ...assessmentData,
+              assigned: false
+            });
+          }
+        }
       } else if (entityType === 'Coach') {
         records = rows.map(row => ({
           full_name: row['full_name'],
@@ -195,10 +222,25 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           errors.push(`Row ${i + 2}: ${err.message}`);
         }
       }
+
+      // Save unassigned records
+      if (unassignedRecords.length > 0) {
+        for (const record of unassignedRecords) {
+          try {
+            if (entityType === 'Evaluation') {
+              await base44.entities.UnassignedEvaluation.create(record);
+            } else if (entityType === 'PhysicalAssessment') {
+              await base44.entities.UnassignedPhysicalAssessment.create(record);
+            }
+          } catch (err) {
+            console.error('Error saving unassigned record:', err);
+          }
+        }
+      }
       
       setResult({
-        success: successCount > 0,
-        message: `Successfully imported ${successCount} out of ${records.length} records`,
+        success: successCount > 0 || unassignedRecords.length > 0,
+        message: `Successfully imported ${successCount} records${unassignedRecords.length > 0 ? `. ${unassignedRecords.length} records saved as unassigned (player not found)` : ''}`,
         errors: errors.length > 0 ? errors.slice(0, 5) : null
       });
       
