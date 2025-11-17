@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format } from 'date-fns';
-import { User, Clock, MapPin } from 'lucide-react';
+import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
+import { User, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -15,17 +15,26 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import BookingCalendar from '../components/booking/BookingCalendar';
-import TimeSlots from '../components/booking/TimeSlots';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import CoachCalendarView from '../components/booking/CoachCalendarView';
+import CoachAvailabilitySettings from '../components/booking/CoachAvailabilitySettings';
 
 export default function BookSession() {
   const [selectedCoach, setSelectedCoach] = useState(null);
+  const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [playerEmail, setPlayerEmail] = useState('');
   const [sessionType, setSessionType] = useState('Individual Training');
   const [notes, setNotes] = useState('');
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -43,6 +52,7 @@ export default function BookSession() {
     mutationFn: (data) => base44.entities.Booking.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['bookings']);
+      setShowBookingDialog(false);
       setSelectedDate(null);
       setSelectedTime(null);
       setPlayerName('');
@@ -51,17 +61,23 @@ export default function BookSession() {
     }
   });
 
-  const coachBookings = selectedCoach && selectedDate
-    ? bookings.filter(b => 
-        b.coach_id === selectedCoach.id && 
-        b.date === format(selectedDate, 'yyyy-MM-dd')
-      )
+  const updateCoachMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Coach.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['coaches']);
+      setShowAvailabilityDialog(false);
+    }
+  });
+
+  const coachBookings = selectedCoach
+    ? bookings.filter(b => b.coach_id === selectedCoach.id)
     : [];
 
-  const bookedTimes = coachBookings.map(b => b.start_time);
-  const bookedDates = bookings
-    .filter(b => b.coach_id === selectedCoach?.id)
-    .map(b => b.date);
+  const handleTimeSlotClick = (date, time) => {
+    setSelectedDate(date);
+    setSelectedTime(time);
+    setShowBookingDialog(true);
+  };
 
   const handleConfirmBooking = () => {
     if (!selectedCoach || !selectedDate || !selectedTime) return;
@@ -82,6 +98,15 @@ export default function BookSession() {
     createBookingMutation.mutate(bookingData);
   };
 
+  const handleSaveAvailability = (availabilityData) => {
+    if (selectedCoach) {
+      updateCoachMutation.mutate({
+        id: selectedCoach.id,
+        data: availabilityData
+      });
+    }
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -89,9 +114,9 @@ export default function BookSession() {
         <p className="text-slate-600 mt-1">Schedule one-on-one sessions with our coaches</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          <Card className="border-none shadow-lg mb-6">
+          <Card className="border-none shadow-lg">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5 text-emerald-600" />
@@ -105,8 +130,7 @@ export default function BookSession() {
                     key={coach.id}
                     onClick={() => {
                       setSelectedCoach(coach);
-                      setSelectedDate(null);
-                      setSelectedTime(null);
+                      setCurrentWeek(new Date());
                     }}
                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                       selectedCoach?.id === coach.id
@@ -114,115 +138,163 @@ export default function BookSession() {
                         : 'border-slate-200 hover:border-emerald-300'
                     }`}
                   >
-                    <div className="font-semibold text-slate-900">{coach.full_name}</div>
-                    <div className="text-sm text-slate-600">{coach.specialization}</div>
-                    {coach.session_duration && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
-                        <Clock className="w-3 h-3" />
-                        {coach.session_duration} min
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold text-slate-900">{coach.full_name}</div>
+                        <div className="text-sm text-slate-600">{coach.specialization}</div>
                       </div>
-                    )}
+                      {selectedCoach?.id === coach.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAvailabilityDialog(true);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
             </CardContent>
           </Card>
-
-          {selectedCoach && selectedDate && selectedTime && (
-            <Card className="border-none shadow-lg bg-emerald-50">
-              <CardHeader>
-                <CardTitle className="text-emerald-900">Booking Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Your Name *</Label>
-                  <Input
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="Enter your name"
-                  />
-                </div>
-                <div>
-                  <Label>Your Email *</Label>
-                  <Input
-                    type="email"
-                    value={playerEmail}
-                    onChange={(e) => setPlayerEmail(e.target.value)}
-                    placeholder="your@email.com"
-                  />
-                </div>
-                <div>
-                  <Label>Session Type</Label>
-                  <Select value={sessionType} onValueChange={setSessionType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Individual Training">Individual Training</SelectItem>
-                      <SelectItem value="Evaluation Session">Evaluation Session</SelectItem>
-                      <SelectItem value="Physical Assessment">Physical Assessment</SelectItem>
-                      <SelectItem value="Tactical Review">Tactical Review</SelectItem>
-                      <SelectItem value="Mental Coaching">Mental Coaching</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Notes (Optional)</Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Any specific goals or requests..."
-                  />
-                </div>
-                <Button
-                  onClick={handleConfirmBooking}
-                  disabled={!playerName || !playerEmail || createBookingMutation.isPending}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                >
-                  Confirm Booking
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           {!selectedCoach ? (
             <Card className="border-none shadow-lg">
               <CardContent className="p-12 text-center">
                 <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Coach</h3>
-                <p className="text-slate-600">Choose a coach from the list to view available time slots</p>
+                <p className="text-slate-600">Choose a coach to view their calendar and availability</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Select a Date</h3>
-                <BookingCalendar
-                  selectedDate={selectedDate}
-                  onDateSelect={setSelectedDate}
-                  bookedDates={bookedDates}
-                />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                  {selectedDate ? format(selectedDate, 'EEEE, MMMM d') : 'Select a Time'}
-                </h3>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <TimeSlots
-                    selectedDate={selectedDate}
-                    selectedTime={selectedTime}
-                    onTimeSelect={setSelectedTime}
-                    bookedTimes={bookedTimes}
-                  />
+            <Card className="border-none shadow-lg">
+              <CardHeader className="border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <CardTitle>{selectedCoach.full_name}'s Calendar</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="text-sm font-medium px-4">
+                      {format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d')} - 
+                      {format(addWeeks(startOfWeek(currentWeek, { weekStartsOn: 1 }), 1), 'MMM d, yyyy')}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <CoachCalendarView
+                  selectedWeek={currentWeek}
+                  coach={selectedCoach}
+                  bookings={coachBookings}
+                  onTimeSlotClick={handleTimeSlotClick}
+                />
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
+
+      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Booking</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="p-4 bg-emerald-50 rounded-lg">
+              <div className="text-sm text-slate-600">Booking with</div>
+              <div className="font-semibold text-slate-900">{selectedCoach?.full_name}</div>
+              <div className="text-sm text-slate-600 mt-2">
+                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
+              </div>
+            </div>
+            <div>
+              <Label>Your Name *</Label>
+              <Input
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Enter your name"
+              />
+            </div>
+            <div>
+              <Label>Your Email *</Label>
+              <Input
+                type="email"
+                value={playerEmail}
+                onChange={(e) => setPlayerEmail(e.target.value)}
+                placeholder="your@email.com"
+              />
+            </div>
+            <div>
+              <Label>Session Type</Label>
+              <Select value={sessionType} onValueChange={setSessionType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Individual Training">Individual Training</SelectItem>
+                  <SelectItem value="Evaluation Session">Evaluation Session</SelectItem>
+                  <SelectItem value="Physical Assessment">Physical Assessment</SelectItem>
+                  <SelectItem value="Tactical Review">Tactical Review</SelectItem>
+                  <SelectItem value="Mental Coaching">Mental Coaching</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any specific goals or requests..."
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmBooking}
+              disabled={!playerName || !playerEmail || createBookingMutation.isPending}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Confirm Booking
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Availability - {selectedCoach?.full_name}</DialogTitle>
+          </DialogHeader>
+          {selectedCoach && (
+            <CoachAvailabilitySettings
+              coach={selectedCoach}
+              onSave={handleSaveAvailability}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import BookSession from './pages/BookSession';
 import Teams from './pages/Teams';
 import Evaluations from './pages/Evaluations';
 import Assessments from './pages/Assessments';
+import TeamDashboard from './pages/TeamDashboard';
+import ClubManagement from './pages/ClubManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -16,6 +18,8 @@ export const PAGES = {
     "Teams": Teams,
     "Evaluations": Evaluations,
     "Assessments": Assessments,
+    "TeamDashboard": TeamDashboard,
+    "ClubManagement": ClubManagement,
 }
 
 export const pagesConfig = {

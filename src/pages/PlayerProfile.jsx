@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -8,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CircularChart from '../components/physical/CircularChart';
+import PerformanceTrendChart from '../components/analytics/PerformanceTrendChart';
+import RadarComparisonChart from '../components/analytics/RadarComparisonChart';
 import {
   Dialog,
   DialogContent,
@@ -79,10 +82,21 @@ export default function PlayerProfile() {
     queryFn: () => base44.entities.Team.list()
   });
 
+  const { data: allAssessments = [] } = useQuery({
+    queryKey: ['allAssessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list()
+  });
+
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['allPlayers'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
   const createAssessmentMutation = useMutation({
     mutationFn: (data) => base44.entities.PhysicalAssessment.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['assessments', playerId]);
+      queryClient.invalidateQueries(['allAssessments']);
       setShowAssessmentDialog(false);
     }
   });
@@ -99,6 +113,32 @@ export default function PlayerProfile() {
 
   const team = teams.find(t => t.id === player.team_id);
   const latestAssessment = assessments[0];
+
+  // Calculate team and club averages
+  const teamPlayers = allPlayers.filter(p => p.team_id === player.team_id);
+  const teamPlayerIds = teamPlayers.map(p => p.id);
+  const teamAssessments = allAssessments.filter(a => teamPlayerIds.includes(a.player_id));
+  
+  const calculateAverages = (assessmentList) => {
+    if (assessmentList.length === 0) return { speed: 0, agility: 0, power: 0, endurance: 0 };
+    
+    const totals = assessmentList.reduce((acc, a) => ({
+      speed: acc.speed + (a.speed || 0),
+      agility: acc.agility + (a.agility || 0),
+      power: acc.power + (a.power || 0),
+      endurance: acc.endurance + (a.endurance || 0)
+    }), { speed: 0, agility: 0, power: 0, endurance: 0 });
+    
+    return {
+      speed: Math.round(totals.speed / assessmentList.length),
+      agility: Math.round(totals.agility / assessmentList.length),
+      power: Math.round(totals.power / assessmentList.length),
+      endurance: Math.round(totals.endurance / assessmentList.length)
+    };
+  };
+
+  const teamAverage = calculateAverages(teamAssessments);
+  const clubAverage = calculateAverages(allAssessments);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -166,8 +206,9 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="physical">Physical Profile</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
             </TabsList>
 
@@ -244,6 +285,96 @@ export default function PlayerProfile() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Physical Performance Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {assessments.length > 1 ? (
+                    <PerformanceTrendChart
+                      data={assessments.slice().reverse()} // Reverse to show chronologically on chart
+                      metrics={[
+                        { key: 'speed', label: 'Speed' },
+                        { key: 'agility', label: 'Agility' },
+                        { key: 'power', label: 'Power' },
+                        { key: 'endurance', label: 'Endurance' }
+                      ]}
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      Need at least 2 assessments to show physical trends
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Physical Comparison Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {latestAssessment ? (
+                    <>
+                      <RadarComparisonChart
+                        playerData={latestAssessment}
+                        teamAverage={teamAverage}
+                        clubAverage={clubAverage}
+                      />
+                      <div className="grid grid-cols-3 gap-4 mt-6">
+                        <div className="text-center p-4 bg-blue-50 rounded-xl">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {Math.round((latestAssessment.speed + latestAssessment.agility + latestAssessment.power + latestAssessment.endurance) / 4)}
+                          </div>
+                          <div className="text-sm text-slate-600 mt-1">Player Avg</div>
+                        </div>
+                        <div className="text-center p-4 bg-emerald-50 rounded-xl">
+                          <div className="text-2xl font-bold text-emerald-600">
+                            {Math.round((teamAverage.speed + teamAverage.agility + teamAverage.power + teamAverage.endurance) / 4)}
+                          </div>
+                          <div className="text-sm text-slate-600 mt-1">Team Avg</div>
+                        </div>
+                        <div className="text-center p-4 bg-orange-50 rounded-xl">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {Math.round((clubAverage.speed + clubAverage.agility + clubAverage.power + clubAverage.endurance) / 4)}
+                          </div>
+                          <div className="text-sm text-slate-600 mt-1">Club Avg</div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      No physical assessment data available for comparison
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Evaluation Trends</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {evaluations.length > 1 ? (
+                    <PerformanceTrendChart
+                      data={evaluations.slice().reverse()} // Reverse to show chronologically on chart
+                      metrics={[
+                        { key: 'technical_skills', label: 'Technical' },
+                        { key: 'tactical_awareness', label: 'Tactical' },
+                        { key: 'physical_attributes', label: 'Physical' },
+                        { key: 'mental_attributes', label: 'Mental' },
+                        { key: 'overall_rating', label: 'Overall' }
+                      ]}
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      Need at least 2 evaluations to show trends
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="evaluations" className="space-y-6">
@@ -330,8 +461,9 @@ export default function PlayerProfile() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Assessment Date</Label>
+              <Label htmlFor="assessment_date">Assessment Date</Label>
               <Input
+                id="assessment_date"
                 type="date"
                 value={newAssessment.assessment_date}
                 onChange={(e) => setNewAssessment({...newAssessment, assessment_date: e.target.value})}
@@ -339,8 +471,9 @@ export default function PlayerProfile() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Speed (0-100): {newAssessment.speed}</Label>
+                <Label htmlFor="speed_range">Speed (0-100): {newAssessment.speed}</Label>
                 <input
+                  id="speed_range"
                   type="range"
                   min="0"
                   max="100"
@@ -350,8 +483,9 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label>Agility (0-100): {newAssessment.agility}</Label>
+                <Label htmlFor="agility_range">Agility (0-100): {newAssessment.agility}</Label>
                 <input
+                  id="agility_range"
                   type="range"
                   min="0"
                   max="100"
@@ -361,8 +495,9 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label>Power (0-100): {newAssessment.power}</Label>
+                <Label htmlFor="power_range">Power (0-100): {newAssessment.power}</Label>
                 <input
+                  id="power_range"
                   type="range"
                   min="0"
                   max="100"
@@ -372,8 +507,9 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label>Endurance (0-100): {newAssessment.endurance}</Label>
+                <Label htmlFor="endurance_range">Endurance (0-100): {newAssessment.endurance}</Label>
                 <input
+                  id="endurance_range"
                   type="range"
                   min="0"
                   max="100"
@@ -384,8 +520,9 @@ export default function PlayerProfile() {
               </div>
             </div>
             <div>
-              <Label>Notes</Label>
+              <Label htmlFor="assessment_notes">Notes</Label>
               <Textarea
+                id="assessment_notes"
                 value={newAssessment.notes}
                 onChange={(e) => setNewAssessment({...newAssessment, notes: e.target.value})}
                 placeholder="Additional notes..."
@@ -408,8 +545,9 @@ export default function PlayerProfile() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Evaluation Date</Label>
+              <Label htmlFor="evaluation_date">Evaluation Date</Label>
               <Input
+                id="evaluation_date"
                 type="date"
                 value={newEvaluation.evaluation_date}
                 onChange={(e) => setNewEvaluation({...newEvaluation, evaluation_date: e.target.value})}
@@ -418,8 +556,9 @@ export default function PlayerProfile() {
             <div className="grid grid-cols-2 gap-4">
               {['technical_skills', 'tactical_awareness', 'physical_attributes', 'mental_attributes', 'teamwork'].map(field => (
                 <div key={field}>
-                  <Label>{field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} (1-10): {newEvaluation[field]}</Label>
+                  <Label htmlFor={`${field}_range`}>{field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} (1-10): {newEvaluation[field]}</Label>
                   <input
+                    id={`${field}_range`}
                     type="range"
                     min="1"
                     max="10"
@@ -430,8 +569,9 @@ export default function PlayerProfile() {
                 </div>
               ))}
               <div>
-                <Label>Overall Rating (1-10): {newEvaluation.overall_rating}</Label>
+                <Label htmlFor="overall_rating_range">Overall Rating (1-10): {newEvaluation.overall_rating}</Label>
                 <input
+                  id="overall_rating_range"
                   type="range"
                   min="1"
                   max="10"
@@ -442,16 +582,18 @@ export default function PlayerProfile() {
               </div>
             </div>
             <div>
-              <Label>Strengths</Label>
+              <Label htmlFor="evaluation_strengths">Strengths</Label>
               <Textarea
+                id="evaluation_strengths"
                 value={newEvaluation.strengths}
                 onChange={(e) => setNewEvaluation({...newEvaluation, strengths: e.target.value})}
                 placeholder="Key strengths..."
               />
             </div>
             <div>
-              <Label>Areas for Improvement</Label>
+              <Label htmlFor="evaluation_improvements">Areas for Improvement</Label>
               <Textarea
+                id="evaluation_improvements"
                 value={newEvaluation.areas_for_improvement}
                 onChange={(e) => setNewEvaluation({...newEvaluation, areas_for_improvement: e.target.value})}
                 placeholder="What to work on..."
