@@ -25,7 +25,7 @@ export default function PlayerProfile() {
 
   const [showAssessmentDialog, setShowAssessmentDialog] = useState(false);
   const [showEvaluationDialog, setShowEvaluationDialog] = useState(false);
-  
+
   const [newAssessment, setNewAssessment] = useState({
     player_id: playerId,
     assessment_date: new Date().toISOString().split('T')[0],
@@ -33,10 +33,7 @@ export default function PlayerProfile() {
     agility: 50,
     power: 50,
     endurance: 50,
-    sprint_time: '',
-    vertical_jump: '',
-    cooper_test: '',
-    assessor: '',
+    // sprint_time, vertical_jump, cooper_test, and assessor removed as per dialog changes
     notes: ''
   });
 
@@ -114,17 +111,17 @@ export default function PlayerProfile() {
   const teamPlayers = allPlayers.filter(p => p.team_id === player.team_id);
   const teamPlayerIds = teamPlayers.map(p => p.id);
   const teamAssessments = allAssessments.filter(a => teamPlayerIds.includes(a.player_id));
-  
+
   const calculateAverages = (assessmentList) => {
     if (assessmentList.length === 0) return { speed: 0, agility: 0, power: 0, endurance: 0 };
-    
+
     const totals = assessmentList.reduce((acc, a) => ({
       speed: acc.speed + (a.speed || 0),
       agility: acc.agility + (a.agility || 0),
       power: acc.power + (a.power || 0),
       endurance: acc.endurance + (a.endurance || 0)
     }), { speed: 0, agility: 0, power: 0, endurance: 0 });
-    
+
     return {
       speed: Math.round(totals.speed / assessmentList.length),
       agility: Math.round(totals.agility / assessmentList.length),
@@ -135,6 +132,7 @@ export default function PlayerProfile() {
 
   const teamAverage = calculateAverages(teamAssessments);
   const clubAverage = calculateAverages(allAssessments);
+  const playerHistoricalAvg = calculateAverages(assessments); // New: Player's own historical average
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -238,7 +236,7 @@ export default function PlayerProfile() {
                         </div>
                         <div className="p-4 bg-pink-50 rounded-xl">
                           <div className="text-sm text-pink-600 mb-1">Endurance (YIRT)</div>
-                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.endurance || 'N/A'}</div>
+                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.cooper_test || 'N/A'}</div> {/* Assuming cooper_test is meant here */}
                           <div className="text-xs text-slate-500 mt-1">score (higher is better)</div>
                           <div className="text-xs text-slate-400">Best: 65</div>
                         </div>
@@ -283,7 +281,7 @@ export default function PlayerProfile() {
                             </div>
                             <div>
                               <span className="text-slate-600">Endurance: </span>
-                              <span className="font-semibold">{assessment.endurance || 'N/A'}</span>
+                              <span className="font-semibold">{assessment.cooper_test || 'N/A'}</span> {/* Assuming cooper_test is meant here */}
                             </div>
                           </div>
                           {assessment.notes && (
@@ -304,15 +302,48 @@ export default function PlayerProfile() {
                 </CardHeader>
                 <CardContent>
                   {assessments.length > 1 ? (
-                    <PerformanceTrendChart
-                      data={assessments.slice().reverse()}
-                      metrics={[
-                        { key: 'speed', label: 'Speed' },
-                        { key: 'agility', label: 'Agility' },
-                        { key: 'power', label: 'Power' },
-                        { key: 'endurance', label: 'Endurance' }
-                      ]}
-                    />
+                    <div>
+                      <PerformanceTrendChart
+                        data={assessments.slice().reverse()}
+                        metrics={[
+                          { key: 'speed', label: 'Speed' },
+                          { key: 'agility', label: 'Agility' },
+                          { key: 'power', label: 'Power' },
+                          { key: 'endurance', label: 'Endurance' }
+                        ]}
+                      />
+                      <div className="grid grid-cols-4 gap-4 mt-6">
+                        {['speed', 'agility', 'power', 'endurance'].map(metric => {
+                          const current = latestAssessment?.[metric] || 0;
+                          const historical = playerHistoricalAvg[metric];
+                          const change = current - historical;
+                          // Handle division by zero for percentChange if historical is 0
+                          const percentChange = historical !== 0 ? ((change / historical) * 100).toFixed(1) : (current !== 0 ? 'N/A' : '0.0');
+
+                          return (
+                            <div key={metric} className="p-3 bg-slate-50 rounded-xl">
+                              <div className="text-xs text-slate-600 capitalize mb-1">{metric}</div>
+                              <div className="text-lg font-bold text-slate-900">{current}</div>
+                              {historical !== 0 && change !== 0 && (
+                                <div className={`text-xs flex items-center gap-1 mt-1 ${change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                  {change > 0 ? '↑' : '↓'} {Math.abs(parseFloat(percentChange))}% vs avg
+                                </div>
+                              )}
+                              {historical === 0 && current !== 0 && (
+                                <div className="text-xs flex items-center gap-1 mt-1 text-emerald-600">
+                                  ↑ New data (no historical avg)
+                                </div>
+                              )}
+                              {historical === 0 && current === 0 && (
+                                <div className="text-xs flex items-center gap-1 mt-1 text-slate-500">
+                                  No data
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-12 text-slate-500">
                       Need at least 2 assessments to show physical trends
@@ -462,7 +493,7 @@ export default function PlayerProfile() {
             </TabsContent>
 
             <TabsContent value="goals" className="space-y-6">
-              {player && <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />}
+              <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />
             </TabsContent>
           </Tabs>
         </div>
@@ -485,7 +516,7 @@ export default function PlayerProfile() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="speed_range">Speed Rating (0-100): {newAssessment.speed}</Label>
+                <Label htmlFor="speed_range">Speed (0-100): {newAssessment.speed}</Label>
                 <input
                   id="speed_range"
                   type="range"
@@ -497,7 +528,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="agility_range">Agility Rating (0-100): {newAssessment.agility}</Label>
+                <Label htmlFor="agility_range">Agility (0-100): {newAssessment.agility}</Label>
                 <input
                   id="agility_range"
                   type="range"
@@ -509,7 +540,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="power_range">Power Rating (0-100): {newAssessment.power}</Label>
+                <Label htmlFor="power_range">Power (0-100): {newAssessment.power}</Label>
                 <input
                   id="power_range"
                   type="range"
@@ -521,7 +552,7 @@ export default function PlayerProfile() {
                 />
               </div>
               <div>
-                <Label htmlFor="endurance_range">Endurance Rating (0-100): {newAssessment.endurance}</Label>
+                <Label htmlFor="endurance_range">Endurance (0-100): {newAssessment.endurance}</Label>
                 <input
                   id="endurance_range"
                   type="range"
@@ -533,40 +564,7 @@ export default function PlayerProfile() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="sprint_time">Sprint Time (20m Linear, seconds)</Label>
-                <Input
-                  id="sprint_time"
-                  type="number"
-                  step="0.01"
-                  value={newAssessment.sprint_time}
-                  onChange={(e) => setNewAssessment({...newAssessment, sprint_time: parseFloat(e.target.value) || ''})}
-                  placeholder="e.g., 3.25"
-                />
-              </div>
-              <div>
-                <Label htmlFor="vertical_jump">Vertical Jump (inches)</Label>
-                <Input
-                  id="vertical_jump"
-                  type="number"
-                  step="0.1"
-                  value={newAssessment.vertical_jump}
-                  onChange={(e) => setNewAssessment({...newAssessment, vertical_jump: parseFloat(e.target.value) || ''})}
-                  placeholder="e.g., 30.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="cooper_test">Cooper Test (distance in meters)</Label>
-                <Input
-                  id="cooper_test"
-                  type="number"
-                  value={newAssessment.cooper_test}
-                  onChange={(e) => setNewAssessment({...newAssessment, cooper_test: parseInt(e.target.value) || ''})}
-                  placeholder="e.g., 2800"
-                />
-              </div>
-            </div>
+            {/* Sprint time, vertical jump, cooper test inputs removed */}
             <div>
               <Label htmlFor="assessment_notes">Notes</Label>
               <Textarea

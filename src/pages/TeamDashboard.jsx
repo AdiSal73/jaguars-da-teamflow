@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, TrendingUp, Activity, Award } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Activity, Award, Trophy, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { createPageUrl } from '@/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import TeamStrengthsHeatmap from '../components/analytics/TeamStrengthsHeatmap';
 import TeamTrendChart from '../components/analytics/TeamTrendChart';
+import { Badge } from '@/components/ui/badge';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -56,10 +57,69 @@ export default function TeamDashboard() {
   const teamAssessments = allAssessments.filter(a => playerIds.includes(a.player_id));
   const teamEvaluations = allEvaluations.filter(e => playerIds.includes(e.player_id));
 
+  // Player leaderboard data
+  const playerStats = players.map(player => {
+    const playerAssessments = allAssessments.filter(a => a.player_id === player.id);
+    const playerEvaluations = allEvaluations.filter(e => e.player_id === player.id);
+    const latestAssessment = playerAssessments[0];
+    const latestEvaluation = playerEvaluations[0];
+
+    const avgSpeed = latestAssessment?.speed || 0;
+    const avgAgility = latestAssessment?.agility || 0;
+    const avgPower = latestAssessment?.power || 0;
+    const avgEndurance = latestAssessment?.endurance || 0;
+    const physicalScore = Math.round((avgSpeed + avgAgility + avgPower + avgEndurance) / 4);
+    
+    const evalScore = latestEvaluation?.overall_rating || 0;
+
+    return {
+      ...player,
+      avgSpeed,
+      avgAgility,
+      avgPower,
+      avgEndurance,
+      physicalScore,
+      evalScore,
+      overallScore: Math.round((physicalScore + evalScore * 10) / 2)
+    };
+  }).sort((a, b) => b.overallScore - a.overallScore);
+
+  // Team comparison data
+  const teamComparisons = allTeams.map(t => {
+    const tPlayers = allPlayers.filter(p => p.team_id === t.id);
+    const tPlayerIds = tPlayers.map(p => p.id);
+    const tAssessments = allAssessments.filter(a => tPlayerIds.includes(a.player_id));
+    const tEvaluations = allEvaluations.filter(e => tPlayerIds.includes(e.player_id));
+
+    const avgPhysical = tAssessments.length > 0
+      ? Math.round(
+          tAssessments.reduce((sum, a) => sum + (a.speed + a.agility + a.power + a.endurance) / 4, 0) /
+          tAssessments.length
+        )
+      : 0;
+
+    const avgEvaluation = tEvaluations.length > 0
+      ? Math.round(
+          tEvaluations.reduce((sum, e) => sum + (e.overall_rating || 0), 0) / tEvaluations.length
+        )
+      : 0;
+
+    return {
+      name: t.name,
+      id: t.id,
+      playerCount: tPlayers.length,
+      avgPhysical,
+      avgEvaluation,
+      overallScore: Math.round((avgPhysical + avgEvaluation * 10) / 2)
+    };
+  }).sort((a, b) => b.overallScore - a.overallScore);
+
+  const currentTeamRank = teamComparisons.findIndex(t => t.id === teamId) + 1;
+
   // Team performance trends over time
   const assessmentsByMonth = {};
   teamAssessments.forEach(a => {
-    const month = new Date(a.assessment_date).toLocaleString('default', { month: 'short' });
+    const month = new Date(a.assessment_date).toLocaleString('default', { month: 'short', year: 'numeric' });
     if (!assessmentsByMonth[month]) {
       assessmentsByMonth[month] = { speed: [], agility: [], power: [], endurance: [] };
     }
@@ -100,19 +160,7 @@ export default function TeamDashboard() {
 
   const teamAverages = calculateTeamAverages();
 
-  const topPerformers = players.map(player => {
-    const playerAssessments = allAssessments.filter(a => a.player_id === player.id);
-    const latestAssessment = playerAssessments[0];
-    
-    if (!latestAssessment) return { ...player, overall: 0 };
-    
-    const overall = Math.round(
-      (latestAssessment.speed + latestAssessment.agility + 
-       latestAssessment.power + latestAssessment.endurance) / 4
-    );
-    
-    return { ...player, overall };
-  }).sort((a, b) => b.overall - a.overall).slice(0, 5);
+  const topPerformers = playerStats.slice(0, 5);
 
   // Comparison with club average
   const clubAssessments = allAssessments;
@@ -152,16 +200,26 @@ export default function TeamDashboard() {
       </Button>
 
       <div className="mb-8">
-        <div className="flex items-center gap-4">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-            style={{ backgroundColor: team.team_color }}
-          >
-            {team.name.charAt(0)}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+              style={{ backgroundColor: team.team_color }}
+            >
+              {team.name.charAt(0)}
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">{team.name}</h1>
+              <p className="text-slate-600">{team.age_group} • {team.division}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">{team.name}</h1>
-            <p className="text-slate-600">{team.age_group} • {team.division}</p>
+          <div className="text-right">
+            <div className="text-sm text-slate-600">Club Ranking</div>
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-600" />
+              <span className="text-2xl font-bold text-slate-900">#{currentTeamRank}</span>
+              <span className="text-sm text-slate-500">of {allTeams.length}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -219,7 +277,36 @@ export default function TeamDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <TeamStrengthsHeatmap teamData={evalAvg} />
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle>Player Leaderboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {topPerformers.map((player, idx) => (
+                <Link key={player.id} to={`${createPageUrl('PlayerProfile')}?id=${player.id}`}>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                        idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-600' : 'bg-slate-300'
+                      }`}>
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-900">{player.full_name}</div>
+                        <div className="text-sm text-slate-600">{player.position}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-emerald-600">{player.overallScore}</div>
+                      <div className="text-xs text-slate-500">Overall Score</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-none shadow-lg">
           <CardHeader>
@@ -248,6 +335,42 @@ export default function TeamDashboard() {
         </Card>
       </div>
 
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <TeamStrengthsHeatmap teamData={evalAvg} />
+
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle>Club Team Rankings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {teamComparisons.slice(0, 5).map((t, idx) => (
+                <div
+                  key={t.id}
+                  className={`flex items-center justify-between p-3 rounded-xl ${
+                    t.id === teamId ? 'bg-emerald-100 border-2 border-emerald-500' : 'bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-sm font-bold">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-900">{t.name}</div>
+                      <div className="text-xs text-slate-600">{t.playerCount} players</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-slate-900">{t.overallScore}</div>
+                    <div className="text-xs text-slate-500">Score</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {trendData.length > 0 && (
         <Card className="border-none shadow-lg mb-6">
           <CardHeader>
@@ -259,7 +382,7 @@ export default function TeamDashboard() {
         </Card>
       )}
 
-      <Card className="border-none shadow-lg mb-6">
+      <Card className="border-none shadow-lg">
         <CardHeader>
           <CardTitle>Team vs Club Average</CardTitle>
         </CardHeader>
@@ -277,35 +400,6 @@ export default function TeamDashboard() {
               <Bar dataKey="endurance" name="Endurance" fill="#ec4899" />
             </BarChart>
           </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card className="border-none shadow-lg">
-        <CardHeader>
-          <CardTitle>Top Performers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {topPerformers.map((player, idx) => (
-              <Link key={player.id} to={`${createPageUrl('PlayerProfile')}?id=${player.id}`}>
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {idx + 1}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">{player.full_name}</div>
-                      <div className="text-sm text-slate-600">{player.position}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-emerald-600">{player.overall}</div>
-                    <div className="text-xs text-slate-500">Overall</div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -2,21 +2,21 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, CheckCircle, Target, Dumbbell, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle, Circle, Trash2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -33,6 +33,11 @@ export default function TrainingPlanDetail() {
 
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
   const [showGoalDialog, setShowGoalDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackTarget, setFeedbackTarget] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [replyText, setReplyText] = useState('');
+
   const [newExercise, setNewExercise] = useState({
     name: '',
     description: '',
@@ -40,13 +45,21 @@ export default function TrainingPlanDetail() {
     sets: 3,
     reps: 10,
     duration: 30,
-    completed: false
+    completed: false,
+    feedback: []
   });
+
   const [newGoal, setNewGoal] = useState({
     goal: '',
-    target_value: 100,
+    target_value: 0,
     current_value: 0,
-    completed: false
+    completed: false,
+    feedback: []
+  });
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
   });
 
   const { data: plan } = useQuery({
@@ -73,30 +86,7 @@ export default function TrainingPlanDetail() {
       data: { exercises }
     });
     setShowExerciseDialog(false);
-    setNewExercise({
-      name: '',
-      description: '',
-      type: 'Technical',
-      sets: 3,
-      reps: 10,
-      duration: 30,
-      completed: false
-    });
-  };
-
-  const handleAddGoal = () => {
-    const goals = [...(plan.goals || []), newGoal];
-    updatePlanMutation.mutate({
-      id: planId,
-      data: { goals }
-    });
-    setShowGoalDialog(false);
-    setNewGoal({
-      goal: '',
-      target_value: 100,
-      current_value: 0,
-      completed: false
-    });
+    setNewExercise({ name: '', description: '', type: 'Technical', sets: 3, reps: 10, duration: 30, completed: false, feedback: [] });
   };
 
   const handleToggleExercise = (exerciseId) => {
@@ -108,37 +98,123 @@ export default function TrainingPlanDetail() {
     const completedCount = exercises.filter(ex => ex.completed).length;
     const progress = Math.round((completedCount / exercises.length) * 100);
     
-    updatePlanMutation.mutate({
-      id: planId,
+    updatePlanMutation.mutate({ 
+      id: planId, 
       data: { exercises, progress }
     });
   };
 
   const handleDeleteExercise = (exerciseId) => {
     const exercises = plan.exercises.filter(ex => ex.id !== exerciseId);
-    updatePlanMutation.mutate({
-      id: planId,
-      data: { exercises }
+    const completedCount = exercises.filter(ex => ex.completed).length;
+    const progress = exercises.length > 0 ? Math.round((completedCount / exercises.length) * 100) : 0;
+    
+    updatePlanMutation.mutate({ 
+      id: planId, 
+      data: { exercises, progress }
     });
   };
 
-  const handleUpdateGoalProgress = (goalIndex, value) => {
-    const goals = [...plan.goals];
-    goals[goalIndex].current_value = value;
-    goals[goalIndex].completed = value >= goals[goalIndex].target_value;
+  const handleAddGoal = () => {
+    const goals = [...(plan.goals || []), { ...newGoal, id: Date.now().toString() }];
+    updatePlanMutation.mutate({ 
+      id: planId, 
+      data: { goals }
+    });
+    setShowGoalDialog(false);
+    setNewGoal({ goal: '', target_value: 0, current_value: 0, completed: false, feedback: [] });
+  };
+
+  const handleUpdateGoalProgress = (goalId, currentValue) => {
+    const goals = plan.goals.map(g => {
+      if (g.id === goalId) {
+        const completed = currentValue >= g.target_value;
+        return { ...g, current_value: currentValue, completed };
+      }
+      return g;
+    });
     
-    updatePlanMutation.mutate({
-      id: planId,
+    updatePlanMutation.mutate({ 
+      id: planId, 
       data: { goals }
     });
   };
 
-  if (!plan) return null;
+  const handleAddFeedback = () => {
+    if (!feedbackTarget || !feedbackText) return;
 
-  const completedExercises = plan.exercises?.filter(ex => ex.completed).length || 0;
-  const totalExercises = plan.exercises?.length || 0;
-  const completedGoals = plan.goals?.filter(g => g.completed).length || 0;
-  const totalGoals = plan.goals?.length || 0;
+    const feedback = {
+      id: Date.now().toString(),
+      sender_id: user.id,
+      sender_name: user.full_name || user.email,
+      message: feedbackText,
+      timestamp: new Date().toISOString(),
+      replies: []
+    };
+
+    if (feedbackTarget.type === 'exercise') {
+      const exercises = plan.exercises.map(ex => 
+        ex.id === feedbackTarget.id 
+          ? { ...ex, feedback: [...(ex.feedback || []), feedback] }
+          : ex
+      );
+      updatePlanMutation.mutate({ id: planId, data: { exercises } });
+    } else if (feedbackTarget.type === 'goal') {
+      const goals = plan.goals.map(g => 
+        g.id === feedbackTarget.id 
+          ? { ...g, feedback: [...(g.feedback || []), feedback] }
+          : g
+      );
+      updatePlanMutation.mutate({ id: planId, data: { goals } });
+    }
+
+    setShowFeedbackDialog(false);
+    setFeedbackText('');
+    setFeedbackTarget(null);
+  };
+
+  const handleReplyToFeedback = (itemType, itemId, feedbackId) => {
+    if (!replyText) return;
+
+    const reply = {
+      sender_id: user.id,
+      sender_name: user.full_name || user.email,
+      message: replyText,
+      timestamp: new Date().toISOString()
+    };
+
+    if (itemType === 'exercise') {
+      const exercises = plan.exercises.map(ex => {
+        if (ex.id === itemId) {
+          const feedback = (ex.feedback || []).map(fb => 
+            fb.id === feedbackId 
+              ? { ...fb, replies: [...(fb.replies || []), reply] }
+              : fb
+          );
+          return { ...ex, feedback };
+        }
+        return ex;
+      });
+      updatePlanMutation.mutate({ id: planId, data: { exercises } });
+    } else if (itemType === 'goal') {
+      const goals = plan.goals.map(g => {
+        if (g.id === itemId) {
+          const feedback = (g.feedback || []).map(fb => 
+            fb.id === feedbackId 
+              ? { ...fb, replies: [...(fb.replies || []), reply] }
+              : fb
+          );
+          return { ...g, feedback };
+        }
+        return g;
+      });
+      updatePlanMutation.mutate({ id: planId, data: { goals } });
+    }
+
+    setReplyText('');
+  };
+
+  if (!plan) return null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -147,190 +223,278 @@ export default function TrainingPlanDetail() {
         Back
       </Button>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+      <Card className="border-none shadow-lg mb-6">
+        <CardHeader className="border-b border-slate-100">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl">{plan.title}</CardTitle>
+              <p className="text-slate-600 mt-2">{plan.description}</p>
+              <div className="flex gap-4 mt-4 text-sm text-slate-600">
+                <span>Player: <strong>{plan.player_name}</strong></span>
+                {plan.coach_name && <span>Coach: <strong>{plan.coach_name}</strong></span>}
+                <span>Duration: <strong>{plan.start_date} to {plan.end_date}</strong></span>
+              </div>
+            </div>
+            <Badge className={plan.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-600'}>
+              {plan.status}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="mb-2 text-sm text-slate-600">Overall Progress</div>
+          <Progress value={plan.progress || 0} className="h-3" />
+          <div className="text-right text-sm text-slate-600 mt-1">{plan.progress || 0}% Complete</div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="exercises" className="w-full">
+        <TabsList>
+          <TabsTrigger value="exercises">Exercises</TabsTrigger>
+          <TabsTrigger value="goals">Goals</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="exercises" className="space-y-6 mt-6">
           <Card className="border-none shadow-lg">
             <CardHeader className="border-b border-slate-100">
-              <CardTitle>Plan Overview</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Training Exercises</CardTitle>
+                <Button onClick={() => setShowExerciseDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Exercise
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.title}</h3>
-                  <p className="text-slate-600 text-sm">{plan.description}</p>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-600 mb-1">Player</div>
-                  <div className="font-semibold text-slate-900">{plan.player_name}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-600 mb-1">Duration</div>
-                  <div className="text-sm text-slate-900">
-                    {new Date(plan.start_date).toLocaleDateString()} - {new Date(plan.end_date).toLocaleDateString()}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">Progress</span>
-                    <span className="font-semibold text-emerald-600">{plan.progress || 0}%</span>
-                  </div>
-                  <Progress value={plan.progress || 0} className="h-3" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-emerald-50 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-emerald-600">{completedExercises}/{totalExercises}</div>
-                    <div className="text-xs text-slate-600 mt-1">Exercises</div>
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-600">{completedGoals}/{totalGoals}</div>
-                    <div className="text-xs text-slate-600 mt-1">Goals</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="exercises" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="exercises">Exercises</TabsTrigger>
-              <TabsTrigger value="goals">Goals</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="exercises" className="space-y-4">
-              <Card className="border-none shadow-lg">
-                <CardHeader className="border-b border-slate-100">
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Exercises</CardTitle>
-                    <Button onClick={() => setShowExerciseDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Exercise
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {totalExercises === 0 ? (
-                    <div className="text-center py-12 text-slate-500">
-                      <Dumbbell className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      No exercises added yet
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {plan.exercises.map(exercise => (
-                        <div key={exercise.id} className={`p-4 rounded-xl border-2 transition-all ${
-                          exercise.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'
-                        }`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3 flex-1">
-                              <button
-                                onClick={() => handleToggleExercise(exercise.id)}
-                                className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  exercise.completed 
-                                    ? 'bg-emerald-600 border-emerald-600' 
-                                    : 'border-slate-300 hover:border-emerald-500'
-                                }`}
-                              >
-                                {exercise.completed && <CheckCircle className="w-4 h-4 text-white" />}
-                              </button>
-                              <div className="flex-1">
-                                <h4 className={`font-semibold ${exercise.completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
-                                  {exercise.name}
-                                </h4>
-                                <p className="text-sm text-slate-600 mt-1">{exercise.description}</p>
-                                <div className="flex gap-4 mt-2 text-xs text-slate-500">
-                                  <Badge variant="outline">{exercise.type}</Badge>
-                                  {exercise.sets && <span>{exercise.sets} sets</span>}
-                                  {exercise.reps && <span>{exercise.reps} reps</span>}
-                                  {exercise.duration && <span>{exercise.duration} min</span>}
-                                </div>
-                              </div>
+              {!plan.exercises || plan.exercises.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">No exercises yet</div>
+              ) : (
+                <div className="space-y-4">
+                  {plan.exercises.map(exercise => (
+                    <div key={exercise.id} className="p-4 bg-slate-50 rounded-xl">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start gap-3 flex-1">
+                          <button
+                            onClick={() => handleToggleExercise(exercise.id)}
+                            className="mt-1"
+                          >
+                            {exercise.completed ? (
+                              <CheckCircle className="w-5 h-5 text-emerald-600" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-slate-400" />
+                            )}
+                          </button>
+                          <div className="flex-1">
+                            <h4 className={`font-semibold text-slate-900 ${exercise.completed ? 'line-through' : ''}`}>
+                              {exercise.name}
+                            </h4>
+                            <p className="text-sm text-slate-600 mt-1">{exercise.description}</p>
+                            <div className="flex gap-4 mt-2 text-xs text-slate-500">
+                              <span>Type: {exercise.type}</span>
+                              {exercise.sets && <span>Sets: {exercise.sets}</span>}
+                              {exercise.reps && <span>Reps: {exercise.reps}</span>}
+                              {exercise.duration && <span>Duration: {exercise.duration}min</span>}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteExercise(exercise.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="goals" className="space-y-4">
-              <Card className="border-none shadow-lg">
-                <CardHeader className="border-b border-slate-100">
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Training Goals</CardTitle>
-                    <Button onClick={() => setShowGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Goal
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {totalGoals === 0 ? (
-                    <div className="text-center py-12 text-slate-500">
-                      <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      No goals set yet
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {plan.goals.map((goal, idx) => (
-                        <div key={idx} className="p-4 bg-slate-50 rounded-xl">
-                          <div className="flex items-start justify-between mb-3">
-                            <h4 className="font-semibold text-slate-900">{goal.goal}</h4>
-                            {goal.completed && (
-                              <Badge className="bg-emerald-100 text-emerald-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Completed
-                              </Badge>
+                            {exercise.completed && exercise.completed_date && (
+                              <p className="text-xs text-emerald-600 mt-2">
+                                Completed on {new Date(exercise.completed_date).toLocaleDateString()}
+                              </p>
                             )}
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-600">Progress</span>
-                              <span className="font-semibold">{goal.current_value}/{goal.target_value}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setFeedbackTarget({ type: 'exercise', id: exercise.id, name: exercise.name });
+                              setShowFeedbackDialog(true);
+                            }}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteExercise(exercise.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {exercise.feedback && exercise.feedback.length > 0 && (
+                        <div className="ml-8 mt-3 space-y-2 border-t border-slate-200 pt-3">
+                          {exercise.feedback.map(fb => (
+                            <div key={fb.id} className="bg-blue-50 p-3 rounded-lg">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="text-sm font-semibold text-slate-900">{fb.sender_name}</span>
+                                <span className="text-xs text-slate-500">{new Date(fb.timestamp).toLocaleString()}</span>
+                              </div>
+                              <p className="text-sm text-slate-700">{fb.message}</p>
+                              
+                              {fb.replies && fb.replies.length > 0 && (
+                                <div className="mt-2 ml-4 space-y-2">
+                                  {fb.replies.map((reply, idx) => (
+                                    <div key={idx} className="bg-white p-2 rounded">
+                                      <div className="flex justify-between items-start mb-1">
+                                        <span className="text-xs font-semibold">{reply.sender_name}</span>
+                                        <span className="text-xs text-slate-500">{new Date(reply.timestamp).toLocaleString()}</span>
+                                      </div>
+                                      <p className="text-xs text-slate-700">{reply.message}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              <div className="mt-2 flex gap-2">
+                                <Input
+                                  placeholder="Reply..."
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  className="text-sm"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleReplyToFeedback('exercise', exercise.id, fb.id)}
+                                  disabled={!replyText}
+                                >
+                                  Reply
+                                </Button>
+                              </div>
                             </div>
-                            <Progress value={(goal.current_value / goal.target_value) * 100} className="h-2" />
-                            <div className="flex gap-2 mt-2">
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="goals" className="space-y-6 mt-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b border-slate-100">
+              <div className="flex justify-between items-center">
+                <CardTitle>Training Goals</CardTitle>
+                <Button onClick={() => setShowGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Goal
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {!plan.goals || plan.goals.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">No goals yet</div>
+              ) : (
+                <div className="space-y-4">
+                  {plan.goals.map(goal => {
+                    const progress = goal.target_value > 0 ? (goal.current_value / goal.target_value) * 100 : 0;
+                    return (
+                      <div key={goal.id} className="p-4 bg-slate-50 rounded-xl">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-slate-900">{goal.goal}</h4>
+                              {goal.completed && (
+                                <Badge className="bg-emerald-600">Completed</Badge>
+                              )}
+                            </div>
+                            <div className="mb-3">
+                              <div className="flex justify-between text-sm text-slate-600 mb-1">
+                                <span>Progress</span>
+                                <span>{goal.current_value} / {goal.target_value}</span>
+                              </div>
+                              <Progress value={Math.min(progress, 100)} className="h-2" />
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              <Label className="text-xs">Update Progress:</Label>
                               <Input
                                 type="number"
                                 value={goal.current_value}
-                                onChange={(e) => handleUpdateGoalProgress(idx, parseInt(e.target.value))}
-                                className="w-24"
+                                onChange={(e) => handleUpdateGoalProgress(goal.id, parseFloat(e.target.value) || 0)}
+                                className="w-24 text-sm"
                               />
-                              <Button size="sm" variant="outline">Update</Button>
                             </div>
                           </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setFeedbackTarget({ type: 'goal', id: goal.id, name: goal.goal });
+                              setShowFeedbackDialog(true);
+                            }}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+
+                        {goal.feedback && goal.feedback.length > 0 && (
+                          <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+                            {goal.feedback.map(fb => (
+                              <div key={fb.id} className="bg-blue-50 p-3 rounded-lg">
+                                <div className="flex justify-between items-start mb-1">
+                                  <span className="text-sm font-semibold text-slate-900">{fb.sender_name}</span>
+                                  <span className="text-xs text-slate-500">{new Date(fb.timestamp).toLocaleString()}</span>
+                                </div>
+                                <p className="text-sm text-slate-700">{fb.message}</p>
+                                
+                                {fb.replies && fb.replies.length > 0 && (
+                                  <div className="mt-2 ml-4 space-y-2">
+                                    {fb.replies.map((reply, idx) => (
+                                      <div key={idx} className="bg-white p-2 rounded">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="text-xs font-semibold">{reply.sender_name}</span>
+                                          <span className="text-xs text-slate-500">{new Date(reply.timestamp).toLocaleString()}</span>
+                                        </div>
+                                        <p className="text-xs text-slate-700">{reply.message}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                <div className="mt-2 flex gap-2">
+                                  <Input
+                                    placeholder="Reply..."
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    className="text-sm"
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleReplyToFeedback('goal', goal.id, fb.id)}
+                                    disabled={!replyText}
+                                  >
+                                    Reply
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Exercise</DialogTitle>
+            <DialogTitle>Add New Exercise</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Exercise Name *</Label>
+              <Label>Exercise Name</Label>
               <Input
                 value={newExercise.name}
                 onChange={(e) => setNewExercise({...newExercise, name: e.target.value})}
-                placeholder="e.g., Sprint Intervals"
+                placeholder="e.g., Ball Control Drills"
               />
             </div>
             <div>
@@ -349,19 +513,19 @@ export default function TrainingPlanDetail() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Technical">Technical</SelectItem>
-                  <SelectItem value="Physical">Physical</SelectItem>
                   <SelectItem value="Tactical">Tactical</SelectItem>
+                  <SelectItem value="Physical">Physical</SelectItem>
                   <SelectItem value="Mental">Mental</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label>Sets</Label>
                 <Input
                   type="number"
                   value={newExercise.sets}
-                  onChange={(e) => setNewExercise({...newExercise, sets: parseInt(e.target.value)})}
+                  onChange={(e) => setNewExercise({...newExercise, sets: parseInt(e.target.value) || 0})}
                 />
               </div>
               <div>
@@ -369,7 +533,7 @@ export default function TrainingPlanDetail() {
                 <Input
                   type="number"
                   value={newExercise.reps}
-                  onChange={(e) => setNewExercise({...newExercise, reps: parseInt(e.target.value)})}
+                  onChange={(e) => setNewExercise({...newExercise, reps: parseInt(e.target.value) || 0})}
                 />
               </div>
               <div>
@@ -377,18 +541,14 @@ export default function TrainingPlanDetail() {
                 <Input
                   type="number"
                   value={newExercise.duration}
-                  onChange={(e) => setNewExercise({...newExercise, duration: parseInt(e.target.value)})}
+                  onChange={(e) => setNewExercise({...newExercise, duration: parseInt(e.target.value) || 0})}
                 />
               </div>
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowExerciseDialog(false)}>Cancel</Button>
-            <Button 
-              onClick={handleAddExercise}
-              disabled={!newExercise.name}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
+            <Button onClick={handleAddExercise} disabled={!newExercise.name} className="bg-emerald-600 hover:bg-emerald-700">
               Add Exercise
             </Button>
           </div>
@@ -398,15 +558,15 @@ export default function TrainingPlanDetail() {
       <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Goal</DialogTitle>
+            <DialogTitle>Add New Goal</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Goal Description *</Label>
-              <Input
+              <Label>Goal Description</Label>
+              <Textarea
                 value={newGoal.goal}
                 onChange={(e) => setNewGoal({...newGoal, goal: e.target.value})}
-                placeholder="e.g., Improve 40m sprint time"
+                placeholder="What do you want to achieve?"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -415,7 +575,7 @@ export default function TrainingPlanDetail() {
                 <Input
                   type="number"
                   value={newGoal.target_value}
-                  onChange={(e) => setNewGoal({...newGoal, target_value: parseInt(e.target.value)})}
+                  onChange={(e) => setNewGoal({...newGoal, target_value: parseFloat(e.target.value) || 0})}
                 />
               </div>
               <div>
@@ -423,19 +583,44 @@ export default function TrainingPlanDetail() {
                 <Input
                   type="number"
                   value={newGoal.current_value}
-                  onChange={(e) => setNewGoal({...newGoal, current_value: parseInt(e.target.value)})}
+                  onChange={(e) => setNewGoal({...newGoal, current_value: parseFloat(e.target.value) || 0})}
                 />
               </div>
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowGoalDialog(false)}>Cancel</Button>
-            <Button 
-              onClick={handleAddGoal}
-              disabled={!newGoal.goal}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
+            <Button onClick={handleAddGoal} disabled={!newGoal.goal} className="bg-emerald-600 hover:bg-emerald-700">
               Add Goal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Provide Feedback</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="text-sm text-slate-600">Feedback for:</div>
+              <div className="font-semibold text-slate-900">{feedbackTarget?.name}</div>
+            </div>
+            <div>
+              <Label>Your Feedback</Label>
+              <Textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Enter your feedback..."
+                rows={5}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={() => setShowFeedbackDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddFeedback} disabled={!feedbackText} className="bg-emerald-600 hover:bg-emerald-700">
+              Send Feedback
             </Button>
           </div>
         </DialogContent>
