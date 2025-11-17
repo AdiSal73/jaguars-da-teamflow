@@ -54,11 +54,6 @@ const navigationItems = [
     icon: Table,
   },
   {
-    title: "Teams",
-    url: createPageUrl("Teams"),
-    icon: Shield,
-  },
-  {
     title: "Training Plans",
     url: createPageUrl("TrainingPlans"),
     icon: TrendingUp,
