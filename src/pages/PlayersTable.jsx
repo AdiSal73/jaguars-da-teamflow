@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,11 +21,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function PlayersTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [bulkTeamId, setBulkTeamId] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -56,6 +67,19 @@ export default function PlayersTable() {
       queryClient.invalidateQueries(['players']);
       setSelectedPlayers([]);
       setBulkTeamId('');
+    }
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      for (const playerId of selectedPlayers) {
+        await base44.entities.Player.delete(playerId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['players']);
+      setSelectedPlayers([]);
+      setShowDeleteDialog(false);
     }
   });
 
@@ -119,6 +143,14 @@ export default function PlayersTable() {
             >
               <Users className="w-4 h-4 mr-2" />
               Assign Selected to Team
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={selectedPlayers.length === 0}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Selected
             </Button>
           </div>
         </CardContent>
@@ -259,6 +291,23 @@ export default function PlayersTable() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedPlayers.length} Players?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected players and all their associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => bulkDeleteMutation.mutate()} className="bg-red-600 hover:bg-red-700">
+              Delete Players
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
