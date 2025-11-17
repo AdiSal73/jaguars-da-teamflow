@@ -7,6 +7,8 @@ import Evaluations from './pages/Evaluations';
 import Assessments from './pages/Assessments';
 import TeamDashboard from './pages/TeamDashboard';
 import ClubManagement from './pages/ClubManagement';
+import TrainingPlans from './pages/TrainingPlans';
+import TrainingPlanDetail from './pages/TrainingPlanDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +22,8 @@ export const PAGES = {
     "Assessments": Assessments,
     "TeamDashboard": TeamDashboard,
     "ClubManagement": ClubManagement,
+    "TrainingPlans": TrainingPlans,
+    "TrainingPlanDetail": TrainingPlanDetail,
 }
 
 export const pagesConfig = {

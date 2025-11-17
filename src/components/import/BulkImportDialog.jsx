@@ -32,11 +32,10 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
     { value: 'PhysicalAssessment', label: 'Physical Assessments' }
   ];
 
-  // Template data with examples
   const templateData = {
     Player: {
-      headers: ['full_name', 'email', 'phone', 'date_of_birth', 'position', 'jersey_number', 'height', 'weight', 'status'],
-      example: ['John Doe', 'john@example.com', '+1234567890', '2005-03-15', 'Midfielder', '10', '175', '70', 'Active']
+      headers: ['Team Name', 'Parent Name', 'Email', 'Phone Number', 'Player Last Name', 'Player First Name', 'Primary Position', 'Secondary Position', 'Date of Birth', 'Gender', 'Grade'],
+      example: ['Elite Squad', 'John Doe Sr', 'parent@email.com', '+1234567890', 'Doe', 'John', 'Midfielder', 'Forward', '2005-03-15', 'Male', '10']
     },
     Coach: {
       headers: ['full_name', 'email', 'phone', 'specialization', 'bio', 'session_duration', 'booking_enabled'],
@@ -47,8 +46,8 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       example: ['Elite Squad', 'U-18', 'Premier League', '2024/2025', '#22c55e']
     },
     Evaluation: {
-      headers: ['player_id', 'evaluator_name', 'evaluation_date', 'technical_skills', 'tactical_awareness', 'physical_attributes', 'mental_attributes', 'teamwork', 'overall_rating', 'strengths', 'areas_for_improvement'],
-      example: ['player_id_here', 'Coach Name', '2024-01-15', '8', '7', '9', '8', '7', '8', 'Great ball control', 'Needs to work on positioning']
+      headers: ['Date', 'Player Name', 'Birth Year', 'Team Name', 'My Goals', 'Evaluator', 'Current Team Status', 'Growth Mindset', 'Resilience', 'Efficiency in execution', 'Adept Mover', 'Team Focus', 'Primary Position', 'Preferred Foot', 'Defending Organized:', 'Defending the final third', 'DEFENDING TRANSITION', 'Attacking Organized', 'Attacking The Final Third', 'Attacking in Transition', "Player's Strengths", 'Areas of Growth', 'Training Focus'],
+      example: ['2024-01-15', 'John Doe', '2005', 'Elite Squad', 'Improve passing', 'Coach Smith', 'Active', '8', '7', '8', '9', '8', 'Midfielder', 'Right', '7', '8', '8', '9', '8', '9', 'Great vision', 'Work on defense', 'Tactical drills']
     },
     PhysicalAssessment: {
       headers: ['Name', 'Team', 'Date', 'Position', 'Age', '20 m linear', 'Speed Score', '20 m All Time Rank', 'vertical', 'Vertical Score', 'Vertical Rank', 'YIRT', 'YIRT Score', 'YIRT All Time Rank', '5-10-2005', '5-10-5 Score', '5-10-5 all time rank', 'Energy Score', 'All Time Rank', 'Jags Rank'],
@@ -80,77 +79,86 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       Player: {
         type: 'object',
         properties: {
-          full_name: { type: 'string', description: 'Full name of the player' },
-          email: { type: 'string', description: 'Email address' },
-          phone: { type: 'string', description: 'Phone number' },
-          date_of_birth: { type: 'string', description: 'Date of birth in YYYY-MM-DD format' },
-          position: { type: 'string', description: 'Playing position: Goalkeeper, Defender, Midfielder, or Forward' },
-          jersey_number: { type: 'number', description: 'Jersey number' },
-          height: { type: 'number', description: 'Height in centimeters' },
-          weight: { type: 'number', description: 'Weight in kilograms' },
-          status: { type: 'string', description: 'Status: Active, Injured, Suspended, or Inactive' }
-        },
-        required: ['full_name', 'position']
+          team_name: { type: 'string' },
+          parent_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          last_name: { type: 'string' },
+          first_name: { type: 'string' },
+          primary_position: { type: 'string' },
+          secondary_position: { type: 'string' },
+          date_of_birth: { type: 'string' },
+          gender: { type: 'string' },
+          grade: { type: 'string' }
+        }
       },
       Coach: {
         type: 'object',
         properties: {
-          full_name: { type: 'string', description: 'Full name of the coach' },
-          email: { type: 'string', description: 'Email address' },
-          phone: { type: 'string', description: 'Phone number' },
-          specialization: { type: 'string', description: 'Specialization area' },
-          bio: { type: 'string', description: 'Biography' },
-          session_duration: { type: 'number', description: 'Default session duration in minutes' },
-          booking_enabled: { type: 'boolean', description: 'Whether booking is enabled' }
-        },
-        required: ['full_name', 'specialization']
+          full_name: { type: 'string' },
+          email: { type: 'string' },
+          phone: { type: 'string' },
+          specialization: { type: 'string' },
+          bio: { type: 'string' },
+          session_duration: { type: 'number' },
+          booking_enabled: { type: 'boolean' }
+        }
       },
       Team: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'Team name' },
-          age_group: { type: 'string', description: 'Age group (e.g., U-12, U-15, U-18, Senior)' },
-          division: { type: 'string', description: 'Division name' },
-          season: { type: 'string', description: 'Season (e.g., 2024/2025)' },
-          team_color: { type: 'string', description: 'Team color in hex format (e.g., #22c55e)' }
-        },
-        required: ['name', 'age_group']
+          name: { type: 'string' },
+          age_group: { type: 'string' },
+          division: { type: 'string' },
+          season: { type: 'string' },
+          team_color: { type: 'string' }
+        }
       },
       Evaluation: {
         type: 'object',
         properties: {
-          player_id: { type: 'string', description: 'The ID of the player being evaluated' },
-          evaluator_name: { type: 'string', description: 'Name of the person doing the evaluation' },
-          evaluation_date: { type: 'string', description: 'Date of evaluation in YYYY-MM-DD format' },
-          technical_skills: { type: 'number', description: 'Technical skills rating from 1 to 10' },
-          tactical_awareness: { type: 'number', description: 'Tactical awareness rating from 1 to 10' },
-          physical_attributes: { type: 'number', description: 'Physical attributes rating from 1 to 10' },
-          mental_attributes: { type: 'number', description: 'Mental attributes rating from 1 to 10' },
-          teamwork: { type: 'number', description: 'Teamwork rating from 1 to 10' },
-          overall_rating: { type: 'number', description: 'Overall rating from 1 to 10' },
-          strengths: { type: 'string', description: 'Player strengths' },
-          areas_for_improvement: { type: 'string', description: 'Areas that need improvement' }
-        },
-        required: ['player_id', 'evaluation_date']
+          date: { type: 'string' },
+          player_name: { type: 'string' },
+          birth_year: { type: 'string' },
+          team_name: { type: 'string' },
+          goals: { type: 'string' },
+          evaluator: { type: 'string' },
+          team_status: { type: 'string' },
+          growth_mindset: { type: 'number' },
+          resilience: { type: 'number' },
+          efficiency: { type: 'number' },
+          adept_mover: { type: 'number' },
+          team_focus: { type: 'number' },
+          primary_position: { type: 'string' },
+          preferred_foot: { type: 'string' },
+          defending_organized: { type: 'number' },
+          defending_final_third: { type: 'number' },
+          defending_transition: { type: 'number' },
+          attacking_organized: { type: 'number' },
+          attacking_final_third: { type: 'number' },
+          attacking_transition: { type: 'number' },
+          strengths: { type: 'string' },
+          areas_of_growth: { type: 'string' },
+          training_focus: { type: 'string' }
+        }
       },
       PhysicalAssessment: {
         type: 'object',
         properties: {
-          player_name: { type: 'string', description: 'Full name of the player from the Name column' },
-          team_name: { type: 'string', description: 'Team name from the Team column' },
-          assessment_date: { type: 'string', description: 'Date from the Date column in any standard format' },
-          position: { type: 'string', description: 'Position from the Position column' },
-          age: { type: 'number', description: 'Age from the Age column' },
-          sprint_time: { type: 'number', description: '20m sprint time from the "20 m linear" column' },
-          speed: { type: 'number', description: 'Speed score from the "Speed Score" column (0-100)' },
-          vertical_jump: { type: 'number', description: 'Vertical jump from the "vertical" column in cm' },
-          power: { type: 'number', description: 'Power score from the "Vertical Score" column (0-100)' },
-          cooper_test: { type: 'number', description: 'YIRT distance from the "YIRT" column in meters' },
-          endurance: { type: 'number', description: 'Endurance score from the "YIRT Score" column (0-100)' },
-          agility_time: { type: 'number', description: '5-10-5 time from the "5-10-2005" column' },
-          agility: { type: 'number', description: 'Agility score from the "5-10-5 Score" column (0-100)' }
-        },
-        required: ['player_name', 'assessment_date']
+          player_name: { type: 'string' },
+          team_name: { type: 'string' },
+          assessment_date: { type: 'string' },
+          position: { type: 'string' },
+          age: { type: 'number' },
+          sprint_time: { type: 'number' },
+          speed: { type: 'number' },
+          vertical_jump: { type: 'number' },
+          power: { type: 'number' },
+          cooper_test: { type: 'number' },
+          endurance: { type: 'number' },
+          agility_time: { type: 'number' },
+          agility: { type: 'number' }
+        }
       }
     };
     return schemas[type];
@@ -173,11 +181,9 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           properties: {
             records: {
               type: 'array',
-              items: schema,
-              description: `Array of ${entityType} records extracted from the CSV. Map the CSV columns to the properties as described in the schema.`
+              items: schema
             }
-          },
-          required: ['records']
+          }
         }
       });
 
@@ -188,17 +194,64 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           throw new Error('No valid records found in the CSV file.');
         }
 
-        // Special handling for PhysicalAssessment - need to lookup player IDs
+        if (entityType === 'Player') {
+          const teams = await base44.entities.Team.list();
+          
+          records = records.map(record => {
+            const team = teams.find(t => t.name?.toLowerCase() === record.team_name?.toLowerCase());
+            
+            return {
+              full_name: `${record.first_name || ''} ${record.last_name || ''}`.trim(),
+              email: record.email,
+              phone: record.phone,
+              date_of_birth: record.date_of_birth,
+              position: record.primary_position,
+              team_id: team?.id,
+              status: 'Active'
+            };
+          });
+        }
+
+        if (entityType === 'Evaluation') {
+          const players = await base44.entities.Player.list();
+          
+          records = records.map(record => {
+            const player = players.find(p => p.full_name?.toLowerCase() === record.player_name?.toLowerCase());
+            
+            if (!player) {
+              throw new Error(`Player not found: ${record.player_name}`);
+            }
+
+            const avgRating = Math.round((
+              (record.growth_mindset || 0) + (record.resilience || 0) + 
+              (record.efficiency || 0) + (record.adept_mover || 0) + (record.team_focus || 0)
+            ) / 5);
+
+            return {
+              player_id: player.id,
+              evaluator_name: record.evaluator,
+              evaluation_date: record.date,
+              technical_skills: Math.round(((record.attacking_organized || 0) + (record.attacking_final_third || 0)) / 2),
+              tactical_awareness: Math.round(((record.defending_organized || 0) + (record.attacking_organized || 0)) / 2),
+              physical_attributes: record.adept_mover || 5,
+              mental_attributes: Math.round(((record.growth_mindset || 0) + (record.resilience || 0)) / 2),
+              teamwork: record.team_focus || 5,
+              overall_rating: avgRating,
+              strengths: record.strengths,
+              areas_for_improvement: record.areas_of_growth,
+              notes: `Goals: ${record.goals || 'N/A'}. Training Focus: ${record.training_focus || 'N/A'}`
+            };
+          });
+        }
+
         if (entityType === 'PhysicalAssessment') {
           const players = await base44.entities.Player.list();
           
           records = records.map(record => {
-            const player = players.find(p => 
-              p.full_name?.toLowerCase() === record.player_name?.toLowerCase()
-            );
+            const player = players.find(p => p.full_name?.toLowerCase() === record.player_name?.toLowerCase());
             
             if (!player) {
-              throw new Error(`Player not found: ${record.player_name}. Please import players first.`);
+              throw new Error(`Player not found: ${record.player_name}`);
             }
 
             return {
@@ -208,11 +261,11 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
               agility: record.agility || 0,
               power: record.power || 0,
               endurance: record.endurance || 0,
-              sprint_time: record.sprint_time || null,
-              vertical_jump: record.vertical_jump || null,
-              cooper_test: record.cooper_test || null,
-              assessor: record.team_name || null,
-              notes: record.position ? `Position: ${record.position}, Age: ${record.age || 'N/A'}` : null
+              sprint_time: record.sprint_time,
+              vertical_jump: record.vertical_jump,
+              cooper_test: record.cooper_test,
+              assessor: record.team_name,
+              notes: `Position: ${record.position || 'N/A'}, Age: ${record.age || 'N/A'}`
             };
           });
         }
@@ -245,12 +298,12 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           onSuccess();
         }
       } else {
-        throw new Error(extractResult.details || 'Failed to extract data from file. Please check your CSV format.');
+        throw new Error(extractResult.details || 'Failed to extract data from file.');
       }
     } catch (error) {
       setResult({
         success: false,
-        message: error.message || 'Import failed. Please check your CSV format and try again.'
+        message: error.message || 'Import failed.'
       });
     }
 
@@ -268,16 +321,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              {entityType === 'PhysicalAssessment' ? (
-                <div>
-                  <strong>Physical Assessment Import:</strong> Upload your CSV with the exact columns shown below. Player names will be matched automatically.
-                  <br /><strong>Note:</strong> Make sure to import Players first before importing assessments.
-                </div>
-              ) : (
-                <div>
-                  <strong>Important:</strong> Your CSV must use the exact column names from the template. Download the template to see the required format.
-                </div>
-              )}
+              Upload your CSV with the exact columns shown below. The system will automatically match and import your data.
             </AlertDescription>
           </Alert>
 
@@ -308,16 +352,10 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
             </div>
           </div>
 
-          <div>
-            <Button
-              variant="outline"
-              onClick={downloadTemplate}
-              className="w-full"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download CSV Template with Example
-            </Button>
-          </div>
+          <Button variant="outline" onClick={downloadTemplate} className="w-full">
+            <Download className="w-4 h-4 mr-2" />
+            Download CSV Template
+          </Button>
 
           <div>
             <Label>Upload CSV File</Label>
@@ -338,10 +376,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
                   {file ? (
                     <p className="text-sm font-medium text-slate-900">{file.name}</p>
                   ) : (
-                    <div>
-                      <p className="text-sm text-slate-600">Click to upload CSV file</p>
-                      <p className="text-xs text-slate-400 mt-1">Make sure to use the template format</p>
-                    </div>
+                    <p className="text-sm text-slate-600">Click to upload CSV file</p>
                   )}
                 </div>
               </label>
@@ -350,11 +385,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
 
           {result && (
             <Alert variant={result.success ? 'default' : 'destructive'}>
-              {result.success ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <AlertCircle className="h-4 w-4" />
-              )}
+              {result.success ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
               <AlertDescription>
                 {result.message}
                 {result.errors && result.errors.length > 0 && (
@@ -363,9 +394,6 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
                     {result.errors.slice(0, 5).map((err, idx) => (
                       <p key={idx} className="mt-1">• {err}</p>
                     ))}
-                    {result.errors.length > 5 && (
-                      <p className="mt-1 text-slate-500">... and {result.errors.length - 5} more errors</p>
-                    )}
                   </div>
                 )}
               </AlertDescription>
@@ -373,11 +401,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           )}
 
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
             <Button

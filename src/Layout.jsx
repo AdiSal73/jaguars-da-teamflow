@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -38,6 +38,11 @@ const navigationItems = [
     title: "Teams",
     url: createPageUrl("Teams"),
     icon: Shield,
+  },
+  {
+    title: "Training Plans",
+    url: createPageUrl("TrainingPlans"),
+    icon: TrendingUp,
   },
   {
     title: "Book Session",
