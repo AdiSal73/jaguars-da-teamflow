@@ -79,18 +79,52 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       Player: {
         type: 'object',
         properties: {
-          team_name: { type: 'string' },
-          parent_name: { type: 'string' },
-          email: { type: 'string' },
-          phone: { type: 'string' },
-          last_name: { type: 'string' },
-          first_name: { type: 'string' },
-          primary_position: { type: 'string' },
-          secondary_position: { type: 'string' },
-          date_of_birth: { type: 'string' },
-          gender: { type: 'string' },
-          grade: { type: 'string' }
-        }
+          team_name: { 
+            type: 'string',
+            description: 'Extract from the "Team Name" column'
+          },
+          parent_name: { 
+            type: 'string',
+            description: 'Extract from the "Parent Name" column'
+          },
+          email: { 
+            type: 'string',
+            description: 'Extract from the "Email" column'
+          },
+          phone: { 
+            type: 'string',
+            description: 'Extract from the "Phone Number" column'
+          },
+          last_name: { 
+            type: 'string',
+            description: 'Extract from the "Player Last Name" column'
+          },
+          first_name: { 
+            type: 'string',
+            description: 'Extract from the "Player First Name" column'
+          },
+          primary_position: { 
+            type: 'string',
+            description: 'Extract from the "Primary Position" column'
+          },
+          secondary_position: { 
+            type: 'string',
+            description: 'Extract from the "Secondary Position" column'
+          },
+          date_of_birth: { 
+            type: 'string',
+            description: 'Extract from the "Date of Birth" column in YYYY-MM-DD format'
+          },
+          gender: { 
+            type: 'string',
+            description: 'Extract from the "Gender" column'
+          },
+          grade: { 
+            type: 'string',
+            description: 'Extract from the "Grade" column'
+          }
+        },
+        required: ['first_name', 'last_name']
       },
       Coach: {
         type: 'object',
@@ -117,48 +151,158 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       Evaluation: {
         type: 'object',
         properties: {
-          date: { type: 'string' },
-          player_name: { type: 'string' },
-          birth_year: { type: 'string' },
-          team_name: { type: 'string' },
-          goals: { type: 'string' },
-          evaluator: { type: 'string' },
-          team_status: { type: 'string' },
-          growth_mindset: { type: 'number' },
-          resilience: { type: 'number' },
-          efficiency: { type: 'number' },
-          adept_mover: { type: 'number' },
-          team_focus: { type: 'number' },
-          primary_position: { type: 'string' },
-          preferred_foot: { type: 'string' },
-          defending_organized: { type: 'number' },
-          defending_final_third: { type: 'number' },
-          defending_transition: { type: 'number' },
-          attacking_organized: { type: 'number' },
-          attacking_final_third: { type: 'number' },
-          attacking_transition: { type: 'number' },
-          strengths: { type: 'string' },
-          areas_of_growth: { type: 'string' },
-          training_focus: { type: 'string' }
-        }
+          date: { 
+            type: 'string',
+            description: 'Extract from the "Date" column'
+          },
+          player_name: { 
+            type: 'string',
+            description: 'Extract from the "Player Name" column'
+          },
+          birth_year: { 
+            type: 'string',
+            description: 'Extract from the "Birth Year" column'
+          },
+          team_name: { 
+            type: 'string',
+            description: 'Extract from the "Team Name" column'
+          },
+          goals: { 
+            type: 'string',
+            description: 'Extract from the "My Goals" column'
+          },
+          evaluator: { 
+            type: 'string',
+            description: 'Extract from the "Evaluator" column'
+          },
+          team_status: { 
+            type: 'string',
+            description: 'Extract from the "Current Team Status" column'
+          },
+          growth_mindset: { 
+            type: 'number',
+            description: 'Extract from the "Growth Mindset" column'
+          },
+          resilience: { 
+            type: 'number',
+            description: 'Extract from the "Resilience" column'
+          },
+          efficiency: { 
+            type: 'number',
+            description: 'Extract from the "Efficiency in execution" column'
+          },
+          adept_mover: { 
+            type: 'number',
+            description: 'Extract from the "Adept Mover" column'
+          },
+          team_focus: { 
+            type: 'number',
+            description: 'Extract from the "Team Focus" column'
+          },
+          primary_position: { 
+            type: 'string',
+            description: 'Extract from the "Primary Position" column'
+          },
+          preferred_foot: { 
+            type: 'string',
+            description: 'Extract from the "Preferred Foot" column'
+          },
+          defending_organized: { 
+            type: 'number',
+            description: 'Extract from the "Defending Organized:" column'
+          },
+          defending_final_third: { 
+            type: 'number',
+            description: 'Extract from the "Defending the final third" column'
+          },
+          defending_transition: { 
+            type: 'number',
+            description: 'Extract from the "DEFENDING TRANSITION" column'
+          },
+          attacking_organized: { 
+            type: 'number',
+            description: 'Extract from the "Attacking Organized" column'
+          },
+          attacking_final_third: { 
+            type: 'number',
+            description: 'Extract from the "Attacking The Final Third" column'
+          },
+          attacking_transition: { 
+            type: 'number',
+            description: 'Extract from the "Attacking in Transition" column'
+          },
+          strengths: { 
+            type: 'string',
+            description: 'Extract from the "Player\'s Strengths" column'
+          },
+          areas_of_growth: { 
+            type: 'string',
+            description: 'Extract from the "Areas of Growth" column'
+          },
+          training_focus: { 
+            type: 'string',
+            description: 'Extract from the "Training Focus" column'
+          }
+        },
+        required: ['date', 'player_name']
       },
       PhysicalAssessment: {
         type: 'object',
         properties: {
-          player_name: { type: 'string' },
-          team_name: { type: 'string' },
-          assessment_date: { type: 'string' },
-          position: { type: 'string' },
-          age: { type: 'number' },
-          sprint_time: { type: 'number' },
-          speed: { type: 'number' },
-          vertical_jump: { type: 'number' },
-          power: { type: 'number' },
-          cooper_test: { type: 'number' },
-          endurance: { type: 'number' },
-          agility_time: { type: 'number' },
-          agility: { type: 'number' }
-        }
+          player_name: { 
+            type: 'string',
+            description: 'Extract from the "Name" column'
+          },
+          team_name: { 
+            type: 'string',
+            description: 'Extract from the "Team" column'
+          },
+          assessment_date: { 
+            type: 'string',
+            description: 'Extract from the "Date" column'
+          },
+          position: { 
+            type: 'string',
+            description: 'Extract from the "Position" column'
+          },
+          age: { 
+            type: 'number',
+            description: 'Extract from the "Age" column'
+          },
+          sprint_time: { 
+            type: 'number',
+            description: 'Extract from the "20 m linear" column'
+          },
+          speed: { 
+            type: 'number',
+            description: 'Extract from the "Speed Score" column'
+          },
+          vertical_jump: { 
+            type: 'number',
+            description: 'Extract from the "vertical" column'
+          },
+          power: { 
+            type: 'number',
+            description: 'Extract from the "Vertical Score" column'
+          },
+          cooper_test: { 
+            type: 'number',
+            description: 'Extract from the "YIRT" column'
+          },
+          endurance: { 
+            type: 'number',
+            description: 'Extract from the "YIRT Score" column'
+          },
+          agility_time: { 
+            type: 'number',
+            description: 'Extract from the "5-10-2005" column'
+          },
+          agility: { 
+            type: 'number',
+            description: 'Extract from the "5-10-5 Score" column'
+          }
+        },
+        required: ['player_name', 'assessment_date']
       }
     };
     return schemas[type];
@@ -181,7 +325,8 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
           properties: {
             records: {
               type: 'array',
-              items: schema
+              items: schema,
+              description: `Extract all rows from the CSV. Map each CSV column to the corresponding property as specified in the property descriptions.`
             }
           }
         }
