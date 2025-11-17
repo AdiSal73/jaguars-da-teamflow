@@ -5,10 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, TrendingUp, Activity, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import TeamStrengthsHeatmap from '../components/analytics/TeamStrengthsHeatmap';
+import TeamTrendChart from '../components/analytics/TeamTrendChart';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -31,12 +32,12 @@ export default function TeamDashboard() {
 
   const { data: allAssessments = [] } = useQuery({
     queryKey: ['allAssessments'],
-    queryFn: () => base44.entities.PhysicalAssessment.list()
+    queryFn: () => base44.entities.PhysicalAssessment.list('-assessment_date')
   });
 
   const { data: allEvaluations = [] } = useQuery({
     queryKey: ['allEvaluations'],
-    queryFn: () => base44.entities.Evaluation.list()
+    queryFn: () => base44.entities.Evaluation.list('-evaluation_date')
   });
 
   const { data: allTeams = [] } = useQuery({
@@ -55,7 +56,30 @@ export default function TeamDashboard() {
   const teamAssessments = allAssessments.filter(a => playerIds.includes(a.player_id));
   const teamEvaluations = allEvaluations.filter(e => playerIds.includes(e.player_id));
 
-  // Calculate team averages
+  // Team performance trends over time
+  const assessmentsByMonth = {};
+  teamAssessments.forEach(a => {
+    const month = new Date(a.assessment_date).toLocaleString('default', { month: 'short' });
+    if (!assessmentsByMonth[month]) {
+      assessmentsByMonth[month] = { speed: [], agility: [], power: [], endurance: [] };
+    }
+    assessmentsByMonth[month].speed.push(a.speed || 0);
+    assessmentsByMonth[month].agility.push(a.agility || 0);
+    assessmentsByMonth[month].power.push(a.power || 0);
+    assessmentsByMonth[month].endurance.push(a.endurance || 0);
+  });
+
+  const trendData = Object.keys(assessmentsByMonth).map(month => {
+    const data = assessmentsByMonth[month];
+    return {
+      month,
+      speed: Math.round(data.speed.reduce((a, b) => a + b, 0) / data.speed.length),
+      agility: Math.round(data.agility.reduce((a, b) => a + b, 0) / data.agility.length),
+      power: Math.round(data.power.reduce((a, b) => a + b, 0) / data.power.length),
+      endurance: Math.round(data.endurance.reduce((a, b) => a + b, 0) / data.endurance.length)
+    };
+  }).map(d => ({ ...d, overall: Math.round((d.speed + d.agility + d.power + d.endurance) / 4) }));
+
   const calculateTeamAverages = () => {
     if (teamAssessments.length === 0) return { speed: 0, agility: 0, power: 0, endurance: 0 };
     
@@ -76,7 +100,6 @@ export default function TeamDashboard() {
 
   const teamAverages = calculateTeamAverages();
 
-  // Top performers
   const topPerformers = players.map(player => {
     const playerAssessments = allAssessments.filter(a => a.player_id === player.id);
     const latestAssessment = playerAssessments[0];
@@ -91,42 +114,35 @@ export default function TeamDashboard() {
     return { ...player, overall };
   }).sort((a, b) => b.overall - a.overall).slice(0, 5);
 
-  // Comparison with other teams in same age group
-  const sameAgeTeams = allTeams.filter(t => t.age_group === team.age_group && t.id !== team.id);
+  // Comparison with club average
+  const clubAssessments = allAssessments;
+  const clubTotals = clubAssessments.reduce((acc, a) => ({
+    speed: acc.speed + (a.speed || 0),
+    agility: acc.agility + (a.agility || 0),
+    power: acc.power + (a.power || 0),
+    endurance: acc.endurance + (a.endurance || 0)
+  }), { speed: 0, agility: 0, power: 0, endurance: 0 });
   
-  const comparisonData = [team, ...sameAgeTeams].map(t => {
-    const tPlayers = allPlayers.filter(p => p.team_id === t.id);
-    const tPlayerIds = tPlayers.map(p => p.id);
-    const tAssessments = allAssessments.filter(a => tPlayerIds.includes(a.player_id));
-    
-    if (tAssessments.length === 0) {
-      return { name: t.name, speed: 0, agility: 0, power: 0, endurance: 0 };
-    }
-    
-    const totals = tAssessments.reduce((acc, a) => ({
-      speed: acc.speed + (a.speed || 0),
-      agility: acc.agility + (a.agility || 0),
-      power: acc.power + (a.power || 0),
-      endurance: acc.endurance + (a.endurance || 0)
-    }), { speed: 0, agility: 0, power: 0, endurance: 0 });
-    
-    return {
-      name: t.name.substring(0, 10),
-      speed: Math.round(totals.speed / tAssessments.length),
-      agility: Math.round(totals.agility / tAssessments.length),
-      power: Math.round(totals.power / tAssessments.length),
-      endurance: Math.round(totals.endurance / tAssessments.length)
-    };
-  });
+  const clubAverage = clubAssessments.length > 0 ? {
+    speed: Math.round(clubTotals.speed / clubAssessments.length),
+    agility: Math.round(clubTotals.agility / clubAssessments.length),
+    power: Math.round(clubTotals.power / clubAssessments.length),
+    endurance: Math.round(clubTotals.endurance / clubAssessments.length)
+  } : { speed: 0, agility: 0, power: 0, endurance: 0 };
 
-  // Evaluation averages
+  const comparisonData = [
+    { name: 'Team', ...teamAverages },
+    { name: 'Club Avg', ...clubAverage }
+  ];
+
+  // Evaluation averages for heatmap
   const evalAvg = teamEvaluations.length > 0 ? {
-    technical: Math.round(teamEvaluations.reduce((sum, e) => sum + (e.technical_skills || 0), 0) / teamEvaluations.length),
-    tactical: Math.round(teamEvaluations.reduce((sum, e) => sum + (e.tactical_awareness || 0), 0) / teamEvaluations.length),
-    physical: Math.round(teamEvaluations.reduce((sum, e) => sum + (e.physical_attributes || 0), 0) / teamEvaluations.length),
-    mental: Math.round(teamEvaluations.reduce((sum, e) => sum + (e.mental_attributes || 0), 0) / teamEvaluations.length),
-    overall: Math.round(teamEvaluations.reduce((sum, e) => sum + (e.overall_rating || 0), 0) / teamEvaluations.length)
-  } : null;
+    technical: teamEvaluations.reduce((sum, e) => sum + (e.technical_skills || 0), 0) / teamEvaluations.length,
+    tactical: teamEvaluations.reduce((sum, e) => sum + (e.tactical_awareness || 0), 0) / teamEvaluations.length,
+    physical: teamEvaluations.reduce((sum, e) => sum + (e.physical_attributes || 0), 0) / teamEvaluations.length,
+    mental: teamEvaluations.reduce((sum, e) => sum + (e.mental_attributes || 0), 0) / teamEvaluations.length,
+    teamwork: teamEvaluations.reduce((sum, e) => sum + (e.teamwork || 0), 0) / teamEvaluations.length
+  } : { technical: 0, tactical: 0, physical: 0, mental: 0, teamwork: 0 };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -203,6 +219,8 @@ export default function TeamDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <TeamStrengthsHeatmap teamData={evalAvg} />
+
         <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle>Team Physical Attributes</CardTitle>
@@ -228,43 +246,22 @@ export default function TeamDashboard() {
             </div>
           </CardContent>
         </Card>
-
-        {evalAvg && (
-          <Card className="border-none shadow-lg">
-            <CardHeader>
-              <CardTitle>Team Skills Rating</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[
-                  { label: 'Technical Skills', value: evalAvg.technical, color: 'bg-blue-500' },
-                  { label: 'Tactical Awareness', value: evalAvg.tactical, color: 'bg-emerald-500' },
-                  { label: 'Physical Attributes', value: evalAvg.physical, color: 'bg-purple-500' },
-                  { label: 'Mental Attributes', value: evalAvg.mental, color: 'bg-orange-500' },
-                  { label: 'Overall Rating', value: evalAvg.overall, color: 'bg-slate-700' }
-                ].map((item, idx) => (
-                  <div key={idx}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-slate-600">{item.label}</span>
-                      <span className="font-semibold">{item.value}/10</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${item.color}`}
-                        style={{ width: `${(item.value / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
+
+      {trendData.length > 0 && (
+        <Card className="border-none shadow-lg mb-6">
+          <CardHeader>
+            <CardTitle>Performance Trends Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TeamTrendChart data={trendData} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-none shadow-lg mb-6">
         <CardHeader>
-          <CardTitle>Comparison with {team.age_group} Teams</CardTitle>
+          <CardTitle>Team vs Club Average</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

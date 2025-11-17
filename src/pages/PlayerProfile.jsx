@@ -11,12 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CircularChart from '../components/physical/CircularChart';
 import PerformanceTrendChart from '../components/analytics/PerformanceTrendChart';
 import RadarComparisonChart from '../components/analytics/RadarComparisonChart';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import GoalTracker from '../components/goals/GoalTracker'; // New import
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -206,10 +202,11 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="physical">Physical Profile</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4"> {/* Changed from 3 to 4 */}
+              <TabsTrigger value="physical">Physical</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
+              <TabsTrigger value="goals">Goals</TabsTrigger> {/* New TabsTrigger */}
             </TabsList>
 
             <TabsContent value="physical" className="space-y-6">
@@ -235,19 +232,19 @@ export default function PlayerProfile() {
                       <div className="mt-8 grid grid-cols-4 gap-6 w-full">
                         <div className="text-center">
                           <div className="text-sm text-slate-600 mb-1">Speed</div>
-                          <div className="text-2xl font-bold text-red-500">{latestAssessment.speed}</div>
+                          <div className="2xl font-bold text-red-500">{latestAssessment.speed}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-slate-600 mb-1">Agility</div>
-                          <div className="text-2xl font-bold text-emerald-500">{latestAssessment.agility}</div>
+                          <div className="2xl font-bold text-emerald-500">{latestAssessment.agility}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-slate-600 mb-1">Power</div>
-                          <div className="text-2xl font-bold text-blue-500">{latestAssessment.power}</div>
+                          <div className="2xl font-bold text-blue-500">{latestAssessment.power}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-sm text-slate-600 mb-1">Endurance</div>
-                          <div className="text-2xl font-bold text-pink-500">{latestAssessment.endurance}</div>
+                          <div className="2xl font-bold text-pink-500">{latestAssessment.endurance}</div>
                         </div>
                       </div>
                     </div>
@@ -449,6 +446,10 @@ export default function PlayerProfile() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="goals" className="space-y-6"> {/* New TabsContent */}
+              {player && <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />}
             </TabsContent>
           </Tabs>
         </div>
