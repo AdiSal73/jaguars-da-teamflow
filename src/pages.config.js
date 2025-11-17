@@ -12,6 +12,7 @@ import TrainingPlanDetail from './pages/TrainingPlanDetail';
 import Messages from './pages/Messages';
 import UnassignedRecords from './pages/UnassignedRecords';
 import PlayersTable from './pages/PlayersTable';
+import CoachManagement from './pages/CoachManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Messages": Messages,
     "UnassignedRecords": UnassignedRecords,
     "PlayersTable": PlayersTable,
+    "CoachManagement": CoachManagement,
 }
 
 export const pagesConfig = {

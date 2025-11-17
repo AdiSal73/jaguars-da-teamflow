@@ -66,7 +66,23 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
     
     const headers = lines[0].split(',').map(h => h.trim());
     const rows = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
       const obj = {};
       headers.forEach((header, index) => {
         obj[header] = values[index] || '';
@@ -99,8 +115,11 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
         
         records = rows.map(row => {
           const team = teams.find(t => t.name?.toLowerCase() === row['Team Name']?.toLowerCase());
+          const firstName = row['Player First Name'] || '';
+          const lastName = row['Player Last Name'] || '';
+          
           return {
-            full_name: `${row['Player First Name'] || ''} ${row['Player Last Name'] || ''}`.trim(),
+            full_name: `${firstName} ${lastName}`.trim(),
             parent_name: row['Parent Name'],
             email: row['Email'],
             phone: row['Phone Number'],
