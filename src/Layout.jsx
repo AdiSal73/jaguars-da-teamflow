@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp, MessageSquare, UserX, Table, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp, MessageSquare, Table, UserCog, ChevronDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -16,7 +16,11 @@ import {
   SidebarFooter,
   SidebarProvider,
   SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const navigationItems = [
   {
@@ -28,6 +32,11 @@ const navigationItems = [
     title: "Club Management",
     url: createPageUrl("ClubManagement"),
     icon: Settings,
+    submenu: [
+      { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
+      { title: "Assessments", url: createPageUrl("Assessments") },
+      { title: "Evaluations", url: createPageUrl("Evaluations") },
+    ]
   },
   {
     title: "Coach Management",
@@ -64,21 +73,6 @@ const navigationItems = [
     url: createPageUrl("BookSession"),
     icon: Calendar,
   },
-  {
-    title: "Evaluations",
-    url: createPageUrl("Evaluations"),
-    icon: ClipboardList,
-  },
-  {
-    title: "Assessments",
-    url: createPageUrl("Assessments"),
-    icon: Activity,
-  },
-  {
-    title: "Unassigned Records",
-    url: createPageUrl("UnassignedRecords"),
-    icon: UserX,
-  },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -108,19 +102,53 @@ export default function Layout({ children, currentPageName }) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
-                          location.pathname === item.url ? 'bg-emerald-50 text-emerald-700 shadow-sm' : ''
-                        }`}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                          <item.icon className="w-5 h-5" />
-                          <span className="font-medium">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    item.submenu ? (
+                      <Collapsible key={item.title} className="group/collapsible">
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton className="hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1">
+                              <item.icon className="w-5 h-5" />
+                              <span className="font-medium">{item.title}</span>
+                              <ChevronDown className="ml-auto w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild>
+                                  <Link to={item.url} className={location.pathname === item.url ? 'bg-emerald-50 text-emerald-700' : ''}>
+                                    <span className="font-medium">Overview</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                              {item.submenu.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.title}>
+                                  <SidebarMenuSubButton asChild>
+                                    <Link to={subItem.url} className={location.pathname === subItem.url ? 'bg-emerald-50 text-emerald-700' : ''}>
+                                      <span className="font-medium">{subItem.title}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    ) : (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
+                            location.pathname === item.url ? 'bg-emerald-50 text-emerald-700 shadow-sm' : ''
+                          }`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className="w-5 h-5" />
+                            <span className="font-medium">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>
