@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp, MessageSquare, UserCog, ChevronDown, Menu, Clock, Bell, BarChart3 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -24,21 +25,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Button } from "@/components/ui/button";
 import NotificationCenter from "./components/notifications/NotificationCenter";
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    url: createPageUrl("Dashboard"),
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Analytics",
-    url: createPageUrl("Analytics"),
-    icon: BarChart3,
-  },
+const allNavigationItems = [
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin"] },
+  { title: "Analytics", url: createPageUrl("Analytics"), icon: BarChart3, roles: ["admin"] },
   {
     title: "Club Management",
     url: createPageUrl("ClubManagement"),
     icon: Settings,
+    roles: ["admin"],
     submenu: [
       { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
       { title: "Assessments", url: createPageUrl("Assessments") },
@@ -46,46 +40,26 @@ const navigationItems = [
       { title: "User Management", url: createPageUrl("UserManagement") },
     ]
   },
-  {
-    title: "Coach Management",
-    url: createPageUrl("CoachManagement"),
-    icon: UserCog,
-  },
-  {
-    title: "Teams",
-    url: createPageUrl("Teams"),
-    icon: Shield,
-  },
-  {
-    title: "Players",
-    url: createPageUrl("Players"),
-    icon: Users,
-  },
-  {
-    title: "Training Plans",
-    url: createPageUrl("TrainingPlans"),
-    icon: TrendingUp,
-  },
-  {
-    title: "Messages",
-    url: createPageUrl("Messages"),
-    icon: MessageSquare,
-  },
-  {
-    title: "Availability",
-    url: createPageUrl("Availability"),
-    icon: Clock,
-  },
-  {
-    title: "Book Session",
-    url: createPageUrl("BookSession"),
-    icon: Calendar,
-  },
+  { title: "Coach Management", url: createPageUrl("CoachManagement"), icon: UserCog, roles: ["admin"] },
+  { title: "Teams", url: createPageUrl("Teams"), icon: Shield, roles: ["admin", "coach"] },
+  { title: "Players", url: createPageUrl("Players"), icon: Users, roles: ["admin"] },
+  { title: "Training Plans", url: createPageUrl("TrainingPlans"), icon: TrendingUp, roles: ["admin", "coach"] },
+  { title: "Messages", url: createPageUrl("Messages"), icon: MessageSquare, roles: ["admin", "coach", "user"] },
+  { title: "Availability", url: createPageUrl("Availability"), icon: Clock, roles: ["admin", "coach"] },
+  { title: "Book Session", url: createPageUrl("BookSession"), icon: Calendar, roles: ["admin", "coach", "user"] },
 ];
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const navigationItems = allNavigationItems.filter(item => 
+    item.roles.includes(user?.role)
+  );
 
   return (
     <SidebarProvider>

@@ -199,7 +199,7 @@ export default function Assessments() {
         const teamB = teams.find(t => t.id === playerB?.team_id);
         valA = teamA?.name || '';
         valB = teamB?.name || '';
-      } else if (sortColumn === 'date') {
+      } else if (sortColumn === 'assessment_date') {
         valA = new Date(a.assessment_date);
         valB = new Date(b.assessment_date);
       } else {
@@ -313,19 +313,27 @@ export default function Assessments() {
                         <div className="grid grid-cols-2 gap-3 mb-4">
                           <div className="p-3 bg-red-50 rounded-lg">
                             <div className="text-xs text-red-600 mb-1">20m Linear</div>
-                            <div className="text-lg font-bold text-red-700">{assessment.linear_20m?.toFixed(2) || 'N/A'}s</div>
+                            <div className="text-lg font-bold text-red-700">
+                              {assessment.linear_20m ? `${assessment.linear_20m.toFixed(2)}s` : 'N/A'}
+                            </div>
                           </div>
                           <div className="p-3 bg-blue-50 rounded-lg">
                             <div className="text-xs text-blue-600 mb-1">Vertical Jump</div>
-                            <div className="text-lg font-bold text-blue-700">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</div>
+                            <div className="text-lg font-bold text-blue-700">
+                              {assessment.vertical_jump ? `${assessment.vertical_jump.toFixed(1)}"` : 'N/A'}
+                            </div>
                           </div>
                           <div className="p-3 bg-emerald-50 rounded-lg">
                             <div className="text-xs text-emerald-600 mb-1">5-10-5</div>
-                            <div className="text-lg font-bold text-emerald-700">{assessment.agility_5_10_5?.toFixed(2) || 'N/A'}s</div>
+                            <div className="text-lg font-bold text-emerald-700">
+                              {assessment.agility_5_10_5 ? `${assessment.agility_5_10_5.toFixed(2)}s` : 'N/A'}
+                            </div>
                           </div>
                           <div className="p-3 bg-pink-50 rounded-lg">
                             <div className="text-xs text-pink-600 mb-1">YIRT</div>
-                            <div className="text-lg font-bold text-pink-700">{assessment.yirt || 'N/A'}</div>
+                            <div className="text-lg font-bold text-pink-700">
+                              {assessment.yirt || 'N/A'}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -359,7 +367,7 @@ export default function Assessments() {
                         </Button>
                       </TableHead>
                       <TableHead>
-                        <Button variant="ghost" onClick={() => handleTableSort('date')} className="flex items-center gap-1">
+                        <Button variant="ghost" onClick={() => handleTableSort('assessment_date')} className="flex items-center gap-1">
                           Date <ArrowUpDown className="w-3 h-3" />
                         </Button>
                       </TableHead>
