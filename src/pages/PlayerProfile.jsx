@@ -29,11 +29,12 @@ export default function PlayerProfile() {
 
   const [newAssessment, setNewAssessment] = useState({
     player_id: playerId,
+    team_id: '',
     assessment_date: new Date().toISOString().split('T')[0],
-    speed: 50,
-    agility: 50,
-    power: 50,
-    endurance: 50,
+    sprint: '',
+    vertical: '',
+    yirt: '',
+    shuttle: '',
     notes: ''
   });
 
@@ -85,12 +86,51 @@ export default function PlayerProfile() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const calculateScores = (sprint, vertical, yirt, shuttle) => {
+    const speed = sprint > 0 ? 5 * (20 - 10 * (3.5 * (sprint - 2.8) / sprint)) : 0;
+    let power = 0;
+    if (vertical > 13) {
+      power = 5 * (20 - (20 * (26 - vertical) / vertical));
+    } else if (vertical === 13) power = 10;
+    else if (vertical === 12) power = 9;
+    else if (vertical === 11) power = 8;
+    else if (vertical === 10) power = 7;
+    else if (vertical < 10) power = 5;
+    const endurance = yirt > 0 ? 5 * (20 - 10 * (55 - yirt) / 32) : 0;
+    const agility = shuttle > 0 ? 5 * (20 - 10 * (5.2 * (shuttle - 4.6) / shuttle)) : 0;
+    const overall = ((6 * speed) + (3 * power) + (6 * endurance)) / 15;
+    return {
+      speed_score: Math.max(0, Math.min(100, Math.round(speed))),
+      power_score: Math.max(0, Math.min(100, Math.round(power))),
+      endurance_score: Math.max(0, Math.min(100, Math.round(endurance))),
+      agility_score: Math.max(0, Math.min(100, Math.round(agility))),
+      overall_score: Math.max(0, Math.min(100, Math.round(overall)))
+    };
+  };
+
   const createAssessmentMutation = useMutation({
-    mutationFn: (data) => base44.entities.PhysicalAssessment.create(data),
+    mutationFn: (data) => {
+      const scores = calculateScores(data.sprint, data.vertical, data.yirt, data.shuttle);
+      return base44.entities.PhysicalAssessment.create({
+        ...data,
+        player_name: player?.full_name || '',
+        ...scores
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['assessments', playerId]);
       queryClient.invalidateQueries(['allAssessments']);
       setShowAssessmentDialog(false);
+      setNewAssessment({
+        player_id: playerId,
+        team_id: player?.team_id || '',
+        assessment_date: new Date().toISOString().split('T')[0],
+        sprint: '',
+        vertical: '',
+        yirt: '',
+        shuttle: '',
+        notes: ''
+      });
     }
   });
 
@@ -252,11 +292,12 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="physical">Physical</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
               <TabsTrigger value="goals">Goals</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
 
             <TabsContent value="physical" className="space-y-6">
@@ -273,28 +314,37 @@ export default function PlayerProfile() {
                 <CardContent className="p-8">
                   {latestAssessment ? (
                     <div>
-                      <div className="grid grid-cols-3 gap-4 mb-8">
+                      <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className="p-4 bg-red-50 rounded-xl">
-                          <div className="text-sm text-red-600 mb-1">Speed (20m Linear)</div>
-                          <div className="text-3xl font-bold text-red-700">{latestAssessment.linear_20m?.toFixed(2) || 'N/A'}</div>
-                          <div className="text-xs text-slate-500 mt-1">sec (lower is better)</div>
+                          <div className="text-xs text-red-600 mb-1">Sprint (20m)</div>
+                          <div className="text-2xl font-bold text-red-700">{latestAssessment.sprint?.toFixed(2)}s</div>
                         </div>
                         <div className="p-4 bg-blue-50 rounded-xl">
-                          <div className="text-sm text-blue-600 mb-1">Power (Vertical)</div>
-                          <div className="text-3xl font-bold text-blue-700">{latestAssessment.vertical_jump?.toFixed(1) || 'N/A'}</div>
-                          <div className="text-xs text-slate-500 mt-1">inches (higher is better)</div>
+                          <div className="text-xs text-blue-600 mb-1">Vertical Jump</div>
+                          <div className="text-2xl font-bold text-blue-700">{latestAssessment.vertical}"</div>
+                        </div>
+                        <div className="p-4 bg-emerald-50 rounded-xl">
+                          <div className="text-xs text-emerald-600 mb-1">YIRT</div>
+                          <div className="text-2xl font-bold text-emerald-700">{latestAssessment.yirt}</div>
                         </div>
                         <div className="p-4 bg-pink-50 rounded-xl">
-                          <div className="text-sm text-pink-600 mb-1">Endurance (YIRT)</div>
-                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.yirt || 'N/A'}</div>
-                          <div className="text-xs text-slate-500 mt-1">level (higher is better)</div>
+                          <div className="text-xs text-pink-600 mb-1">Shuttle</div>
+                          <div className="text-2xl font-bold text-pink-700">{latestAssessment.shuttle?.toFixed(2)}s</div>
                         </div>
                       </div>
-                      <div className="mb-4">
-                        <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                          <div className="text-sm text-emerald-600 mb-1">Overall Score</div>
-                          <div className="text-4xl font-bold text-emerald-700">{calculateOverall(latestAssessment)}</div>
-                        </div>
+                      <div className="grid grid-cols-4 gap-3 mb-4">
+                        {[
+                          { label: 'Speed', score: latestAssessment.speed_score, color: '#ef4444' },
+                          { label: 'Power', score: latestAssessment.power_score, color: '#3b82f6' },
+                          { label: 'Endurance', score: latestAssessment.endurance_score, color: '#10b981' },
+                          { label: 'Agility', score: latestAssessment.agility_score, color: '#ec4899' }
+                        ].map(({ label, score, color }) => (
+                          <CircularChart key={label} value={score || 0} label={label} color={color} />
+                        ))}
+                      </div>
+                      <div className="text-center p-4 bg-slate-900 rounded-xl">
+                        <div className="text-sm text-white mb-1">Overall Score</div>
+                        <div className="text-4xl font-bold text-white">{latestAssessment.overall_score || 0}</div>
                       </div>
                     </div>
                   ) : (
@@ -552,89 +602,70 @@ export default function PlayerProfile() {
             <TabsContent value="goals" className="space-y-6">
               <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />
             </TabsContent>
+
+            <TabsContent value="documents" className="space-y-6">
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Player Documents</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-slate-500 py-8">Document management coming soon</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
 
       <Dialog open={showAssessmentDialog} onOpenChange={setShowAssessmentDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>New Physical Assessment</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="assessment_date">Assessment Date</Label>
-              <Input
-                id="assessment_date"
-                type="date"
-                value={newAssessment.assessment_date}
-                onChange={(e) => setNewAssessment({...newAssessment, assessment_date: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="speed_range">Speed (0-100): {newAssessment.speed}</Label>
-                <input
-                  id="speed_range"
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newAssessment.speed}
-                  onChange={(e) => setNewAssessment({...newAssessment, speed: parseInt(e.target.value)})}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="agility_range">Agility (0-100): {newAssessment.agility}</Label>
-                <input
-                  id="agility_range"
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newAssessment.agility}
-                  onChange={(e) => setNewAssessment({...newAssessment, agility: parseInt(e.target.value)})}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="power_range">Power (0-100): {newAssessment.power}</Label>
-                <input
-                  id="power_range"
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newAssessment.power}
-                  onChange={(e) => setNewAssessment({...newAssessment, power: parseInt(e.target.value)})}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="endurance_range">Endurance (0-100): {newAssessment.endurance}</Label>
-                <input
-                  id="endurance_range"
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newAssessment.endurance}
-                  onChange={(e) => setNewAssessment({...newAssessment, endurance: parseInt(e.target.value)})}
-                  className="w-full"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="col-span-2">
+              <Label>Date *</Label>
+              <Input type="date" value={newAssessment.assessment_date} 
+                onChange={(e) => setNewAssessment({...newAssessment, assessment_date: e.target.value})} />
             </div>
             <div>
-              <Label htmlFor="assessment_notes">Notes</Label>
-              <Textarea
-                id="assessment_notes"
-                value={newAssessment.notes}
-                onChange={(e) => setNewAssessment({...newAssessment, notes: e.target.value})}
-                placeholder="Additional notes..."
-              />
+              <Label>Sprint (seconds) *</Label>
+              <Input type="number" step="0.01" value={newAssessment.sprint} 
+                onChange={(e) => setNewAssessment({...newAssessment, sprint: e.target.value})} 
+                placeholder="e.g., 3.5" />
+            </div>
+            <div>
+              <Label>Vertical Jump (inches) *</Label>
+              <Input type="number" value={newAssessment.vertical} 
+                onChange={(e) => setNewAssessment({...newAssessment, vertical: e.target.value})} 
+                placeholder="e.g., 15" />
+            </div>
+            <div>
+              <Label>YIRT (levels) *</Label>
+              <Input type="number" value={newAssessment.yirt} 
+                onChange={(e) => setNewAssessment({...newAssessment, yirt: e.target.value})} 
+                placeholder="e.g., 45" />
+            </div>
+            <div>
+              <Label>Shuttle (seconds) *</Label>
+              <Input type="number" step="0.01" value={newAssessment.shuttle} 
+                onChange={(e) => setNewAssessment({...newAssessment, shuttle: e.target.value})} 
+                placeholder="e.g., 4.8" />
+            </div>
+            <div className="col-span-2">
+              <Label>Notes</Label>
+              <Input value={newAssessment.notes} 
+                onChange={(e) => setNewAssessment({...newAssessment, notes: e.target.value})} />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowAssessmentDialog(false)}>Cancel</Button>
-            <Button onClick={() => createAssessmentMutation.mutate(newAssessment)} className="bg-emerald-600 hover:bg-emerald-700">
-              Save Assessment
+            <Button 
+              onClick={() => createAssessmentMutation.mutate({...newAssessment, team_id: player?.team_id || ''})}
+              disabled={!newAssessment.sprint || !newAssessment.vertical || !newAssessment.yirt || !newAssessment.shuttle}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Create Assessment
             </Button>
           </div>
         </DialogContent>
