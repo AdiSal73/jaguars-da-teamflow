@@ -98,15 +98,15 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-slate-100">
-        <Sidebar className="border-r border-slate-200" collapsible="icon">
-          <SidebarHeader className="border-b border-slate-200 p-6">
+        <Sidebar className="border-r border-slate-200 bg-white shadow-xl" collapsible="icon">
+          <SidebarHeader className="border-b border-slate-100 p-6 bg-gradient-to-br from-emerald-50 to-white">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg ring-2 ring-emerald-100">
+                <Shield className="w-7 h-7 text-white" />
               </div>
               <div className="group-data-[collapsible=icon]:hidden">
-                <h2 className="font-bold text-slate-900 text-lg">Soccer Hub</h2>
-                <p className="text-xs text-slate-500">Elite Training Center</p>
+                <h2 className="font-bold text-slate-900 text-xl tracking-tight">Soccer Hub</h2>
+                <p className="text-xs text-emerald-600 font-medium">Elite Training Center</p>
               </div>
             </div>
           </SidebarHeader>
@@ -123,7 +123,7 @@ export default function Layout({ children, currentPageName }) {
                       <Collapsible key={item.title} className="group/collapsible">
                         <SidebarMenuItem>
                           <CollapsibleTrigger asChild>
-                            <SidebarMenuButton className="hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1">
+                            <SidebarMenuButton className="hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 text-slate-700">
                               <item.icon className="w-5 h-5" />
                               <span className="font-medium group-data-[collapsible=icon]:hidden">{item.title}</span>
                               <ChevronDown className="ml-auto w-4 h-4 transition-transform group-data-[state=open]/collapsible:rotate-180 group-data-[collapsible=icon]:hidden" />
@@ -153,17 +153,17 @@ export default function Layout({ children, currentPageName }) {
                       </Collapsible>
                     ) : (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton 
-                          asChild 
-                          className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
-                            location.pathname === item.url ? 'bg-emerald-50 text-emerald-700 shadow-sm' : ''
-                          }`}
-                        >
-                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                            <item.icon className="w-5 h-5" />
-                            <span className="font-medium group-data-[collapsible=icon]:hidden">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
+                       <SidebarMenuButton 
+                         asChild 
+                         className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
+                           location.pathname === item.url ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md hover:text-white' : 'text-slate-700'
+                         }`}
+                       >
+                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                           <item.icon className="w-5 h-5" />
+                           <span className="font-medium group-data-[collapsible=icon]:hidden">{item.title}</span>
+                         </Link>
+                       </SidebarMenuButton>
                       </SidebarMenuItem>
                     )
                   ))}
@@ -172,13 +172,24 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-slate-200 p-4">
+          <SidebarFooter className="border-t border-slate-100 p-4 bg-white">
+            <div className="mb-3 p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl group-data-[collapsible=icon]:hidden">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {user?.full_name?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{user?.full_name || 'User'}</p>
+                  <p className="text-xs text-slate-500 capitalize">{userRole}</p>
+                </div>
+              </div>
+            </div>
             <button
               onClick={() => base44.auth.logout()}
-              className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200"
+              className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200 font-medium text-slate-700"
             >
               <LogOut className="w-5 h-5" />
-              <span className="font-medium group-data-[collapsible=icon]:hidden">Sign Out</span>
+              <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
             </button>
           </SidebarFooter>
         </Sidebar>

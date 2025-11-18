@@ -498,7 +498,18 @@ export default function Assessments() {
                           <TableCell className="text-center font-semibold text-pink-600">{assessment.agility_score || 0}</TableCell>
                           <TableCell className="text-center font-bold text-slate-900">{assessment.overall_score || 0}</TableCell>
                           <TableCell>
-                            <Button variant="destructive" size="sm" onClick={() => deleteAssessmentMutation.mutate(assessment.id)}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (window.confirm('Delete this assessment?')) {
+                                  deleteAssessmentMutation.mutate(assessment.id);
+                                }
+                              }}
+                              className="hover:bg-red-50 hover:text-red-600"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </TableCell>
