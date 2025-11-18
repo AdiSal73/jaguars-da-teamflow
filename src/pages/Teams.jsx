@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -9,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import CoachSelector from '../components/team/CoachSelector';
 
 export default function Teams() {
   const [showDialog, setShowDialog] = useState(false);
@@ -20,7 +19,7 @@ export default function Teams() {
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
-    league: '', // Changed from 'division' to 'league'
+    league: '',
     season: '',
     team_color: '#22c55e',
     coach_ids: []
@@ -46,12 +45,11 @@ export default function Teams() {
   const createTeamMutation = useMutation({
     mutationFn: (data) => base44.entities.Team.create(data),
     onSuccess: async (newTeam) => {
-      // Update coaches with team assignment
       for (const coachId of teamForm.coach_ids) {
         const coach = coaches.find(c => c.id === coachId);
         if (coach) {
           const updatedTeamIds = [...(coach.team_ids || []), newTeam.id];
-          await base44.entities.Coach.update(coach.id, { team_ids: updatedTeamIds });
+          await base44.entities.Coach.update(coachId, { team_ids: updatedTeamIds });
         }
       }
       queryClient.invalidateQueries(['teams']);
@@ -64,7 +62,6 @@ export default function Teams() {
   const updateTeamMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Team.update(id, data),
     onSuccess: async () => {
-      // Update all coaches
       for (const coach of coaches) {
         const shouldHaveTeam = teamForm.coach_ids.includes(coach.id);
         const hasTeam = coach.team_ids?.includes(editingTeam.id);
@@ -99,7 +96,7 @@ export default function Teams() {
     setTeamForm({
       name: '',
       age_group: '',
-      league: '', // Changed from 'division' to 'league'
+      league: '',
       season: '',
       team_color: '#22c55e',
       coach_ids: []
@@ -112,7 +109,7 @@ export default function Teams() {
     setTeamForm({
       name: team.name || '',
       age_group: team.age_group || '',
-      league: team.league || '', // Changed from 'team.division' to 'team.league'
+      league: team.league || '',
       season: team.season || '',
       team_color: team.team_color || '#22c55e',
       coach_ids: assignedCoaches
@@ -126,15 +123,6 @@ export default function Teams() {
     } else {
       createTeamMutation.mutate(teamForm);
     }
-  };
-
-  const toggleCoach = (coachId) => {
-    setTeamForm({
-      ...teamForm,
-      coach_ids: teamForm.coach_ids.includes(coachId)
-        ? teamForm.coach_ids.filter(id => id !== coachId)
-        : [...teamForm.coach_ids, coachId]
-    });
   };
 
   return (
@@ -183,10 +171,10 @@ export default function Teams() {
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-3">
-                  {team.league && ( // Changed from team.division to team.league
+                  {team.league && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">League:</span> {/* Changed from Division to League */}
-                      <span className="font-medium text-slate-900">{team.league}</span> {/* Changed from team.division to team.league */}
+                      <span className="text-slate-600">League:</span>
+                      <span className="font-medium text-slate-900">{team.league}</span>
                     </div>
                   )}
                   {team.season && (
@@ -249,10 +237,10 @@ export default function Teams() {
               />
             </div>
             <div>
-              <Label>League</Label> {/* Changed from Division to League */}
+              <Label>League</Label>
               <Input
-                value={teamForm.league} // Changed from teamForm.division to teamForm.league
-                onChange={(e) => setTeamForm({...teamForm, league: e.target.value})} // Changed from division to league
+                value={teamForm.league}
+                onChange={(e) => setTeamForm({...teamForm, league: e.target.value})}
                 placeholder="e.g., Premier League"
               />
             </div>
@@ -274,20 +262,11 @@ export default function Teams() {
             </div>
             <div>
               <Label className="mb-3 block">Assign Coaches</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                {coaches.map(coach => (
-                  <div key={coach.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={coach.id}
-                      checked={teamForm.coach_ids.includes(coach.id)}
-                      onCheckedChange={() => toggleCoach(coach.id)}
-                    />
-                    <label htmlFor={coach.id} className="text-sm text-slate-700 cursor-pointer">
-                      {coach.full_name} - {coach.specialization}
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <CoachSelector 
+                coaches={coaches}
+                selectedCoachIds={teamForm.coach_ids}
+                onCoachesChange={(ids) => setTeamForm({...teamForm, coach_ids: ids})}
+              />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">

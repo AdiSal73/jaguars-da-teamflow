@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
+  const [updatingUserId, setUpdatingUserId] = useState(null);
 
   const { data: permissions = [] } = useQuery({
     queryKey: ['rolePermissions'],
@@ -61,22 +61,18 @@ export default function UserManagement() {
   });
 
   const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }) => {
-      // First, check if user exists in User entity (from the useQuery data)
-      const user = users.find(u => u.id === userId);
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      // Update the user's role
-      return await base44.entities.User.update(userId, { role });
+    mutationFn: async ({ userId, newRole }) => {
+      setUpdatingUserId(userId);
+      return await base44.entities.User.update(userId, { role: newRole });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
+      setUpdatingUserId(null);
     },
     onError: (error) => {
       console.error('Failed to update user role:', error);
-      alert('Failed to update user role. Please try again.');
+      alert(`Failed to update user role: ${error.message}`);
+      setUpdatingUserId(null);
     }
   });
 
@@ -226,11 +222,10 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <Select 
-                          value={user.role} 
-                          onValueChange={(role) => {
-                            if (window.confirm(`Change ${user.full_name}'s role to ${role}?`)) {
-                              updateUserRoleMutation.mutate({ userId: user.id, role });
-                            }
+                          value={user.role}
+                          disabled={updatingUserId === user.id}
+                          onValueChange={(newRole) => {
+                            updateUserRoleMutation.mutate({ userId: user.id, newRole });
                           }}
                         >
                           <SelectTrigger className="w-32">
