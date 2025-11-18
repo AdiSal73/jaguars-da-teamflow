@@ -15,6 +15,7 @@ import PlayersTable from './pages/PlayersTable';
 import CoachManagement from './pages/CoachManagement';
 import TeamDetail from './pages/TeamDetail';
 import Availability from './pages/Availability';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "CoachManagement": CoachManagement,
     "TeamDetail": TeamDetail,
     "Availability": Availability,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {

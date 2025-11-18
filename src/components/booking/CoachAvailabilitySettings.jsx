@@ -1,91 +1,95 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Plus, X, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 export default function CoachAvailabilitySettings({ coach, onSave }) {
-  const [workingHours, setWorkingHours] = useState(coach?.working_hours || {
-    monday: { enabled: true, start: '09:00', end: '17:00' },
-    tuesday: { enabled: true, start: '09:00', end: '17:00' },
-    wednesday: { enabled: true, start: '09:00', end: '17:00' },
-    thursday: { enabled: true, start: '09:00', end: '17:00' },
-    friday: { enabled: true, start: '09:00', end: '17:00' },
-    saturday: { enabled: false, start: '09:00', end: '17:00' },
-    sunday: { enabled: false, start: '09:00', end: '17:00' }
-  });
-
-  const [eventTypes, setEventTypes] = useState(coach?.event_types || [
-    { name: 'Individual Training', duration: 60, color: '#22c55e', bufferBefore: 0, bufferAfter: 0 },
-    { name: 'Evaluation Session', duration: 45, color: '#3b82f6', bufferBefore: 0, bufferAfter: 0 },
-    { name: 'Physical Assessment', duration: 30, color: '#f59e0b', bufferBefore: 0, bufferAfter: 0 }
-  ]);
-
-  const [holidays, setHolidays] = useState(coach?.holidays || []);
-  const [newHoliday, setNewHoliday] = useState('');
-  const [newEventType, setNewEventType] = useState({
-    name: '',
-    duration: 60,
-    color: '#22c55e',
-    bufferBefore: 0,
-    bufferAfter: 0
-  });
-
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const durationOptions = [15, 20, 30, 45, 60, 90];
-  const bufferOptions = [0, 5, 10, 15, 30];
-
-  const handleDayToggle = (day) => {
-    setWorkingHours(prev => ({
-      ...prev,
-      [day]: { ...prev[day], enabled: !prev[day]?.enabled }
-    }));
-  };
-
-  const handleTimeChange = (day, field, value) => {
-    setWorkingHours(prev => ({
-      ...prev,
-      [day]: { ...prev[day], [field]: value }
-    }));
-  };
-
-  const addHoliday = () => {
-    if (newHoliday && !holidays.includes(newHoliday)) {
-      setHolidays([...holidays, newHoliday]);
-      setNewHoliday('');
+  const [workingHours, setWorkingHours] = useState(
+    coach.working_hours || {
+      monday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      tuesday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      wednesday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      thursday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      friday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      saturday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] },
+      sunday: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] }
     }
+  );
+
+  const [eventTypes, setEventTypes] = useState(
+    coach.event_types || [
+      { name: 'Individual Training', duration: 60, color: '#22c55e', bufferBefore: 0, bufferAfter: 0 },
+      { name: 'Evaluation Session', duration: 45, color: '#3b82f6', bufferBefore: 0, bufferAfter: 15 },
+      { name: 'Physical Assessment', duration: 30, color: '#f59e0b', bufferBefore: 0, bufferAfter: 0 }
+    ]
+  );
+
+  const [blackoutDates, setBlackoutDates] = useState(coach.holidays || []);
+  const [selectedDates, setSelectedDates] = useState([]);
+
+  const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  const addTimeSlot = (day) => {
+    setWorkingHours({
+      ...workingHours,
+      [day]: {
+        ...workingHours[day],
+        slots: [...workingHours[day].slots, { start: '09:00', end: '17:00' }]
+      }
+    });
   };
 
-  const removeHoliday = (holiday) => {
-    setHolidays(holidays.filter(h => h !== holiday));
+  const removeTimeSlot = (day, index) => {
+    const newSlots = workingHours[day].slots.filter((_, i) => i !== index);
+    setWorkingHours({
+      ...workingHours,
+      [day]: {
+        ...workingHours[day],
+        slots: newSlots
+      }
+    });
+  };
+
+  const updateTimeSlot = (day, index, field, value) => {
+    const newSlots = [...workingHours[day].slots];
+    newSlots[index][field] = value;
+    setWorkingHours({
+      ...workingHours,
+      [day]: {
+        ...workingHours[day],
+        slots: newSlots
+      }
+    });
   };
 
   const addEventType = () => {
-    if (newEventType.name) {
-      setEventTypes([...eventTypes, { ...newEventType }]);
-      setNewEventType({ name: '', duration: 60, color: '#22c55e', bufferBefore: 0, bufferAfter: 0 });
-    }
+    setEventTypes([...eventTypes, { name: 'New Event', duration: 60, color: '#6366f1', bufferBefore: 0, bufferAfter: 0 }]);
   };
 
   const removeEventType = (index) => {
     setEventTypes(eventTypes.filter((_, i) => i !== index));
   };
 
-  const updateEventType = (index, field, value) => {
-    setEventTypes(eventTypes.map((evt, i) => 
-      i === index ? { ...evt, [field]: value } : evt
-    ));
+  const handleDateSelect = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    if (blackoutDates.includes(dateStr)) {
+      setBlackoutDates(blackoutDates.filter(d => d !== dateStr));
+    } else {
+      setBlackoutDates([...blackoutDates, dateStr]);
+    }
   };
 
   const handleSave = () => {
-    onSave({ 
-      working_hours: workingHours, 
-      holidays,
-      event_types: eventTypes
+    onSave({
+      working_hours: workingHours,
+      event_types: eventTypes,
+      holidays: blackoutDates
     });
   };
 
@@ -94,229 +98,207 @@ export default function CoachAvailabilitySettings({ coach, onSave }) {
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="hours">Working Hours</TabsTrigger>
         <TabsTrigger value="events">Event Types</TabsTrigger>
-        <TabsTrigger value="holidays">Holidays</TabsTrigger>
+        <TabsTrigger value="blackout">Blackout Dates</TabsTrigger>
       </TabsList>
 
       <TabsContent value="hours" className="space-y-4">
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">Set Your Working Hours</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {days.map(day => (
-              <div key={day} className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
-                <div className="w-28">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={workingHours[day]?.enabled || false}
-                      onCheckedChange={() => handleDayToggle(day)}
-                    />
-                    <Label className="capitalize font-medium">{day}</Label>
-                  </div>
-                </div>
-                {workingHours[day]?.enabled && (
-                  <div className="flex items-center gap-3 flex-1">
-                    <Input
-                      type="time"
-                      value={workingHours[day]?.start || '09:00'}
-                      onChange={(e) => handleTimeChange(day, 'start', e.target.value)}
-                      className="w-32"
-                    />
-                    <span className="text-slate-500">to</span>
-                    <Input
-                      type="time"
-                      value={workingHours[day]?.end || '17:00'}
-                      onChange={(e) => handleTimeChange(day, 'end', e.target.value)}
-                      className="w-32"
-                    />
-                  </div>
-                )}
+        {daysOfWeek.map(day => (
+          <Card key={day}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base capitalize">{day}</CardTitle>
+                <Switch
+                  checked={workingHours[day].enabled}
+                  onCheckedChange={(checked) =>
+                    setWorkingHours({
+                      ...workingHours,
+                      [day]: { ...workingHours[day], enabled: checked }
+                    })
+                  }
+                />
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            {workingHours[day].enabled && (
+              <CardContent className="space-y-3">
+                {workingHours[day].slots.map((slot, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <Input
+                      type="time"
+                      value={slot.start}
+                      onChange={(e) => updateTimeSlot(day, index, 'start', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="text-slate-600">to</span>
+                    <Input
+                      type="time"
+                      value={slot.end}
+                      onChange={(e) => updateTimeSlot(day, index, 'end', e.target.value)}
+                      className="flex-1"
+                    />
+                    {workingHours[day].slots.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTimeSlot(day, index)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addTimeSlot(day)}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Time Slot
+                </Button>
+              </CardContent>
+            )}
+          </Card>
+        ))}
       </TabsContent>
 
       <TabsContent value="events" className="space-y-4">
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">Event Types & Durations</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {eventTypes.map((evt, idx) => (
-                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: evt.color }}></div>
-                      <Input
-                        value={evt.name}
-                        onChange={(e) => updateEventType(idx, 'name', e.target.value)}
-                        className="flex-1"
-                        placeholder="Event name"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeEventType(idx)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Duration (min)</Label>
-                      <Select 
-                        value={evt.duration.toString()} 
-                        onValueChange={(value) => updateEventType(idx, 'duration', parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {durationOptions.map(dur => (
-                            <SelectItem key={dur} value={dur.toString()}>{dur} min</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Color</Label>
-                      <Input
-                        type="color"
-                        value={evt.color}
-                        onChange={(e) => updateEventType(idx, 'color', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Buffer Before (min)</Label>
-                      <Select 
-                        value={evt.bufferBefore.toString()} 
-                        onValueChange={(value) => updateEventType(idx, 'bufferBefore', parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bufferOptions.map(buf => (
-                            <SelectItem key={buf} value={buf.toString()}>{buf} min</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Buffer After (min)</Label>
-                      <Select 
-                        value={evt.bufferAfter.toString()} 
-                        onValueChange={(value) => updateEventType(idx, 'bufferAfter', parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bufferOptions.map(buf => (
-                            <SelectItem key={buf} value={buf.toString()}>{buf} min</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 border-2 border-dashed border-slate-300 rounded-lg space-y-3">
-              <div className="flex items-center gap-3">
-                <Input
-                  value={newEventType.name}
-                  onChange={(e) => setNewEventType({...newEventType, name: e.target.value})}
-                  placeholder="New event type name"
-                  className="flex-1"
-                />
-                <Button onClick={addEventType} className="bg-emerald-600 hover:bg-emerald-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+        {eventTypes.map((event, index) => (
+          <Card key={index}>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs">Duration (min)</Label>
-                  <Select 
-                    value={newEventType.duration.toString()} 
-                    onValueChange={(value) => setNewEventType({...newEventType, duration: parseInt(value)})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {durationOptions.map(dur => (
-                        <SelectItem key={dur} value={dur.toString()}>{dur} min</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Color</Label>
+                  <Label>Event Name</Label>
                   <Input
-                    type="color"
-                    value={newEventType.color}
-                    onChange={(e) => setNewEventType({...newEventType, color: e.target.value})}
+                    value={event.name}
+                    onChange={(e) => {
+                      const newEvents = [...eventTypes];
+                      newEvents[index].name = e.target.value;
+                      setEventTypes(newEvents);
+                    }}
                   />
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="holidays" className="space-y-4">
-        <Card className="border-none shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg">Holidays & Time Off</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                value={newHoliday}
-                onChange={(e) => setNewHoliday(e.target.value)}
-                placeholder="Add holiday date"
-              />
-              <Button onClick={addHoliday} className="bg-emerald-600 hover:bg-emerald-700">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {holidays.map(holiday => (
-                <div key={holiday} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="font-medium">{new Date(holiday).toLocaleDateString()}</span>
-                  </div>
+                <div>
+                  <Label>Duration (minutes)</Label>
+                  <Input
+                    type="number"
+                    min="15"
+                    max="180"
+                    step="15"
+                    value={event.duration}
+                    onChange={(e) => {
+                      const newEvents = [...eventTypes];
+                      newEvents[index].duration = parseInt(e.target.value);
+                      setEventTypes(newEvents);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Buffer Before (min)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="60"
+                    step="5"
+                    value={event.bufferBefore}
+                    onChange={(e) => {
+                      const newEvents = [...eventTypes];
+                      newEvents[index].bufferBefore = parseInt(e.target.value);
+                      setEventTypes(newEvents);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Buffer After (min)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="60"
+                    step="5"
+                    value={event.bufferAfter}
+                    onChange={(e) => {
+                      const newEvents = [...eventTypes];
+                      newEvents[index].bufferAfter = parseInt(e.target.value);
+                      setEventTypes(newEvents);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label>Color</Label>
+                  <Input
+                    type="color"
+                    value={event.color}
+                    onChange={(e) => {
+                      const newEvents = [...eventTypes];
+                      newEvents[index].color = e.target.value;
+                      setEventTypes(newEvents);
+                    }}
+                  />
+                </div>
+                <div className="flex items-end">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeHoliday(holiday)}
+                    variant="destructive"
+                    onClick={() => removeEventType(index)}
+                    className="w-full"
                   >
-                    <X className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove
                   </Button>
                 </div>
-              ))}
-              {holidays.length === 0 && (
-                <p className="text-center text-slate-500 py-8">No holidays set</p>
-              )}
-            </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        <Button onClick={addEventType} variant="outline" className="w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Event Type
+        </Button>
+      </TabsContent>
+
+      <TabsContent value="blackout" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5" />
+              Select Blackout Dates
+            </CardTitle>
+            <p className="text-sm text-slate-600">Click dates to toggle blackout status</p>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="multiple"
+              selected={blackoutDates.map(d => new Date(d))}
+              onSelect={(dates) => {
+                if (dates) {
+                  setBlackoutDates(dates.map(d => format(d, 'yyyy-MM-dd')));
+                }
+              }}
+              className="rounded-md border"
+            />
+            {blackoutDates.length > 0 && (
+              <div className="mt-4">
+                <Label>Selected Blackout Dates ({blackoutDates.length})</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {blackoutDates.sort().map(date => (
+                    <div key={date} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm flex items-center gap-2">
+                      {new Date(date).toLocaleDateString()}
+                      <button
+                        onClick={() => setBlackoutDates(blackoutDates.filter(d => d !== date))}
+                        className="hover:text-red-900"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
 
-      <div className="mt-6">
-        <Button onClick={handleSave} className="w-full bg-emerald-600 hover:bg-emerald-700">
-          Save All Settings
+      <div className="flex justify-end mt-6">
+        <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+          Save Settings
         </Button>
       </div>
     </Tabs>
