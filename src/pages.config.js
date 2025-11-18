@@ -21,6 +21,8 @@ import PublicBooking from './pages/PublicBooking';
 import PlayerAssessmentAnalytics from './pages/PlayerAssessmentAnalytics';
 import EvaluationsTable from './pages/EvaluationsTable';
 import BookingsTable from './pages/BookingsTable';
+import CoachDashboard from './pages/CoachDashboard';
+import TeamCalendar from './pages/TeamCalendar';
 import __Layout from './Layout.jsx';
 
 
@@ -48,6 +50,8 @@ export const PAGES = {
     "PlayerAssessmentAnalytics": PlayerAssessmentAnalytics,
     "EvaluationsTable": EvaluationsTable,
     "BookingsTable": BookingsTable,
+    "CoachDashboard": CoachDashboard,
+    "TeamCalendar": TeamCalendar,
 }
 
 export const pagesConfig = {
