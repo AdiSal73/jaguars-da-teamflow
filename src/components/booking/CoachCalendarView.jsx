@@ -30,6 +30,10 @@ export default function CoachCalendarView({
       
       // Check if slot is recurring and within range
       if (slot.is_recurring) {
+        if (slot.recurring_start_date) {
+          const startDate = parseISO(slot.recurring_start_date);
+          if (isBefore(day, startDate)) return false;
+        }
         if (slot.recurring_end_date) {
           const endDate = parseISO(slot.recurring_end_date);
           if (isAfter(day, endDate)) return false;

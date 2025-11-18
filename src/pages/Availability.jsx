@@ -224,8 +224,11 @@ export default function Availability() {
                                     <div className="text-xs text-slate-500 space-y-1">
                                       {slot.buffer_before > 0 && <div>Buffer before: {slot.buffer_before} min</div>}
                                       {slot.buffer_after > 0 && <div>Buffer after: {slot.buffer_after} min</div>}
-                                      {slot.is_recurring && slot.recurring_end_date && (
-                                        <div>Ends: {format(new Date(slot.recurring_end_date), 'MMM d, yyyy')}</div>
+                                      {slot.is_recurring && (
+                                        <div>
+                                          {slot.recurring_start_date && `From: ${format(new Date(slot.recurring_start_date), 'MMM d, yyyy')}`}
+                                          {slot.recurring_end_date && ` - Until: ${format(new Date(slot.recurring_end_date), 'MMM d, yyyy')}`}
+                                        </div>
                                       )}
                                     </div>
                                   </div>

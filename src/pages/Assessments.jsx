@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon } from 'lucide-react';
+import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload } from 'lucide-react';
+import BulkImportAssessments from '../components/assessments/BulkImportAssessments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,7 @@ export default function Assessments() {
   const [selectedAssessments, setSelectedAssessments] = useState([]);
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [newAssessment, setNewAssessment] = useState({
     player_id: '',
     team_id: '',
@@ -177,6 +179,18 @@ export default function Assessments() {
     }
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (assessments) => {
+      for (const assessment of assessments) {
+        await base44.entities.PhysicalAssessment.create(assessment);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['assessments']);
+      setShowBulkImportDialog(false);
+    }
+  });
+
   const filteredAssessments = assessments.filter(assessment => {
     const player = players.find(p => p.id === assessment.player_id);
     const playerName = (player?.full_name || assessment.player_name || '').toLowerCase();
@@ -267,10 +281,16 @@ export default function Assessments() {
           <h1 className="text-3xl font-bold text-slate-900">Physical Assessments</h1>
           <p className="text-slate-600 mt-1">Monitor athletic performance and fitness levels</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" />
-          New Assessment
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={() => setShowBulkImportDialog(true)} variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-4 h-4 mr-2" />
+            New Assessment
+          </Button>
+        </div>
       </div>
 
       <Card className="border-none shadow-lg mb-6">
@@ -612,6 +632,19 @@ export default function Assessments() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showBulkImportDialog} onOpenChange={setShowBulkImportDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Import Assessments</DialogTitle>
+          </DialogHeader>
+          <BulkImportAssessments
+            players={players}
+            teams={teams}
+            onImportComplete={(assessments) => bulkCreateMutation.mutate(assessments)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

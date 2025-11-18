@@ -19,6 +19,7 @@ export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
     buffer_before: 0,
     buffer_after: 0,
     is_recurring: true,
+    recurring_start_date: format(new Date(), 'yyyy-MM-dd'),
     recurring_end_date: '',
     specific_dates: []
   });
@@ -190,15 +191,26 @@ export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
           </div>
 
           {formData.is_recurring && (
-            <div>
-              <Label>Recurring Until</Label>
-              <Input
-                type="date"
-                value={formData.recurring_end_date}
-                onChange={(e) => setFormData({...formData, recurring_end_date: e.target.value})}
-                min={format(new Date(), 'yyyy-MM-dd')}
-              />
-              <p className="text-xs text-slate-500 mt-1">Leave empty for indefinite recurrence</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Recurring From</Label>
+                <Input
+                  type="date"
+                  value={formData.recurring_start_date}
+                  onChange={(e) => setFormData({...formData, recurring_start_date: e.target.value})}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                />
+              </div>
+              <div>
+                <Label>Recurring Until</Label>
+                <Input
+                  type="date"
+                  value={formData.recurring_end_date}
+                  onChange={(e) => setFormData({...formData, recurring_end_date: e.target.value})}
+                  min={formData.recurring_start_date || format(new Date(), 'yyyy-MM-dd')}
+                />
+                <p className="text-xs text-slate-500 mt-1">Leave empty for indefinite</p>
+              </div>
             </div>
           )}
         </div>
