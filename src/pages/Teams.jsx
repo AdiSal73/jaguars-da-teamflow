@@ -211,11 +211,11 @@ export default function Teams() {
                     </div>
                   )}
                 </div>
-                </CardContent>
-                </Card>
-                </button>
-                );
-                })}
+              </CardContent>
+            </Card>
+            </button>
+          );
+        })}
       </div>
 
       {teams.length === 0 && (
