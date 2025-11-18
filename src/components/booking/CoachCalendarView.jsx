@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, startOfWeek, addDays, isSameDay, parseISO } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, parseISO, getDay, isAfter, isBefore, addMinutes, parse } from 'date-fns';
 import { Clock, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -9,11 +9,11 @@ export default function CoachCalendarView({
   bookings = [],
   onTimeSlotClick 
 }) {
-  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 }); // Monday
+  const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   
-  const workingHours = coach?.working_hours || {};
-  const holidays = coach?.holidays || [];
+  const availabilitySlots = coach?.availability_slots || [];
+  const services = coach?.services || [];
   
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00', '12:00', 
@@ -21,33 +21,68 @@ export default function CoachCalendarView({
   ];
 
   const isTimeSlotAvailable = (day, time) => {
-    const dayName = format(day, 'EEEE').toLowerCase();
-    const daySchedule = workingHours[dayName];
+    const dayOfWeek = getDay(day);
+    const dateStr = format(day, 'yyyy-MM-dd');
     
-    // Check if it's a holiday
-    if (holidays.some(holiday => isSameDay(parseISO(holiday), day))) {
+    // Find matching availability slots for this day of week
+    const matchingSlots = availabilitySlots.filter(slot => {
+      if (slot.day_of_week !== dayOfWeek) return false;
+      
+      // Check if slot is recurring and within range
+      if (slot.is_recurring) {
+        if (slot.recurring_end_date) {
+          const endDate = parseISO(slot.recurring_end_date);
+          if (isAfter(day, endDate)) return false;
+        }
+        return true;
+      }
+      
+      // Check specific dates for non-recurring slots
+      if (slot.specific_dates && slot.specific_dates.includes(dateStr)) {
+        return true;
+      }
+      
       return false;
-    }
+    });
     
-    // Check working hours
-    if (!daySchedule || !daySchedule.enabled) {
-      return false;
-    }
+    if (matchingSlots.length === 0) return false;
     
-    const [hours, minutes] = time.split(':').map(Number);
-    const timeInMinutes = hours * 60 + minutes;
-    const [startHours, startMinutes] = (daySchedule.start || '09:00').split(':').map(Number);
-    const [endHours, endMinutes] = (daySchedule.end || '17:00').split(':').map(Number);
-    const startInMinutes = startHours * 60 + startMinutes;
-    const endInMinutes = endHours * 60 + endMinutes;
-    
-    return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
+    // Check if time falls within any available slot
+    return matchingSlots.some(slot => {
+      const slotStart = parse(slot.start_time, 'HH:mm', day);
+      const slotEnd = parse(slot.end_time, 'HH:mm', day);
+      const checkTime = parse(time, 'HH:mm', day);
+      
+      // Apply buffer
+      const bufferedStart = addMinutes(slotStart, slot.buffer_before || 0);
+      const bufferedEnd = addMinutes(slotEnd, -(slot.buffer_after || 0));
+      
+      return !isBefore(checkTime, bufferedStart) && isBefore(checkTime, bufferedEnd);
+    });
   };
 
   const getBookingForSlot = (day, time) => {
     return bookings.find(booking => 
       isSameDay(parseISO(booking.date), day) && booking.start_time === time
     );
+  };
+
+  const getAvailableServices = (day, time) => {
+    const dayOfWeek = getDay(day);
+    const matchingSlots = availabilitySlots.filter(slot => {
+      if (slot.day_of_week !== dayOfWeek) return false;
+      const slotStart = parse(slot.start_time, 'HH:mm', day);
+      const slotEnd = parse(slot.end_time, 'HH:mm', day);
+      const checkTime = parse(time, 'HH:mm', day);
+      return !isBefore(checkTime, slotStart) && isBefore(checkTime, slotEnd);
+    });
+    
+    const allServices = new Set();
+    matchingSlots.forEach(slot => {
+      slot.services?.forEach(s => allServices.add(s));
+    });
+    
+    return Array.from(allServices);
   };
 
   return (

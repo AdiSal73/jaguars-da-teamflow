@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Clock } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import CoachAvailabilitySettings from '../components/booking/CoachAvailabilitySettings';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import SlotEditor from '../components/booking/SlotEditor';
+import { format } from 'date-fns';
 
 export default function Availability() {
+  const [showSlotDialog, setShowSlotDialog] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [showServiceDialog, setShowServiceDialog] = useState(false);
+  const [services, setServices] = useState([]);
+  const [newService, setNewService] = useState({ name: '', duration: 60, color: '#22c55e' });
+
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -18,67 +31,360 @@ export default function Availability() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const currentCoach = coaches.find(c => c.email === user?.email);
+
+  React.useEffect(() => {
+    if (currentCoach?.services) {
+      setServices(currentCoach.services);
+    } else {
+      setServices([
+        { name: 'Individual Training', duration: 60, color: '#22c55e' },
+        { name: 'Evaluation Session', duration: 45, color: '#3b82f6' },
+        { name: 'Physical Assessment', duration: 30, color: '#f59e0b' }
+      ]);
+    }
+  }, [currentCoach]);
+
   const updateCoachMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Coach.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      if (id) {
+        return await base44.entities.Coach.update(id, data);
+      } else {
+        return await base44.entities.Coach.create({
+          full_name: user.full_name,
+          email: user.email,
+          specialization: 'General Coaching',
+          is_admin: user.role === 'admin',
+          booking_enabled: true,
+          ...data
+        });
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['coaches']);
     }
   });
 
+  const availabilitySlots = currentCoach?.availability_slots || [];
+
+  const handleSaveSlot = async (slotData) => {
+    let updatedSlots = [...availabilitySlots];
+    
+    if (editingSlot) {
+      updatedSlots = updatedSlots.map(s => s.id === slotData.id ? slotData : s);
+    } else {
+      updatedSlots.push(slotData);
+    }
+
+    await updateCoachMutation.mutateAsync({
+      id: currentCoach?.id,
+      data: { availability_slots: updatedSlots, services }
+    });
+
+    setShowSlotDialog(false);
+    setEditingSlot(null);
+  };
+
+  const handleDeleteSlot = async (slotId) => {
+    if (!window.confirm('Delete this availability slot?')) return;
+    
+    const updatedSlots = availabilitySlots.filter(s => s.id !== slotId);
+    await updateCoachMutation.mutateAsync({
+      id: currentCoach?.id,
+      data: { availability_slots: updatedSlots, services }
+    });
+  };
+
+  const handleSaveServices = async () => {
+    if (!newService.name) return;
+    
+    const updatedServices = [...services, newService];
+    setServices(updatedServices);
+    
+    await updateCoachMutation.mutateAsync({
+      id: currentCoach?.id,
+      data: { services: updatedServices, availability_slots: availabilitySlots }
+    });
+    
+    setNewService({ name: '', duration: 60, color: '#22c55e' });
+    setShowServiceDialog(false);
+  };
+
+  const handleDeleteService = async (serviceName) => {
+    if (!window.confirm('Delete this service?')) return;
+    
+    const updatedServices = services.filter(s => s.name !== serviceName);
+    setServices(updatedServices);
+    
+    await updateCoachMutation.mutateAsync({
+      id: currentCoach?.id,
+      data: { services: updatedServices, availability_slots: availabilitySlots }
+    });
+  };
+
+  const groupSlotsByDay = () => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const grouped = {};
+    
+    days.forEach((day, idx) => {
+      grouped[day] = availabilitySlots.filter(slot => slot.day_of_week === idx);
+    });
+    
+    return grouped;
+  };
+
+  const slotsByDay = groupSlotsByDay();
+
   if (!user) return null;
 
-  // Find coach record for current user
-  const currentCoach = coaches.find(c => c.email === user.email) || {
-    id: null,
-    full_name: user.full_name,
-    email: user.email,
-    working_hours: null,
-    holidays: null,
-    event_types: null
-  };
-
-  const handleSave = async (availabilityData) => {
-    if (currentCoach.id) {
-      // Update existing coach
-      await updateCoachMutation.mutateAsync({
-        id: currentCoach.id,
-        data: availabilityData
-      });
-    } else {
-      // Create new coach record for admin
-      await base44.entities.Coach.create({
-        full_name: user.full_name,
-        email: user.email,
-        specialization: 'General Coaching',
-        is_admin: user.role === 'admin',
-        booking_enabled: true,
-        ...availabilityData
-      });
-      queryClient.invalidateQueries(['coaches']);
-    }
-  };
-
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Clock className="w-8 h-8 text-emerald-600" />
-          My Availability
+          <Calendar className="w-8 h-8 text-emerald-600" />
+          Manage Availability
         </h1>
-        <p className="text-slate-600 mt-1">Set your working hours, event types, and time off</p>
+        <p className="text-slate-600 mt-1">Configure your booking schedule and services</p>
       </div>
 
-      <Card className="border-none shadow-lg">
-        <CardHeader>
-          <CardTitle>{currentCoach.full_name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CoachAvailabilitySettings
-            coach={currentCoach}
-            onSave={handleSave}
+      <Tabs defaultValue="schedule" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="schedule">Weekly Schedule</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedule" className="space-y-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-emerald-600" />
+                  Availability Time Slots
+                </CardTitle>
+                <Button 
+                  onClick={() => { setEditingSlot(null); setShowSlotDialog(true); }}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Time Slot
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {availabilitySlots.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No Availability Set</h3>
+                  <p className="text-slate-600 mb-4">Add time slots to allow bookings</p>
+                  <Button 
+                    onClick={() => setShowSlotDialog(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Slot
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(slotsByDay).map(([day, slots]) => (
+                    <div key={day}>
+                      <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-8 bg-emerald-500 rounded-full" />
+                        {day}
+                      </h3>
+                      {slots.length === 0 ? (
+                        <p className="text-sm text-slate-500 ml-4 mb-4">No slots configured</p>
+                      ) : (
+                        <div className="grid gap-3 ml-4">
+                          {slots.map(slot => (
+                            <Card key={slot.id} className="border-l-4 border-l-emerald-500">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <Badge className="bg-slate-900 text-white">
+                                        {slot.start_time} - {slot.end_time}
+                                      </Badge>
+                                      {slot.is_recurring && (
+                                        <Badge variant="outline" className="text-emerald-600 border-emerald-600">
+                                          Recurring
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                      {slot.services?.map(serviceName => {
+                                        const service = services.find(s => s.name === serviceName);
+                                        return (
+                                          <Badge key={serviceName} style={{ backgroundColor: service?.color || '#6366f1' }}>
+                                            {serviceName}
+                                          </Badge>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="text-xs text-slate-500 space-y-1">
+                                      {slot.buffer_before > 0 && <div>Buffer before: {slot.buffer_before} min</div>}
+                                      {slot.buffer_after > 0 && <div>Buffer after: {slot.buffer_after} min</div>}
+                                      {slot.is_recurring && slot.recurring_end_date && (
+                                        <div>Ends: {format(new Date(slot.recurring_end_date), 'MMM d, yyyy')}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      onClick={() => { setEditingSlot(slot); setShowSlotDialog(true); }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      onClick={() => handleDeleteSlot(slot.id)}
+                                      className="hover:bg-red-50 hover:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-lg bg-blue-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-1">How it works</h3>
+                  <ul className="text-sm text-slate-700 space-y-1">
+                    <li>• Add time slots for each day you're available</li>
+                    <li>• Select which services are bookable during each slot</li>
+                    <li>• Set buffers to add padding between sessions</li>
+                    <li>• Make slots recurring for consistent weekly availability</li>
+                    <li>• All dates without configured slots are automatically blacked out</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-white">
+              <div className="flex items-center justify-between">
+                <CardTitle>Available Services</CardTitle>
+                <Button 
+                  onClick={() => setShowServiceDialog(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Service
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {services.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">No services configured</div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {services.map((service, idx) => (
+                    <Card key={idx} className="border-l-4" style={{ borderLeftColor: service.color }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: service.color }} />
+                              <h3 className="font-semibold text-slate-900">{service.name}</h3>
+                            </div>
+                            <p className="text-sm text-slate-600">{service.duration} minutes</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDeleteService(service.name)}
+                            className="hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <SlotEditor
+            slot={editingSlot}
+            services={services}
+            onSave={handleSaveSlot}
+            onCancel={() => { setShowSlotDialog(false); setEditingSlot(null); }}
           />
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Service</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Service Name</Label>
+              <Input
+                value={newService.name}
+                onChange={(e) => setNewService({...newService, name: e.target.value})}
+                placeholder="e.g., Individual Training"
+              />
+            </div>
+            <div>
+              <Label>Duration (minutes)</Label>
+              <Input
+                type="number"
+                min="15"
+                step="15"
+                value={newService.duration}
+                onChange={(e) => setNewService({...newService, duration: parseInt(e.target.value)})}
+              />
+            </div>
+            <div>
+              <Label>Color</Label>
+              <Input
+                type="color"
+                value={newService.color}
+                onChange={(e) => setNewService({...newService, color: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <Button variant="outline" onClick={() => setShowServiceDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveServices} 
+              disabled={!newService.name}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Add Service
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
