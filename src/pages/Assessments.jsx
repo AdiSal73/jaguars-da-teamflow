@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Activity, User, Search, SlidersHorizontal } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 export default function Assessments() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [teamFilter, setTeamFilter] = useState('all');
+  const [seasonFilter, setSeasonFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
+
   const { data: assessments = [] } = useQuery({
     queryKey: ['assessments'],
     queryFn: () => base44.entities.PhysicalAssessment.list('-assessment_date')
@@ -17,6 +25,11 @@ export default function Assessments() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list()
+  });
+
   const calculateOverallScore = (assessment) => {
     const speed = assessment.speed || 0;
     const agility = assessment.agility || 0;
@@ -25,6 +38,42 @@ export default function Assessments() {
     return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
   };
 
+  // Get unique seasons
+  const seasons = [...new Set(assessments.map(a => {
+    const year = new Date(a.assessment_date).getFullYear();
+    return `${year}-${(year + 1).toString().slice(2)}`;
+  }))].sort();
+
+  // Filter and sort assessments
+  let filteredAssessments = assessments.filter(assessment => {
+    const player = players.find(p => p.id === assessment.player_id);
+    const playerName = player?.full_name?.toLowerCase() || '';
+    const matchesSearch = playerName.includes(searchTerm.toLowerCase());
+    
+    const matchesTeam = teamFilter === 'all' || player?.team_id === teamFilter;
+    
+    const assessmentYear = new Date(assessment.assessment_date).getFullYear();
+    const assessmentSeason = `${assessmentYear}-${(assessmentYear + 1).toString().slice(2)}`;
+    const matchesSeason = seasonFilter === 'all' || assessmentSeason === seasonFilter;
+    
+    return matchesSearch && matchesTeam && matchesSeason;
+  });
+
+  // Sort assessments
+  filteredAssessments = filteredAssessments.sort((a, b) => {
+    const playerA = players.find(p => p.id === a.player_id);
+    const playerB = players.find(p => p.id === b.player_id);
+    
+    if (sortBy === 'name') {
+      return (playerA?.full_name || '').localeCompare(playerB?.full_name || '');
+    } else if (sortBy === 'date') {
+      return new Date(b.assessment_date) - new Date(a.assessment_date);
+    } else if (sortBy === 'score') {
+      return calculateOverallScore(b) - calculateOverallScore(a);
+    }
+    return 0;
+  });
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -32,18 +81,73 @@ export default function Assessments() {
         <p className="text-slate-600 mt-1">Monitor athletic performance and fitness levels</p>
       </div>
 
-      {assessments.length === 0 ? (
+      <Card className="border-none shadow-lg mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SlidersHorizontal className="w-5 h-5" />
+            Filters & Sorting
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search by player name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={seasonFilter} onValueChange={setSeasonFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by season" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Seasons</SelectItem>
+                {seasons.map(season => (
+                  <SelectItem key={season} value={season}>{season}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date (Newest)</SelectItem>
+                <SelectItem value="name">Player Name</SelectItem>
+                <SelectItem value="score">Overall Score</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {filteredAssessments.length === 0 ? (
         <Card className="border-none shadow-lg">
           <CardContent className="p-12 text-center">
             <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No Assessments Yet</h3>
-            <p className="text-slate-600">Start tracking physical performance from player profiles</p>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">No Assessments Found</h3>
+            <p className="text-slate-600">Try adjusting your filters</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assessments.map(assessment => {
+          {filteredAssessments.map(assessment => {
             const player = players.find(p => p.id === assessment.player_id);
+            const team = teams.find(t => t.id === player?.team_id);
             const overallScore = calculateOverallScore(assessment);
             
             return (
@@ -54,9 +158,10 @@ export default function Assessments() {
                       <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
                         <User className="w-6 h-6 text-white" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-bold text-slate-900">{player?.full_name || 'Player'}</h3>
                         <p className="text-xs text-slate-600">{new Date(assessment.assessment_date).toLocaleDateString()}</p>
+                        {team && <p className="text-xs text-slate-500">{team.name}</p>}
                       </div>
                     </div>
 
