@@ -26,6 +26,7 @@ import TeamCalendar from './pages/TeamCalendar';
 import TeamCommunication from './pages/TeamCommunication';
 import TeamDrills from './pages/TeamDrills';
 import MyBookings from './pages/MyBookings';
+import BulkEmail from './pages/BulkEmail';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "TeamCommunication": TeamCommunication,
     "TeamDrills": TeamDrills,
     "MyBookings": MyBookings,
+    "BulkEmail": BulkEmail,
 }
 
 export const pagesConfig = {

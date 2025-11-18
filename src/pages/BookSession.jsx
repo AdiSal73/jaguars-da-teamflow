@@ -41,7 +41,27 @@ export default function BookSession() {
   });
 
   const createBookingMutation = useMutation({
-    mutationFn: (data) => base44.entities.Booking.create(data),
+    mutationFn: async (data) => {
+      const booking = await base44.entities.Booking.create(data);
+      
+      // Send emails to coach and player
+      await base44.integrations.Core.SendEmail({
+        to: data.player_email,
+        subject: 'Booking Confirmation - Pending Approval',
+        body: `Hi ${data.player_name},\n\nYour booking request has been received:\n\nCoach: ${data.coach_name}\nDate: ${data.date}\nTime: ${data.start_time}\nDuration: ${data.duration} minutes\nSession: ${data.session_type}\n\nYour booking is pending approval from the coach. You will receive a confirmation email once approved.\n\nThank you!`
+      });
+      
+      const coach = selectedCoach;
+      if (coach?.email) {
+        await base44.integrations.Core.SendEmail({
+          to: coach.email,
+          subject: 'New Booking Request',
+          body: `Hi ${data.coach_name},\n\nYou have a new booking request:\n\nPlayer: ${data.player_name}\nEmail: ${data.player_email}\nDate: ${data.date}\nTime: ${data.start_time}\nDuration: ${data.duration} minutes\nSession: ${data.session_type}\n\nPlease review and confirm the booking.\n\nThank you!`
+        });
+      }
+      
+      return booking;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['bookings']);
       setBookingConfirmed(true);
@@ -158,7 +178,7 @@ export default function BookSession() {
     return timeSlots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!selectedCoach || !selectedDate || !selectedTime || !selectedService) return;
 
     const bookingData = {
@@ -170,7 +190,7 @@ export default function BookSession() {
       start_time: selectedTime,
       duration: selectedService.duration,
       session_type: selectedService.service,
-      status: 'Scheduled',
+      status: 'Pending',
       notes: notes
     };
 
