@@ -23,6 +23,8 @@ import EvaluationsTable from './pages/EvaluationsTable';
 import BookingsTable from './pages/BookingsTable';
 import CoachDashboard from './pages/CoachDashboard';
 import TeamCalendar from './pages/TeamCalendar';
+import TeamCommunication from './pages/TeamCommunication';
+import TeamDrills from './pages/TeamDrills';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +54,8 @@ export const PAGES = {
     "BookingsTable": BookingsTable,
     "CoachDashboard": CoachDashboard,
     "TeamCalendar": TeamCalendar,
+    "TeamCommunication": TeamCommunication,
+    "TeamDrills": TeamDrills,
 }
 
 export const pagesConfig = {

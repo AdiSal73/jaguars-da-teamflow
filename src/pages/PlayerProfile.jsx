@@ -12,10 +12,12 @@ import CircularChart from '../components/physical/CircularChart';
 import PerformanceTrendChart from '../components/analytics/PerformanceTrendChart';
 import RadarComparisonChart from '../components/analytics/RadarComparisonChart';
 import GoalTracker from '../components/goals/GoalTracker';
+import PlayerDocuments from '../components/player/PlayerDocuments';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function PlayerProfile() {
   const navigate = useNavigate();
@@ -158,34 +160,20 @@ export default function PlayerProfile() {
   const team = teams.find(t => t.id === player.team_id);
   const latestAssessment = assessments[0];
 
-  const calculateOverall = (assessment) => {
-    const speed = assessment.speed_score || 0;
-    const agility = assessment.agility_score || 0;
-    const power = assessment.vertical_score || 0;
-    const endurance = assessment.yirt_score || 0;
-    
-    if (agility === 0 || !agility) { // If agility score is not available, adjust the average calculation
-      return Math.round(((5 * speed) + (3 * power) + (6 * endurance)) / 14); // Weighted average: Speed (x5), Power (x3), Endurance (x6)
-    } else {
-      return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 15); // Weighted average: Speed (x5), Agility (x1), Power (x3), Endurance (x6)
-    }
-  };
 
-  // Calculate team and club averages
+
   const teamPlayers = allPlayers.filter(p => p.team_id === player.team_id);
   const teamPlayerIds = teamPlayers.map(p => p.id);
   const teamAssessments = allAssessments.filter(a => teamPlayerIds.includes(a.player_id));
 
   const calculateAverages = (assessmentList) => {
     if (assessmentList.length === 0) return { speed: 0, agility: 0, power: 0, endurance: 0 };
-
     const totals = assessmentList.reduce((acc, a) => ({
-      speed: acc.speed + (a.speed || 0),
-      agility: acc.agility + (a.agility || 0),
-      power: acc.power + (a.power || 0),
-      endurance: acc.endurance + (a.endurance || 0)
+      speed: acc.speed + (a.speed_score || 0),
+      agility: acc.agility + (a.agility_score || 0),
+      power: acc.power + (a.power_score || 0),
+      endurance: acc.endurance + (a.endurance_score || 0)
     }), { speed: 0, agility: 0, power: 0, endurance: 0 });
-
     return {
       speed: Math.round(totals.speed / assessmentList.length),
       agility: Math.round(totals.agility / assessmentList.length),
@@ -373,25 +361,25 @@ export default function PlayerProfile() {
                               {new Date(assessment.assessment_date).toLocaleDateString()}
                             </span>
                             <span className="text-2xl font-bold text-emerald-600">
-                              {calculateOverall(assessment)}
+                              {assessment.overall_score || 0}
                             </span>
                           </div>
                           <div className="grid grid-cols-4 gap-3 text-sm">
                             <div>
-                              <span className="text-slate-600">Speed: </span>
-                              <span className="font-semibold">{assessment.linear_20m?.toFixed(2) || 'N/A'}s</span>
+                              <span className="text-slate-600">Sprint: </span>
+                              <span className="font-semibold">{assessment.sprint?.toFixed(2) || 'N/A'}s</span>
                             </div>
                             <div>
                               <span className="text-slate-600">Vertical: </span>
-                              <span className="font-semibold">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</span>
+                              <span className="font-semibold">{assessment.vertical || 'N/A'}"</span>
                             </div>
                             <div>
                               <span className="text-slate-600">YIRT: </span>
                               <span className="font-semibold">{assessment.yirt || 'N/A'}</span>
                             </div>
                             <div>
-                              <span className="text-slate-600">5-10-5: </span>
-                              <span className="font-semibold">{assessment.agility_5_10_5?.toFixed(2) || 'N/A'}s</span>
+                              <span className="text-slate-600">Shuttle: </span>
+                              <span className="font-semibold">{assessment.shuttle?.toFixed(2) || 'N/A'}s</span>
                             </div>
                           </div>
                         </button>
@@ -413,37 +401,28 @@ export default function PlayerProfile() {
                       <PerformanceTrendChart
                         data={assessments.slice().reverse()}
                         metrics={[
-                          { key: 'speed', label: 'Speed' },
-                          { key: 'agility', label: 'Agility' },
-                          { key: 'power', label: 'Power' },
-                          { key: 'endurance', label: 'Endurance' }
+                          { key: 'speed_score', label: 'Speed' },
+                          { key: 'agility_score', label: 'Agility' },
+                          { key: 'power_score', label: 'Power' },
+                          { key: 'endurance_score', label: 'Endurance' }
                         ]}
                       />
                       <div className="grid grid-cols-4 gap-4 mt-6">
-                        {['speed', 'agility', 'power', 'endurance'].map(metric => {
+                        {['speed_score', 'agility_score', 'power_score', 'endurance_score'].map((metric, idx) => {
+                          const label = ['Speed', 'Agility', 'Power', 'Endurance'][idx];
+                          const avgKey = ['speed', 'agility', 'power', 'endurance'][idx];
                           const current = latestAssessment?.[metric] || 0;
-                          const historical = playerHistoricalAvg[metric];
+                          const historical = playerHistoricalAvg[avgKey];
                           const change = current - historical;
-                          // Handle division by zero for percentChange if historical is 0
                           const percentChange = historical !== 0 ? ((change / historical) * 100).toFixed(1) : (current !== 0 ? 'N/A' : '0.0');
 
                           return (
                             <div key={metric} className="p-3 bg-slate-50 rounded-xl">
-                              <div className="text-xs text-slate-600 capitalize mb-1">{metric}</div>
+                              <div className="text-xs text-slate-600 mb-1">{label}</div>
                               <div className="text-lg font-bold text-slate-900">{current}</div>
                               {historical !== 0 && change !== 0 && (
                                 <div className={`text-xs flex items-center gap-1 mt-1 ${change > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                  {change > 0 ? '↑' : '↓'} {Math.abs(parseFloat(percentChange))}% vs avg
-                                </div>
-                              )}
-                              {historical === 0 && current !== 0 && (
-                                <div className="text-xs flex items-center gap-1 mt-1 text-emerald-600">
-                                  ↑ New data (no historical avg)
-                                </div>
-                              )}
-                              {historical === 0 && current === 0 && (
-                                <div className="text-xs flex items-center gap-1 mt-1 text-slate-500">
-                                  No data
+                                  {change > 0 ? '↑' : '↓'} {Math.abs(parseFloat(percentChange))}%
                                 </div>
                               )}
                             </div>
@@ -467,16 +446,21 @@ export default function PlayerProfile() {
                   {latestAssessment ? (
                     <>
                       <RadarComparisonChart
-                        playerData={latestAssessment}
+                        playerData={{
+                          speed: latestAssessment.speed_score,
+                          agility: latestAssessment.agility_score,
+                          power: latestAssessment.power_score,
+                          endurance: latestAssessment.endurance_score
+                        }}
                         teamAverage={teamAverage}
                         clubAverage={clubAverage}
                       />
                       <div className="grid grid-cols-3 gap-4 mt-6">
                         <div className="text-center p-4 bg-blue-50 rounded-xl">
                           <div className="text-2xl font-bold text-blue-600">
-                            {Math.round((latestAssessment.speed + latestAssessment.agility + latestAssessment.power + latestAssessment.endurance) / 4)}
+                            {latestAssessment.overall_score || 0}
                           </div>
-                          <div className="text-sm text-slate-600 mt-1">Player Avg</div>
+                          <div className="text-sm text-slate-600 mt-1">Player</div>
                         </div>
                         <div className="text-center p-4 bg-emerald-50 rounded-xl">
                           <div className="text-2xl font-bold text-emerald-600">
@@ -604,14 +588,7 @@ export default function PlayerProfile() {
             </TabsContent>
 
             <TabsContent value="documents" className="space-y-6">
-              <Card className="border-none shadow-lg">
-                <CardHeader>
-                  <CardTitle>Player Documents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-slate-500 py-8">Document management coming soon</p>
-                </CardContent>
-              </Card>
+              <PlayerDocuments playerId={playerId} />
             </TabsContent>
           </Tabs>
         </div>
@@ -743,10 +720,10 @@ export default function PlayerProfile() {
       </Dialog>
 
       <Dialog open={!!selectedAssessment} onOpenChange={() => setSelectedAssessment(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle>Physical Assessment Details</DialogTitle>
+              <DialogTitle>Assessment Details</DialogTitle>
               <Button variant="ghost" size="icon" onClick={() => setSelectedAssessment(null)}>
                 <X className="w-4 h-4" />
               </Button>
@@ -755,52 +732,31 @@ export default function PlayerProfile() {
           {selectedAssessment && (
             <div className="space-y-6 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Date</Label>
-                  <div className="text-lg font-semibold">{new Date(selectedAssessment.assessment_date).toLocaleDateString()}</div>
-                </div>
-                <div>
-                  <Label>Position</Label>
-                  <div className="text-lg font-semibold">{selectedAssessment.position || 'N/A'}</div>
-                </div>
-                <div>
-                  <Label>Age</Label>
-                  <div className="text-lg font-semibold">{selectedAssessment.age || 'N/A'}</div>
-                </div>
-                <div>
-                  <Label>Overall Score</Label>
-                  <div className="text-3xl font-bold text-emerald-600">{calculateOverall(selectedAssessment)}</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-6">
                 <div className="p-4 bg-red-50 rounded-xl">
-                  <div className="text-sm text-red-600 mb-2">20m Linear Sprint</div>
-                  <div className="text-2xl font-bold text-red-700">{selectedAssessment.linear_20m?.toFixed(2) || 'N/A'} sec</div>
-                  <div className="text-sm text-slate-600 mt-2">Speed Score: {selectedAssessment.speed_score || 'N/A'}</div>
+                  <div className="text-sm text-red-600 mb-2">Sprint</div>
+                  <div className="text-2xl font-bold text-red-700">{selectedAssessment.sprint?.toFixed(2)}s</div>
+                  <div className="text-sm text-slate-600 mt-2">Score: {selectedAssessment.speed_score}</div>
                 </div>
                 <div className="p-4 bg-blue-50 rounded-xl">
-                  <div className="text-sm text-blue-600 mb-2">Vertical Jump</div>
-                  <div className="text-2xl font-bold text-blue-700">{selectedAssessment.vertical_jump?.toFixed(1) || 'N/A'} in</div>
-                  <div className="text-sm text-slate-600 mt-2">Vertical Score: {selectedAssessment.vertical_score || 'N/A'}</div>
-                </div>
-                <div className="p-4 bg-pink-50 rounded-xl">
-                  <div className="text-sm text-pink-600 mb-2">YIRT Level</div>
-                  <div className="text-2xl font-bold text-pink-700">{selectedAssessment.yirt || 'N/A'}</div>
-                  <div className="text-sm text-slate-600 mt-2">YIRT Score: {selectedAssessment.yirt_score || 'N/A'}</div>
+                  <div className="text-sm text-blue-600 mb-2">Vertical</div>
+                  <div className="text-2xl font-bold text-blue-700">{selectedAssessment.vertical}"</div>
+                  <div className="text-sm text-slate-600 mt-2">Score: {selectedAssessment.power_score}</div>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-xl">
-                  <div className="text-sm text-emerald-600 mb-2">5-10-5 Agility</div>
-                  <div className="text-2xl font-bold text-emerald-700">{selectedAssessment.agility_5_10_5?.toFixed(2) || 'N/A'} sec</div>
-                  <div className="text-sm text-slate-600 mt-2">Agility Score: {selectedAssessment.agility_score || 'N/A'}</div>
+                  <div className="text-sm text-emerald-600 mb-2">YIRT</div>
+                  <div className="text-2xl font-bold text-emerald-700">{selectedAssessment.yirt}</div>
+                  <div className="text-sm text-slate-600 mt-2">Score: {selectedAssessment.endurance_score}</div>
+                </div>
+                <div className="p-4 bg-pink-50 rounded-xl">
+                  <div className="text-sm text-pink-600 mb-2">Shuttle</div>
+                  <div className="text-2xl font-bold text-pink-700">{selectedAssessment.shuttle?.toFixed(2)}s</div>
+                  <div className="text-sm text-slate-600 mt-2">Score: {selectedAssessment.agility_score}</div>
                 </div>
               </div>
-
-              <div className="p-4 bg-slate-50 rounded-xl">
-                <Label>Energy Score</Label>
-                <div className="text-2xl font-bold text-slate-900 mt-2">{selectedAssessment.energy_score || 'N/A'}</div>
+              <div className="text-center p-4 bg-slate-900 rounded-xl">
+                <div className="text-sm text-white mb-1">Overall Score</div>
+                <div className="text-4xl font-bold text-white">{selectedAssessment.overall_score}</div>
               </div>
-
               {selectedAssessment.notes && (
                 <div>
                   <Label>Notes</Label>

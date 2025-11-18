@@ -84,6 +84,8 @@ export default function Layout({ children, currentPageName }) {
     { title: "Coach Management", url: createPageUrl("CoachManagement"), icon: UserCog, roles: ["admin"] },
     { title: "Teams", url: createPageUrl("Teams"), icon: Shield, roles: ["admin", "coach"] },
     { title: "Team Calendar", url: createPageUrl("TeamCalendar"), icon: Calendar, roles: ["admin", "coach"] },
+    { title: "Announcements", url: createPageUrl("TeamCommunication"), icon: MessageSquare, roles: ["admin", "coach"] },
+    { title: "Team Drills", url: createPageUrl("TeamDrills"), icon: Activity, roles: ["admin", "coach"] },
     { title: "Players", url: createPageUrl("Players"), icon: Users, roles: ["admin"] },
     { title: "Training Plans", url: createPageUrl("TrainingPlans"), icon: TrendingUp, roles: ["admin", "coach"] },
     { title: "Messages", url: createPageUrl("Messages"), icon: MessageSquare, roles: ["admin", "coach", "user"] },
