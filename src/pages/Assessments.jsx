@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User, Search, SlidersHorizontal, Plus, Trash2 } from 'lucide-react';
+import { Activity, User, Search, SlidersHorizontal, Plus, Trash2, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +18,8 @@ export default function Assessments() {
   const [teamFilter, setTeamFilter] = useState('all');
   const [seasonFilter, setSeasonFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [sortColumn, setSortColumn] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAssessment, setNewAssessment] = useState({
     player_id: '',
@@ -115,7 +117,12 @@ export default function Assessments() {
     const agility = assessment.agility_score || 0;
     const power = assessment.vertical_score || 0;
     const endurance = assessment.yirt_score || 0;
-    return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
+    
+    if (agility === 0 || !agility) {
+      return Math.round(((5 * speed) + (3 * power) + (6 * endurance)) / 14);
+    } else {
+      return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 15);
+    }
   };
 
   const seasons = [...new Set(assessments.map(a => {
@@ -151,15 +158,64 @@ export default function Assessments() {
   });
 
   const handleFieldUpdate = (assessmentId, field, value) => {
-    updateAssessmentMutation.mutate({ id: assessmentId, data: { [field]: value } });
+    const numericFields = ['age', 'linear_20m', 'speed_score', 'vertical_jump', 'vertical_score', 'yirt', 'yirt_score', 'agility_5_10_5', 'agility_score', 'energy_score'];
+    const finalValue = numericFields.includes(field) ? parseFloat(value) || 0 : value;
+    updateAssessmentMutation.mutate({ id: assessmentId, data: { [field]: finalValue } });
   };
 
   const handleCreateAssessment = () => {
     const cleanData = Object.fromEntries(
-      Object.entries(newAssessment).filter(([_, v]) => v !== '' && v !== null)
+      Object.entries(newAssessment).filter(([_, v]) => v !== '' && v !== null).map(([k, v]) => {
+        const numericFields = ['age', 'linear_20m', 'speed_score', 'vertical_jump', 'vertical_score', 'yirt', 'yirt_score', 'agility_5_10_5', 'agility_score', 'energy_score'];
+        return [k, numericFields.includes(k) && v !== '' ? parseFloat(v) : v];
+      })
     );
     createAssessmentMutation.mutate(cleanData);
   };
+
+  const handleTableSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortTableData = (data) => {
+    if (!sortColumn) return data;
+    
+    return [...data].sort((a, b) => {
+      const playerA = players.find(p => p.id === a.player_id);
+      const playerB = players.find(p => p.id === b.player_id);
+      
+      let valA, valB;
+      
+      if (sortColumn === 'name') {
+        valA = playerA?.full_name || '';
+        valB = playerB?.full_name || '';
+      } else if (sortColumn === 'team') {
+        const teamA = teams.find(t => t.id === playerA?.team_id);
+        const teamB = teams.find(t => t.id === playerB?.team_id);
+        valA = teamA?.name || '';
+        valB = teamB?.name || '';
+      } else if (sortColumn === 'date') {
+        valA = new Date(a.assessment_date);
+        valB = new Date(b.assessment_date);
+      } else {
+        valA = a[sortColumn] || 0;
+        valB = b[sortColumn] || 0;
+      }
+      
+      if (sortDirection === 'asc') {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+  };
+
+  const sortedTableData = sortTableData(filteredAssessments);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -260,16 +316,16 @@ export default function Assessments() {
                             <div className="text-lg font-bold text-red-700">{assessment.linear_20m?.toFixed(2) || 'N/A'}s</div>
                           </div>
                           <div className="p-3 bg-blue-50 rounded-lg">
-                            <div className="text-xs text-blue-600 mb-1">Vertical</div>
+                            <div className="text-xs text-blue-600 mb-1">Vertical Jump</div>
                             <div className="text-lg font-bold text-blue-700">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</div>
-                          </div>
-                          <div className="p-3 bg-pink-50 rounded-lg">
-                            <div className="text-xs text-pink-600 mb-1">YIRT</div>
-                            <div className="text-lg font-bold text-pink-700">{assessment.yirt || 'N/A'}</div>
                           </div>
                           <div className="p-3 bg-emerald-50 rounded-lg">
                             <div className="text-xs text-emerald-600 mb-1">5-10-5</div>
                             <div className="text-lg font-bold text-emerald-700">{assessment.agility_5_10_5?.toFixed(2) || 'N/A'}s</div>
+                          </div>
+                          <div className="p-3 bg-pink-50 rounded-lg">
+                            <div className="text-xs text-pink-600 mb-1">YIRT</div>
+                            <div className="text-lg font-bold text-pink-700">{assessment.yirt || 'N/A'}</div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -292,25 +348,53 @@ export default function Assessments() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('name')} className="flex items-center gap-1">
+                          Name <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('team')} className="flex items-center gap-1">
+                          Team <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('date')} className="flex items-center gap-1">
+                          Date <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Age</TableHead>
-                      <TableHead>20m Linear</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('linear_20m')} className="flex items-center gap-1">
+                          20m Linear <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
                       <TableHead>Speed Score</TableHead>
-                      <TableHead>Vertical</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('vertical_jump')} className="flex items-center gap-1">
+                          Vertical <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
                       <TableHead>Vertical Score</TableHead>
-                      <TableHead>YIRT</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('yirt')} className="flex items-center gap-1">
+                          YIRT <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
                       <TableHead>YIRT Score</TableHead>
-                      <TableHead>5-10-5</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleTableSort('agility_5_10_5')} className="flex items-center gap-1">
+                          5-10-5 <ArrowUpDown className="w-3 h-3" />
+                        </Button>
+                      </TableHead>
                       <TableHead>5-10-5 Score</TableHead>
                       <TableHead>Energy Score</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAssessments.map(assessment => {
+                    {sortedTableData.map(assessment => {
                       const player = players.find(p => p.id === assessment.player_id);
                       const team = teams.find(t => t.id === player?.team_id);
                       return (
@@ -329,52 +413,52 @@ export default function Assessments() {
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.age || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'age', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'age', e.target.value)} 
                               className="w-16" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" step="0.01" value={assessment.linear_20m || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'linear_20m', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'linear_20m', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.speed_score || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'speed_score', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'speed_score', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" step="0.1" value={assessment.vertical_jump || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'vertical_jump', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'vertical_jump', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.vertical_score || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'vertical_score', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'vertical_score', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.yirt || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'yirt', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'yirt', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.yirt_score || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'yirt_score', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'yirt_score', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" step="0.01" value={assessment.agility_5_10_5 || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'agility_5_10_5', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'agility_5_10_5', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.agility_score || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'agility_score', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'agility_score', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
                             <Input type="number" value={assessment.energy_score || ''} 
-                              onChange={(e) => handleFieldUpdate(assessment.id, 'energy_score', parseFloat(e.target.value))} 
+                              onChange={(e) => handleFieldUpdate(assessment.id, 'energy_score', e.target.value)} 
                               className="w-20" />
                           </TableCell>
                           <TableCell>
