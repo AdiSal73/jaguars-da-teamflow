@@ -19,6 +19,8 @@ import UserManagement from './pages/UserManagement';
 import Analytics from './pages/Analytics';
 import PublicBooking from './pages/PublicBooking';
 import PlayerAssessmentAnalytics from './pages/PlayerAssessmentAnalytics';
+import EvaluationsTable from './pages/EvaluationsTable';
+import BookingsTable from './pages/BookingsTable';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +46,8 @@ export const PAGES = {
     "Analytics": Analytics,
     "PublicBooking": PublicBooking,
     "PlayerAssessmentAnalytics": PlayerAssessmentAnalytics,
+    "EvaluationsTable": EvaluationsTable,
+    "BookingsTable": BookingsTable,
 }
 
 export const pagesConfig = {

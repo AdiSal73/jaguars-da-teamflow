@@ -25,6 +25,8 @@ export default function UnassignedRecords() {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [recordType, setRecordType] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [duplicates, setDuplicates] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -161,6 +163,65 @@ export default function UnassignedRecords() {
     setSyncing(false);
   };
 
+  const scanForDuplicates = async () => {
+    setScanning(true);
+    const found = { assessments: [], evaluations: [] };
+
+    // Check physical assessments
+    const allAssessments = await base44.entities.PhysicalAssessment.list();
+    const assessmentMap = new Map();
+    
+    allAssessments.forEach(a => {
+      const key = `${a.player_id}_${a.assessment_date}`;
+      if (!assessmentMap.has(key)) {
+        assessmentMap.set(key, []);
+      }
+      assessmentMap.get(key).push(a);
+    });
+
+    assessmentMap.forEach((list, key) => {
+      if (list.length > 1) {
+        found.assessments.push({ key, records: list });
+      }
+    });
+
+    // Check evaluations
+    const allEvaluations = await base44.entities.Evaluation.list();
+    const evalMap = new Map();
+    
+    allEvaluations.forEach(e => {
+      const key = `${e.player_id}_${e.evaluation_date}`;
+      if (!evalMap.has(key)) {
+        evalMap.set(key, []);
+      }
+      evalMap.get(key).push(e);
+    });
+
+    evalMap.forEach((list, key) => {
+      if (list.length > 1) {
+        found.evaluations.push({ key, records: list });
+      }
+    });
+
+    setDuplicates(found);
+    setScanning(false);
+  };
+
+  const deleteDuplicates = async () => {
+    for (const group of duplicates.assessments) {
+      for (let i = 1; i < group.records.length; i++) {
+        await base44.entities.PhysicalAssessment.delete(group.records[i].id);
+      }
+    }
+    for (const group of duplicates.evaluations) {
+      for (let i = 1; i < group.records.length; i++) {
+        await base44.entities.Evaluation.delete(group.records[i].id);
+      }
+    }
+    queryClient.invalidateQueries();
+    setDuplicates(null);
+  };
+
   const openAssignDialog = (record, type) => {
     setSelectedRecord(record);
     setRecordType(type);
@@ -173,14 +234,23 @@ export default function UnassignedRecords() {
           <h1 className="text-3xl font-bold text-slate-900">Unassigned Records</h1>
           <p className="text-slate-600 mt-1">Assign imported records to players</p>
         </div>
-        <Button 
-          onClick={handleAutoSync} 
-          disabled={syncing || (unassignedEvals.length === 0 && unassignedAssessments.length === 0)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : 'Auto-Sync by Name'}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={scanForDuplicates} 
+            disabled={scanning}
+            variant="outline"
+          >
+            {scanning ? 'Scanning...' : 'Scan Duplicates'}
+          </Button>
+          <Button 
+            onClick={handleAutoSync} 
+            disabled={syncing || (unassignedEvals.length === 0 && unassignedAssessments.length === 0)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Auto-Sync by Name'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -374,6 +444,51 @@ export default function UnassignedRecords() {
               Assign Record
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!duplicates} onOpenChange={() => setDuplicates(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Duplicate Records Found</DialogTitle>
+          </DialogHeader>
+          {duplicates && (
+            <div className="space-y-4">
+              {duplicates.assessments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Assessments: {duplicates.assessments.length}</h3>
+                  {duplicates.assessments.slice(0, 10).map((dup, i) => (
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2">
+                      {dup.records.length} duplicates found
+                    </div>
+                  ))}
+                </div>
+              )}
+              {duplicates.evaluations.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Evaluations: {duplicates.evaluations.length}</h3>
+                  {duplicates.evaluations.slice(0, 10).map((dup, i) => (
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2">
+                      {dup.records.length} duplicates found
+                    </div>
+                  ))}
+                </div>
+              )}
+              {duplicates.assessments.length === 0 && duplicates.evaluations.length === 0 && (
+                <p className="text-center py-8 text-slate-500">No duplicates found!</p>
+              )}
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setDuplicates(null)} className="flex-1">Close</Button>
+                <Button 
+                  onClick={deleteDuplicates}
+                  disabled={duplicates.assessments.length === 0 && duplicates.evaluations.length === 0}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  Delete Duplicates
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

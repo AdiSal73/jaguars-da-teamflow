@@ -81,6 +81,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       const rows = parseCSV(text);
       const importErrors = [];
       const assessmentsToCreate = [];
+      const unassignedToCreate = [];
 
       rows.forEach(row => {
         const playerName = row.Name || row.name;
@@ -109,18 +110,25 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
         }
 
         const player = players.find(p => 
-          p.full_name.toLowerCase() === playerName.toLowerCase()
+          p.full_name.toLowerCase().trim() === playerName.toLowerCase().trim()
         );
         const team = teams.find(t => 
-          t.name.toLowerCase() === teamName.toLowerCase()
+          t.name.toLowerCase().trim() === teamName.toLowerCase().trim()
         );
 
         if (!player) {
-          importErrors.push(`Line ${row._lineNumber}: Player "${playerName}" not found`);
-          return;
-        }
-        if (!team) {
-          importErrors.push(`Line ${row._lineNumber}: Team "${teamName}" not found`);
+          const scores = calculateScores(sprint, vertical, yirt, shuttle);
+          unassignedToCreate.push({
+            player_name: playerName,
+            team_name: teamName,
+            assessment_date: date,
+            sprint,
+            vertical,
+            yirt,
+            shuttle,
+            ...scores,
+            assigned: false
+          });
           return;
         }
 
@@ -129,7 +137,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
         assessmentsToCreate.push({
           player_id: player.id,
           player_name: player.full_name,
-          team_id: team.id,
+          team_id: team?.id || '',
           assessment_date: date,
           sprint,
           vertical,
@@ -142,12 +150,15 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       setErrors(importErrors);
 
       if (assessmentsToCreate.length > 0) {
-        await onImportComplete(assessmentsToCreate);
+        await onImportComplete(assessmentsToCreate, unassignedToCreate);
+      } else if (unassignedToCreate.length > 0) {
+        await onImportComplete([], unassignedToCreate);
       }
 
       setResults({
         total: rows.length,
         success: assessmentsToCreate.length,
+        unassigned: unassignedToCreate.length,
         failed: importErrors.length
       });
       setProgress(100);
@@ -214,7 +225,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
             <Alert className="bg-green-50 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription>
-                Import complete: {results.success} succeeded, {results.failed} failed out of {results.total} total
+                Import complete: {results.success} assigned, {results.unassigned || 0} unassigned, {results.failed} failed out of {results.total} total
               </AlertDescription>
             </Alert>
           )}

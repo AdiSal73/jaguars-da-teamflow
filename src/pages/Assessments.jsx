@@ -180,13 +180,17 @@ export default function Assessments() {
   });
 
   const bulkCreateMutation = useMutation({
-    mutationFn: async (assessments) => {
+    mutationFn: async ({ assessments, unassigned }) => {
       for (const assessment of assessments) {
         await base44.entities.PhysicalAssessment.create(assessment);
+      }
+      for (const record of unassigned) {
+        await base44.entities.UnassignedPhysicalAssessment.create(record);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['assessments']);
+      queryClient.invalidateQueries(['unassignedAssessments']);
       setShowBulkImportDialog(false);
     }
   });
@@ -641,7 +645,7 @@ export default function Assessments() {
           <BulkImportAssessments
             players={players}
             teams={teams}
-            onImportComplete={(assessments) => bulkCreateMutation.mutate(assessments)}
+            onImportComplete={(assessments, unassigned) => bulkCreateMutation.mutate({ assessments, unassigned })}
           />
         </DialogContent>
       </Dialog>

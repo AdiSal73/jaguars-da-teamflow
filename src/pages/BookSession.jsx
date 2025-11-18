@@ -1,41 +1,27 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
-import { User, ChevronLeft, ChevronRight, Settings, Shield } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, getDay, parseISO, isBefore, isAfter, addMinutes, parse } from 'date-fns';
+import { User, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import CoachCalendarView from '../components/booking/CoachCalendarView';
-import CoachAvailabilitySettings from '../components/booking/CoachAvailabilitySettings';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function BookSession() {
   const [selectedCoach, setSelectedCoach] = useState(null);
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [playerEmail, setPlayerEmail] = useState('');
-  const [sessionType, setSessionType] = useState('Individual Training');
   const [notes, setNotes] = useState('');
   const [showBookingDialog, setShowBookingDialog] = useState(false);
-  const [showAvailabilityDialog, setShowAvailabilityDialog] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -49,79 +35,127 @@ export default function BookSession() {
     queryFn: () => base44.entities.Coach.list()
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      if (user?.role === 'admin') {
-        return await base44.entities.User.list();
-      }
-      return [];
-    },
-    enabled: !!user
-  });
-
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings'],
-    queryFn: async () => {
-      const allBookings = await base44.entities.Booking.list();
-      if (user?.role === 'user') {
-        return allBookings.filter(b => b.player_email === user.email);
-      }
-      if (user?.role === 'coach') {
-        const currentCoach = coaches.find(c => c.email === user.email);
-        return allBookings.filter(b => b.coach_id === currentCoach?.id);
-      }
-      return allBookings;
-    },
-    enabled: !!user
+    queryFn: () => base44.entities.Booking.list()
   });
 
   const createBookingMutation = useMutation({
     mutationFn: (data) => base44.entities.Booking.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['bookings']);
-      setShowBookingDialog(false);
-      setSelectedDate(null);
-      setSelectedTime(null);
-      setPlayerName('');
-      setPlayerEmail('');
-      setNotes('');
+      setBookingConfirmed(true);
+      setTimeout(() => {
+        setShowBookingDialog(false);
+        setSelectedDate(null);
+        setSelectedTime(null);
+        setSelectedService(null);
+        setPlayerName('');
+        setPlayerEmail('');
+        setNotes('');
+        setBookingConfirmed(false);
+      }, 2000);
     }
   });
 
-  const updateCoachMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Coach.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['coaches']);
-      setShowAvailabilityDialog(false);
+  React.useEffect(() => {
+    if (coaches.length > 0 && !selectedCoach) {
+      setSelectedCoach(coaches[0]);
     }
-  });
+  }, [coaches, selectedCoach]);
 
-  const adminUsers = users.filter(u => u.role === 'admin');
-  const allCoachOptions = [
-    ...coaches,
-    ...adminUsers.map(admin => ({
-      id: admin.id,
-      full_name: admin.full_name,
-      specialization: 'Admin',
-      isAdmin: true,
-      session_duration: 60,
-      booking_enabled: true
-    }))
-  ];
+  const getAvailableDates = () => {
+    if (!selectedCoach?.availability_slots) return [];
+    
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const allDays = eachDayOfInterval({ start, end });
+    
+    return allDays.filter(day => {
+      if (isBefore(day, new Date())) return false;
+      const dayOfWeek = getDay(day);
+      const dateStr = format(day, 'yyyy-MM-dd');
+      
+      return selectedCoach.availability_slots.some(slot => {
+        if (slot.day_of_week !== dayOfWeek) return false;
+        
+        if (slot.is_recurring) {
+          if (slot.recurring_start_date && isBefore(day, parseISO(slot.recurring_start_date))) return false;
+          if (slot.recurring_end_date && isAfter(day, parseISO(slot.recurring_end_date))) return false;
+          return true;
+        }
+        
+        return slot.specific_dates?.includes(dateStr);
+      });
+    });
+  };
 
-  const coachBookings = selectedCoach
-    ? bookings.filter(b => b.coach_id === selectedCoach.id)
-    : [];
+  const getAvailableTimeSlots = (date) => {
+    if (!date || !selectedCoach) return [];
+    
+    const dayOfWeek = getDay(date);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    const slots = selectedCoach.availability_slots?.filter(slot => {
+      if (slot.day_of_week !== dayOfWeek) return false;
+      
+      if (slot.is_recurring) {
+        if (slot.recurring_start_date && isBefore(date, parseISO(slot.recurring_start_date))) return false;
+        if (slot.recurring_end_date && isAfter(date, parseISO(slot.recurring_end_date))) return false;
+        return true;
+      }
+      
+      return slot.specific_dates?.includes(dateStr);
+    }) || [];
 
-  const handleTimeSlotClick = (date, time) => {
-    setSelectedDate(date);
-    setSelectedTime(time);
-    setShowBookingDialog(true);
+    const timeSlots = [];
+    const dayBookings = bookings.filter(b => 
+      b.coach_id === selectedCoach.id && 
+      b.date === dateStr &&
+      b.status !== 'Cancelled'
+    );
+
+    slots.forEach(slot => {
+      const services = slot.services || [];
+      const availableServices = selectedCoach.services?.filter(s => services.includes(s.name)) || [];
+      
+      if (availableServices.length === 0) return;
+
+      const startTime = parse(slot.start_time, 'HH:mm', date);
+      const endTime = parse(slot.end_time, 'HH:mm', date);
+      
+      let currentTime = startTime;
+      
+      while (currentTime < endTime) {
+        availableServices.forEach(service => {
+          const slotEnd = addMinutes(currentTime, service.duration);
+          const bufferEnd = addMinutes(slotEnd, slot.buffer_after || 0);
+          
+          if (bufferEnd <= endTime) {
+            const timeStr = format(currentTime, 'HH:mm');
+            const isBooked = dayBookings.some(b => b.start_time === timeStr);
+            
+            if (!isBooked) {
+              timeSlots.push({
+                time: timeStr,
+                service: service.name,
+                duration: service.duration,
+                color: service.color,
+                displayTime: format(currentTime, 'h:mm a')
+              });
+            }
+          }
+        });
+        
+        currentTime = addMinutes(currentTime, 15);
+      }
+    });
+
+    return timeSlots;
   };
 
   const handleConfirmBooking = () => {
-    if (!selectedCoach || !selectedDate || !selectedTime) return;
+    if (!selectedCoach || !selectedDate || !selectedTime || !selectedService) return;
 
     const bookingData = {
       coach_id: selectedCoach.id,
@@ -130,8 +164,8 @@ export default function BookSession() {
       player_email: playerEmail,
       date: format(selectedDate, 'yyyy-MM-dd'),
       start_time: selectedTime,
-      duration: selectedCoach.session_duration || 60,
-      session_type: sessionType,
+      duration: selectedService.duration,
+      session_type: selectedService.service,
       status: 'Scheduled',
       notes: notes
     };
@@ -139,203 +173,235 @@ export default function BookSession() {
     createBookingMutation.mutate(bookingData);
   };
 
-  const handleSaveAvailability = (availabilityData) => {
-    if (selectedCoach && !selectedCoach.isAdmin) {
-      updateCoachMutation.mutate({
-        id: selectedCoach.id,
-        data: availabilityData
-      });
-    }
-  };
+  const availableDates = getAvailableDates();
+  const availableTimeSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Book a Training Session</h1>
-        <p className="text-slate-600 mt-1">Schedule one-on-one sessions with our coaches</p>
+        <p className="text-slate-600 mt-1">Select a coach, date, and time for your session</p>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
+      {/* Coach Selection */}
+      <Card className="border-none shadow-lg mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5 text-emerald-600" />
+            Select Coach
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {coaches.map(coach => (
+              <button
+                key={coach.id}
+                onClick={() => {
+                  setSelectedCoach(coach);
+                  setSelectedDate(null);
+                  setSelectedTime(null);
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  selectedCoach?.id === coach.id
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-slate-200 hover:border-emerald-300'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
+                    {coach.full_name.charAt(0)}
+                  </div>
+                  <div className="font-semibold text-slate-900">{coach.full_name}</div>
+                  <div className="text-xs text-slate-600">{coach.specialization}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedCoach && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Calendar */}
           <Card className="border-none shadow-lg">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5 text-emerald-600" />
-                Select Coach
-              </CardTitle>
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-emerald-600" />
+                  Select Date
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm font-medium px-4">
+                    {format(currentMonth, 'MMMM yyyy')}
+                  </span>
+                  <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                {allCoachOptions.map(coach => (
-                  <button
-                    key={coach.id}
-                    onClick={() => {
-                      setSelectedCoach(coach);
-                      setCurrentWeek(new Date());
-                    }}
-                    className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                      selectedCoach?.id === coach.id
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-slate-200 hover:border-emerald-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-semibold text-slate-900 flex items-center gap-2">
-                          {coach.full_name}
-                          {coach.isAdmin && <Shield className="w-4 h-4 text-slate-500" />}
-                        </div>
-                        <div className="text-sm text-slate-600">{coach.specialization}</div>
-                      </div>
-                      {selectedCoach?.id === coach.id && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAvailabilityDialog(true);
-                          }}
-                          className="h-8 w-8"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </button>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center text-xs font-semibold text-slate-600 py-2">
+                    {day}
+                  </div>
                 ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {eachDayOfInterval({
+                  start: startOfMonth(currentMonth),
+                  end: endOfMonth(currentMonth)
+                }).map((day, idx) => {
+                  const isAvailable = availableDates.some(d => isSameDay(d, day));
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  const isPast = isBefore(day, new Date()) && !isToday(day);
+                  
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => isAvailable && setSelectedDate(day)}
+                      disabled={!isAvailable || isPast}
+                      className={`
+                        aspect-square rounded-lg text-sm font-medium transition-all
+                        ${isSelected ? 'bg-emerald-600 text-white shadow-lg' : ''}
+                        ${isAvailable && !isSelected ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : ''}
+                        ${!isAvailable ? 'text-slate-300 cursor-not-allowed' : ''}
+                        ${isToday(day) && !isSelected ? 'border-2 border-emerald-500' : ''}
+                      `}
+                    >
+                      {format(day, 'd')}
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="lg:col-span-3">
-          {!selectedCoach ? (
-            <Card className="border-none shadow-lg">
-              <CardContent className="p-12 text-center">
-                <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Coach</h3>
-                <p className="text-slate-600">Choose a coach to view their calendar and availability</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-none shadow-lg">
-              <CardHeader className="border-b border-slate-100">
-                <div className="flex items-center justify-between">
-                  <CardTitle>{selectedCoach.full_name}'s Calendar</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <span className="text-sm font-medium px-4">
-                      {format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d')} - 
-                      {format(addWeeks(startOfWeek(currentWeek, { weekStartsOn: 1 }), 1), 'MMM d, yyyy')}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+          {/* Time Slots */}
+          <Card className="border-none shadow-lg">
+            <CardHeader className="border-b">
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-emerald-600" />
+                Available Times
+                {selectedDate && (
+                  <span className="text-sm font-normal text-slate-600 ml-2">
+                    {format(selectedDate, 'EEEE, MMM d')}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {!selectedDate ? (
+                <div className="text-center py-12">
+                  <CalendarIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">Select a date to view available times</p>
                 </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <CoachCalendarView
-                  selectedWeek={currentWeek}
-                  coach={selectedCoach}
-                  bookings={coachBookings}
-                  onTimeSlotClick={handleTimeSlotClick}
-                />
-              </CardContent>
-            </Card>
-          )}
+              ) : availableTimeSlots.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">No available time slots for this date</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {availableTimeSlots.map((slot, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedTime(slot.time);
+                        setSelectedService({ service: slot.service, duration: slot.duration });
+                        setShowBookingDialog(true);
+                      }}
+                      className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: slot.color }}
+                          />
+                          <div>
+                            <div className="font-semibold text-slate-900">{slot.displayTime}</div>
+                            <div className="text-sm text-slate-600">{slot.service} ({slot.duration} min)</div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-400" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
 
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Booking</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="p-4 bg-emerald-50 rounded-lg">
-              <div className="text-sm text-slate-600">Booking with</div>
-              <div className="font-semibold text-slate-900">{selectedCoach?.full_name}</div>
-              <div className="text-sm text-slate-600 mt-2">
-                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
+        <DialogContent className="max-w-md">
+          {bookingConfirmed ? (
+            <div className="text-center py-8">
+              <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Booking Confirmed!</h3>
+              <p className="text-slate-600">You'll receive a confirmation email shortly.</p>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Confirm Your Booking</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="p-4 bg-emerald-50 rounded-lg">
+                  <div className="text-sm text-slate-600">Coach</div>
+                  <div className="font-semibold text-slate-900">{selectedCoach?.full_name}</div>
+                  <div className="text-sm text-slate-600 mt-2">
+                    {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime && format(parse(selectedTime, 'HH:mm', new Date()), 'h:mm a')}
+                  </div>
+                  <div className="text-sm text-emerald-700 font-medium mt-1">
+                    {selectedService?.service} ({selectedService?.duration} minutes)
+                  </div>
+                </div>
+                <div>
+                  <Label>Your Name *</Label>
+                  <Input
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div>
+                  <Label>Your Email *</Label>
+                  <Input
+                    type="email"
+                    value={playerEmail}
+                    onChange={(e) => setPlayerEmail(e.target.value)}
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <Label>Notes (Optional)</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any specific goals or requests..."
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <Label>Your Name *</Label>
-              <Input
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Enter your name"
-              />
-            </div>
-            <div>
-              <Label>Your Email *</Label>
-              <Input
-                type="email"
-                value={playerEmail}
-                onChange={(e) => setPlayerEmail(e.target.value)}
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <Label>Session Type</Label>
-              <Select value={sessionType} onValueChange={setSessionType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Individual Training">Individual Training</SelectItem>
-                  <SelectItem value="Evaluation Session">Evaluation Session</SelectItem>
-                  <SelectItem value="Physical Assessment">Physical Assessment</SelectItem>
-                  <SelectItem value="Tactical Review">Tactical Review</SelectItem>
-                  <SelectItem value="Mental Coaching">Mental Coaching</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Notes (Optional)</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any specific goals or requests..."
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmBooking}
-              disabled={!playerName || !playerEmail || createBookingMutation.isPending}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-            >
-              Confirm Booking
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Availability - {selectedCoach?.full_name}</DialogTitle>
-          </DialogHeader>
-          {selectedCoach && (
-            <CoachAvailabilitySettings
-              coach={selectedCoach}
-              onSave={handleSaveAvailability}
-            />
+              <div className="flex gap-3 mt-6">
+                <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmBooking}
+                  disabled={!playerName || !playerEmail || createBookingMutation.isPending}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Confirm Booking
+                </Button>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
