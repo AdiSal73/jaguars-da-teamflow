@@ -16,6 +16,7 @@ import CoachManagement from './pages/CoachManagement';
 import TeamDetail from './pages/TeamDetail';
 import Availability from './pages/Availability';
 import UserManagement from './pages/UserManagement';
+import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "TeamDetail": TeamDetail,
     "Availability": Availability,
     "UserManagement": UserManagement,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {

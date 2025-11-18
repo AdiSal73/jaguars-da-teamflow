@@ -1,37 +1,28 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Send, Reply, MessageSquare } from 'lucide-react';
+import { Plus, Send, Reply, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Messages() {
   const [showSendDialog, setShowSendDialog] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [newMessage, setNewMessage] = useState({
     recipient_id: '',
     team_id: '',
     subject: '',
     message: '',
-    send_to_type: 'player'
+    send_to_type: 'player',
+    is_broadcast: false
   });
 
   const queryClient = useQueryClient();
@@ -56,8 +47,28 @@ export default function Messages() {
     queryFn: () => base44.entities.Team.list()
   });
 
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
   const sendMessageMutation = useMutation({
-    mutationFn: (data) => base44.entities.Message.create(data),
+    mutationFn: async (data) => {
+      if (data.is_broadcast && data.team_id) {
+        // Send to all players in the team
+        const teamPlayers = players.filter(p => p.team_id === data.team_id);
+        const promises = teamPlayers.map(player => 
+          base44.entities.Message.create({
+            ...data,
+            recipient_id: player.id,
+            recipient_name: player.full_name
+          })
+        );
+        return Promise.all(promises);
+      } else {
+        return base44.entities.Message.create(data);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['messages']);
       setShowSendDialog(false);
@@ -66,7 +77,8 @@ export default function Messages() {
         team_id: '',
         subject: '',
         message: '',
-        send_to_type: 'player'
+        send_to_type: 'player',
+        is_broadcast: false
       });
     }
   });
@@ -97,13 +109,18 @@ export default function Messages() {
       subject: newMessage.subject,
       message: newMessage.message,
       read: false,
-      replies: []
+      replies: [],
+      is_broadcast: newMessage.is_broadcast
     };
 
     if (newMessage.send_to_type === 'player') {
       const player = players.find(p => p.id === newMessage.recipient_id);
       messageData.recipient_id = newMessage.recipient_id;
       messageData.recipient_name = player?.full_name;
+    } else if (newMessage.send_to_type === 'coach') {
+      const coach = coaches.find(c => c.id === newMessage.recipient_id);
+      messageData.recipient_id = newMessage.recipient_id;
+      messageData.recipient_name = coach?.full_name;
     } else {
       const team = teams.find(t => t.id === newMessage.team_id);
       messageData.team_id = newMessage.team_id;
@@ -124,18 +141,28 @@ export default function Messages() {
   };
 
   const handleOpenMessage = (message) => {
-    setSelectedMessage(message);
+    setSelectedConversation(message);
     if (!message.read && message.recipient_id === user.id) {
       markReadMutation.mutate(message.id);
     }
   };
 
-  const myMessages = messages.filter(m => 
-    m.recipient_id === user.id || m.sender_id === user.id ||
-    (m.team_id && players.find(p => p.id === user.id && p.team_id === m.team_id))
+  // Group messages by conversation
+  const directMessages = messages.filter(m => 
+    (m.recipient_id === user.id || m.sender_id === user.id) && !m.team_id
   );
 
-  const unreadCount = myMessages.filter(m => !m.read && m.recipient_id === user.id).length;
+  const teamMessages = messages.filter(m => {
+    if (m.team_id) {
+      const playerInTeam = players.find(p => p.id === user.id && p.team_id === m.team_id);
+      const coachInTeam = coaches.find(c => c.email === user.email && c.team_ids?.includes(m.team_id));
+      return playerInTeam || coachInTeam || user.role === 'admin';
+    }
+    return false;
+  });
+
+  const unreadDirect = directMessages.filter(m => !m.read && m.recipient_id === user.id).length;
+  const unreadTeam = teamMessages.filter(m => !m.read && m.recipient_id === user.id).length;
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -143,7 +170,7 @@ export default function Messages() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Messages</h1>
           <p className="text-slate-600 mt-1">
-            {unreadCount > 0 && `${unreadCount} unread messages`}
+            {unreadDirect + unreadTeam > 0 && `${unreadDirect + unreadTeam} unread messages`}
           </p>
         </div>
         <Button onClick={() => setShowSendDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
@@ -152,113 +179,239 @@ export default function Messages() {
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="border-none shadow-lg">
-            <CardHeader>
-              <CardTitle>Inbox</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {myMessages.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    <p>No messages yet</p>
+      <Tabs defaultValue="direct" className="w-full">
+        <TabsList>
+          <TabsTrigger value="direct">
+            Direct Messages {unreadDirect > 0 && <Badge className="ml-2 bg-blue-600">{unreadDirect}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="team">
+            Team Messages {unreadTeam > 0 && <Badge className="ml-2 bg-blue-600">{unreadTeam}</Badge>}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="direct">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Direct Messages</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {directMessages.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">
+                        <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p>No messages yet</p>
+                      </div>
+                    ) : (
+                      directMessages.map(message => (
+                        <button
+                          key={message.id}
+                          onClick={() => handleOpenMessage(message)}
+                          className={`w-full p-3 rounded-xl text-left transition-all ${
+                            selectedConversation?.id === message.id
+                              ? 'bg-emerald-50 border-2 border-emerald-500'
+                              : message.read
+                              ? 'bg-slate-50 hover:bg-slate-100'
+                              : 'bg-blue-50 hover:bg-blue-100 border-2 border-blue-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-slate-900 text-sm">
+                              {message.sender_id === user.id ? `To: ${message.recipient_name}` : message.sender_name}
+                            </span>
+                            {!message.read && message.recipient_id === user.id && (
+                              <Badge className="bg-blue-600 text-white text-xs">New</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-slate-600 truncate">{message.subject}</div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            {new Date(message.created_date).toLocaleDateString()}
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
-                ) : (
-                  myMessages.map(message => (
-                    <button
-                      key={message.id}
-                      onClick={() => handleOpenMessage(message)}
-                      className={`w-full p-3 rounded-xl text-left transition-all ${
-                        selectedMessage?.id === message.id
-                          ? 'bg-emerald-50 border-2 border-emerald-500'
-                          : message.read
-                          ? 'bg-slate-50 hover:bg-slate-100'
-                          : 'bg-blue-50 hover:bg-blue-100 border-2 border-blue-200'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-semibold text-slate-900 text-sm">
-                          {message.sender_id === user.id ? `To: ${message.recipient_name}` : message.sender_name}
-                        </span>
-                        {!message.read && message.recipient_id === user.id && (
-                          <Badge className="bg-blue-600 text-white text-xs">New</Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-slate-600 truncate">{message.subject}</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {new Date(message.created_date).toLocaleDateString()}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        <div className="lg:col-span-2">
-          {selectedMessage ? (
-            <Card className="border-none shadow-lg">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle>{selectedMessage.subject}</CardTitle>
-                <div className="text-sm text-slate-600">
-                  From: {selectedMessage.sender_name} • {new Date(selectedMessage.created_date).toLocaleString()}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="mb-6">
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedMessage.message}</p>
-                </div>
+            <div className="lg:col-span-2">
+              {selectedConversation && !selectedConversation.team_id ? (
+                <Card className="border-none shadow-lg">
+                  <CardHeader className="border-b border-slate-100">
+                    <CardTitle>{selectedConversation.subject}</CardTitle>
+                    <div className="text-sm text-slate-600">
+                      From: {selectedConversation.sender_name} • {new Date(selectedConversation.created_date).toLocaleString()}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="mb-6">
+                      <p className="text-slate-700 whitespace-pre-wrap">{selectedConversation.message}</p>
+                    </div>
 
-                {selectedMessage.replies && selectedMessage.replies.length > 0 && (
-                  <div className="mb-6 space-y-3">
-                    <h4 className="font-semibold text-slate-900">Replies</h4>
-                    {selectedMessage.replies.map((reply, idx) => (
-                      <div key={idx} className="p-4 bg-slate-50 rounded-xl">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-slate-900">{reply.sender_name}</span>
-                          <span className="text-xs text-slate-500">
-                            {new Date(reply.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-slate-700">{reply.message}</p>
+                    {selectedConversation.replies && selectedConversation.replies.length > 0 && (
+                      <div className="mb-6 space-y-3">
+                        <h4 className="font-semibold text-slate-900">Replies</h4>
+                        {selectedConversation.replies.map((reply, idx) => (
+                          <div key={idx} className="p-4 bg-slate-50 rounded-xl">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-medium text-slate-900">{reply.sender_name}</span>
+                              <span className="text-xs text-slate-500">
+                                {new Date(reply.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-slate-700">{reply.message}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+
+                    <div className="border-t border-slate-200 pt-4">
+                      <Label>Reply</Label>
+                      <Textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Type your reply..."
+                        className="mt-2"
+                      />
+                      <Button
+                        onClick={() => handleReply(selectedConversation.id)}
+                        disabled={!replyText}
+                        className="mt-3 bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <Reply className="w-4 h-4 mr-2" />
+                        Send Reply
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-none shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Message</h3>
+                    <p className="text-slate-600">Choose a message to view</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="team">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Team Messages
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {teamMessages.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">
+                        <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p>No team messages</p>
+                      </div>
+                    ) : (
+                      teamMessages.map(message => (
+                        <button
+                          key={message.id}
+                          onClick={() => handleOpenMessage(message)}
+                          className={`w-full p-3 rounded-xl text-left transition-all ${
+                            selectedConversation?.id === message.id
+                              ? 'bg-emerald-50 border-2 border-emerald-500'
+                              : message.read
+                              ? 'bg-slate-50 hover:bg-slate-100'
+                              : 'bg-blue-50 hover:bg-blue-100 border-2 border-blue-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-slate-900 text-sm">
+                              {message.recipient_name}
+                            </span>
+                            {!message.read && message.recipient_id === user.id && (
+                              <Badge className="bg-blue-600 text-white text-xs">New</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-slate-600 truncate">{message.subject}</div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            From: {message.sender_name}
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            </div>
 
-                <div className="border-t border-slate-200 pt-4">
-                  <Label>Reply</Label>
-                  <Textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your reply..."
-                    className="mt-2"
-                  />
-                  <Button
-                    onClick={() => handleReply(selectedMessage.id)}
-                    disabled={!replyText}
-                    className="mt-3 bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    <Reply className="w-4 h-4 mr-2" />
-                    Send Reply
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-none shadow-lg">
-              <CardContent className="p-12 text-center">
-                <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Message</h3>
-                <p className="text-slate-600">Choose a message from the inbox to view</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+            <div className="lg:col-span-2">
+              {selectedConversation && selectedConversation.team_id ? (
+                <Card className="border-none shadow-lg">
+                  <CardHeader className="border-b border-slate-100">
+                    <CardTitle>{selectedConversation.subject}</CardTitle>
+                    <div className="text-sm text-slate-600">
+                      From: {selectedConversation.sender_name} • To: {selectedConversation.recipient_name}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="mb-6">
+                      <p className="text-slate-700 whitespace-pre-wrap">{selectedConversation.message}</p>
+                    </div>
+
+                    {selectedConversation.replies && selectedConversation.replies.length > 0 && (
+                      <div className="mb-6 space-y-3">
+                        <h4 className="font-semibold text-slate-900">Discussion</h4>
+                        {selectedConversation.replies.map((reply, idx) => (
+                          <div key={idx} className="p-4 bg-slate-50 rounded-xl">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-medium text-slate-900">{reply.sender_name}</span>
+                              <span className="text-xs text-slate-500">
+                                {new Date(reply.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-slate-700">{reply.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="border-t border-slate-200 pt-4">
+                      <Label>Reply to Team</Label>
+                      <Textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Type your reply..."
+                        className="mt-2"
+                      />
+                      <Button
+                        onClick={() => handleReply(selectedConversation.id)}
+                        disabled={!replyText}
+                        className="mt-3 bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <Reply className="w-4 h-4 mr-2" />
+                        Send Reply
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-none shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Team Message</h3>
+                    <p className="text-slate-600">Choose a team message to view</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent>
@@ -268,18 +421,20 @@ export default function Messages() {
           <div className="space-y-4 mt-4">
             <div>
               <Label>Send To</Label>
-              <Select value={newMessage.send_to_type} onValueChange={(value) => setNewMessage({...newMessage, send_to_type: value, recipient_id: '', team_id: ''})}>
+              <Select value={newMessage.send_to_type} onValueChange={(value) => setNewMessage({...newMessage, send_to_type: value, recipient_id: '', team_id: '', is_broadcast: false})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="player">Individual Player</SelectItem>
-                  <SelectItem value="team">Entire Team</SelectItem>
+                  <SelectItem value="coach">Individual Coach</SelectItem>
+                  <SelectItem value="team">Team (Group Chat)</SelectItem>
+                  <SelectItem value="broadcast">Broadcast to Team</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {newMessage.send_to_type === 'player' ? (
+            {newMessage.send_to_type === 'player' && (
               <div>
                 <Label>Select Player</Label>
                 <Select value={newMessage.recipient_id} onValueChange={(value) => setNewMessage({...newMessage, recipient_id: value})}>
@@ -293,10 +448,34 @@ export default function Messages() {
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
+            )}
+
+            {newMessage.send_to_type === 'coach' && (
+              <div>
+                <Label>Select Coach</Label>
+                <Select value={newMessage.recipient_id} onValueChange={(value) => setNewMessage({...newMessage, recipient_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose coach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coaches.map(coach => (
+                      <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {(newMessage.send_to_type === 'team' || newMessage.send_to_type === 'broadcast') && (
               <div>
                 <Label>Select Team</Label>
-                <Select value={newMessage.team_id} onValueChange={(value) => setNewMessage({...newMessage, team_id: value})}>
+                <Select value={newMessage.team_id} onValueChange={(value) => {
+                  setNewMessage({
+                    ...newMessage, 
+                    team_id: value, 
+                    is_broadcast: newMessage.send_to_type === 'broadcast'
+                  });
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose team" />
                   </SelectTrigger>
@@ -306,6 +485,11 @@ export default function Messages() {
                     ))}
                   </SelectContent>
                 </Select>
+                {newMessage.send_to_type === 'broadcast' && (
+                  <p className="text-xs text-slate-600 mt-2">
+                    This will send individual messages to all players in the team
+                  </p>
+                )}
               </div>
             )}
 

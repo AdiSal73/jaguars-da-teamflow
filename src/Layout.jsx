@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp, MessageSquare, UserCog, ChevronDown, Menu, Clock, Bell } from "lucide-react";
+import { LayoutDashboard, Users, Shield, Calendar, ClipboardList, Activity, LogOut, Settings, TrendingUp, MessageSquare, UserCog, ChevronDown, Menu, Clock, Bell, BarChart3 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Sidebar,
@@ -32,6 +31,11 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
+    title: "Analytics",
+    url: createPageUrl("Analytics"),
+    icon: BarChart3,
+  },
+  {
     title: "Club Management",
     url: createPageUrl("ClubManagement"),
     icon: Settings,
@@ -46,6 +50,11 @@ const navigationItems = [
     title: "Coach Management",
     url: createPageUrl("CoachManagement"),
     icon: UserCog,
+  },
+  {
+    title: "Teams",
+    url: createPageUrl("Teams"),
+    icon: Shield,
   },
   {
     title: "Players",

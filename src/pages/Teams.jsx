@@ -1,27 +1,28 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Users, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { Plus, Users, User, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export default function Teams() {
   const [showDialog, setShowDialog] = useState(false);
-  const [newTeam, setNewTeam] = useState({
+  const [editingTeam, setEditingTeam] = useState(null);
+  const [deleteTeamId, setDeleteTeamId] = useState(null);
+  const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
     division: '',
     season: '',
-    team_color: '#22c55e'
+    team_color: '#22c55e',
+    coach_ids: []
   });
 
   const queryClient = useQueryClient();
@@ -43,101 +44,119 @@ export default function Teams() {
 
   const createTeamMutation = useMutation({
     mutationFn: (data) => base44.entities.Team.create(data),
-    onSuccess: () => {
+    onSuccess: async (newTeam) => {
+      // Update coaches with team assignment
+      for (const coachId of teamForm.coach_ids) {
+        const coach = coaches.find(c => c.id === coachId);
+        if (coach) {
+          const updatedTeamIds = [...(coach.team_ids || []), newTeam.id];
+          await base44.entities.Coach.update(coachId, { team_ids: updatedTeamIds });
+        }
+      }
       queryClient.invalidateQueries(['teams']);
+      queryClient.invalidateQueries(['coaches']);
       setShowDialog(false);
-      setNewTeam({
-        name: '',
-        age_group: '',
-        division: '',
-        season: '',
-        team_color: '#22c55e'
-      });
+      resetForm();
     }
   });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Team.update(id, data),
+    onSuccess: async () => {
+      // Update all coaches
+      for (const coach of coaches) {
+        const shouldHaveTeam = teamForm.coach_ids.includes(coach.id);
+        const hasTeam = coach.team_ids?.includes(editingTeam.id);
+        
+        if (shouldHaveTeam && !hasTeam) {
+          await base44.entities.Coach.update(coach.id, { 
+            team_ids: [...(coach.team_ids || []), editingTeam.id] 
+          });
+        } else if (!shouldHaveTeam && hasTeam) {
+          await base44.entities.Coach.update(coach.id, { 
+            team_ids: coach.team_ids.filter(tid => tid !== editingTeam.id) 
+          });
+        }
+      }
+      queryClient.invalidateQueries(['teams']);
+      queryClient.invalidateQueries(['coaches']);
+      setShowDialog(false);
+      setEditingTeam(null);
+      resetForm();
+    }
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: (id) => base44.entities.Team.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams']);
+      setDeleteTeamId(null);
+    }
+  });
+
+  const resetForm = () => {
+    setTeamForm({
+      name: '',
+      age_group: '',
+      division: '',
+      season: '',
+      team_color: '#22c55e',
+      coach_ids: []
+    });
+  };
+
+  const handleEdit = (team) => {
+    setEditingTeam(team);
+    const assignedCoaches = coaches.filter(c => c.team_ids?.includes(team.id)).map(c => c.id);
+    setTeamForm({
+      name: team.name || '',
+      age_group: team.age_group || '',
+      division: team.division || '',
+      season: team.season || '',
+      team_color: team.team_color || '#22c55e',
+      coach_ids: assignedCoaches
+    });
+    setShowDialog(true);
+  };
+
+  const handleSave = () => {
+    if (editingTeam) {
+      updateTeamMutation.mutate({ id: editingTeam.id, data: teamForm });
+    } else {
+      createTeamMutation.mutate(teamForm);
+    }
+  };
+
+  const toggleCoach = (coachId) => {
+    setTeamForm({
+      ...teamForm,
+      coach_ids: teamForm.coach_ids.includes(coachId)
+        ? teamForm.coach_ids.filter(id => id !== coachId)
+        : [...teamForm.coach_ids, coachId]
+    });
+  };
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Teams</h1>
-          <p className="text-slate-600 mt-1">Manage your club's team structure</p>
+          <h1 className="text-3xl font-bold text-slate-900">Teams Management</h1>
+          <p className="text-slate-600 mt-1">Manage teams and assign coaches</p>
         </div>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Team
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Team</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Team Name *</Label>
-                <Input
-                  value={newTeam.name}
-                  onChange={(e) => setNewTeam({...newTeam, name: e.target.value})}
-                  placeholder="e.g., Elite Squad"
-                />
-              </div>
-              <div>
-                <Label>Age Group *</Label>
-                <Input
-                  value={newTeam.age_group}
-                  onChange={(e) => setNewTeam({...newTeam, age_group: e.target.value})}
-                  placeholder="e.g., U-15, U-18, Senior"
-                />
-              </div>
-              <div>
-                <Label>Division</Label>
-                <Input
-                  value={newTeam.division}
-                  onChange={(e) => setNewTeam({...newTeam, division: e.target.value})}
-                  placeholder="e.g., Premier League"
-                />
-              </div>
-              <div>
-                <Label>Season</Label>
-                <Input
-                  value={newTeam.season}
-                  onChange={(e) => setNewTeam({...newTeam, season: e.target.value})}
-                  placeholder="e.g., 2024/2025"
-                />
-              </div>
-              <div>
-                <Label>Team Color</Label>
-                <Input
-                  type="color"
-                  value={newTeam.team_color}
-                  onChange={(e) => setNewTeam({...newTeam, team_color: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={() => createTeamMutation.mutate(newTeam)}
-                disabled={!newTeam.name || !newTeam.age_group}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                Create Team
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => { setEditingTeam(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Team
+        </Button>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teams.map(team => {
           const teamPlayers = players.filter(p => p.team_id === team.id);
-          const headCoach = coaches.find(c => c.id === team.head_coach_id);
+          const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
 
           return (
-            <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="border-b border-slate-100" style={{ backgroundColor: `${team.team_color}20` }}>
+            <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <CardHeader className="border-b border-slate-100 relative" style={{ backgroundColor: `${team.team_color}20` }}>
                 <CardTitle className="flex items-center gap-3">
                   <div 
                     className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
@@ -145,11 +164,21 @@ export default function Teams() {
                   >
                     {team.name.charAt(0)}
                   </div>
-                  <div>
-                    <div className="text-lg">{team.name}</div>
+                  <div className="flex-1">
+                    <Link to={`${createPageUrl('TeamDashboard')}?teamId=${team.id}`} className="hover:text-emerald-600">
+                      <div className="text-lg">{team.name}</div>
+                    </Link>
                     <div className="text-sm font-normal text-slate-600">{team.age_group}</div>
                   </div>
                 </CardTitle>
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(team)} className="bg-white shadow-sm">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteTeamId(team.id)} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-3">
@@ -172,13 +201,15 @@ export default function Teams() {
                       {teamPlayers.length}
                     </span>
                   </div>
-                  {headCoach && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">Head Coach:</span>
-                      <span className="font-medium text-slate-900 flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {headCoach.full_name}
-                      </span>
+                  {teamCoaches.length > 0 && (
+                    <div className="pt-3 border-t border-slate-100">
+                      <div className="text-xs text-slate-600 mb-2">Assigned Coaches:</div>
+                      {teamCoaches.map(coach => (
+                        <div key={coach.id} className="flex items-center gap-2 text-sm mb-1">
+                          <User className="w-3 h-3 text-emerald-600" />
+                          <span className="text-slate-700">{coach.full_name}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -193,6 +224,102 @@ export default function Teams() {
           <p className="text-slate-500">No teams yet. Create your first team to get started.</p>
         </div>
       )}
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingTeam ? 'Edit Team' : 'Create New Team'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Team Name *</Label>
+              <Input
+                value={teamForm.name}
+                onChange={(e) => setTeamForm({...teamForm, name: e.target.value})}
+                placeholder="e.g., Elite Squad"
+              />
+            </div>
+            <div>
+              <Label>Age Group *</Label>
+              <Input
+                value={teamForm.age_group}
+                onChange={(e) => setTeamForm({...teamForm, age_group: e.target.value})}
+                placeholder="e.g., U-15, U-18, Senior"
+              />
+            </div>
+            <div>
+              <Label>Division</Label>
+              <Input
+                value={teamForm.division}
+                onChange={(e) => setTeamForm({...teamForm, division: e.target.value})}
+                placeholder="e.g., Premier League"
+              />
+            </div>
+            <div>
+              <Label>Season</Label>
+              <Input
+                value={teamForm.season}
+                onChange={(e) => setTeamForm({...teamForm, season: e.target.value})}
+                placeholder="e.g., 2024/2025"
+              />
+            </div>
+            <div>
+              <Label>Team Color</Label>
+              <Input
+                type="color"
+                value={teamForm.team_color}
+                onChange={(e) => setTeamForm({...teamForm, team_color: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label className="mb-3 block">Assign Coaches</Label>
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                {coaches.map(coach => (
+                  <div key={coach.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={coach.id}
+                      checked={teamForm.coach_ids.includes(coach.id)}
+                      onCheckedChange={() => toggleCoach(coach.id)}
+                    />
+                    <label htmlFor={coach.id} className="text-sm text-slate-700 cursor-pointer">
+                      {coach.full_name} - {coach.specialization}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={() => { setShowDialog(false); setEditingTeam(null); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={!teamForm.name || !teamForm.age_group}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {editingTeam ? 'Update Team' : 'Create Team'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteTeamId} onOpenChange={() => setDeleteTeamId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Team?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this team. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTeamMutation.mutate(deleteTeamId)} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
