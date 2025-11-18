@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -8,25 +9,91 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: players = [], isLoading: loadingPlayers } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list()
+    queryFn: async () => {
+      const allPlayers = await base44.entities.Player.list();
+      if (user?.role === 'user') {
+        return allPlayers.filter(p => p.email === user.email);
+      }
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        if (currentCoach?.team_ids) {
+          return allPlayers.filter(p => currentCoach.team_ids.includes(p.team_id));
+        }
+      }
+      return allPlayers;
+    },
+    enabled: !!user
   });
 
   const { data: teams = [], isLoading: loadingTeams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => base44.entities.Team.list()
+    queryFn: async () => {
+      const allTeams = await base44.entities.Team.list();
+      if (user?.role === 'user') return [];
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        if (currentCoach?.team_ids) {
+          return allTeams.filter(t => currentCoach.team_ids.includes(t.id));
+        }
+      }
+      return allTeams;
+    },
+    enabled: !!user
   });
 
   const { data: bookings = [], isLoading: loadingBookings } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => base44.entities.Booking.list('-created_date')
+    queryFn: async () => {
+      const allBookings = await base44.entities.Booking.list('-created_date', 10);
+      if (user?.role === 'user') {
+        return allBookings.filter(b => b.player_email === user.email);
+      }
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        return allBookings.filter(b => b.coach_id === currentCoach?.id);
+      }
+      return allBookings;
+    },
+    enabled: !!user
   });
 
   const { data: assessments = [], isLoading: loadingAssessments } = useQuery({
     queryKey: ['assessments'],
-    queryFn: () => base44.entities.PhysicalAssessment.list('-assessment_date')
+    queryFn: async () => {
+      const allAssessments = await base44.entities.PhysicalAssessment.list('-assessment_date', 10);
+      if (user?.role === 'user') {
+        const playerIds = players.map(p => p.id);
+        return allAssessments.filter(a => playerIds.includes(a.player_id));
+      }
+      if (user?.role === 'coach') {
+        const playerIds = players.map(p => p.id);
+        return allAssessments.filter(a => playerIds.includes(a.player_id));
+      }
+      return allAssessments;
+    },
+    enabled: !!user && players.length > 0
   });
+
+  // Redirect players to their profile
+  React.useEffect(() => {
+    if (user?.role === 'user' && players.length > 0) {
+      window.location.href = `${createPageUrl('PlayerProfile')}?id=${players[0].id}`;
+    }
+  }, [user, players]);
+
+  if (user?.role === 'user') {
+    return <div className="p-8 text-center">Redirecting to your profile...</div>;
+  }
 
   const upcomingBookings = bookings.filter(b => 
     b.status === 'Scheduled' && new Date(b.date) >= new Date()

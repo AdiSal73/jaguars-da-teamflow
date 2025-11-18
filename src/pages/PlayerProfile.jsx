@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +104,10 @@ export default function PlayerProfile() {
 
   if (!player) return null;
 
+  const currentPlayerIndex = allPlayers.findIndex(p => p.id === playerId);
+  const previousPlayer = currentPlayerIndex > 0 ? allPlayers[currentPlayerIndex - 1] : null;
+  const nextPlayer = currentPlayerIndex < allPlayers.length - 1 ? allPlayers[currentPlayerIndex + 1] : null;
+
   const team = teams.find(t => t.id === player.team_id);
   const latestAssessment = assessments[0];
 
@@ -136,14 +140,33 @@ export default function PlayerProfile() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <Button
-        variant="ghost"
-        onClick={() => navigate(-1)}
-        className="mb-6"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={!previousPlayer}
+            onClick={() => navigate(`/player-profile?id=${previousPlayer.id}`)}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!nextPlayer}
+            onClick={() => navigate(`/player-profile?id=${nextPlayer.id}`)}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-none shadow-lg">
