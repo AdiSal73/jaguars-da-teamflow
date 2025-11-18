@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Shield, Save } from 'lucide-react';
@@ -21,7 +21,7 @@ export default function UserManagement() {
     user: null
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const adminPerms = permissions.find(p => p.role_name === 'admin');
     const coachPerms = permissions.find(p => p.role_name === 'coach');
     const userPerms = permissions.find(p => p.role_name === 'user');

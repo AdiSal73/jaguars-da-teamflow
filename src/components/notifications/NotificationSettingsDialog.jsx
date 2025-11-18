@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -36,7 +36,7 @@ export default function NotificationSettingsDialog({ open, onOpenChange }) {
 
   const [localSettings, setLocalSettings] = useState(settings);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings) setLocalSettings(settings);
   }, [settings]);
 

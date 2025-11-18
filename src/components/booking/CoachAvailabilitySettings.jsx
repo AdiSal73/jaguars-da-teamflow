@@ -31,7 +31,6 @@ export default function CoachAvailabilitySettings({ coach, onSave }) {
   );
 
   const [blackoutDates, setBlackoutDates] = useState(coach.holidays || []);
-  const [selectedDates, setSelectedDates] = useState([]);
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -74,15 +73,6 @@ export default function CoachAvailabilitySettings({ coach, onSave }) {
 
   const removeEventType = (index) => {
     setEventTypes(eventTypes.filter((_, i) => i !== index));
-  };
-
-  const handleDateSelect = (date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    if (blackoutDates.includes(dateStr)) {
-      setBlackoutDates(blackoutDates.filter(d => d !== dateStr));
-    } else {
-      setBlackoutDates([...blackoutDates, dateStr]);
-    }
   };
 
   const handleSave = () => {
