@@ -25,6 +25,7 @@ import CoachDashboard from './pages/CoachDashboard';
 import TeamCalendar from './pages/TeamCalendar';
 import TeamCommunication from './pages/TeamCommunication';
 import TeamDrills from './pages/TeamDrills';
+import MyBookings from './pages/MyBookings';
 import __Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "TeamCalendar": TeamCalendar,
     "TeamCommunication": TeamCommunication,
     "TeamDrills": TeamDrills,
+    "MyBookings": MyBookings,
 }
 
 export const pagesConfig = {

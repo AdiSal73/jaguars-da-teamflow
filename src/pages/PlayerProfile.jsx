@@ -320,14 +320,36 @@ export default function PlayerProfile() {
                           <div className="text-2xl font-bold text-pink-700">{latestAssessment.shuttle?.toFixed(2)}s</div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-3 mb-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                         {[
                           { label: 'Speed', score: latestAssessment.speed_score, color: '#ef4444' },
                           { label: 'Power', score: latestAssessment.power_score, color: '#3b82f6' },
                           { label: 'Endurance', score: latestAssessment.endurance_score, color: '#10b981' },
                           { label: 'Agility', score: latestAssessment.agility_score, color: '#ec4899' }
                         ].map(({ label, score, color }) => (
-                          <CircularChart key={label} value={score || 0} label={label} color={color} />
+                          <div key={label} className="flex flex-col items-center">
+                            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+                              <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="50%" cy="50%" r="28" stroke="#e5e7eb" strokeWidth="6" fill="none" />
+                                <circle 
+                                  cx="50%" 
+                                  cy="50%" 
+                                  r="28" 
+                                  stroke={color} 
+                                  strokeWidth="6" 
+                                  fill="none"
+                                  strokeDasharray={`${2 * Math.PI * 28}`}
+                                  strokeDashoffset={`${2 * Math.PI * 28 * (1 - (score || 0) / 100)}`}
+                                  strokeLinecap="round"
+                                  className="transition-all duration-500"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm sm:text-base font-bold text-slate-900">{score || 0}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs text-slate-600 mt-2">{label}</span>
+                          </div>
                         ))}
                       </div>
                       <div className="text-center p-4 bg-slate-900 rounded-xl">

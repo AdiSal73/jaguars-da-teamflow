@@ -17,6 +17,7 @@ export default function PublicBooking() {
   const coachId = urlParams.get('coach');
   
   const [selectedCoach, setSelectedCoach] = useState(null);
+  const [specializationFilter, setSpecializationFilter] = useState('all');
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -126,25 +127,43 @@ export default function PublicBooking() {
           </Card>
         )}
 
-        {coaches.length > 1 && (
-          <Card className="border-none shadow-lg mb-6">
-            <CardContent className="p-6">
-              <Label className="mb-2 block">Select Coach</Label>
-              <Select value={selectedCoach?.id} onValueChange={(id) => setSelectedCoach(coaches.find(c => c.id === id))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a coach" />
-                </SelectTrigger>
-                <SelectContent>
-                  {coaches.map(coach => (
-                    <SelectItem key={coach.id} value={coach.id}>
-                      {coach.full_name} - {coach.specialization}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        )}
+        <Card className="border-none shadow-lg mb-6">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="mb-2 block">Filter by Specialty</Label>
+                <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Specialties</SelectItem>
+                    <SelectItem value="Technical Training">Technical Training</SelectItem>
+                    <SelectItem value="Tactical Analysis">Tactical Analysis</SelectItem>
+                    <SelectItem value="Physical Conditioning">Physical Conditioning</SelectItem>
+                    <SelectItem value="Goalkeeping">Goalkeeping</SelectItem>
+                    <SelectItem value="Mental Coaching">Mental Coaching</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block">Select Coach</Label>
+                <Select value={selectedCoach?.id} onValueChange={(id) => setSelectedCoach(coaches.find(c => c.id === id))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a coach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coaches.filter(c => specializationFilter === 'all' || c.specialization === specializationFilter).map(coach => (
+                      <SelectItem key={coach.id} value={coach.id}>
+                        {coach.full_name} - {coach.specialization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {selectedCoach ? (
           <Card className="border-none shadow-xl">

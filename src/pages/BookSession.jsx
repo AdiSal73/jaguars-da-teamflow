@@ -123,17 +123,19 @@ export default function BookSession() {
 
       const startTime = parse(slot.start_time, 'HH:mm', date);
       const endTime = parse(slot.end_time, 'HH:mm', date);
+      const bufferBefore = slot.buffer_before || 0;
+      const bufferAfter = slot.buffer_after || 0;
       
-      let currentTime = startTime;
-      
-      while (currentTime < endTime) {
-        availableServices.forEach(service => {
-          const slotEnd = addMinutes(currentTime, service.duration);
-          const bufferEnd = addMinutes(slotEnd, slot.buffer_after || 0);
+      availableServices.forEach(service => {
+        let currentTime = startTime;
+        
+        while (currentTime < endTime) {
+          const sessionEnd = addMinutes(currentTime, service.duration);
+          const totalEnd = addMinutes(sessionEnd, bufferAfter);
           
-          if (bufferEnd <= endTime) {
+          if (totalEnd <= endTime) {
             const timeStr = format(currentTime, 'HH:mm');
-            const isBooked = dayBookings.some(b => b.start_time === timeStr);
+            const isBooked = dayBookings.some(b => b.start_time === timeStr && b.session_type === service.name);
             
             if (!isBooked) {
               timeSlots.push({
@@ -144,14 +146,16 @@ export default function BookSession() {
                 displayTime: format(currentTime, 'h:mm a')
               });
             }
+          } else {
+            break;
           }
-        });
-        
-        currentTime = addMinutes(currentTime, 15);
-      }
+          
+          currentTime = addMinutes(currentTime, service.duration + bufferAfter);
+        }
+      });
     });
 
-    return timeSlots;
+    return timeSlots.sort((a, b) => a.time.localeCompare(b.time));
   };
 
   const handleConfirmBooking = () => {

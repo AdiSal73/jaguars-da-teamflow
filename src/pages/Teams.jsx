@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Plus, Users, User, Edit, Trash2, BarChart3 } from 'lucide-react';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import CoachSelector from '../components/team/CoachSelector';
 
 export default function Teams() {
+  const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [deleteTeamId, setDeleteTeamId] = useState(null);
@@ -146,30 +147,33 @@ export default function Teams() {
           const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
 
           return (
-            <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <CardHeader className="border-b border-slate-100 relative" style={{ backgroundColor: `${team.team_color}20` }}>
-                <CardTitle className="flex items-center gap-3">
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: team.team_color }}
-                  >
-                    {team.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <Link to={`${createPageUrl('TeamDashboard')}?teamId=${team.id}`} className="hover:text-emerald-600">
+            <button
+              key={team.id}
+              onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
+              className="text-left"
+            >
+              <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
+                <CardHeader className="border-b border-slate-100 relative" style={{ backgroundColor: `${team.team_color}20` }}>
+                  <CardTitle className="flex items-center gap-3">
+                    <div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
+                      style={{ backgroundColor: team.team_color }}
+                    >
+                      {team.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
                       <div className="text-lg">{team.name}</div>
-                    </Link>
-                    <div className="text-sm font-normal text-slate-600">{team.age_group}</div>
-                  </div>
-                </CardTitle>
+                      <div className="text-sm font-normal text-slate-600">{team.age_group}</div>
+                    </div>
+                  </CardTitle>
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" onClick={() => setViewAnalyticsTeam(team)} className="bg-white shadow-sm">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`); }} className="bg-white shadow-sm">
                     <BarChart3 className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(team)} className="bg-white shadow-sm">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); handleEdit(team); }} className="bg-white shadow-sm">
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteTeamId(team.id)} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); setDeleteTeamId(team.id); }} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -207,10 +211,11 @@ export default function Teams() {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+                </Card>
+                </button>
+                );
+                })}
       </div>
 
       {teams.length === 0 && (
