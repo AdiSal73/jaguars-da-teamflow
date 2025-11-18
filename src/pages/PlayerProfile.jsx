@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { createPageUrl } from '@/utils';
+import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus, ChevronLeft, ChevronRight, X, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -161,13 +161,22 @@ export default function PlayerProfile() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`${createPageUrl('PlayerAssessmentAnalytics')}?playerId=${playerId}`)}
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            View Analytics
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"

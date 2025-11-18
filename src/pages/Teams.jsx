@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Users, User, Edit, Trash2 } from 'lucide-react';
+import { Plus, Users, User, Edit, Trash2, BarChart3 } from 'lucide-react';
+import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ export default function Teams() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [deleteTeamId, setDeleteTeamId] = useState(null);
+  const [viewAnalyticsTeam, setViewAnalyticsTeam] = useState(null);
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
@@ -161,6 +163,9 @@ export default function Teams() {
                   </div>
                 </CardTitle>
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" onClick={() => setViewAnalyticsTeam(team)} className="bg-white shadow-sm">
+                    <BarChart3 className="w-4 h-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(team)} className="bg-white shadow-sm">
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -300,6 +305,17 @@ export default function Teams() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!viewAnalyticsTeam} onOpenChange={() => setViewAnalyticsTeam(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Team Performance Analytics - {viewAnalyticsTeam?.name}</DialogTitle>
+          </DialogHeader>
+          {viewAnalyticsTeam && (
+            <TeamPerformanceAnalytics teamId={viewAnalyticsTeam.id} teamName={viewAnalyticsTeam.name} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
