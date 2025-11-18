@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -40,14 +41,45 @@ export default function TrainingPlans() {
 
   const queryClient = useQueryClient();
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: plans = [] } = useQuery({
     queryKey: ['trainingPlans'],
-    queryFn: () => base44.entities.TrainingPlan.list('-created_date')
+    queryFn: async () => {
+      const allPlans = await base44.entities.TrainingPlan.list('-created_date');
+      if (user?.role === 'user') {
+        const players = await base44.entities.Player.list();
+        const currentPlayer = players.find(p => p.email === user.email);
+        return allPlans.filter(p => p.player_id === currentPlayer?.id);
+      }
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        return allPlans.filter(p => p.coach_id === currentCoach?.id);
+      }
+      return allPlans;
+    },
+    enabled: !!user
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list()
+    queryFn: async () => {
+      const allPlayers = await base44.entities.Player.list();
+      if (user?.role === 'admin') return allPlayers;
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        if (currentCoach?.team_ids) {
+          return allPlayers.filter(p => currentCoach.team_ids.includes(p.team_id));
+        }
+      }
+      return [];
+    },
+    enabled: !!user
   });
 
   const createPlanMutation = useMutation({
@@ -68,11 +100,19 @@ export default function TrainingPlans() {
     }
   });
 
-  const handleCreatePlan = () => {
+  const handleCreatePlan = async () => {
     const player = players.find(p => p.id === newPlan.player_id);
+    let coachId = null;
+    if (user?.role === 'coach') {
+      const coaches = await base44.entities.Coach.list();
+      const currentCoach = coaches.find(c => c.email === user.email);
+      coachId = currentCoach?.id;
+    }
+
     createPlanMutation.mutate({
       ...newPlan,
       player_name: player?.full_name,
+      coach_id: coachId, // Add coach_id if the current user is a coach
       progress: 0
     });
   };
@@ -90,10 +130,12 @@ export default function TrainingPlans() {
           <h1 className="text-3xl font-bold text-slate-900">Training Plans</h1>
           <p className="text-slate-600 mt-1">Create and manage personalized training programs</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Plan
-        </Button>
+        {(user?.role === 'admin' || user?.role === 'coach') && (
+          <Button onClick={() => setShowDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Create Plan
+          </Button>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -143,72 +185,74 @@ export default function TrainingPlans() {
         </div>
       )}
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create Training Plan</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label>Player *</Label>
-              <Select value={newPlan.player_id} onValueChange={(value) => setNewPlan({...newPlan, player_id: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select player" />
-                </SelectTrigger>
-                <SelectContent>
-                  {players.map(player => (
-                    <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Plan Title *</Label>
-              <Input
-                value={newPlan.title}
-                onChange={(e) => setNewPlan({...newPlan, title: e.target.value})}
-                placeholder="e.g., Speed & Agility Development"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={newPlan.description}
-                onChange={(e) => setNewPlan({...newPlan, description: e.target.value})}
-                placeholder="Describe the training plan objectives..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+      {(user?.role === 'admin' || user?.role === 'coach') && (
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Training Plan</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
               <div>
-                <Label>Start Date *</Label>
+                <Label>Player *</Label>
+                <Select value={newPlan.player_id} onValueChange={(value) => setNewPlan({...newPlan, player_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map(player => (
+                      <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Plan Title *</Label>
                 <Input
-                  type="date"
-                  value={newPlan.start_date}
-                  onChange={(e) => setNewPlan({...newPlan, start_date: e.target.value})}
+                  value={newPlan.title}
+                  onChange={(e) => setNewPlan({...newPlan, title: e.target.value})}
+                  placeholder="e.g., Speed & Agility Development"
                 />
               </div>
               <div>
-                <Label>End Date *</Label>
-                <Input
-                  type="date"
-                  value={newPlan.end_date}
-                  onChange={(e) => setNewPlan({...newPlan, end_date: e.target.value})}
+                <Label>Description</Label>
+                <Textarea
+                  value={newPlan.description}
+                  onChange={(e) => setNewPlan({...newPlan, description: e.target.value})}
+                  placeholder="Describe the training plan objectives..."
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date *</Label>
+                  <Input
+                    type="date"
+                    value={newPlan.start_date}
+                    onChange={(e) => setNewPlan({...newPlan, start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>End Date *</Label>
+                  <Input
+                    type="date"
+                    value={newPlan.end_date}
+                    onChange={(e) => setNewPlan({...newPlan, end_date: e.target.value})}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-            <Button 
-              onClick={handleCreatePlan}
-              disabled={!newPlan.player_id || !newPlan.title || !newPlan.end_date}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Create Plan
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleCreatePlan}
+                disabled={!newPlan.player_id || !newPlan.title || !newPlan.end_date}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                Create Plan
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

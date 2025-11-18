@@ -39,6 +39,11 @@ export default function BookSession() {
 
   const queryClient = useQueryClient();
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
     queryFn: () => base44.entities.Coach.list()
@@ -46,12 +51,29 @@ export default function BookSession() {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: async () => {
+      if (user?.role === 'admin') {
+        return await base44.entities.User.list();
+      }
+      return [];
+    },
+    enabled: !!user
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => base44.entities.Booking.list()
+    queryFn: async () => {
+      const allBookings = await base44.entities.Booking.list();
+      if (user?.role === 'user') {
+        return allBookings.filter(b => b.player_email === user.email);
+      }
+      if (user?.role === 'coach') {
+        const currentCoach = coaches.find(c => c.email === user.email);
+        return allBookings.filter(b => b.coach_id === currentCoach?.id);
+      }
+      return allBookings;
+    },
+    enabled: !!user
   });
 
   const createBookingMutation = useMutation({

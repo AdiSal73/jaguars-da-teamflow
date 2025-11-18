@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -7,9 +8,32 @@ import { ClipboardList, TrendingUp, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function Evaluations() {
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: evaluations = [] } = useQuery({
     queryKey: ['evaluations'],
-    queryFn: () => base44.entities.Evaluation.list('-evaluation_date')
+    queryFn: async () => {
+      const allEvaluations = await base44.entities.Evaluation.list('-evaluation_date');
+      if (user?.role === 'user') {
+        const players = await base44.entities.Player.list();
+        const currentPlayer = players.find(p => p.email === user.email);
+        return allEvaluations.filter(e => e.player_id === currentPlayer?.id);
+      }
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        if (currentCoach?.team_ids) {
+          const teamPlayers = await base44.entities.Player.list();
+          const playerIds = teamPlayers.filter(p => currentCoach.team_ids.includes(p.team_id)).map(p => p.id);
+          return allEvaluations.filter(e => playerIds.includes(e.player_id));
+        }
+      }
+      return allEvaluations;
+    },
+    enabled: !!user
   });
 
   const { data: players = [] } = useQuery({
