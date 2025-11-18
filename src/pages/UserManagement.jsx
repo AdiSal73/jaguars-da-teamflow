@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save } from 'lucide-react';
+import { Shield, Save, Users as UsersIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -13,6 +15,11 @@ export default function UserManagement() {
   const { data: permissions = [] } = useQuery({
     queryKey: ['rolePermissions'],
     queryFn: () => base44.entities.RolePermissions.list()
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
   });
 
   const [localPermissions, setLocalPermissions] = useState({
@@ -49,6 +56,13 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['rolePermissions']);
+    }
+  });
+
+  const updateUserRoleMutation = useMutation({
+    mutationFn: ({ userId, role }) => base44.entities.User.update(userId, { role }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users']);
     }
   });
 
@@ -153,15 +167,71 @@ export default function UserManagement() {
           <Shield className="w-8 h-8 text-emerald-600" />
           User Management & RBAC
         </h1>
-        <p className="text-slate-600 mt-1">Customize role-based access control permissions for your organization</p>
+        <p className="text-slate-600 mt-1">Manage users and customize role-based access control</p>
       </div>
 
-      <Tabs defaultValue="admin" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="admin">Admin Role</TabsTrigger>
           <TabsTrigger value="coach">Coach Role</TabsTrigger>
           <TabsTrigger value="user">User/Player Role</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="users">
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UsersIcon className="w-5 h-5 text-emerald-600" />
+                All Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Current Role</TableHead>
+                    <TableHead>Change Role</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                          user.role === 'coach' ? 'bg-blue-100 text-blue-800' :
+                          'bg-slate-100 text-slate-800'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Select 
+                          value={user.role} 
+                          onValueChange={(role) => updateUserRoleMutation.mutate({ userId: user.id, role })}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="coach">Coach</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {['admin', 'coach', 'user'].map(role => (
           <TabsContent key={role} value={role}>

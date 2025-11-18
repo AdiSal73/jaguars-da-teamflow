@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -19,7 +20,7 @@ export default function Teams() {
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
-    division: '',
+    league: '', // Changed from 'division' to 'league'
     season: '',
     team_color: '#22c55e',
     coach_ids: []
@@ -50,7 +51,7 @@ export default function Teams() {
         const coach = coaches.find(c => c.id === coachId);
         if (coach) {
           const updatedTeamIds = [...(coach.team_ids || []), newTeam.id];
-          await base44.entities.Coach.update(coachId, { team_ids: updatedTeamIds });
+          await base44.entities.Coach.update(coach.id, { team_ids: updatedTeamIds });
         }
       }
       queryClient.invalidateQueries(['teams']);
@@ -98,7 +99,7 @@ export default function Teams() {
     setTeamForm({
       name: '',
       age_group: '',
-      division: '',
+      league: '', // Changed from 'division' to 'league'
       season: '',
       team_color: '#22c55e',
       coach_ids: []
@@ -111,7 +112,7 @@ export default function Teams() {
     setTeamForm({
       name: team.name || '',
       age_group: team.age_group || '',
-      division: team.division || '',
+      league: team.league || '', // Changed from 'team.division' to 'team.league'
       season: team.season || '',
       team_color: team.team_color || '#22c55e',
       coach_ids: assignedCoaches
@@ -182,10 +183,10 @@ export default function Teams() {
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-3">
-                  {team.division && (
+                  {team.league && ( // Changed from team.division to team.league
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">Division:</span>
-                      <span className="font-medium text-slate-900">{team.division}</span>
+                      <span className="text-slate-600">League:</span> {/* Changed from Division to League */}
+                      <span className="font-medium text-slate-900">{team.league}</span> {/* Changed from team.division to team.league */}
                     </div>
                   )}
                   {team.season && (
@@ -248,10 +249,10 @@ export default function Teams() {
               />
             </div>
             <div>
-              <Label>Division</Label>
+              <Label>League</Label> {/* Changed from Division to League */}
               <Input
-                value={teamForm.division}
-                onChange={(e) => setTeamForm({...teamForm, division: e.target.value})}
+                value={teamForm.league} // Changed from teamForm.division to teamForm.league
+                onChange={(e) => setTeamForm({...teamForm, league: e.target.value})} // Changed from division to league
                 placeholder="e.g., Premier League"
               />
             </div>

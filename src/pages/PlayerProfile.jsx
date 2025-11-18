@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Ruler, Weight, TrendingUp, Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ export default function PlayerProfile() {
 
   const [showAssessmentDialog, setShowAssessmentDialog] = useState(false);
   const [showEvaluationDialog, setShowEvaluationDialog] = useState(false);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
 
   const [newAssessment, setNewAssessment] = useState({
     player_id: playerId,
@@ -33,7 +34,6 @@ export default function PlayerProfile() {
     agility: 50,
     power: 50,
     endurance: 50,
-    // sprint_time, vertical_jump, cooper_test, and assessor removed as per dialog changes
     notes: ''
   });
 
@@ -104,12 +104,32 @@ export default function PlayerProfile() {
 
   if (!player) return null;
 
-  const currentPlayerIndex = allPlayers.findIndex(p => p.id === playerId);
-  const previousPlayer = currentPlayerIndex > 0 ? allPlayers[currentPlayerIndex - 1] : null;
-  const nextPlayer = currentPlayerIndex < allPlayers.length - 1 ? allPlayers[currentPlayerIndex + 1] : null;
+  // Sort players alphabetically by last name
+  const sortedPlayers = [...allPlayers].sort((a, b) => {
+    const lastNameA = a.full_name?.split(' ').pop() || '';
+    const lastNameB = b.full_name?.split(' ').pop() || '';
+    return lastNameA.localeCompare(lastNameB);
+  });
+
+  const currentPlayerIndex = sortedPlayers.findIndex(p => p.id === playerId);
+  const previousPlayer = currentPlayerIndex > 0 ? sortedPlayers[currentPlayerIndex - 1] : null;
+  const nextPlayer = currentPlayerIndex < sortedPlayers.length - 1 ? sortedPlayers[currentPlayerIndex + 1] : null;
 
   const team = teams.find(t => t.id === player.team_id);
   const latestAssessment = assessments[0];
+
+  const calculateOverall = (assessment) => {
+    const speed = assessment.speed_score || 0;
+    const agility = assessment.agility_score || 0;
+    const power = assessment.vertical_score || 0;
+    const endurance = assessment.yirt_score || 0;
+    
+    if (agility === 0 || !agility) { // If agility score is not available, adjust the average calculation
+      return Math.round(((5 * speed) + (3 * power) + (6 * endurance)) / 14); // Weighted average: Speed (x5), Power (x3), Endurance (x6)
+    } else {
+      return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 15); // Weighted average: Speed (x5), Agility (x1), Power (x3), Endurance (x6)
+    }
+  };
 
   // Calculate team and club averages
   const teamPlayers = allPlayers.filter(p => p.team_id === player.team_id);
@@ -136,7 +156,7 @@ export default function PlayerProfile() {
 
   const teamAverage = calculateAverages(teamAssessments);
   const clubAverage = calculateAverages(allAssessments);
-  const playerHistoricalAvg = calculateAverages(assessments); // New: Player's own historical average
+  const playerHistoricalAvg = calculateAverages(assessments);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -247,29 +267,26 @@ export default function PlayerProfile() {
                       <div className="grid grid-cols-3 gap-4 mb-8">
                         <div className="p-4 bg-red-50 rounded-xl">
                           <div className="text-sm text-red-600 mb-1">Speed (20m Linear)</div>
-                          <div className="text-3xl font-bold text-red-700">{latestAssessment.sprint_time?.toFixed(2) || 'N/A'}</div>
+                          <div className="text-3xl font-bold text-red-700">{latestAssessment.linear_20m?.toFixed(2) || 'N/A'}</div>
                           <div className="text-xs text-slate-500 mt-1">sec (lower is better)</div>
-                          <div className="text-xs text-slate-400">Max: 2.6s</div>
                         </div>
                         <div className="p-4 bg-blue-50 rounded-xl">
                           <div className="text-sm text-blue-600 mb-1">Power (Vertical)</div>
                           <div className="text-3xl font-bold text-blue-700">{latestAssessment.vertical_jump?.toFixed(1) || 'N/A'}</div>
                           <div className="text-xs text-slate-500 mt-1">inches (higher is better)</div>
-                          <div className="text-xs text-slate-400">Max: 50"</div>
                         </div>
                         <div className="p-4 bg-pink-50 rounded-xl">
                           <div className="text-sm text-pink-600 mb-1">Endurance (YIRT)</div>
-                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.cooper_test || 'N/A'}</div> {/* Assuming cooper_test is meant here */}
-                          <div className="text-xs text-slate-500 mt-1">score (higher is better)</div>
-                          <div className="text-xs text-slate-400">Best: 65</div>
+                          <div className="text-3xl font-bold text-pink-700">{latestAssessment.yirt || 'N/A'}</div>
+                          <div className="text-xs text-slate-500 mt-1">level (higher is better)</div>
                         </div>
                       </div>
-                      <CircularChart
-                        speed={latestAssessment.speed || 0}
-                        agility={latestAssessment.agility || 0}
-                        power={latestAssessment.power || 0}
-                        endurance={latestAssessment.endurance || 0}
-                      />
+                      <div className="mb-4">
+                        <div className="text-center p-4 bg-emerald-50 rounded-xl">
+                          <div className="text-sm text-emerald-600 mb-1">Overall Score</div>
+                          <div className="text-4xl font-bold text-emerald-700">{calculateOverall(latestAssessment)}</div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-slate-500">
@@ -287,30 +304,38 @@ export default function PlayerProfile() {
                   <CardContent>
                     <div className="space-y-3">
                       {assessments.map(assessment => (
-                        <div key={assessment.id} className="p-4 bg-slate-50 rounded-xl">
+                        <button
+                          key={assessment.id}
+                          onClick={() => setSelectedAssessment(assessment)}
+                          className="w-full p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors text-left"
+                        >
                           <div className="flex justify-between items-start mb-3">
                             <span className="font-medium text-slate-900">
                               {new Date(assessment.assessment_date).toLocaleDateString()}
                             </span>
+                            <span className="text-2xl font-bold text-emerald-600">
+                              {calculateOverall(assessment)}
+                            </span>
                           </div>
-                          <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div className="grid grid-cols-4 gap-3 text-sm">
                             <div>
                               <span className="text-slate-600">Speed: </span>
-                              <span className="font-semibold">{assessment.sprint_time?.toFixed(2) || 'N/A'}s</span>
+                              <span className="font-semibold">{assessment.linear_20m?.toFixed(2) || 'N/A'}s</span>
                             </div>
                             <div>
-                              <span className="text-slate-600">Power: </span>
+                              <span className="text-slate-600">Vertical: </span>
                               <span className="font-semibold">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</span>
                             </div>
                             <div>
-                              <span className="text-slate-600">Endurance: </span>
-                              <span className="font-semibold">{assessment.cooper_test || 'N/A'}</span> {/* Assuming cooper_test is meant here */}
+                              <span className="text-slate-600">YIRT: </span>
+                              <span className="font-semibold">{assessment.yirt || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">5-10-5: </span>
+                              <span className="font-semibold">{assessment.agility_5_10_5?.toFixed(2) || 'N/A'}s</span>
                             </div>
                           </div>
-                          {assessment.notes && (
-                            <p className="text-sm text-slate-600 mt-2">{assessment.notes}</p>
-                          )}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </CardContent>
@@ -587,7 +612,6 @@ export default function PlayerProfile() {
                 />
               </div>
             </div>
-            {/* Sprint time, vertical jump, cooper test inputs removed */}
             <div>
               <Label htmlFor="assessment_notes">Notes</Label>
               <Textarea
@@ -675,6 +699,76 @@ export default function PlayerProfile() {
               Save Evaluation
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedAssessment} onOpenChange={() => setSelectedAssessment(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex justify-between items-center">
+              <DialogTitle>Physical Assessment Details</DialogTitle>
+              <Button variant="ghost" size="icon" onClick={() => setSelectedAssessment(null)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          {selectedAssessment && (
+            <div className="space-y-6 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Date</Label>
+                  <div className="text-lg font-semibold">{new Date(selectedAssessment.assessment_date).toLocaleDateString()}</div>
+                </div>
+                <div>
+                  <Label>Position</Label>
+                  <div className="text-lg font-semibold">{selectedAssessment.position || 'N/A'}</div>
+                </div>
+                <div>
+                  <Label>Age</Label>
+                  <div className="text-lg font-semibold">{selectedAssessment.age || 'N/A'}</div>
+                </div>
+                <div>
+                  <Label>Overall Score</Label>
+                  <div className="text-3xl font-bold text-emerald-600">{calculateOverall(selectedAssessment)}</div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div className="p-4 bg-red-50 rounded-xl">
+                  <div className="text-sm text-red-600 mb-2">20m Linear Sprint</div>
+                  <div className="text-2xl font-bold text-red-700">{selectedAssessment.linear_20m?.toFixed(2) || 'N/A'} sec</div>
+                  <div className="text-sm text-slate-600 mt-2">Speed Score: {selectedAssessment.speed_score || 'N/A'}</div>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <div className="text-sm text-blue-600 mb-2">Vertical Jump</div>
+                  <div className="text-2xl font-bold text-blue-700">{selectedAssessment.vertical_jump?.toFixed(1) || 'N/A'} in</div>
+                  <div className="text-sm text-slate-600 mt-2">Vertical Score: {selectedAssessment.vertical_score || 'N/A'}</div>
+                </div>
+                <div className="p-4 bg-pink-50 rounded-xl">
+                  <div className="text-sm text-pink-600 mb-2">YIRT Level</div>
+                  <div className="text-2xl font-bold text-pink-700">{selectedAssessment.yirt || 'N/A'}</div>
+                  <div className="text-sm text-slate-600 mt-2">YIRT Score: {selectedAssessment.yirt_score || 'N/A'}</div>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-xl">
+                  <div className="text-sm text-emerald-600 mb-2">5-10-5 Agility</div>
+                  <div className="text-2xl font-bold text-emerald-700">{selectedAssessment.agility_5_10_5?.toFixed(2) || 'N/A'} sec</div>
+                  <div className="text-sm text-slate-600 mt-2">Agility Score: {selectedAssessment.agility_score || 'N/A'}</div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl">
+                <Label>Energy Score</Label>
+                <div className="text-2xl font-bold text-slate-900 mt-2">{selectedAssessment.energy_score || 'N/A'}</div>
+              </div>
+
+              {selectedAssessment.notes && (
+                <div>
+                  <Label>Notes</Label>
+                  <div className="text-slate-700 mt-2 p-4 bg-slate-50 rounded-xl">{selectedAssessment.notes}</div>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
