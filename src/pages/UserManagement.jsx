@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save, Users as UsersIcon } from 'lucide-react';
+import { Shield, Save, Users as UsersIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
-  const [updatingUserId, setUpdatingUserId] = useState(null);
 
   const { data: permissions = [] } = useQuery({
     queryKey: ['rolePermissions'],
@@ -21,6 +20,11 @@ export default function UserManagement() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
   });
 
   const [localPermissions, setLocalPermissions] = useState({
@@ -60,21 +64,58 @@ export default function UserManagement() {
     }
   });
 
-  const updateUserRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole }) => {
-      setUpdatingUserId(userId);
-      return await base44.entities.User.update(userId, { role: newRole });
+  const createCoachMutation = useMutation({
+    mutationFn: async (userData) => {
+      return await base44.entities.Coach.create({
+        full_name: userData.full_name,
+        email: userData.email,
+        specialization: 'General Coaching',
+        booking_enabled: true
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
-      setUpdatingUserId(null);
-    },
-    onError: (error) => {
-      console.error('Failed to update user role:', error);
-      alert(`Failed to update user role: ${error.message}`);
-      setUpdatingUserId(null);
+      queryClient.invalidateQueries(['coaches']);
+      alert('User promoted to coach successfully!');
     }
   });
+
+  const removeCoachMutation = useMutation({
+    mutationFn: async (email) => {
+      const coach = coaches.find(c => c.email === email);
+      if (coach) {
+        await base44.entities.Coach.delete(coach.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['coaches']);
+      alert('Coach role removed successfully!');
+    }
+  });
+
+  const getUserRole = (user) => {
+    if (user.role === 'admin') return 'admin';
+    const isCoach = coaches.find(c => c.email === user.email);
+    if (isCoach) return 'coach';
+    return 'user';
+  };
+
+  const toggleCoachRole = async (user) => {
+    const currentRole = getUserRole(user);
+    if (currentRole === 'admin') {
+      alert('Cannot change admin users to coach. Remove admin role first.');
+      return;
+    }
+    
+    if (currentRole === 'coach') {
+      if (window.confirm(`Remove coach role from ${user.full_name}?`)) {
+        removeCoachMutation.mutate(user.email);
+      }
+    } else {
+      if (window.confirm(`Promote ${user.full_name} to coach?`)) {
+        createCoachMutation.mutate(user);
+      }
+    }
+  };
 
   const getDefaultPermissions = (role) => {
     if (role === 'admin') {
@@ -203,43 +244,38 @@ export default function UserManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Current Role</TableHead>
-                    <TableHead>Change Role</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map(user => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.full_name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                          user.role === 'coach' ? 'bg-blue-100 text-blue-800' :
-                          'bg-slate-100 text-slate-800'
-                        }`}>
-                          {user.role}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Select 
-                          value={user.role}
-                          disabled={updatingUserId === user.id}
-                          onValueChange={(newRole) => {
-                            updateUserRoleMutation.mutate({ userId: user.id, newRole });
-                          }}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="coach">Coach</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {users.map(user => {
+                    const userRole = getUserRole(user);
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            userRole === 'admin' ? 'bg-purple-100 text-purple-800' :
+                            userRole === 'coach' ? 'bg-blue-100 text-blue-800' :
+                            'bg-slate-100 text-slate-800'
+                          }>
+                            {userRole}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleCoachRole(user)}
+                            disabled={userRole === 'admin'}
+                          >
+                            {userRole === 'coach' ? 'Remove Coach' : 'Make Coach'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
