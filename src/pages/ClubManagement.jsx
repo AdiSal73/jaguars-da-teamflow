@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Upload, TrendingUp, Users, Activity, BarChart3, Shield, RefreshCw } from 'lucide-react';
+import { Upload, TrendingUp, Users, Activity, BarChart3, Shield, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import BulkImportDialog from '../components/import/BulkImportDialog';
@@ -22,7 +23,9 @@ import {
 export default function ClubManagement() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [showDuplicatesDialog, setShowDuplicatesDialog] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [duplicateReport, setDuplicateReport] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -61,10 +64,117 @@ export default function ClubManagement() {
     queryFn: () => base44.entities.UnassignedPhysicalAssessment.filter({ assigned: false })
   });
 
+  const findDuplicates = async () => {
+    const duplicates = {
+      players: [],
+      teams: [],
+      assessments: [],
+      evaluations: []
+    };
+
+    // Find duplicate players
+    const playersByName = {};
+    for (const player of players) {
+      const key = player.full_name?.toLowerCase();
+      if (!playersByName[key]) playersByName[key] = [];
+      playersByName[key].push(player);
+    }
+    for (const key in playersByName) {
+      if (playersByName[key].length > 1) {
+        duplicates.players.push({ name: key, count: playersByName[key].length, records: playersByName[key] });
+      }
+    }
+
+    // Find duplicate teams
+    const teamsByName = {};
+    for (const team of teams) {
+      const key = team.name?.toLowerCase();
+      if (!teamsByName[key]) teamsByName[key] = [];
+      teamsByName[key].push(team);
+    }
+    for (const key in teamsByName) {
+      if (teamsByName[key].length > 1) {
+        duplicates.teams.push({ name: key, count: teamsByName[key].length, records: teamsByName[key] });
+      }
+    }
+
+    // Find duplicate assessments
+    const assessmentsByKey = {};
+    for (const assessment of assessments) {
+      const key = `${assessment.player_id}_${assessment.assessment_date}`;
+      if (!assessmentsByKey[key]) assessmentsByKey[key] = [];
+      assessmentsByKey[key].push(assessment);
+    }
+    for (const key in assessmentsByKey) {
+      if (assessmentsByKey[key].length > 1) {
+        duplicates.assessments.push({ key, count: assessmentsByKey[key].length, records: assessmentsByKey[key] });
+      }
+    }
+
+    // Find duplicate evaluations
+    const evaluationsByKey = {};
+    for (const evaluation of evaluations) {
+      const key = `${evaluation.player_id}_${evaluation.evaluation_date}`;
+      if (!evaluationsByKey[key]) evaluationsByKey[key] = [];
+      evaluationsByKey[key].push(evaluation);
+    }
+    for (const key in evaluationsByKey) {
+      if (evaluationsByKey[key].length > 1) {
+        duplicates.evaluations.push({ key, count: evaluationsByKey[key].length, records: evaluationsByKey[key] });
+      }
+    }
+
+    setDuplicateReport(duplicates);
+    setShowDuplicatesDialog(true);
+  };
+
+  const deleteDuplicates = async () => {
+    if (!duplicateReport) return;
+
+    let deletedCount = 0;
+
+    try {
+      for (const group of duplicateReport.players) {
+        for (let i = 1; i < group.records.length; i++) {
+          await base44.entities.Player.delete(group.records[i].id);
+          deletedCount++;
+        }
+      }
+
+      for (const group of duplicateReport.teams) {
+        for (let i = 1; i < group.records.length; i++) {
+          await base44.entities.Team.delete(group.records[i].id);
+          deletedCount++;
+        }
+      }
+
+      for (const group of duplicateReport.assessments) {
+        for (let i = 1; i < group.records.length; i++) {
+          await base44.entities.PhysicalAssessment.delete(group.records[i].id);
+          deletedCount++;
+        }
+      }
+
+      for (const group of duplicateReport.evaluations) {
+        for (let i = 1; i < group.records.length; i++) {
+          await base44.entities.Evaluation.delete(group.records[i].id);
+          deletedCount++;
+        }
+      }
+
+      queryClient.invalidateQueries();
+      alert(`Deleted ${deletedCount} duplicate records!`);
+    } catch (error) {
+      alert('Error deleting duplicates: ' + error.message);
+    } finally {
+      setShowDuplicatesDialog(false);
+      setDuplicateReport(null);
+    }
+  };
+
   const handleAutoSync = async () => {
     setSyncing(true);
     let syncedCount = 0;
-    let deletedCount = 0;
 
     try {
       // Auto-assign unassigned evaluations
@@ -120,68 +230,8 @@ export default function ClubManagement() {
         }
       }
 
-      // Remove duplicates in players
-      const playersByName = {};
-      for (const player of players) {
-        const key = player.full_name?.toLowerCase();
-        if (!playersByName[key]) {
-          playersByName[key] = [];
-        }
-        playersByName[key].push(player);
-      }
-
-      for (const key in playersByName) {
-        const duplicates = playersByName[key];
-        if (duplicates.length > 1) {
-          for (let i = 1; i < duplicates.length; i++) {
-            await base44.entities.Player.delete(duplicates[i].id);
-            deletedCount++;
-          }
-        }
-      }
-
-      // Remove duplicates in teams
-      const teamsByName = {};
-      for (const team of teams) {
-        const key = team.name?.toLowerCase();
-        if (!teamsByName[key]) {
-          teamsByName[key] = [];
-        }
-        teamsByName[key].push(team);
-      }
-
-      for (const key in teamsByName) {
-        const duplicates = teamsByName[key];
-        if (duplicates.length > 1) {
-          for (let i = 1; i < duplicates.length; i++) {
-            await base44.entities.Team.delete(duplicates[i].id);
-            deletedCount++;
-          }
-        }
-      }
-
-      // Remove duplicates in physical assessments
-      const assessmentsByKey = {};
-      for (const assessment of assessments) {
-        const key = `${assessment.player_id}_${assessment.assessment_date}`;
-        if (!assessmentsByKey[key]) {
-          assessmentsByKey[key] = [];
-        }
-        assessmentsByKey[key].push(assessment);
-      }
-
-      for (const key in assessmentsByKey) {
-        const duplicates = assessmentsByKey[key];
-        if (duplicates.length > 1) {
-          for (let i = 1; i < duplicates.length; i++) {
-            await base44.entities.PhysicalAssessment.delete(duplicates[i].id);
-            deletedCount++;
-          }
-        }
-      }
-
       queryClient.invalidateQueries();
-      alert(`Auto-sync complete! Synced ${syncedCount} records and removed ${deletedCount} duplicates.`);
+      alert(`Auto-sync complete! Synced ${syncedCount} records.`);
     } catch (error) {
       alert('Error during auto-sync: ' + error.message);
     }
@@ -257,6 +307,10 @@ export default function ClubManagement() {
           <p className="text-slate-600 mt-1">Comprehensive overview of your club's performance</p>
         </div>
         <div className="flex gap-3">
+          <Button onClick={findDuplicates} variant="outline">
+            <Trash2 className="w-4 h-4 mr-2" />
+            Find Duplicates
+          </Button>
           <Button onClick={() => setShowSyncDialog(true)} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
             Auto-Sync Data
@@ -414,15 +468,75 @@ export default function ClubManagement() {
       <AlertDialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Auto-Sync All Data</AlertDialogTitle>
+            <AlertDialogTitle>Auto-Sync Unassigned Data</AlertDialogTitle>
             <AlertDialogDescription>
-              This will automatically assign unassigned records by matching names and remove duplicate players, teams, and physical assessments. This action cannot be undone.
+              This will automatically assign unassigned evaluations and physical assessments by matching player names.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleAutoSync} disabled={syncing} className="bg-emerald-600 hover:bg-emerald-700">
               {syncing ? 'Syncing...' : 'Start Auto-Sync'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDuplicatesDialog} onOpenChange={setShowDuplicatesDialog}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate Records Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              Review the duplicate records below. Clicking "Delete Duplicates" will keep the first record found and delete all others within each duplicate group. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {duplicateReport && (
+            <div className="space-y-4">
+              {duplicateReport.players.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Duplicate Players ({duplicateReport.players.length} groups)</h3>
+                  {duplicateReport.players.map((dup, i) => (
+                    <div key={i} className="p-2 bg-red-50 rounded text-sm mb-1">
+                      Player: {dup.name} - {dup.count} records
+                    </div>
+                  ))}
+                </div>
+              )}
+              {duplicateReport.teams.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Duplicate Teams ({duplicateReport.teams.length} groups)</h3>
+                  {duplicateReport.teams.map((dup, i) => (
+                    <div key={i} className="p-2 bg-red-50 rounded text-sm mb-1">
+                      Team: {dup.name} - {dup.count} records
+                    </div>
+                  ))}
+                </div>
+              )}
+              {duplicateReport.assessments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Duplicate Assessments ({duplicateReport.assessments.length} groups)</h3>
+                  <div className="text-sm text-slate-600">Found {duplicateReport.assessments.length} groups of duplicate assessments based on player and date.</div>
+                </div>
+              )}
+              {duplicateReport.evaluations.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Duplicate Evaluations ({duplicateReport.evaluations.length} groups)</h3>
+                  <div className="text-sm text-slate-600">Found {duplicateReport.evaluations.length} groups of duplicate evaluations based on player and date.</div>
+                </div>
+              )}
+              {duplicateReport.players.length === 0 && duplicateReport.teams.length === 0 && duplicateReport.assessments.length === 0 && duplicateReport.evaluations.length === 0 && (
+                <div className="text-center py-8 text-slate-500">No duplicates found!</div>
+              )}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={deleteDuplicates} 
+              disabled={!duplicateReport || (duplicateReport.players.length + duplicateReport.teams.length + duplicateReport.assessments.length + duplicateReport.evaluations.length === 0)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Duplicates
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
