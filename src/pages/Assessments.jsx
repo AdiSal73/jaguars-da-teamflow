@@ -17,6 +17,14 @@ export default function Assessments() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const calculateOverallScore = (assessment) => {
+    const speed = assessment.speed || 0;
+    const agility = assessment.agility || 0;
+    const power = assessment.power || 0;
+    const endurance = assessment.endurance || 0;
+    return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -36,7 +44,7 @@ export default function Assessments() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assessments.map(assessment => {
             const player = players.find(p => p.id === assessment.player_id);
-            const avgScore = Math.round((assessment.speed + assessment.agility + assessment.power + assessment.endurance) / 4);
+            const overallScore = calculateOverallScore(assessment);
             
             return (
               <Link key={assessment.id} to={`${createPageUrl('PlayerProfile')}?id=${assessment.player_id}`}>
@@ -54,26 +62,26 @@ export default function Assessments() {
 
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="p-3 bg-red-50 rounded-lg">
-                        <div className="text-xs text-red-600 mb-1">Speed</div>
-                        <div className="text-lg font-bold text-red-700">{assessment.speed}</div>
-                      </div>
-                      <div className="p-3 bg-emerald-50 rounded-lg">
-                        <div className="text-xs text-emerald-600 mb-1">Agility</div>
-                        <div className="text-lg font-bold text-emerald-700">{assessment.agility}</div>
+                        <div className="text-xs text-red-600 mb-1">20m Linear</div>
+                        <div className="text-lg font-bold text-red-700">{assessment.sprint_time?.toFixed(2) || 'N/A'}s</div>
                       </div>
                       <div className="p-3 bg-blue-50 rounded-lg">
-                        <div className="text-xs text-blue-600 mb-1">Power</div>
-                        <div className="text-lg font-bold text-blue-700">{assessment.power}</div>
+                        <div className="text-xs text-blue-600 mb-1">Vertical</div>
+                        <div className="text-lg font-bold text-blue-700">{assessment.vertical_jump?.toFixed(1) || 'N/A'}"</div>
                       </div>
                       <div className="p-3 bg-pink-50 rounded-lg">
-                        <div className="text-xs text-pink-600 mb-1">Endurance</div>
-                        <div className="text-lg font-bold text-pink-700">{assessment.endurance}</div>
+                        <div className="text-xs text-pink-600 mb-1">YIRT</div>
+                        <div className="text-lg font-bold text-pink-700">{assessment.cooper_test || 'N/A'}</div>
+                      </div>
+                      <div className="p-3 bg-emerald-50 rounded-lg">
+                        <div className="text-xs text-emerald-600 mb-1">5-10-5</div>
+                        <div className="text-lg font-bold text-emerald-700">{assessment.agility || 'N/A'}</div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <span className="text-sm text-slate-600">Overall Score</span>
-                      <span className="text-2xl font-bold text-slate-900">{avgScore}</span>
+                      <span className="text-2xl font-bold text-slate-900">{overallScore}</span>
                     </div>
                   </CardContent>
                 </Card>

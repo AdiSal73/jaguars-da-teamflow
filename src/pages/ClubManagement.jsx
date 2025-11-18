@@ -160,6 +160,26 @@ export default function ClubManagement() {
         }
       }
 
+      // Remove duplicates in physical assessments
+      const assessmentsByKey = {};
+      for (const assessment of assessments) {
+        const key = `${assessment.player_id}_${assessment.assessment_date}`;
+        if (!assessmentsByKey[key]) {
+          assessmentsByKey[key] = [];
+        }
+        assessmentsByKey[key].push(assessment);
+      }
+
+      for (const key in assessmentsByKey) {
+        const duplicates = assessmentsByKey[key];
+        if (duplicates.length > 1) {
+          for (let i = 1; i < duplicates.length; i++) {
+            await base44.entities.PhysicalAssessment.delete(duplicates[i].id);
+            deletedCount++;
+          }
+        }
+      }
+
       queryClient.invalidateQueries();
       alert(`Auto-sync complete! Synced ${syncedCount} records and removed ${deletedCount} duplicates.`);
     } catch (error) {
@@ -168,6 +188,14 @@ export default function ClubManagement() {
 
     setSyncing(false);
     setShowSyncDialog(false);
+  };
+
+  const calculateOverallScore = (assessment) => {
+    const speed = assessment.speed || 0;
+    const agility = assessment.agility || 0;
+    const power = assessment.power || 0;
+    const endurance = assessment.endurance || 0;
+    return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
   };
 
   // Calculate team statistics
@@ -179,9 +207,7 @@ export default function ClubManagement() {
 
     const avgPhysical = teamAssessments.length > 0
       ? Math.round(
-          teamAssessments.reduce((sum, a) => 
-            sum + ((a.speed + a.agility + a.power + a.endurance) / 4), 0
-          ) / teamAssessments.length
+          teamAssessments.reduce((sum, a) => sum + calculateOverallScore(a), 0) / teamAssessments.length
         )
       : 0;
 
@@ -210,9 +236,7 @@ export default function ClubManagement() {
     totalEvaluations: evaluations.length,
     avgPhysical: assessments.length > 0
       ? Math.round(
-          assessments.reduce((sum, a) => 
-            sum + ((a.speed + a.agility + a.power + a.endurance) / 4), 0
-          ) / assessments.length
+          assessments.reduce((sum, a) => sum + calculateOverallScore(a), 0) / assessments.length
         )
       : 0
   };
@@ -392,7 +416,7 @@ export default function ClubManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Auto-Sync All Data</AlertDialogTitle>
             <AlertDialogDescription>
-              This will automatically assign unassigned records by matching names and remove duplicate players and teams. This action cannot be undone.
+              This will automatically assign unassigned records by matching names and remove duplicate players, teams, and physical assessments. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -164,7 +165,7 @@ export default function BookSession() {
                         </div>
                         <div className="text-sm text-slate-600">{coach.specialization}</div>
                       </div>
-                      {selectedCoach?.id === coach.id && !coach.isAdmin && (
+                      {selectedCoach?.id === coach.id && (
                         <Button
                           variant="ghost"
                           size="icon"

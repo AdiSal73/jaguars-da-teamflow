@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -47,11 +48,6 @@ const navigationItems = [
     title: "Players",
     url: createPageUrl("Players"),
     icon: Users,
-  },
-  {
-    title: "Players Table",
-    url: createPageUrl("PlayersTable"),
-    icon: Table,
   },
   {
     title: "Training Plans",
