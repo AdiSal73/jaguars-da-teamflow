@@ -75,9 +75,11 @@ export default function ClubManagement() {
     // Find duplicate players
     const playersByName = {};
     for (const player of players) {
-      const key = player.full_name?.toLowerCase();
-      if (!playersByName[key]) playersByName[key] = [];
-      playersByName[key].push(player);
+      const key = player.full_name?.toLowerCase().trim();
+      if (key && key.length > 0) {
+        if (!playersByName[key]) playersByName[key] = [];
+        playersByName[key].push(player);
+      }
     }
     for (const key in playersByName) {
       if (playersByName[key].length > 1) {
@@ -88,9 +90,11 @@ export default function ClubManagement() {
     // Find duplicate teams
     const teamsByName = {};
     for (const team of teams) {
-      const key = team.name?.toLowerCase();
-      if (!teamsByName[key]) teamsByName[key] = [];
-      teamsByName[key].push(team);
+      const key = team.name?.toLowerCase().trim();
+      if (key && key.length > 0) {
+        if (!teamsByName[key]) teamsByName[key] = [];
+        teamsByName[key].push(team);
+      }
     }
     for (const key in teamsByName) {
       if (teamsByName[key].length > 1) {
@@ -98,29 +102,47 @@ export default function ClubManagement() {
       }
     }
 
-    // Find duplicate assessments
+    // Find duplicate assessments - by player name AND date
     const assessmentsByKey = {};
     for (const assessment of assessments) {
-      const key = `${assessment.player_id}_${assessment.assessment_date}`;
-      if (!assessmentsByKey[key]) assessmentsByKey[key] = [];
-      assessmentsByKey[key].push(assessment);
+      const player = players.find(p => p.id === assessment.player_id);
+      if (player) {
+        const key = `${player.full_name?.toLowerCase().trim()}_${assessment.assessment_date}`;
+        if (!assessmentsByKey[key]) assessmentsByKey[key] = [];
+        assessmentsByKey[key].push({ ...assessment, playerName: player.full_name });
+      }
     }
     for (const key in assessmentsByKey) {
       if (assessmentsByKey[key].length > 1) {
-        duplicates.assessments.push({ key, count: assessmentsByKey[key].length, records: assessmentsByKey[key] });
+        duplicates.assessments.push({
+          key,
+          playerName: assessmentsByKey[key][0].playerName,
+          date: assessmentsByKey[key][0].assessment_date,
+          count: assessmentsByKey[key].length,
+          records: assessmentsByKey[key]
+        });
       }
     }
 
-    // Find duplicate evaluations
+    // Find duplicate evaluations - by player name AND date
     const evaluationsByKey = {};
     for (const evaluation of evaluations) {
-      const key = `${evaluation.player_id}_${evaluation.evaluation_date}`;
-      if (!evaluationsByKey[key]) evaluationsByKey[key] = [];
-      evaluationsByKey[key].push(evaluation);
+      const player = players.find(p => p.id === evaluation.player_id);
+      if (player) {
+        const key = `${player.full_name?.toLowerCase().trim()}_${evaluation.evaluation_date}`;
+        if (!evaluationsByKey[key]) evaluationsByKey[key] = [];
+        evaluationsByKey[key].push({ ...evaluation, playerName: player.full_name });
+      }
     }
     for (const key in evaluationsByKey) {
       if (evaluationsByKey[key].length > 1) {
-        duplicates.evaluations.push({ key, count: evaluationsByKey[key].length, records: evaluationsByKey[key] });
+        duplicates.evaluations.push({
+          key,
+          playerName: evaluationsByKey[key][0].playerName,
+          date: evaluationsByKey[key][0].evaluation_date,
+          count: evaluationsByKey[key].length,
+          records: evaluationsByKey[key]
+        });
       }
     }
 
@@ -179,10 +201,10 @@ export default function ClubManagement() {
     try {
       // Auto-assign unassigned evaluations
       for (const unassignedEval of unassignedEvaluations) {
-        const player = players.find(p => 
+        const player = players.find(p =>
           p.full_name?.toLowerCase() === unassignedEval.player_name?.toLowerCase()
         );
-        
+
         if (player) {
           await base44.entities.Evaluation.create({
             player_id: player.id,
@@ -198,7 +220,7 @@ export default function ClubManagement() {
             areas_for_improvement: unassignedEval.areas_for_improvement,
             notes: unassignedEval.notes
           });
-          
+
           await base44.entities.UnassignedEvaluation.update(unassignedEval.id, { assigned: true });
           syncedCount++;
         }
@@ -206,10 +228,10 @@ export default function ClubManagement() {
 
       // Auto-assign unassigned assessments
       for (const unassignedAssess of unassignedAssessments) {
-        const player = players.find(p => 
+        const player = players.find(p =>
           p.full_name?.toLowerCase() === unassignedAssess.player_name?.toLowerCase()
         );
-        
+
         if (player) {
           await base44.entities.PhysicalAssessment.create({
             player_id: player.id,
@@ -224,7 +246,7 @@ export default function ClubManagement() {
             assessor: unassignedAssess.team_name,
             notes: `Position: ${unassignedAssess.position || 'N/A'}`
           });
-          
+
           await base44.entities.UnassignedPhysicalAssessment.update(unassignedAssess.id, { assigned: true });
           syncedCount++;
         }
@@ -410,7 +432,7 @@ export default function ClubManagement() {
             <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
               <CardHeader className="border-b border-slate-100" style={{ backgroundColor: `${team.team_color}20` }}>
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold"
                     style={{ backgroundColor: team.team_color }}
                   >
@@ -483,45 +505,61 @@ export default function ClubManagement() {
       </AlertDialog>
 
       <AlertDialog open={showDuplicatesDialog} onOpenChange={setShowDuplicatesDialog}>
-        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>Duplicate Records Found</AlertDialogTitle>
             <AlertDialogDescription>
-              Review the duplicate records below. Clicking "Delete Duplicates" will keep the first record found and delete all others within each duplicate group. This action cannot be undone.
+              Review the duplicate records below. Clicking "Delete Duplicates" will keep the first record and delete all others.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {duplicateReport && (
             <div className="space-y-4">
               {duplicateReport.players.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">Duplicate Players ({duplicateReport.players.length} groups)</h3>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Players ({duplicateReport.players.length})</h3>
                   {duplicateReport.players.map((dup, i) => (
-                    <div key={i} className="p-2 bg-red-50 rounded text-sm mb-1">
-                      Player: {dup.name} - {dup.count} records
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
+                      <div className="font-medium">{dup.name}</div>
+                      <div className="text-slate-600">{dup.count} duplicates found</div>
                     </div>
                   ))}
                 </div>
               )}
               {duplicateReport.teams.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">Duplicate Teams ({duplicateReport.teams.length} groups)</h3>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Teams ({duplicateReport.teams.length})</h3>
                   {duplicateReport.teams.map((dup, i) => (
-                    <div key={i} className="p-2 bg-red-50 rounded text-sm mb-1">
-                      Team: {dup.name} - {dup.count} records
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
+                      <div className="font-medium">{dup.name}</div>
+                      <div className="text-slate-600">{dup.count} duplicates found</div>
                     </div>
                   ))}
                 </div>
               )}
               {duplicateReport.assessments.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">Duplicate Assessments ({duplicateReport.assessments.length} groups)</h3>
-                  <div className="text-sm text-slate-600">Found {duplicateReport.assessments.length} groups of duplicate assessments based on player and date.</div>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Assessments ({duplicateReport.assessments.length})</h3>
+                  {duplicateReport.assessments.map((dup, i) => (
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
+                      <div className="font-medium">{dup.playerName}</div>
+                      <div className="text-slate-600">
+                        Date: {new Date(dup.date).toLocaleDateString()} - {dup.count} duplicates found
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
               {duplicateReport.evaluations.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2">Duplicate Evaluations ({duplicateReport.evaluations.length} groups)</h3>
-                  <div className="text-sm text-slate-600">Found {duplicateReport.evaluations.length} groups of duplicate evaluations based on player and date.</div>
+                  <h3 className="font-semibold mb-2 text-red-600">Duplicate Evaluations ({duplicateReport.evaluations.length})</h3>
+                  {duplicateReport.evaluations.map((dup, i) => (
+                    <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
+                      <div className="font-medium">{dup.playerName}</div>
+                      <div className="text-slate-600">
+                        Date: {new Date(dup.date).toLocaleDateString()} - {dup.count} duplicates found
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
               {duplicateReport.players.length === 0 && duplicateReport.teams.length === 0 && duplicateReport.assessments.length === 0 && duplicateReport.evaluations.length === 0 && (
@@ -531,8 +569,8 @@ export default function ClubManagement() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={deleteDuplicates} 
+            <AlertDialogAction
+              onClick={deleteDuplicates}
               disabled={!duplicateReport || (duplicateReport.players.length + duplicateReport.teams.length + duplicateReport.assessments.length + duplicateReport.evaluations.length === 0)}
               className="bg-red-600 hover:bg-red-700"
             >

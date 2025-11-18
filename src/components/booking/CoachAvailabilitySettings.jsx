@@ -5,9 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, Calendar as CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { Plus, Trash2 } from 'lucide-react';
+import BlackoutDateRangePicker from './BlackoutDateRangePicker';
 
 export default function CoachAvailabilitySettings({ coach, onSave }) {
   const [workingHours, setWorkingHours] = useState(
@@ -245,45 +244,10 @@ export default function CoachAvailabilitySettings({ coach, onSave }) {
       </TabsContent>
 
       <TabsContent value="blackout" className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5" />
-              Select Blackout Dates
-            </CardTitle>
-            <p className="text-sm text-slate-600">Click dates to toggle blackout status</p>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="multiple"
-              selected={blackoutDates.map(d => new Date(d))}
-              onSelect={(dates) => {
-                if (dates) {
-                  setBlackoutDates(dates.map(d => format(d, 'yyyy-MM-dd')));
-                }
-              }}
-              className="rounded-md border"
-            />
-            {blackoutDates.length > 0 && (
-              <div className="mt-4">
-                <Label>Selected Blackout Dates ({blackoutDates.length})</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {blackoutDates.sort().map(date => (
-                    <div key={date} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm flex items-center gap-2">
-                      {new Date(date).toLocaleDateString()}
-                      <button
-                        onClick={() => setBlackoutDates(blackoutDates.filter(d => d !== date))}
-                        className="hover:text-red-900"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <BlackoutDateRangePicker
+          blackoutDates={blackoutDates}
+          onBlackoutDatesChange={setBlackoutDates}
+        />
       </TabsContent>
 
       <div className="flex justify-end mt-6">
