@@ -96,6 +96,7 @@ export default function Layout({ children, currentPageName }) {
     { title: "Players", url: createPageUrl("Players"), icon: Users, roles: ["admin"] },
     { title: "Training Plans", url: createPageUrl("TrainingPlans"), icon: TrendingUp, roles: ["admin", "coach"] },
     { title: "Messages", url: createPageUrl("Messages"), icon: MessageSquare, roles: ["admin", "coach", "user"] },
+    { title: "Bulk Email", url: createPageUrl("BulkEmail"), icon: MessageSquare, roles: ["admin", "coach"] },
     { title: "Availability", url: createPageUrl("Availability"), icon: Clock, roles: ["admin", "coach"] },
     { title: "Book Session", url: createPageUrl("BookSession"), icon: Calendar, roles: ["admin", "coach", "user"] },
     { title: "My Bookings", url: createPageUrl("MyBookings"), icon: Calendar, roles: ["user"] },

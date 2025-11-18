@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, getDay, parseISO, isBefore, isAfter, addMinutes, parse } from 'date-fns';
 import { User, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
+import ShareBookingLink from '../components/booking/ShareBookingLink';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -202,9 +203,12 @@ export default function BookSession() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Book a Training Session</h1>
-        <p className="text-slate-600 mt-1">Select a coach, date, and time for your session</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Book a Training Session</h1>
+          <p className="text-slate-600 mt-1">Select a coach, date, and time for your session</p>
+        </div>
+        <ShareBookingLink coachId={selectedCoach?.id} />
       </div>
 
       {/* Coach Selection */}

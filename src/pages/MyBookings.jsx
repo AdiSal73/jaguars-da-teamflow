@@ -30,7 +30,7 @@ export default function MyBookings() {
   });
 
   const upcoming = bookings.filter(b => 
-    b.status === 'Scheduled' && new Date(b.date) >= new Date()
+    (b.status === 'Pending' || b.status === 'Confirmed') && new Date(b.date) >= new Date()
   );
 
   const past = bookings.filter(b => 
@@ -40,7 +40,8 @@ export default function MyBookings() {
   const cancelled = bookings.filter(b => b.status === 'Cancelled');
 
   const statusColors = {
-    Scheduled: 'bg-emerald-100 text-emerald-800',
+    Pending: 'bg-yellow-100 text-yellow-800',
+    Confirmed: 'bg-emerald-100 text-emerald-800',
     Completed: 'bg-blue-100 text-blue-800',
     Cancelled: 'bg-red-100 text-red-800',
     'No-show': 'bg-orange-100 text-orange-800'
@@ -54,7 +55,7 @@ export default function MyBookings() {
             <CardTitle className="text-lg">{booking.session_type}</CardTitle>
             <Badge className={statusColors[booking.status] + ' mt-2'}>{booking.status}</Badge>
           </div>
-          {showCancel && booking.status === 'Scheduled' && (
+          {showCancel && (booking.status === 'Pending' || booking.status === 'Confirmed') && (
             <Button
               variant="ghost"
               size="sm"

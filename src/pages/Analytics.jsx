@@ -4,7 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, Users, AlertTriangle, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, Users, AlertTriangle, BarChart3, Download, Star } from 'lucide-react';
+import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Analytics() {
@@ -171,6 +173,48 @@ export default function Analytics() {
   const riskPlayers = getRiskPlayers();
   const topPerformers = getTopPerformers();
 
+  const handleExportData = () => {
+    const data = {
+      assessments: filteredAssessments.map(a => ({
+        player: players.find(p => p.id === a.player_id)?.full_name,
+        date: a.assessment_date,
+        speed: a.speed_score,
+        power: a.power_score,
+        endurance: a.endurance_score,
+        agility: a.agility_score,
+        overall: a.overall_score
+      })),
+      evaluations: filteredEvaluations.map(e => ({
+        player: players.find(p => p.id === e.player_id)?.full_name,
+        date: e.evaluation_date,
+        technical: e.technical_skills,
+        tactical: e.tactical_awareness,
+        physical: e.physical_attributes,
+        mental: e.mental_attributes,
+        teamwork: e.teamwork,
+        overall: e.overall_rating
+      }))
+    };
+    
+    const csv = [
+      ['=== PHYSICAL ASSESSMENTS ==='],
+      ['Player', 'Date', 'Speed', 'Power', 'Endurance', 'Agility', 'Overall'],
+      ...data.assessments.map(a => [a.player, a.date, a.speed, a.power, a.endurance, a.agility, a.overall]),
+      [],
+      ['=== EVALUATIONS ==='],
+      ['Player', 'Date', 'Technical', 'Tactical', 'Physical', 'Mental', 'Teamwork', 'Overall'],
+      ...data.evaluations.map(e => [e.player, e.date, e.technical, e.tactical, e.physical, e.mental, e.teamwork, e.overall])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics_${selectedTeam === 'all' ? 'all_teams' : teams.find(t => t.id === selectedTeam)?.name}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast.success('Analytics exported!');
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -178,7 +222,7 @@ export default function Analytics() {
         <p className="text-slate-600">Comprehensive insights and trends across your teams</p>
       </div>
 
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex justify-between items-center">
         <Select value={selectedTeam} onValueChange={setSelectedTeam}>
           <SelectTrigger className="w-64">
             <SelectValue placeholder="Select team" />
@@ -188,14 +232,19 @@ export default function Analytics() {
             {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button onClick={handleExportData} variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Export Data
+        </Button>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="assessments">Assessments</TabsTrigger>
+          <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
-          <TabsTrigger value="comparison">Comparison</TabsTrigger>
-          <TabsTrigger value="predictions">Predictions</TabsTrigger>
+          <TabsTrigger value="predictions">At Risk</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -281,6 +330,102 @@ export default function Analytics() {
                     <div className="text-2xl font-bold text-emerald-600">{item.score}</div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="assessments" className="space-y-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle>Physical Assessment Data</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {filteredAssessments.map(assessment => {
+                  const player = players.find(p => p.id === assessment.player_id);
+                  return (
+                    <div key={assessment.id} className="p-4 bg-slate-50 rounded-xl">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-semibold text-slate-900">{player?.full_name}</div>
+                          <div className="text-sm text-slate-600">{new Date(assessment.assessment_date).toLocaleDateString()}</div>
+                        </div>
+                        <div className="text-2xl font-bold text-emerald-600">{assessment.overall_score || 0}</div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        <div className="text-center p-2 bg-red-50 rounded-lg">
+                          <div className="text-xs text-red-600">Speed</div>
+                          <div className="font-bold text-red-700">{assessment.speed_score || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-blue-50 rounded-lg">
+                          <div className="text-xs text-blue-600">Power</div>
+                          <div className="font-bold text-blue-700">{assessment.power_score || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-emerald-50 rounded-lg">
+                          <div className="text-xs text-emerald-600">Endurance</div>
+                          <div className="font-bold text-emerald-700">{assessment.endurance_score || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-pink-50 rounded-lg">
+                          <div className="text-xs text-pink-600">Agility</div>
+                          <div className="font-bold text-pink-700">{assessment.agility_score || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="evaluations" className="space-y-6">
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-yellow-600" />
+                Evaluation Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {filteredEvaluations.map(evaluation => {
+                  const player = players.find(p => p.id === evaluation.player_id);
+                  return (
+                    <div key={evaluation.id} className="p-4 bg-slate-50 rounded-xl">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-semibold text-slate-900">{player?.full_name}</div>
+                          <div className="text-sm text-slate-600">{new Date(evaluation.evaluation_date).toLocaleDateString()}</div>
+                          <div className="text-xs text-slate-500 mt-1">By: {evaluation.evaluator_name}</div>
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">{evaluation.overall_rating || 0}</div>
+                      </div>
+                      <div className="grid grid-cols-5 gap-2">
+                        <div className="text-center p-2 bg-blue-50 rounded-lg">
+                          <div className="text-xs text-blue-600">Technical</div>
+                          <div className="font-bold text-blue-700">{evaluation.technical_skills || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-purple-50 rounded-lg">
+                          <div className="text-xs text-purple-600">Tactical</div>
+                          <div className="font-bold text-purple-700">{evaluation.tactical_awareness || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-emerald-50 rounded-lg">
+                          <div className="text-xs text-emerald-600">Physical</div>
+                          <div className="font-bold text-emerald-700">{evaluation.physical_attributes || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-orange-50 rounded-lg">
+                          <div className="text-xs text-orange-600">Mental</div>
+                          <div className="font-bold text-orange-700">{evaluation.mental_attributes || 0}</div>
+                        </div>
+                        <div className="text-center p-2 bg-pink-50 rounded-lg">
+                          <div className="text-xs text-pink-600">Teamwork</div>
+                          <div className="font-bold text-pink-700">{evaluation.teamwork || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
