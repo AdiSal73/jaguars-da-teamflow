@@ -7,7 +7,6 @@ import { Activity, User, Search, SlidersHorizontal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 
 export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,9 +14,32 @@ export default function Assessments() {
   const [seasonFilter, setSeasonFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: assessments = [] } = useQuery({
     queryKey: ['assessments'],
-    queryFn: () => base44.entities.PhysicalAssessment.list('-assessment_date')
+    queryFn: async () => {
+      const allAssessments = await base44.entities.PhysicalAssessment.list('-assessment_date');
+      if (user?.role === 'user') {
+        const players = await base44.entities.Player.list();
+        const currentPlayer = players.find(p => p.email === user.email);
+        return allAssessments.filter(a => a.player_id === currentPlayer?.id);
+      }
+      if (user?.role === 'coach') {
+        const coaches = await base44.entities.Coach.list();
+        const currentCoach = coaches.find(c => c.email === user.email);
+        if (currentCoach?.team_ids) {
+          const teamPlayers = await base44.entities.Player.list();
+          const playerIds = teamPlayers.filter(p => currentCoach.team_ids.includes(p.team_id)).map(p => p.id);
+          return allAssessments.filter(a => playerIds.includes(a.player_id));
+        }
+      }
+      return allAssessments;
+    },
+    enabled: !!user
   });
 
   const { data: players = [] } = useQuery({
