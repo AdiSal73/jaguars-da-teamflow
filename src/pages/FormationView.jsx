@@ -195,7 +195,9 @@ export default function FormationView() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-8 max-w-7xl mx-auto">
+      <Droppable droppableId="field" type="POSITION">
+        {(provided) => (
+          <div ref={provided.innerRef} {...provided.droppableProps} className="p-8 max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{team?.name || 'Formation View'}</h1>
           <p className="text-slate-600">View all players organized by their positions</p>
@@ -278,40 +280,47 @@ export default function FormationView() {
                 </svg>
 
                 {/* Player positions */}
-                {formation.positions.map(position => {
+                {formation.positions.map((position, posIdx) => {
                   const positionPlayers = getPlayersForPosition(position.id);
                   
                   return (
-                    <Droppable droppableId={`position-${position.id}`} key={position.id}>
-                      {(provided, snapshot) => (
+                    <Draggable key={position.id} draggableId={`pos-${position.id}`} index={posIdx}>
+                      {(dragProvided) => (
                         <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
                           className="absolute transform -translate-x-1/2 -translate-y-1/2"
                           style={{
                             left: `${position.x}%`,
                             top: `${position.y}%`,
                             width: '300px',
-                            maxHeight: '500px'
+                            maxHeight: '500px',
+                            ...dragProvided.draggableProps.style
                           }}
                         >
-                          <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[500px] transition-all ${
-                            snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-white'
-                          }`}>
-                            <div className="text-center text-xs font-bold text-emerald-700 mb-2 sticky top-0 bg-white/95 pb-1 border-b border-slate-200">
-                              {position.label}
-                            </div>
-                            <div className="space-y-2">
-                              {positionPlayers.length > 0 ? (
-                                positionPlayers.map((player, index) => (
-                                  <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={`transition-all ${snapshot.isDragging ? 'rotate-3 scale-110' : ''}`}
-                                      >
+                          <Droppable droppableId={`position-${position.id}`}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                              >
+                              <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[500px] transition-all ${
+                                snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-white'
+                              }`}>
+                                <div {...dragProvided.dragHandleProps} className="text-center text-xs font-bold text-emerald-700 mb-2 sticky top-0 bg-white/95 pb-1 border-b border-slate-200 cursor-move hover:bg-emerald-50 rounded px-2 py-1">
+                                  {position.label}
+                                </div>
+                                <div className="space-y-2">
+                                  {positionPlayers.length > 0 ? (
+                                    positionPlayers.map((player, index) => (
+                                      <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                                        {(playerProvided, playerSnapshot) => (
+                                          <div
+                                            ref={playerProvided.innerRef}
+                                            {...playerProvided.draggableProps}
+                                            {...playerProvided.dragHandleProps}
+                                            className={`transition-all ${playerSnapshot.isDragging ? 'rotate-3 scale-110' : ''}`}
+                                          >
                                         <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg p-2 border-2 border-emerald-200 cursor-grab active:cursor-grabbing hover:shadow-lg group">
                                           <div className="flex items-center gap-2">
                                             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
@@ -333,25 +342,27 @@ export default function FormationView() {
                                               <Edit2 className="w-3 h-3 text-slate-600" />
                                             </button>
                                           </div>
-                                        </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ))
+                                  ) : (
+                                    <div className="text-center py-3">
+                                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                                        <span className="text-slate-400 font-bold text-sm">+</span>
                                       </div>
-                                    )}
-                                  </Draggable>
-                                ))
-                              ) : (
-                                <div className="text-center py-3">
-                                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                                    <span className="text-slate-400 font-bold text-sm">+</span>
-                                  </div>
-                                  <div className="text-[10px] text-slate-400">Drag players here</div>
+                                      <div className="text-[10px] text-slate-400">Drag players here</div>
+                                    </div>
+                                  )}
+                                  {provided.placeholder}
                                 </div>
-                              )}
-                              {provided.placeholder}
-                            </div>
-                          </div>
+                              </div>
+                            )}
+                          </Droppable>
                         </div>
                       )}
-                    </Droppable>
+                    </Draggable>
                   );
                 })}
               </div>
@@ -447,7 +458,10 @@ export default function FormationView() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
     </DragDropContext>
   );
 }

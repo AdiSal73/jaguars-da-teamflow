@@ -62,12 +62,10 @@ export default function Players() {
     date_of_birth: '',
     gender: '',
     grade: '',
-    position: 'Midfielder',
+    primary_position: 'Center Midfielder',
     secondary_position: '',
     preferred_foot: '',
     jersey_number: '',
-    height: '',
-    weight: '',
     team_id: '',
     status: 'Active'
   });
@@ -178,12 +176,10 @@ export default function Players() {
       date_of_birth: '',
       gender: '',
       grade: '',
-      position: 'Midfielder',
+      primary_position: 'Center Midfielder',
       secondary_position: '',
       preferred_foot: '',
       jersey_number: '',
-      height: '',
-      weight: '',
       team_id: '',
       status: 'Active'
     });
@@ -209,12 +205,10 @@ export default function Players() {
       date_of_birth: player.date_of_birth || '',
       gender: player.gender || '',
       grade: player.grade || '',
-      position: player.position || 'Midfielder',
+      primary_position: player.primary_position || 'Center Midfielder',
       secondary_position: player.secondary_position || '',
       preferred_foot: player.preferred_foot || '',
       jersey_number: player.jersey_number || '',
-      height: player.height || '',
-      weight: player.weight || '',
       team_id: player.team_id || '',
       status: player.status || 'Active'
     });
@@ -357,12 +351,12 @@ export default function Players() {
                             {player.jersey_number || <User className="w-8 h-8" />}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-bold text-lg text-slate-900">{player.full_name}</h3>
-                            <p className="text-sm text-slate-600 mb-2">{player.position}</p>
-                            <div className="flex flex-wrap gap-2">
-                              <Badge className={statusColors[player.status]}>{player.status}</Badge>
-                              {team && <Badge variant="outline">{team.name}</Badge>}
-                            </div>
+                           <h3 className="font-bold text-lg text-slate-900">{player.full_name}</h3>
+                           <p className="text-sm text-slate-600 mb-2">{player.primary_position || 'No position'}</p>
+                           <div className="flex flex-wrap gap-2">
+                             <Badge className={statusColors[player.status]}>{player.status}</Badge>
+                             {team && <Badge variant="outline">{team.name}</Badge>}
+                           </div>
                           </div>
                         </div>
                       </CardContent>
@@ -490,17 +484,24 @@ export default function Players() {
                         </TableCell>
                         <TableCell>
                           <Select 
-                            value={player.position} 
-                            onValueChange={(value) => handleFieldUpdate(player.id, 'position', value)}
+                            value={player.primary_position || ''} 
+                            onValueChange={(value) => handleFieldUpdate(player.id, 'primary_position', value)}
                           >
-                            <SelectTrigger className="min-w-[130px]">
-                              <SelectValue />
+                            <SelectTrigger className="min-w-[180px]">
+                              <SelectValue placeholder="Select position" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Goalkeeper">Goalkeeper</SelectItem>
-                              <SelectItem value="Defender">Defender</SelectItem>
-                              <SelectItem value="Midfielder">Midfielder</SelectItem>
+                              <SelectItem value="GK">GK</SelectItem>
+                              <SelectItem value="Right Outside Back">Right Outside Back</SelectItem>
+                              <SelectItem value="Left Outside Back">Left Outside Back</SelectItem>
+                              <SelectItem value="Right Centerback">Right Centerback</SelectItem>
+                              <SelectItem value="Left Centerback">Left Centerback</SelectItem>
+                              <SelectItem value="Defensive Midfielder">Defensive Midfielder</SelectItem>
+                              <SelectItem value="Right Winger">Right Winger</SelectItem>
+                              <SelectItem value="Center Midfielder">Center Midfielder</SelectItem>
                               <SelectItem value="Forward">Forward</SelectItem>
+                              <SelectItem value="Attacking Midfielder">Attacking Midfielder</SelectItem>
+                              <SelectItem value="Left Winger">Left Winger</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -627,15 +628,22 @@ export default function Players() {
             </div>
             <div>
               <Label>Primary Position *</Label>
-              <Select value={playerForm.position} onValueChange={(value) => setPlayerForm({...playerForm, position: value})}>
+              <Select value={playerForm.primary_position} onValueChange={(value) => setPlayerForm({...playerForm, primary_position: value})}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select position" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Goalkeeper">Goalkeeper</SelectItem>
-                  <SelectItem value="Defender">Defender</SelectItem>
-                  <SelectItem value="Midfielder">Midfielder</SelectItem>
+                  <SelectItem value="GK">GK</SelectItem>
+                  <SelectItem value="Right Outside Back">Right Outside Back</SelectItem>
+                  <SelectItem value="Left Outside Back">Left Outside Back</SelectItem>
+                  <SelectItem value="Right Centerback">Right Centerback</SelectItem>
+                  <SelectItem value="Left Centerback">Left Centerback</SelectItem>
+                  <SelectItem value="Defensive Midfielder">Defensive Midfielder</SelectItem>
+                  <SelectItem value="Right Winger">Right Winger</SelectItem>
+                  <SelectItem value="Center Midfielder">Center Midfielder</SelectItem>
                   <SelectItem value="Forward">Forward</SelectItem>
+                  <SelectItem value="Attacking Midfielder">Attacking Midfielder</SelectItem>
+                  <SelectItem value="Left Winger">Left Winger</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -670,24 +678,6 @@ export default function Players() {
               />
             </div>
             <div>
-              <Label>Height (cm)</Label>
-              <Input
-                type="number"
-                value={playerForm.height}
-                onChange={(e) => setPlayerForm({...playerForm, height: e.target.value})}
-                placeholder="180"
-              />
-            </div>
-            <div>
-              <Label>Weight (kg)</Label>
-              <Input
-                type="number"
-                value={playerForm.weight}
-                onChange={(e) => setPlayerForm({...playerForm, weight: e.target.value})}
-                placeholder="75"
-              />
-            </div>
-            <div>
               <Label>Team</Label>
               <Select value={playerForm.team_id} onValueChange={(value) => setPlayerForm({...playerForm, team_id: value})}>
                 <SelectTrigger>
@@ -719,7 +709,7 @@ export default function Players() {
             <Button variant="outline" onClick={() => setShowDialog(false)} className="h-12 px-8">Cancel</Button>
             <Button 
               onClick={handleSave}
-              disabled={!playerForm.full_name || !playerForm.position}
+              disabled={!playerForm.full_name}
               className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               {editingPlayer ? 'Update Player' : 'Add Player'}
