@@ -13,7 +13,7 @@ export default function ShareBookingLink({ coachId }) {
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const bookingUrl = `${window.location.origin}/public-booking${coachId ? `?coach=${coachId}` : ''}`;
+  const bookingUrl = `${window.location.origin}/book-session${coachId ? `?coach=${coachId}` : ''}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingUrl);
@@ -70,6 +70,9 @@ export default function ShareBookingLink({ coachId }) {
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
+              <p className="text-xs text-slate-500 mt-2">
+                This link works for both authenticated and unauthenticated users
+              </p>
             </div>
             <div className="border-t pt-4">
               <Label>Send via Email</Label>
