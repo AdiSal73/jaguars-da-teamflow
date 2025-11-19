@@ -114,6 +114,7 @@ export default function PlayerProfile() {
       return base44.entities.PhysicalAssessment.create({
         ...data,
         player_name: player?.full_name || '',
+        team_id: player?.team_id || data.team_id,
         ...scores
       });
     },
@@ -133,6 +134,17 @@ export default function PlayerProfile() {
       });
     }
   });
+
+  // Sync all assessments with player team
+  React.useEffect(() => {
+    if (player?.team_id && assessments.length > 0) {
+      assessments.forEach(assessment => {
+        if (assessment.team_id !== player.team_id) {
+          base44.entities.PhysicalAssessment.update(assessment.id, { team_id: player.team_id });
+        }
+      });
+    }
+  }, [player, assessments]);
 
   const createEvaluationMutation = useMutation({
     mutationFn: (data) => base44.entities.Evaluation.create(data),

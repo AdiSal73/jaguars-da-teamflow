@@ -80,7 +80,7 @@ export default function Players() {
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: async () => {
-      const allPlayers = await base44.entities.Player.list('-created_date', 50);
+      const allPlayers = await base44.entities.Player.list('-created_date');
       if (user?.role === 'admin') return allPlayers;
       if (user?.role === 'coach') {
         const coaches = await base44.entities.Coach.list();
