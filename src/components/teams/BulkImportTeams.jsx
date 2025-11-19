@@ -72,7 +72,6 @@ export default function BulkImportTeams({ onImportComplete }) {
           age_group: ageGroup,
           league: league || '',
           season: season || '',
-          team_color: '#22c55e',
           coach_ids: []
         });
       });
