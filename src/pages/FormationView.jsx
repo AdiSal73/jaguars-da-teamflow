@@ -279,7 +279,7 @@ export default function FormationView() {
                             left: `${position.x}%`,
                             top: `${position.y}%`,
                             width: '300px',
-                            maxHeight: '300px'
+                            maxHeight: '600px'
                           }}
                         >
                           <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[200px] transition-all ${
