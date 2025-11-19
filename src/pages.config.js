@@ -27,6 +27,7 @@ import TeamCommunication from './pages/TeamCommunication';
 import TeamDrills from './pages/TeamDrills';
 import MyBookings from './pages/MyBookings';
 import BulkEmail from './pages/BulkEmail';
+import Tryouts from './pages/Tryouts';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "TeamDrills": TeamDrills,
     "MyBookings": MyBookings,
     "BulkEmail": BulkEmail,
+    "Tryouts": Tryouts,
 }
 
 export const pagesConfig = {

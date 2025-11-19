@@ -166,6 +166,13 @@ export default function PlayerProfile() {
     }
   });
 
+  const calculateTrapped = (dateOfBirth) => {
+    if (!dateOfBirth) return 'Unknown';
+    const date = new Date(dateOfBirth);
+    const month = date.getMonth() + 1;
+    return (month >= 9 && month <= 12) ? 'Yes' : 'No';
+  };
+
   const handleTryoutFieldUpdate = (field, value) => {
     const data = {
       ...tryout,
@@ -176,6 +183,8 @@ export default function PlayerProfile() {
     };
     saveTryoutMutation.mutate(data);
   };
+
+  const trapped = calculateTrapped(player?.date_of_birth);
 
   if (!player) return null;
 
@@ -640,43 +649,70 @@ export default function PlayerProfile() {
             </TabsContent>
 
             <TabsContent value="tryout" className="space-y-6">
-              <Card className="border-none shadow-lg">
-                <CardHeader>
-                  <CardTitle>Tryout Information</CardTitle>
+              <Card className="border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
+                <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-blue-50">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <div className="w-2 h-8 bg-emerald-500 rounded-full" />
+                    Tryout Information
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Player Name</Label>
-                      <Input value={player.full_name} disabled />
+                <CardContent className="space-y-6 p-8">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-slate-200">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider">Player Name</Label>
+                      <div className="text-lg font-semibold text-slate-900 mt-1">{player.full_name}</div>
                     </div>
-                    <div>
-                      <Label>Current Team</Label>
-                      <Input value={team?.name || 'N/A'} disabled />
+                    <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-slate-200">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider">Current Team</Label>
+                      <div className="text-lg font-semibold text-slate-900 mt-1">{team?.name || 'N/A'}</div>
                     </div>
-                    <div>
-                      <Label>Primary Position</Label>
+                    <div className={`p-4 rounded-xl shadow-sm border-2 ${trapped === 'Yes' ? 'bg-red-50 border-red-300' : 'bg-emerald-50 border-emerald-300'}`}>
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider">Trapped Player</Label>
+                      <div className="text-lg font-bold mt-1 flex items-center gap-2">
+                        {trapped === 'Yes' ? (
+                          <>
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                            <span className="text-red-700">Yes</span>
+                          </>
+                        ) : (
+                          <span className="text-emerald-700">No</span>
+                        )}
+                      </div>
+                      {player.date_of_birth && (
+                        <div className="text-xs text-slate-600 mt-1">
+                          Born: {new Date(player.date_of_birth).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 bg-white rounded-xl shadow-sm border-2 border-slate-200">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider">Date of Birth</Label>
+                      <div className="text-lg font-semibold text-slate-900 mt-1">
+                        {player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Primary Position</Label>
                       <Select 
                         value={tryout?.primary_position?.toString() || ''} 
                         onValueChange={(value) => handleTryoutFieldUpdate('primary_position', parseInt(value))}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select position" />
                         </SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
-                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                            <SelectItem key={num} value={num.toString()}>Position {num}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Dominant Foot</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Dominant Foot</Label>
                       <Select 
                         value={tryout?.dominant_foot || ''} 
                         onValueChange={(value) => handleTryoutFieldUpdate('dominant_foot', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select dominant foot" />
                         </SelectTrigger>
                         <SelectContent>
@@ -687,13 +723,13 @@ export default function PlayerProfile() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Team Role</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Team Role</Label>
                       <Select 
                         value={tryout?.team_role || ''} 
                         onValueChange={(value) => handleTryoutFieldUpdate('team_role', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select team role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -707,71 +743,73 @@ export default function PlayerProfile() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Recommendation</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Recommendation</Label>
                       <Select 
                         value={tryout?.recommendation || ''} 
                         onValueChange={(value) => handleTryoutFieldUpdate('recommendation', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select recommendation" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Move up">Move up</SelectItem>
-                          <SelectItem value="Keep">Keep</SelectItem>
-                          <SelectItem value="Move down">Move down</SelectItem>
+                          <SelectItem value="Move up">🔼 Move up</SelectItem>
+                          <SelectItem value="Keep">✅ Keep</SelectItem>
+                          <SelectItem value="Move down">🔽 Move down</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Next Year's Team</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Next Year's Team</Label>
                       <Input 
                         value={tryout?.next_year_team || ''} 
                         onChange={(e) => handleTryoutFieldUpdate('next_year_team', e.target.value)}
                         placeholder="Enter team name"
+                        className="border-2 border-slate-300 h-12"
                       />
                     </div>
-                    <div>
-                      <Label>Next Season Status</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Next Season Status</Label>
                       <Select 
                         value={tryout?.next_season_status || 'N/A'} 
                         onValueChange={(value) => handleTryoutFieldUpdate('next_season_status', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="N/A">N/A</SelectItem>
-                          <SelectItem value="Accepted Offer">Accepted Offer</SelectItem>
-                          <SelectItem value="Rejected Offer">Rejected Offer</SelectItem>
-                          <SelectItem value="Considering Offer">Considering Offer</SelectItem>
-                          <SelectItem value="Not Offered">Not Offered</SelectItem>
+                          <SelectItem value="Accepted Offer">✅ Accepted Offer</SelectItem>
+                          <SelectItem value="Rejected Offer">❌ Rejected Offer</SelectItem>
+                          <SelectItem value="Considering Offer">🤔 Considering Offer</SelectItem>
+                          <SelectItem value="Not Offered">⏳ Not Offered</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>Registration Status</Label>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Registration Status</Label>
                       <Select 
                         value={tryout?.registration_status || 'Not Signed'} 
                         onValueChange={(value) => handleTryoutFieldUpdate('registration_status', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-2 border-slate-300 h-12">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Not Signed">Not Signed</SelectItem>
-                          <SelectItem value="Signed and Paid">Signed and Paid</SelectItem>
-                          <SelectItem value="Signed">Signed</SelectItem>
+                          <SelectItem value="Not Signed">⏳ Not Signed</SelectItem>
+                          <SelectItem value="Signed and Paid">✅ Signed and Paid</SelectItem>
+                          <SelectItem value="Signed">📝 Signed</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="md:col-span-2">
-                      <Label>Notes</Label>
+                    <div className="md:col-span-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Notes</Label>
                       <Textarea 
                         value={tryout?.notes || ''} 
                         onChange={(e) => handleTryoutFieldUpdate('notes', e.target.value)}
                         placeholder="Additional notes..."
                         rows={4}
+                        className="border-2 border-slate-300 resize-none"
                       />
                     </div>
                   </div>

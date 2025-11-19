@@ -82,6 +82,7 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     { title: "Coach Management", url: createPageUrl("CoachManagement"), icon: UserCog, roles: ["admin"] },
+    { title: "Tryouts", url: createPageUrl("Tryouts"), icon: Users, roles: ["admin", "coach"] },
     {
       title: "Teams",
       url: createPageUrl("Teams"),
