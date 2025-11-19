@@ -13,6 +13,7 @@ import PerformanceTrendChart from '../components/analytics/PerformanceTrendChart
 import RadarComparisonChart from '../components/analytics/RadarComparisonChart';
 import GoalTracker from '../components/goals/GoalTracker';
 import PlayerDocuments from '../components/player/PlayerDocuments';
+import ComprehensiveEvaluationForm from '../components/evaluation/ComprehensiveEvaluationForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,19 +41,7 @@ export default function PlayerProfile() {
     notes: ''
   });
 
-  const [newEvaluation, setNewEvaluation] = useState({
-    player_id: playerId,
-    evaluation_date: new Date().toISOString().split('T')[0],
-    technical_skills: 5,
-    tactical_awareness: 5,
-    physical_attributes: 5,
-    mental_attributes: 5,
-    teamwork: 5,
-    overall_rating: 5,
-    strengths: '',
-    areas_for_improvement: '',
-    notes: ''
-  });
+
 
   const { data: player } = useQuery({
     queryKey: ['player', playerId],
@@ -578,7 +567,7 @@ export default function PlayerProfile() {
               <Card className="border-none shadow-lg">
                 <CardHeader className="border-b border-slate-100">
                   <div className="flex justify-between items-center">
-                    <CardTitle>Performance Evaluations</CardTitle>
+                    <CardTitle>Comprehensive Evaluations</CardTitle>
                     <Button onClick={() => setShowEvaluationDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                       <Plus className="w-4 h-4 mr-2" />
                       New Evaluation
@@ -591,56 +580,107 @@ export default function PlayerProfile() {
                       No evaluations yet
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {evaluations.map(evaluation => (
-                        <div key={evaluation.id} className="p-6 bg-slate-50 rounded-xl">
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <div className="font-semibold text-slate-900 mb-1">
-                                {new Date(evaluation.evaluation_date).toLocaleDateString()}
+                        <Card key={evaluation.id} className="border-none shadow-xl hover:shadow-2xl transition-all">
+                          <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-bold text-xl text-slate-900">{evaluation.evaluator || 'Coach'}</div>
+                                <div className="flex gap-4 mt-2 text-sm text-slate-600">
+                                  <span>{new Date(evaluation.created_date).toLocaleDateString()}</span>
+                                  <span>•</span>
+                                  <span>Position: {evaluation.primary_position}</span>
+                                </div>
                               </div>
-                              <div className="text-sm text-slate-600">
-                                Evaluated by: {evaluation.evaluator_name || 'Coach'}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-6">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              <div className="space-y-4">
+                                <h3 className="font-bold text-lg text-slate-900 border-b-2 border-emerald-500 pb-2">Mental & Physical</h3>
+                                <div className="space-y-3">
+                                  {[
+                                    { label: 'Growth Mindset', value: evaluation.growth_mindset },
+                                    { label: 'Resilience', value: evaluation.resilience },
+                                    { label: 'Efficiency', value: evaluation.efficiency_in_execution },
+                                    { label: 'Athleticism', value: evaluation.athleticism },
+                                    { label: 'Team Focus', value: evaluation.team_focus }
+                                  ].map(item => (
+                                    <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-emerald-600">{item.value}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-4">
+                                <h3 className="font-bold text-lg text-slate-900 border-b-2 border-blue-500 pb-2">Defending</h3>
+                                <div className="space-y-3">
+                                  {[
+                                    { label: 'Organized', value: evaluation.defending_organized },
+                                    { label: 'Final Third', value: evaluation.defending_final_third },
+                                    { label: 'Transition', value: evaluation.defending_transition }
+                                  ].map(item => (
+                                    <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-blue-600">{item.value}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                <h3 className="font-bold text-lg text-slate-900 border-b-2 border-orange-500 pb-2 mt-6">Attacking</h3>
+                                <div className="space-y-3">
+                                  {[
+                                    { label: 'Organized', value: evaluation.attacking_organized },
+                                    { label: 'Final Third', value: evaluation.attacking_final_third },
+                                    { label: 'Transition', value: evaluation.attacking_in_transition }
+                                  ].map(item => (
+                                    <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-orange-600">{item.value}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="space-y-4">
+                                <h3 className="font-bold text-lg text-slate-900 border-b-2 border-purple-500 pb-2">Development Notes</h3>
+                                {evaluation.my_goals && (
+                                  <div className="p-3 bg-purple-50 rounded-lg">
+                                    <div className="text-xs font-semibold text-purple-700 mb-1">Goals</div>
+                                    <div className="text-sm text-slate-700">{evaluation.my_goals}</div>
+                                  </div>
+                                )}
+                                {evaluation.player_strengths && (
+                                  <div className="p-3 bg-green-50 rounded-lg">
+                                    <div className="text-xs font-semibold text-green-700 mb-1">Strengths</div>
+                                    <div className="text-sm text-slate-700">{evaluation.player_strengths}</div>
+                                  </div>
+                                )}
+                                {evaluation.areas_of_growth && (
+                                  <div className="p-3 bg-orange-50 rounded-lg">
+                                    <div className="text-xs font-semibold text-orange-700 mb-1">Areas of Growth</div>
+                                    <div className="text-sm text-slate-700">{evaluation.areas_of_growth}</div>
+                                  </div>
+                                )}
+                                {evaluation.training_focus && (
+                                  <div className="p-3 bg-blue-50 rounded-lg">
+                                    <div className="text-xs font-semibold text-blue-700 mb-1">Training Focus</div>
+                                    <div className="text-sm text-slate-700">{evaluation.training_focus}</div>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-emerald-600">
-                                {evaluation.overall_rating}/10
-                              </div>
-                              <div className="text-xs text-slate-500">Overall</div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-600">Technical:</span>
-                              <span className="font-semibold">{evaluation.technical_skills}/10</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-600">Tactical:</span>
-                              <span className="font-semibold">{evaluation.tactical_awareness}/10</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-600">Physical:</span>
-                              <span className="font-semibold">{evaluation.physical_attributes}/10</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-600">Mental:</span>
-                              <span className="font-semibold">{evaluation.mental_attributes}/10</span>
-                            </div>
-                          </div>
-                          {evaluation.strengths && (
-                            <div className="mb-2">
-                              <div className="text-sm font-medium text-slate-700 mb-1">Strengths:</div>
-                              <div className="text-sm text-slate-600">{evaluation.strengths}</div>
-                            </div>
-                          )}
-                          {evaluation.areas_for_improvement && (
-                            <div>
-                              <div className="text-sm font-medium text-slate-700 mb-1">Areas for Improvement:</div>
-                              <div className="text-sm text-slate-600">{evaluation.areas_for_improvement}</div>
-                            </div>
-                          )}
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   )}
@@ -883,73 +923,19 @@ export default function PlayerProfile() {
       </Dialog>
 
       <Dialog open={showEvaluationDialog} onOpenChange={setShowEvaluationDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Evaluation</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              New Comprehensive Evaluation
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="evaluation_date">Evaluation Date</Label>
-              <Input
-                id="evaluation_date"
-                type="date"
-                value={newEvaluation.evaluation_date}
-                onChange={(e) => setNewEvaluation({...newEvaluation, evaluation_date: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {['technical_skills', 'tactical_awareness', 'physical_attributes', 'mental_attributes', 'teamwork'].map(field => (
-                <div key={field}>
-                  <Label htmlFor={`${field}_range`}>{field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} (1-10): {newEvaluation[field]}</Label>
-                  <input
-                    id={`${field}_range`}
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={newEvaluation[field]}
-                    onChange={(e) => setNewEvaluation({...newEvaluation, [field]: parseInt(e.target.value)})}
-                    className="w-full"
-                  />
-                </div>
-              ))}
-              <div>
-                <Label htmlFor="overall_rating_range">Overall Rating (1-10): {newEvaluation.overall_rating}</Label>
-                <input
-                  id="overall_rating_range"
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={newEvaluation.overall_rating}
-                  onChange={(e) => setNewEvaluation({...newEvaluation, overall_rating: parseInt(e.target.value)})}
-                  className="w-full"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="evaluation_strengths">Strengths</Label>
-              <Textarea
-                id="evaluation_strengths"
-                value={newEvaluation.strengths}
-                onChange={(e) => setNewEvaluation({...newEvaluation, strengths: e.target.value})}
-                placeholder="Key strengths..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="evaluation_improvements">Areas for Improvement</Label>
-              <Textarea
-                id="evaluation_improvements"
-                value={newEvaluation.areas_for_improvement}
-                onChange={(e) => setNewEvaluation({...newEvaluation, areas_for_improvement: e.target.value})}
-                placeholder="What to work on..."
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowEvaluationDialog(false)}>Cancel</Button>
-            <Button onClick={() => createEvaluationMutation.mutate(newEvaluation)} className="bg-emerald-600 hover:bg-emerald-700">
-              Save Evaluation
-            </Button>
-          </div>
+          <ComprehensiveEvaluationForm
+            player={player}
+            teams={teams}
+            onSave={(data) => createEvaluationMutation.mutate(data)}
+            onCancel={() => setShowEvaluationDialog(false)}
+          />
         </DialogContent>
       </Dialog>
 
