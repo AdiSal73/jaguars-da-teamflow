@@ -95,7 +95,7 @@ export default function PublicBooking() {
       start_time: selectedTime,
       duration: selectedService?.duration || 60,
       session_type: sessionType,
-      status: 'Scheduled',
+      status: 'Pending',
       notes: notes,
       meeting_location: 'TBD'
     };
