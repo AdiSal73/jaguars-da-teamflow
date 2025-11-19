@@ -20,8 +20,13 @@ export default function Tryouts() {
   const [selectedCoach, setSelectedCoach] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
-  const [sortBy, setSortBy] = useState('team');
+  const [sortBy, setSortBy] = useState('team_ranking');
   const [viewMode, setViewMode] = useState('columns');
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -40,8 +45,23 @@ export default function Tryouts() {
 
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
-    queryFn: () => base44.entities.Coach.list()
+    queryFn: () => base44.entities.Coach.list(),
+    enabled: !!user
   });
+
+  const userRole = React.useMemo(() => {
+    if (!user) return null;
+    if (user.role === 'admin') return 'admin';
+    const isCoach = coaches.find(c => c.email === user.email);
+    if (isCoach) return 'coach';
+    return 'user';
+  }, [user, coaches]);
+
+  React.useEffect(() => {
+    if (userRole === 'user') {
+      navigate(createPageUrl('Dashboard'));
+    }
+  }, [userRole, navigate]);
 
   const updatePlayerTeamMutation = useMutation({
     mutationFn: ({ playerId, teamId }) => base44.entities.Player.update(playerId, { team_id: teamId }),
@@ -106,7 +126,11 @@ export default function Tryouts() {
 
     // Sort based on selected sort option
     return playersWithTryout.sort((a, b) => {
-      if (sortBy === 'team') {
+      if (sortBy === 'team_ranking') {
+        const rankA = a.tryout?.team_ranking || 9999;
+        const rankB = b.tryout?.team_ranking || 9999;
+        return rankA - rankB;
+      } else if (sortBy === 'team') {
         const teamA = teams.find(t => t.id === a.team_id);
         const teamB = teams.find(t => t.id === b.team_id);
         const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
@@ -205,7 +229,11 @@ export default function Tryouts() {
     
     // Sort
     return filtered.sort((a, b) => {
-      if (sortBy === 'team') {
+      if (sortBy === 'team_ranking') {
+        const rankA = a.tryout?.team_ranking || 9999;
+        const rankB = b.tryout?.team_ranking || 9999;
+        return rankA - rankB;
+      } else if (sortBy === 'team') {
         const teamA = teams.find(t => t.id === a.team_id);
         const teamB = teams.find(t => t.id === b.team_id);
         const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
@@ -244,16 +272,43 @@ export default function Tryouts() {
     });
   };
 
+  const updateRankingMutation = useMutation({
+    mutationFn: async ({ playerId, newRanking }) => {
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      const player = players.find(p => p.id === playerId);
+      const team = teams.find(t => t.id === player?.team_id);
+      
+      if (existingTryout) {
+        return base44.entities.PlayerTryout.update(existingTryout.id, { team_ranking: newRanking });
+      } else {
+        return base44.entities.PlayerTryout.create({
+          player_id: playerId,
+          player_name: player?.full_name,
+          current_team: team?.name,
+          team_ranking: newRanking
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+    }
+  });
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
 
     const { source, destination, draggableId } = result;
-    if (source.droppableId === destination.droppableId) return;
-
     const playerId = draggableId.replace('player-', '');
-    const newTeamId = destination.droppableId.replace('team-', '');
-
-    updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
+    
+    // If dropped in a different team
+    if (source.droppableId !== destination.droppableId) {
+      const newTeamId = destination.droppableId.replace('team-', '');
+      updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
+    }
+    
+    // Update ranking based on new position
+    const newRanking = destination.index + 1;
+    updateRankingMutation.mutate({ playerId, newRanking });
   };
 
   const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
@@ -302,66 +357,67 @@ export default function Tryouts() {
                         {teamPlayers.length === 0 ? (
                           <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p>
                         ) : (
-                          teamPlayers.map((player, index) => (
-                            <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                 ref={provided.innerRef}
-                                 {...provided.draggableProps}
-                                 {...provided.dragHandleProps}
-                                 style={{
-                                   ...provided.draggableProps.style,
-                                 }}
-                                 className={`${
-                                   player.trapped === 'Yes' 
-                                     ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                     : 'border-slate-200 bg-white hover:border-emerald-400'
-                                 } w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                   snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                 }`}
-                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3 flex-1">
-                                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md text-lg">
-                                        {player.jersey_number || <User className="w-6 h-6" />}
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
-                                        <div className="text-xs text-slate-600 mt-0.5">{player.position}</div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      {player.trapped === 'Yes' && (
-                                        <Badge className="bg-red-500 text-white mb-1 shadow-sm">
-                                          <AlertCircle className="w-3 h-3 mr-1" />
-                                          Trapped
-                                        </Badge>
-                                      )}
-                                      {player.tryout && (
-                                        <div className="space-y-1">
-                                          {player.tryout.team_role && (
-                                            <div className="text-xs text-slate-600 font-medium">{player.tryout.team_role}</div>
-                                          )}
-                                          {player.tryout.recommendation && (
-                                            <Badge 
-                                              className={`shadow-sm ${
-                                                player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                                player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                                'bg-blue-500'
-                                              }`}
-                                            >
-                                              {player.tryout.recommendation}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))
+                         teamPlayers.map((player, index) => (
+                           <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                             {(provided, snapshot) => (
+                               <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={{
+                                  ...provided.draggableProps.style,
+                                }}
+                                className={`${
+                                  player.trapped === 'Yes' 
+                                    ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                    : 'border-slate-200 bg-white hover:border-emerald-400'
+                                } w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                  snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                }`}
+                                onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
+                               >
+                                 <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-3 flex-1">
+                                     <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-base">
+                                       #{player.tryout?.team_ranking || index + 1}
+                                     </div>
+                                     <div className="flex-1">
+                                       <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
+                                       <div className="text-xs text-slate-600 mt-0.5 flex gap-2">
+                                         <span>{player.primary_position}</span>
+                                         {player.tryout?.team_role && (
+                                           <>
+                                             <span>•</span>
+                                             <span>{player.tryout.team_role}</span>
+                                           </>
+                                         )}
+                                       </div>
+                                     </div>
+                                   </div>
+                                   <div className="text-right">
+                                     {player.trapped === 'Yes' && (
+                                       <Badge className="bg-red-500 text-white mb-1 shadow-sm">
+                                         <AlertCircle className="w-3 h-3 mr-1" />
+                                         Trapped
+                                       </Badge>
+                                     )}
+                                     {player.tryout?.recommendation && (
+                                       <Badge 
+                                         className={`shadow-sm ${
+                                           player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                                           player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                                           'bg-blue-500'
+                                         }`}
+                                       >
+                                         {player.tryout.recommendation}
+                                       </Badge>
+                                     )}
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+                           </Draggable>
+                         ))
                         )}
                         {provided.placeholder}
                       </CardContent>
@@ -461,6 +517,7 @@ export default function Tryouts() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="team_ranking">Team Ranking</SelectItem>
                     <SelectItem value="team">Team</SelectItem>
                     <SelectItem value="age_group">Age Group</SelectItem>
                     <SelectItem value="league">League</SelectItem>
@@ -612,6 +669,16 @@ export default function Tryouts() {
                           value={player.tryout?.next_year_team || ''} 
                           onChange={(e) => updateTryoutField.mutate({ playerId: player.id, field: 'next_year_team', value: e.target.value })}
                           className="h-9 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Team Ranking</Label>
+                        <Input 
+                          type="number"
+                          value={player.tryout?.team_ranking || ''} 
+                          onChange={(e) => updateTryoutField.mutate({ playerId: player.id, field: 'team_ranking', value: parseInt(e.target.value) })}
+                          className="h-9 mt-1"
+                          placeholder="1, 2, 3..."
                         />
                       </div>
                       <div>

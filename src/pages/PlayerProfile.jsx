@@ -43,6 +43,25 @@ export default function PlayerProfile() {
 
 
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list(),
+    enabled: !!user
+  });
+
+  const userRole = React.useMemo(() => {
+    if (!user) return null;
+    if (user.role === 'admin') return 'admin';
+    const isCoach = coaches.find(c => c.email === user.email);
+    if (isCoach) return 'coach';
+    return 'user';
+  }, [user, coaches]);
+
   const { data: player } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
@@ -323,11 +342,13 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className={`grid w-full ${userRole === 'admin' || userRole === 'coach' ? 'grid-cols-6' : 'grid-cols-5'}`}>
               <TabsTrigger value="physical">Physical</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
-              <TabsTrigger value="tryout">Tryout</TabsTrigger>
+              {(userRole === 'admin' || userRole === 'coach') && (
+                <TabsTrigger value="tryout">Tryout</TabsTrigger>
+              )}
               <TabsTrigger value="goals">Goals</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
@@ -700,7 +721,8 @@ export default function PlayerProfile() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="tryout" className="space-y-6">
+            {(userRole === 'admin' || userRole === 'coach') && (
+              <TabsContent value="tryout" className="space-y-6">
               <Card className="border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
                 <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-blue-50">
                   <CardTitle className="text-2xl flex items-center gap-2">
@@ -865,6 +887,16 @@ export default function PlayerProfile() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
+                      <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Team Ranking</Label>
+                      <Input 
+                        type="number"
+                        value={tryout?.team_ranking || ''} 
+                        onChange={(e) => handleTryoutFieldUpdate('team_ranking', parseInt(e.target.value))}
+                        placeholder="e.g., 1, 2, 3"
+                        className="border-2 border-slate-300 h-12"
+                      />
+                    </div>
                     <div className="md:col-span-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 p-4">
                       <Label className="text-xs text-slate-500 uppercase tracking-wider mb-2 block">Notes</Label>
                       <Textarea 
@@ -879,6 +911,7 @@ export default function PlayerProfile() {
                 </CardContent>
               </Card>
             </TabsContent>
+            )}
 
             <TabsContent value="goals" className="space-y-6">
               <GoalTracker playerId={playerId} playerName={player.full_name} goals={player.goals || []} />
