@@ -13,7 +13,7 @@ export default function ShareBookingLink({ coachId }) {
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const bookingUrl = `${window.location.origin}/book-session${coachId ? `?coach=${coachId}` : ''}`;
+  const bookingUrl = `${window.location.origin}${coachId ? `?coach=${coachId}` : ''}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingUrl);

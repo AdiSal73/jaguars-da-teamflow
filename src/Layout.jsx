@@ -100,6 +100,7 @@ export default function Layout({ children, currentPageName }) {
     { title: "Availability", url: createPageUrl("Availability"), icon: Clock, roles: ["admin", "coach"] },
     { title: "Book Session", url: createPageUrl("BookSession"), icon: Calendar, roles: ["admin", "coach", "user"] },
     { title: "My Bookings", url: createPageUrl("MyBookings"), icon: Calendar, roles: ["user"] },
+    { title: "Manage Bookings", url: createPageUrl("BookingsTable"), icon: Calendar, roles: ["admin", "coach"] },
   ];
 
   const navigationItems = allNavigationItems.filter(item => 
