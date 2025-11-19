@@ -479,6 +479,7 @@ export default function Tryouts() {
           <TabsList className="mb-6">
             <TabsTrigger value="columns">3-Column View</TabsTrigger>
             <TabsTrigger value="cards">Card View</TabsTrigger>
+            <TabsTrigger value="formation">Formation View</TabsTrigger>
           </TabsList>
 
           <TabsContent value="columns">
@@ -510,7 +511,7 @@ export default function Tryouts() {
                 return (
                   <Card key={player.id} className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all">
                     <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 pb-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-3">
                         <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
                           {player.jersey_number || <User className="w-7 h-7" />}
                         </div>
@@ -524,6 +525,24 @@ export default function Tryouts() {
                             Trapped
                           </Badge>
                         )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-blue-50 p-2 rounded">
+                          <div className="text-slate-600">Position</div>
+                          <div className="font-semibold text-slate-900">{player.position || 'N/A'}</div>
+                        </div>
+                        <div className="bg-purple-50 p-2 rounded">
+                          <div className="text-slate-600">Dominant Foot</div>
+                          <div className="font-semibold text-slate-900">{player.tryout?.dominant_foot || 'N/A'}</div>
+                        </div>
+                        <div className="bg-emerald-50 p-2 rounded">
+                          <div className="text-slate-600">Team Role</div>
+                          <div className="font-semibold text-slate-900 text-[10px]">{player.tryout?.team_role || 'N/A'}</div>
+                        </div>
+                        <div className="bg-orange-50 p-2 rounded">
+                          <div className="text-slate-600">Recommendation</div>
+                          <div className="font-semibold text-slate-900">{player.tryout?.recommendation || 'N/A'}</div>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-3">
@@ -626,6 +645,35 @@ export default function Tryouts() {
                 );
               })}
             </div>
+          </TabsContent>
+
+          <TabsContent value="formation">
+            <Card className="border-none shadow-lg mb-6">
+              <CardHeader>
+                <CardTitle>Select Team to View Formation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {teams.map(team => (
+                    <button
+                      key={team.id}
+                      onClick={() => navigate(`${createPageUrl('FormationView')}?teamId=${team.id}`)}
+                      className="p-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl border-2 border-slate-200 hover:border-emerald-500 transition-all hover:shadow-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
+                          {team.age_group || team.name.charAt(0)}
+                        </div>
+                        <div className="text-left">
+                          <div className="font-bold text-slate-900">{team.name}</div>
+                          <div className="text-sm text-slate-600">{team.age_group}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

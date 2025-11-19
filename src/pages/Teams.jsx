@@ -185,15 +185,12 @@ export default function Teams() {
 
           return (
             <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
-              onClick={() => handleEdit(team)}
+              onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
             >
-                <CardHeader className="border-b border-slate-100 relative" style={{ backgroundColor: `${team.team_color}20` }}>
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50">
                   <CardTitle className="flex items-center gap-3">
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                      style={{ backgroundColor: team.team_color }}
-                    >
-                      {team.name.charAt(0)}
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
+                      {team.age_group || team.name.charAt(0)}
                     </div>
                     <div className="flex-1">
                       <div className="text-lg">{team.name}</div>
@@ -201,8 +198,8 @@ export default function Teams() {
                     </div>
                   </CardTitle>
                 <div className="absolute top-4 right-4 flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`); }} className="bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                    <BarChart3 className="w-4 h-4" />
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(team); }} className="bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Edit className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTeamId(team.id); }} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Trash2 className="w-4 h-4" />
