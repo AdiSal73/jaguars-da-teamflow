@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Users, User, Edit, Trash2, BarChart3 } from 'lucide-react';
+import { Plus, Users, User, Edit, Trash2, BarChart3, Scan } from 'lucide-react';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,6 +95,36 @@ export default function Teams() {
     }
   });
 
+  const scanAndCreateTeams = async () => {
+    const uniqueTeamNames = [...new Set(players.map(p => p.team_id).filter(Boolean))];
+    const existingTeamIds = teams.map(t => t.id);
+    
+    let createdCount = 0;
+    for (const teamId of uniqueTeamNames) {
+      if (!existingTeamIds.includes(teamId)) {
+        const teamPlayers = players.filter(p => p.team_id === teamId);
+        if (teamPlayers.length > 0) {
+          const firstPlayer = teamPlayers[0];
+          const teamName = firstPlayer.team_id;
+          
+          const ageMatch = teamName.match(/U-?(\d+)/i);
+          const ageGroup = ageMatch ? `U-${ageMatch[1]}` : 'Senior';
+          
+          await base44.entities.Team.create({
+            name: teamName,
+            age_group: ageGroup,
+            league: '',
+            coach_ids: []
+          });
+          createdCount++;
+        }
+      }
+    }
+    
+    queryClient.invalidateQueries(['teams']);
+    alert(`Created ${createdCount} new teams from player data!`);
+  };
+
   const resetForm = () => {
     setTeamForm({
       name: '',
@@ -135,10 +165,16 @@ export default function Teams() {
           <h1 className="text-3xl font-bold text-slate-900">Teams Management</h1>
           <p className="text-slate-600 mt-1">Manage teams and assign coaches</p>
         </div>
-        <Button onClick={() => { setEditingTeam(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Team
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={scanAndCreateTeams} variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
+            <Scan className="w-4 h-4 mr-2" />
+            Scan & Create Teams
+          </Button>
+          <Button onClick={() => { setEditingTeam(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Team
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

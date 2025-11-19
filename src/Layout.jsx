@@ -28,10 +28,17 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { data: user } = useQuery({
+  const { data: user, isError } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => base44.auth.me(),
+    retry: false
   });
+
+  React.useEffect(() => {
+    if (isError) {
+      base44.auth.redirectToLogin();
+    }
+  }, [isError]);
 
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
