@@ -135,7 +135,7 @@ export default function Dashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to Jaguars DA APP
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to Jaguars GA APP
         </h1>
         <p className="text-slate-600">Manage your club's players, teams, and training sessions</p>
       </div>
@@ -156,10 +156,10 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-3xl font-bold text-slate-900">
                   {loadingPlayers || loadingTeams || loadingBookings || loadingAssessments ?
-                  <Skeleton className="h-10 w-16" /> :
+                <Skeleton className="h-10 w-16" /> :
 
-                  stat.value
-                  }
+                stat.value
+                }
                 </div>
               </CardContent>
             </Card>
