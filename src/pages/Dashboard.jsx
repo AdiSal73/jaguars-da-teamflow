@@ -19,13 +19,13 @@ export default function Dashboard() {
     queryFn: async () => {
       const allPlayers = await base44.entities.Player.list();
       if (user?.role === 'user') {
-        return allPlayers.filter(p => p.email === user.email);
+        return allPlayers.filter((p) => p.email === user.email);
       }
       if (user?.role === 'coach') {
         const coaches = await base44.entities.Coach.list();
-        const currentCoach = coaches.find(c => c.email === user.email);
+        const currentCoach = coaches.find((c) => c.email === user.email);
         if (currentCoach?.team_ids) {
-          return allPlayers.filter(p => currentCoach.team_ids.includes(p.team_id));
+          return allPlayers.filter((p) => currentCoach.team_ids.includes(p.team_id));
         }
       }
       return allPlayers;
@@ -40,9 +40,9 @@ export default function Dashboard() {
       if (user?.role === 'user') return [];
       if (user?.role === 'coach') {
         const coaches = await base44.entities.Coach.list();
-        const currentCoach = coaches.find(c => c.email === user.email);
+        const currentCoach = coaches.find((c) => c.email === user.email);
         if (currentCoach?.team_ids) {
-          return allTeams.filter(t => currentCoach.team_ids.includes(t.id));
+          return allTeams.filter((t) => currentCoach.team_ids.includes(t.id));
         }
       }
       return allTeams;
@@ -55,12 +55,12 @@ export default function Dashboard() {
     queryFn: async () => {
       const allBookings = await base44.entities.Booking.list('-created_date', 10);
       if (user?.role === 'user') {
-        return allBookings.filter(b => b.player_email === user.email);
+        return allBookings.filter((b) => b.player_email === user.email);
       }
       if (user?.role === 'coach') {
         const coaches = await base44.entities.Coach.list();
-        const currentCoach = coaches.find(c => c.email === user.email);
-        return allBookings.filter(b => b.coach_id === currentCoach?.id);
+        const currentCoach = coaches.find((c) => c.email === user.email);
+        return allBookings.filter((b) => b.coach_id === currentCoach?.id);
       }
       return allBookings;
     },
@@ -72,12 +72,12 @@ export default function Dashboard() {
     queryFn: async () => {
       const allAssessments = await base44.entities.PhysicalAssessment.list('-assessment_date', 10);
       if (user?.role === 'user') {
-        const playerIds = players.map(p => p.id);
-        return allAssessments.filter(a => playerIds.includes(a.player_id));
+        const playerIds = players.map((p) => p.id);
+        return allAssessments.filter((a) => playerIds.includes(a.player_id));
       }
       if (user?.role === 'coach') {
-        const playerIds = players.map(p => p.id);
-        return allAssessments.filter(a => playerIds.includes(a.player_id));
+        const playerIds = players.map((p) => p.id);
+        return allAssessments.filter((a) => playerIds.includes(a.player_id));
       }
       return allAssessments;
     },
@@ -95,53 +95,53 @@ export default function Dashboard() {
     return <div className="p-8 text-center">Redirecting to your profile...</div>;
   }
 
-  const upcomingBookings = bookings.filter(b => 
-    b.status === 'Scheduled' && new Date(b.date) >= new Date()
+  const upcomingBookings = bookings.filter((b) =>
+  b.status === 'Scheduled' && new Date(b.date) >= new Date()
   ).slice(0, 5);
 
   const recentAssessments = assessments.slice(0, 4);
 
   const stats = [
-    { 
-      title: 'Total Players', 
-      value: players.length, 
-      icon: Users, 
-      color: 'bg-blue-500',
-      link: createPageUrl('Players')
-    },
-    { 
-      title: 'Active Teams', 
-      value: teams.length, 
-      icon: Shield, 
-      color: 'bg-emerald-500',
-      link: createPageUrl('Teams')
-    },
-    { 
-      title: 'Upcoming Sessions', 
-      value: upcomingBookings.length, 
-      icon: Calendar, 
-      color: 'bg-purple-500',
-      link: createPageUrl('BookSession')
-    },
-    { 
-      title: 'Recent Assessments', 
-      value: assessments.length, 
-      icon: Activity, 
-      color: 'bg-orange-500',
-      link: createPageUrl('Assessments')
-    }
-  ];
+  {
+    title: 'Total Players',
+    value: players.length,
+    icon: Users,
+    color: 'bg-blue-500',
+    link: createPageUrl('Players')
+  },
+  {
+    title: 'Active Teams',
+    value: teams.length,
+    icon: Shield,
+    color: 'bg-emerald-500',
+    link: createPageUrl('Teams')
+  },
+  {
+    title: 'Upcoming Sessions',
+    value: upcomingBookings.length,
+    icon: Calendar,
+    color: 'bg-purple-500',
+    link: createPageUrl('BookSession')
+  },
+  {
+    title: 'Recent Assessments',
+    value: assessments.length,
+    icon: Activity,
+    color: 'bg-orange-500',
+    link: createPageUrl('Assessments')
+  }];
+
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to Soccer Hub</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to Jaguars DA APP
+        </h1>
         <p className="text-slate-600">Manage your club's players, teams, and training sessions</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <Link key={stat.title} to={stat.link}>
+        {stats.map((stat) => <Link key={stat.title} to={stat.link}>
             <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-none bg-white">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -155,16 +155,16 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-slate-900">
-                  {loadingPlayers || loadingTeams || loadingBookings || loadingAssessments ? (
-                    <Skeleton className="h-10 w-16" />
-                  ) : (
-                    stat.value
-                  )}
+                  {loadingPlayers || loadingTeams || loadingBookings || loadingAssessments ?
+                  <Skeleton className="h-10 w-16" /> :
+
+                  stat.value
+                  }
                 </div>
               </CardContent>
             </Card>
           </Link>
-        ))}
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -176,16 +176,16 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            {loadingBookings ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-              </div>
-            ) : upcomingBookings.length === 0 ? (
-              <p className="text-center text-slate-500 py-8">No upcoming sessions</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingBookings.map(booking => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+            {loadingBookings ?
+            <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+              </div> :
+            upcomingBookings.length === 0 ?
+            <p className="text-center text-slate-500 py-8">No upcoming sessions</p> :
+
+            <div className="space-y-3">
+                {upcomingBookings.map((booking) =>
+              <div key={booking.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                     <div>
                       <p className="font-semibold text-slate-900">{booking.player_name || 'Player'}</p>
                       <p className="text-sm text-slate-600">{booking.coach_name}</p>
@@ -195,9 +195,9 @@ export default function Dashboard() {
                       <p className="text-xs text-slate-500">{new Date(booking.date).toLocaleDateString()}</p>
                     </div>
                   </div>
-                ))}
+              )}
               </div>
-            )}
+            }
           </CardContent>
         </Card>
 
@@ -209,16 +209,16 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            {loadingAssessments ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-              </div>
-            ) : recentAssessments.length === 0 ? (
-              <p className="text-center text-slate-500 py-8">No assessments yet</p>
-            ) : (
-              <div className="space-y-3">
-                {recentAssessments.map(assessment => (
-                  <div key={assessment.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+            {loadingAssessments ?
+            <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+              </div> :
+            recentAssessments.length === 0 ?
+            <p className="text-center text-slate-500 py-8">No assessments yet</p> :
+
+            <div className="space-y-3">
+                {recentAssessments.map((assessment) =>
+              <div key={assessment.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                     <div>
                       <p className="font-semibold text-slate-900">Physical Assessment</p>
                       <p className="text-xs text-slate-500">{new Date(assessment.assessment_date).toLocaleDateString()}</p>
@@ -232,12 +232,12 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                ))}
+              )}
               </div>
-            )}
+            }
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>);
+
 }
