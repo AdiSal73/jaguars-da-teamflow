@@ -549,16 +549,24 @@ export default function Tryouts() {
                       <div>
                         <Label className="text-xs text-slate-600">Primary Position</Label>
                         <Select 
-                          value={player.tryout?.primary_position?.toString() || ''} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'primary_position', value: parseInt(value) })}
+                          value={player.tryout?.primary_position || ''} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'primary_position', value })}
                         >
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
                           <SelectContent>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
-                              <SelectItem key={num} value={num.toString()}>Position {num}</SelectItem>
-                            ))}
+                            <SelectItem value="GK">GK</SelectItem>
+                            <SelectItem value="Right Outside Back">Right Outside Back</SelectItem>
+                            <SelectItem value="Left Outside Back">Left Outside Back</SelectItem>
+                            <SelectItem value="Right Centerback">Right Centerback</SelectItem>
+                            <SelectItem value="Left Centerback">Left Centerback</SelectItem>
+                            <SelectItem value="Defensive Midfielder">Defensive Midfielder</SelectItem>
+                            <SelectItem value="Right Winger">Right Winger</SelectItem>
+                            <SelectItem value="Center Midfielder">Center Midfielder</SelectItem>
+                            <SelectItem value="Forward">Forward</SelectItem>
+                            <SelectItem value="Attacking Midfielder">Attacking Midfielder</SelectItem>
+                            <SelectItem value="Left Winger">Left Winger</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

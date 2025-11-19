@@ -7,110 +7,127 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
 
+const positionMapping = {
+  'GK': 'GK',
+  'Right Outside Back': 'Right Outside Back',
+  'Left Outside Back': 'Left Outside Back',
+  'Right Centerback': 'Right Centerback',
+  'Left Centerback': 'Left Centerback',
+  'Defensive Midfielder': 'Defensive Midfielder',
+  'Right Winger': 'Right Winger',
+  'Center Midfielder': 'Center Midfielder',
+  'Forward': 'Forward',
+  'Attacking Midfielder': 'Attacking Midfielder',
+  'Left Winger': 'Left Winger'
+};
+
 const formations = {
   '4-3-3': {
     name: '4-3-3',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 2, x: 80, y: 75, label: 'RB' },
-      { id: 5, x: 62, y: 75, label: 'CB' },
-      { id: 4, x: 38, y: 75, label: 'CB' },
-      { id: 3, x: 20, y: 75, label: 'LB' },
-      { id: 8, x: 62, y: 50, label: 'CM' },
-      { id: 6, x: 50, y: 50, label: 'CDM' },
-      { id: 10, x: 38, y: 50, label: 'CM' },
-      { id: 7, x: 75, y: 20, label: 'RW' },
-      { id: 9, x: 50, y: 15, label: 'ST' },
-      { id: 11, x: 25, y: 20, label: 'LW' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Right Outside Back', x: 80, y: 75, label: 'RB' },
+      { id: 'Left Centerback', x: 62, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 38, y: 75, label: 'RCB' },
+      { id: 'Left Outside Back', x: 20, y: 75, label: 'LB' },
+      { id: 'Center Midfielder', x: 62, y: 50, label: 'CM' },
+      { id: 'Defensive Midfielder', x: 50, y: 50, label: 'CDM' },
+      { id: 'Attacking Midfielder', x: 38, y: 50, label: 'CAM' },
+      { id: 'Right Winger', x: 75, y: 20, label: 'RW' },
+      { id: 'Forward', x: 50, y: 15, label: 'ST' },
+      { id: 'Left Winger', x: 25, y: 20, label: 'LW' }
     ]
   },
   '4-2-3-1': {
     name: '4-2-3-1',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 2, x: 80, y: 75, label: 'RB' },
-      { id: 5, x: 62, y: 75, label: 'CB' },
-      { id: 4, x: 38, y: 75, label: 'CB' },
-      { id: 3, x: 20, y: 75, label: 'LB' },
-      { id: 6, x: 60, y: 55, label: 'CDM' },
-      { id: 8, x: 40, y: 55, label: 'CDM' },
-      { id: 7, x: 75, y: 35, label: 'RM' },
-      { id: 10, x: 50, y: 35, label: 'CAM' },
-      { id: 11, x: 25, y: 35, label: 'LM' },
-      { id: 9, x: 50, y: 15, label: 'ST' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Right Outside Back', x: 80, y: 75, label: 'RB' },
+      { id: 'Left Centerback', x: 62, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 38, y: 75, label: 'RCB' },
+      { id: 'Left Outside Back', x: 20, y: 75, label: 'LB' },
+      { id: 'Defensive Midfielder', x: 60, y: 55, label: 'CDM' },
+      { id: 'Center Midfielder', x: 40, y: 55, label: 'CM' },
+      { id: 'Right Winger', x: 75, y: 35, label: 'RW' },
+      { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM' },
+      { id: 'Left Winger', x: 25, y: 35, label: 'LW' },
+      { id: 'Forward', x: 50, y: 15, label: 'ST' }
     ]
   },
   '4-4-2': {
     name: '4-4-2',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 2, x: 80, y: 75, label: 'RB' },
-      { id: 5, x: 62, y: 75, label: 'CB' },
-      { id: 4, x: 38, y: 75, label: 'CB' },
-      { id: 3, x: 20, y: 75, label: 'LB' },
-      { id: 7, x: 80, y: 45, label: 'RM' },
-      { id: 8, x: 60, y: 45, label: 'CM' },
-      { id: 6, x: 40, y: 45, label: 'CM' },
-      { id: 11, x: 20, y: 45, label: 'LM' },
-      { id: 9, x: 60, y: 15, label: 'ST' },
-      { id: 10, x: 40, y: 15, label: 'ST' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Right Outside Back', x: 80, y: 75, label: 'RB' },
+      { id: 'Left Centerback', x: 62, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 38, y: 75, label: 'RCB' },
+      { id: 'Left Outside Back', x: 20, y: 75, label: 'LB' },
+      { id: 'Right Winger', x: 80, y: 45, label: 'RW' },
+      { id: 'Center Midfielder', x: 60, y: 45, label: 'CM' },
+      { id: 'Defensive Midfielder', x: 40, y: 45, label: 'CDM' },
+      { id: 'Left Winger', x: 20, y: 45, label: 'LW' },
+      { id: 'Forward', x: 60, y: 15, label: 'ST' },
+      { id: 'Attacking Midfielder', x: 40, y: 15, label: 'CAM' }
     ]
   },
   '3-4-2-1': {
     name: '3-4-2-1',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 5, x: 65, y: 75, label: 'CB' },
-      { id: 4, x: 50, y: 75, label: 'CB' },
-      { id: 3, x: 35, y: 75, label: 'CB' },
-      { id: 2, x: 80, y: 50, label: 'RM' },
-      { id: 8, x: 60, y: 50, label: 'CM' },
-      { id: 6, x: 40, y: 50, label: 'CM' },
-      { id: 11, x: 20, y: 50, label: 'LM' },
-      { id: 10, x: 60, y: 28, label: 'CAM' },
-      { id: 7, x: 40, y: 28, label: 'CAM' },
-      { id: 9, x: 50, y: 15, label: 'ST' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Left Centerback', x: 65, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 50, y: 75, label: 'CB' },
+      { id: 'Left Outside Back', x: 35, y: 75, label: 'LB' },
+      { id: 'Right Outside Back', x: 80, y: 50, label: 'RB' },
+      { id: 'Center Midfielder', x: 60, y: 50, label: 'CM' },
+      { id: 'Defensive Midfielder', x: 40, y: 50, label: 'CDM' },
+      { id: 'Left Winger', x: 20, y: 50, label: 'LW' },
+      { id: 'Attacking Midfielder', x: 60, y: 28, label: 'CAM' },
+      { id: 'Right Winger', x: 40, y: 28, label: 'RW' },
+      { id: 'Forward', x: 50, y: 15, label: 'ST' }
     ]
   },
   '3-5-2': {
     name: '3-5-2',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 5, x: 65, y: 75, label: 'CB' },
-      { id: 4, x: 50, y: 75, label: 'CB' },
-      { id: 3, x: 35, y: 75, label: 'CB' },
-      { id: 2, x: 80, y: 50, label: 'RWB' },
-      { id: 8, x: 62, y: 50, label: 'CM' },
-      { id: 6, x: 50, y: 50, label: 'CDM' },
-      { id: 10, x: 38, y: 50, label: 'CM' },
-      { id: 11, x: 20, y: 50, label: 'LWB' },
-      { id: 9, x: 60, y: 15, label: 'ST' },
-      { id: 7, x: 40, y: 15, label: 'ST' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Left Centerback', x: 65, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 50, y: 75, label: 'CB' },
+      { id: 'Left Outside Back', x: 35, y: 75, label: 'LB' },
+      { id: 'Right Outside Back', x: 80, y: 50, label: 'RWB' },
+      { id: 'Center Midfielder', x: 62, y: 50, label: 'CM' },
+      { id: 'Defensive Midfielder', x: 50, y: 50, label: 'CDM' },
+      { id: 'Attacking Midfielder', x: 38, y: 50, label: 'CAM' },
+      { id: 'Left Winger', x: 20, y: 50, label: 'LWB' },
+      { id: 'Forward', x: 60, y: 15, label: 'ST' },
+      { id: 'Right Winger', x: 40, y: 15, label: 'RW' }
     ]
   },
   '3-4-1-2': {
     name: '3-4-1-2',
     positions: [
-      { id: 1, x: 50, y: 95, label: 'GK' },
-      { id: 5, x: 65, y: 75, label: 'CB' },
-      { id: 4, x: 50, y: 75, label: 'CB' },
-      { id: 3, x: 35, y: 75, label: 'CB' },
-      { id: 2, x: 80, y: 50, label: 'RM' },
-      { id: 8, x: 60, y: 50, label: 'CM' },
-      { id: 6, x: 40, y: 50, label: 'CM' },
-      { id: 11, x: 20, y: 50, label: 'LM' },
-      { id: 10, x: 50, y: 32, label: 'CAM' },
-      { id: 9, x: 60, y: 15, label: 'ST' },
-      { id: 7, x: 40, y: 15, label: 'ST' }
+      { id: 'GK', x: 50, y: 95, label: 'GK' },
+      { id: 'Left Centerback', x: 65, y: 75, label: 'LCB' },
+      { id: 'Right Centerback', x: 50, y: 75, label: 'CB' },
+      { id: 'Left Outside Back', x: 35, y: 75, label: 'LB' },
+      { id: 'Right Outside Back', x: 80, y: 50, label: 'RB' },
+      { id: 'Center Midfielder', x: 60, y: 50, label: 'CM' },
+      { id: 'Defensive Midfielder', x: 40, y: 50, label: 'CDM' },
+      { id: 'Left Winger', x: 20, y: 50, label: 'LW' },
+      { id: 'Attacking Midfielder', x: 50, y: 32, label: 'CAM' },
+      { id: 'Forward', x: 60, y: 15, label: 'ST' },
+      { id: 'Right Winger', x: 40, y: 15, label: 'RW' }
     ]
   }
 };
 
 export default function FormationView() {
+  const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const teamId = urlParams.get('teamId');
   
   const [selectedFormation, setSelectedFormation] = useState('4-3-3');
+  const [editingPlayer, setEditingPlayer] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -135,10 +152,50 @@ export default function FormationView() {
     queryFn: () => base44.entities.PlayerTryout.list()
   });
 
+  const updatePlayerPositionMutation = useMutation({
+    mutationFn: async ({ playerId, newPosition }) => {
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      const player = players.find(p => p.id === playerId);
+      
+      if (existingTryout) {
+        return base44.entities.PlayerTryout.update(existingTryout.id, { 
+          primary_position: newPosition 
+        });
+      } else {
+        return base44.entities.PlayerTryout.create({
+          player_id: playerId,
+          player_name: player?.full_name,
+          current_team: team?.name,
+          primary_position: newPosition
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      setShowEditDialog(false);
+    }
+  });
+
   const getPlayersForPosition = (positionId) => {
     return players.filter(player => {
       const tryout = tryouts.find(t => t.player_id === player.id);
       return tryout?.primary_position === positionId;
+    });
+  };
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const sourcePositionId = result.source.droppableId.replace('position-', '');
+    const destPositionId = result.destination.droppableId.replace('position-', '');
+
+    if (sourcePositionId === destPositionId) return;
+
+    const draggedPlayerId = result.draggableId.replace('player-', '');
+    
+    updatePlayerPositionMutation.mutate({
+      playerId: draggedPlayerId,
+      newPosition: destPositionId
     });
   };
 
@@ -149,7 +206,8 @@ export default function FormationView() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{team.name} - Formation View</h1>
           <p className="text-slate-600">View all players organized by their positions</p>
@@ -209,45 +267,76 @@ export default function FormationView() {
                   const positionPlayers = getPlayersForPosition(position.id);
                   
                   return (
-                    <div
-                      key={position.id}
-                      className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                      style={{
-                        left: `${position.x}%`,
-                        top: `${position.y}%`,
-                        width: '100px',
-                        maxHeight: '140px'
-                      }}
-                    >
-                      <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 border-white p-2 overflow-y-auto max-h-[140px]">
-                        <div className="text-center text-[10px] font-bold text-emerald-700 mb-1 sticky top-0 bg-white/95 pb-1 border-b border-slate-200">
-                          {position.label}
-                        </div>
-                        <div className="space-y-1">
-                          {positionPlayers.length > 0 ? (
-                            positionPlayers.map(player => (
-                              <div key={player.id} className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg p-1.5 border border-emerald-200">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
-                                    {player.jersey_number || position.id}
-                                  </div>
-                                  <div className="text-[9px] font-semibold text-slate-900 leading-tight flex-1 min-w-0">
-                                    <div className="truncate">{player.full_name?.split(' ').pop()}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-2">
-                              <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                                <span className="text-slate-400 font-bold text-xs">{position.id}</span>
-                              </div>
-                              <div className="text-[8px] text-slate-400">No players</div>
+                    <Droppable droppableId={`position-${position.id}`} key={position.id}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                          style={{
+                            left: `${position.x}%`,
+                            top: `${position.y}%`,
+                            width: '140px',
+                            maxHeight: '200px'
+                          }}
+                        >
+                          <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[200px] transition-all ${
+                            snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-white'
+                          }`}>
+                            <div className="text-center text-xs font-bold text-emerald-700 mb-2 sticky top-0 bg-white/95 pb-1 border-b border-slate-200">
+                              {position.label}
                             </div>
-                          )}
+                            <div className="space-y-2">
+                              {positionPlayers.length > 0 ? (
+                                positionPlayers.map((player, index) => (
+                                  <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                                    {(provided, snapshot) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        className={`transition-all ${snapshot.isDragging ? 'rotate-3 scale-110' : ''}`}
+                                      >
+                                        <div className="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg p-2 border-2 border-emerald-200 cursor-grab active:cursor-grabbing hover:shadow-lg group">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0">
+                                              {player.jersey_number || '?'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-xs font-semibold text-slate-900 truncate">
+                                                {player.full_name}
+                                              </div>
+                                            </div>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingPlayer(player);
+                                                setShowEditDialog(true);
+                                              }}
+                                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
+                                            >
+                                              <Edit2 className="w-3 h-3 text-slate-600" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))
+                              ) : (
+                                <div className="text-center py-3">
+                                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                                    <span className="text-slate-400 font-bold text-sm">+</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400">Drag players here</div>
+                                </div>
+                              )}
+                              {provided.placeholder}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      )}
+                    </Droppable>
                   );
                 })}
               </div>
@@ -256,37 +345,100 @@ export default function FormationView() {
         </Card>
 
         {/* Players without assigned positions */}
-        {players.filter(player => {
-          const tryout = tryouts.find(t => t.player_id === player.id);
-          return !tryout?.primary_position || tryout.primary_position < 1 || tryout.primary_position > 11;
-        }).length > 0 && (
-          <Card className="mt-6 border-none shadow-lg">
-            <CardHeader>
-              <CardTitle>Players Without Position Assignment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {players
-                  .filter(player => {
-                    const tryout = tryouts.find(t => t.player_id === player.id);
-                    return !tryout?.primary_position || tryout.primary_position < 1 || tryout.primary_position > 11;
-                  })
-                  .map(player => (
-                    <div key={player.id} className="bg-slate-50 rounded-xl p-3 border-2 border-slate-200">
-                      <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md mb-2">
-                          {player.jersey_number || <User className="w-6 h-6" />}
-                        </div>
-                        <div className="text-xs font-semibold text-slate-900 text-center">
-                          {player.full_name}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+        <Droppable droppableId="position-unassigned">
+          {(provided, snapshot) => (
+            <Card 
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`mt-6 border-none shadow-lg transition-all ${
+                snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''
+              }`}
+            >
+              <CardHeader>
+                <CardTitle>Unassigned Players</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {players
+                    .filter(player => {
+                      const tryout = tryouts.find(t => t.player_id === player.id);
+                      return !tryout?.primary_position || !Object.keys(positionMapping).includes(tryout.primary_position);
+                    })
+                    .map((player, index) => (
+                      <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`transition-all ${snapshot.isDragging ? 'scale-110' : ''}`}
+                          >
+                            <div className="bg-slate-50 rounded-xl p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
+                              <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md mb-2">
+                                  {player.jersey_number || <User className="w-6 h-6" />}
+                                </div>
+                                <div className="text-xs font-semibold text-slate-900 text-center">
+                                  {player.full_name}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                  {provided.placeholder}
+                </div>
+                {players.filter(player => {
+                  const tryout = tryouts.find(t => t.player_id === player.id);
+                  return !tryout?.primary_position || !Object.keys(positionMapping).includes(tryout.primary_position);
+                }).length === 0 && (
+                  <p className="text-center text-slate-500 py-4">All players assigned to positions</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Droppable>
+
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Player Position</DialogTitle>
+            </DialogHeader>
+            {editingPlayer && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2">
+                    {editingPlayer.jersey_number || <User className="w-8 h-8" />}
+                  </div>
+                  <div className="font-semibold text-lg">{editingPlayer.full_name}</div>
+                </div>
+                <div>
+                  <Label className="mb-2 block">Primary Position</Label>
+                  <Select 
+                    value={tryouts.find(t => t.player_id === editingPlayer.id)?.primary_position || ''} 
+                    onValueChange={(value) => {
+                      updatePlayerPositionMutation.mutate({
+                        playerId: editingPlayer.id,
+                        newPosition: value
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(positionMapping).map(key => (
+                        <SelectItem key={key} value={key}>{key}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
+    </DragDropContext>
   );
 }
