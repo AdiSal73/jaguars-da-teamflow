@@ -125,64 +125,54 @@ const formations = {
 export default function FormationView() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
-  const teamId = urlParams.get('teamId');
+  const teamIdParam = urlParams.get('teamId');
   
   const [selectedFormation, setSelectedFormation] = useState('4-3-3');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(teamIdParam || 'all');
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
 
-  const { data: team } = useQuery({
-    queryKey: ['team', teamId],
-    queryFn: async () => {
-      const teams = await base44.entities.Team.list();
-      return teams.find(t => t.id === teamId);
-    },
-    enabled: !!teamId
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list()
   });
 
-  const { data: players = [] } = useQuery({
-    queryKey: ['players', teamId],
-    queryFn: async () => {
-      const allPlayers = await base44.entities.Player.list();
-      return allPlayers.filter(p => p.team_id === teamId);
-    },
-    enabled: !!teamId
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list()
   });
 
-  const { data: tryouts = [] } = useQuery({
-    queryKey: ['tryouts'],
-    queryFn: () => base44.entities.PlayerTryout.list()
+  // Filter players based on selected team or age group
+  const players = allPlayers.filter(player => {
+    if (selectedTeam !== 'all') {
+      return player.team_id === selectedTeam;
+    }
+    
+    if (selectedAgeGroup !== 'all') {
+      const team = teams.find(t => t.id === player.team_id);
+      return team?.age_group === selectedAgeGroup;
+    }
+    
+    return true;
   });
+
+  const team = teams.find(t => t.id === selectedTeam) || (selectedAgeGroup !== 'all' ? { name: `${selectedAgeGroup} Players` } : { name: 'All Players' });
 
   const updatePlayerPositionMutation = useMutation({
     mutationFn: async ({ playerId, newPosition }) => {
-      const existingTryout = tryouts.find(t => t.player_id === playerId);
-      const player = players.find(p => p.id === playerId);
-      
-      if (existingTryout) {
-        return base44.entities.PlayerTryout.update(existingTryout.id, { 
-          primary_position: newPosition 
-        });
-      } else {
-        return base44.entities.PlayerTryout.create({
-          player_id: playerId,
-          player_name: player?.full_name,
-          current_team: team?.name,
-          primary_position: newPosition
-        });
-      }
+      return base44.entities.Player.update(playerId, { 
+        primary_position: newPosition 
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['players']);
       setShowEditDialog(false);
     }
   });
 
   const getPlayersForPosition = (positionId) => {
-    return players.filter(player => {
-      const tryout = tryouts.find(t => t.player_id === player.id);
-      return tryout?.primary_position === positionId;
-    });
+    return players.filter(player => player.primary_position === positionId);
   };
 
   const handleDragEnd = (result) => {
@@ -203,30 +193,64 @@ export default function FormationView() {
 
   const formation = formations[selectedFormation];
 
-  if (!team) {
-    return <div className="p-8">Loading...</div>;
-  }
-
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{team.name} - Formation View</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">{team?.name || 'Formation View'}</h1>
           <p className="text-slate-600">View all players organized by their positions</p>
         </div>
 
-        <div className="mb-6">
-          <Label className="mb-2 block text-lg font-semibold">Select Formation</Label>
-          <Select value={selectedFormation} onValueChange={setSelectedFormation}>
-            <SelectTrigger className="w-64 h-12">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(formations).map(key => (
-                <SelectItem key={key} value={key}>{formations[key].name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <Label className="mb-2 block text-lg font-semibold">Select Formation</Label>
+            <Select value={selectedFormation} onValueChange={setSelectedFormation}>
+              <SelectTrigger className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(formations).map(key => (
+                  <SelectItem key={key} value={key}>{formations[key].name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="mb-2 block text-lg font-semibold">Filter by Team</Label>
+            <Select value={selectedTeam} onValueChange={(value) => { setSelectedTeam(value); setSelectedAgeGroup('all'); }}>
+              <SelectTrigger className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="mb-2 block text-lg font-semibold">Filter by Age Group</Label>
+            <Select value={selectedAgeGroup} onValueChange={(value) => { setSelectedAgeGroup(value); setSelectedTeam('all'); }}>
+              <SelectTrigger className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Age Groups</SelectItem>
+                {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                  const extractAge = (ag) => {
+                    const match = ag?.match(/U-?(\d+)/i);
+                    return match ? parseInt(match[1]) : 0;
+                  };
+                  return extractAge(b) - extractAge(a);
+                }).map(ageGroup => (
+                  <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card className="border-none shadow-2xl overflow-hidden">
@@ -241,25 +265,14 @@ export default function FormationView() {
               <div className="absolute inset-0">
                 {/* Field markings overlay */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 140" preserveAspectRatio="none">
-                  {/* Outer boundary */}
                   <rect x="2" y="2" width="96" height="136" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                  
-                  {/* Center line */}
                   <line x1="2" y1="70" x2="98" y2="70" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                  
-                  {/* Center circle */}
                   <circle cx="50" cy="70" r="8" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                   <circle cx="50" cy="70" r="0.5" fill="white" opacity="0.6" />
-                  
-                  {/* Penalty areas */}
                   <rect x="20" y="2" width="60" height="15" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                   <rect x="20" y="123" width="60" height="15" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                  
-                  {/* Goal areas */}
                   <rect x="35" y="2" width="30" height="6" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                   <rect x="35" y="132" width="30" height="6" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                  
-                  {/* Goals */}
                   <rect x="42" y="0" width="16" height="2" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                   <rect x="42" y="138" width="16" height="2" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                 </svg>
@@ -282,7 +295,7 @@ export default function FormationView() {
                             maxHeight: '500px'
                           }}
                         >
-                          <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[200px] transition-all ${
+                          <div className={`bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border-2 p-3 overflow-y-auto max-h-[500px] transition-all ${
                             snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-white'
                           }`}>
                             <div className="text-center text-xs font-bold text-emerald-700 mb-2 sticky top-0 bg-white/95 pb-1 border-b border-slate-200">
@@ -362,10 +375,7 @@ export default function FormationView() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {players
-                    .filter(player => {
-                      const tryout = tryouts.find(t => t.player_id === player.id);
-                      return !tryout?.primary_position || !Object.keys(positionMapping).includes(tryout.primary_position);
-                    })
+                    .filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position))
                     .map((player, index) => (
                       <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                         {(provided, snapshot) => (
@@ -391,10 +401,7 @@ export default function FormationView() {
                     ))}
                   {provided.placeholder}
                 </div>
-                {players.filter(player => {
-                  const tryout = tryouts.find(t => t.player_id === player.id);
-                  return !tryout?.primary_position || !Object.keys(positionMapping).includes(tryout.primary_position);
-                }).length === 0 && (
+                {players.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position)).length === 0 && (
                   <p className="text-center text-slate-500 py-4">All players assigned to positions</p>
                 )}
               </CardContent>
@@ -418,7 +425,7 @@ export default function FormationView() {
                 <div>
                   <Label className="mb-2 block">Primary Position</Label>
                   <Select 
-                    value={tryouts.find(t => t.player_id === editingPlayer.id)?.primary_position || ''} 
+                    value={editingPlayer.primary_position || ''} 
                     onValueChange={(value) => {
                       updatePlayerPositionMutation.mutate({
                         playerId: editingPlayer.id,
