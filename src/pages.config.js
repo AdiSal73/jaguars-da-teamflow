@@ -26,6 +26,7 @@ import BulkEmail from './pages/BulkEmail';
 import Tryouts from './pages/Tryouts';
 import TeamsTable from './pages/TeamsTable';
 import EvaluationsNew from './pages/EvaluationsNew';
+import FormationView from './pages/FormationView';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "TeamsTable": TeamsTable,
     "EvaluationsNew": EvaluationsNew,
+    "FormationView": FormationView,
 }
 
 export const pagesConfig = {
