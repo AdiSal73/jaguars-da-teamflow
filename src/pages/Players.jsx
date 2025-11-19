@@ -46,6 +46,8 @@ import {
 
 export default function Players() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTeam, setFilterTeam] = useState('all');
+  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [showDialog, setShowDialog] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -239,10 +241,27 @@ export default function Players() {
     }
   };
 
-  const filteredPlayers = players.filter(player =>
-    player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    player.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPlayers = players
+    .filter(player => {
+      const matchesSearch = player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        player.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
+      const team = teams.find(t => t.id === player.team_id);
+      const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
+      return matchesSearch && matchesTeam && matchesAgeGroup;
+    })
+    .sort((a, b) => {
+      // Sort by team first
+      const teamA = teams.find(t => t.id === a.team_id);
+      const teamB = teams.find(t => t.id === b.team_id);
+      const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
+      if (teamCompare !== 0) return teamCompare;
+      
+      // Then alphabetically by last name
+      const lastNameA = a.full_name?.split(' ').pop() || '';
+      const lastNameB = b.full_name?.split(' ').pop() || '';
+      return lastNameA.localeCompare(lastNameB);
+    });
 
   const statusColors = {
     'Active': 'bg-emerald-100 text-emerald-800',
@@ -270,7 +289,7 @@ export default function Players() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
@@ -279,6 +298,42 @@ export default function Players() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label className="mb-2 block">Filter by Team</Label>
+            <Select value={filterTeam} onValueChange={setFilterTeam}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Teams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map(team => (
+                  <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block">Filter by Age Group</Label>
+            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Age Groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Age Groups</SelectItem>
+                {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                  const extractAge = (ag) => {
+                    const match = ag?.match(/U-?(\d+)/i);
+                    return match ? parseInt(match[1]) : 0;
+                  };
+                  return extractAge(b) - extractAge(a);
+                }).map(ageGroup => (
+                  <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

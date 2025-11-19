@@ -8,6 +8,9 @@ import { User, AlertCircle, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Tryouts() {
   const navigate = useNavigate();
@@ -17,6 +20,8 @@ export default function Tryouts() {
   const [selectedCoach, setSelectedCoach] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
+  const [sortBy, setSortBy] = useState('team');
+  const [viewMode, setViewMode] = useState('columns');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -97,13 +102,146 @@ export default function Tryouts() {
       teamPlayers = teamPlayers.filter(p => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
     }
 
-    return teamPlayers
-      .map(p => getPlayerTryoutData(p))
-      .sort((a, b) => {
-        const lastNameA = a.full_name?.split(' ').pop() || '';
-        const lastNameB = b.full_name?.split(' ').pop() || '';
-        return lastNameA.localeCompare(lastNameB);
+    const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
+
+    // Sort based on selected sort option
+    return playersWithTryout.sort((a, b) => {
+      if (sortBy === 'team') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
+        if (teamCompare !== 0) return teamCompare;
+      } else if (sortBy === 'age_group') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const extractAge = (ag) => {
+          const match = ag?.match(/U-?(\d+)/i);
+          return match ? parseInt(match[1]) : 0;
+        };
+        const ageCompare = extractAge(teamB?.age_group) - extractAge(teamA?.age_group);
+        if (ageCompare !== 0) return ageCompare;
+      } else if (sortBy === 'league') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const leagueCompare = (teamA?.league || '').localeCompare(teamB?.league || '');
+        if (leagueCompare !== 0) return leagueCompare;
+      } else if (sortBy === 'team_role') {
+        const roleCompare = (a.tryout?.team_role || '').localeCompare(b.tryout?.team_role || '');
+        if (roleCompare !== 0) return roleCompare;
+      } else if (sortBy === 'recommendation') {
+        const recCompare = (a.tryout?.recommendation || '').localeCompare(b.tryout?.recommendation || '');
+        if (recCompare !== 0) return recCompare;
+      } else if (sortBy === 'next_season_status') {
+        const statusCompare = (a.tryout?.next_season_status || '').localeCompare(b.tryout?.next_season_status || '');
+        if (statusCompare !== 0) return statusCompare;
+      } else if (sortBy === 'registration_status') {
+        const regCompare = (a.tryout?.registration_status || '').localeCompare(b.tryout?.registration_status || '');
+        if (regCompare !== 0) return regCompare;
+      }
+      
+      // Always alphabetically by last name as secondary sort
+      const lastNameA = a.full_name?.split(' ').pop() || '';
+      const lastNameB = b.full_name?.split(' ').pop() || '';
+      return lastNameA.localeCompare(lastNameB);
+    });
+  };
+
+  const updateTryoutField = useMutation({
+    mutationFn: async ({ playerId, field, value }) => {
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      const player = players.find(p => p.id === playerId);
+      const team = teams.find(t => t.id === player?.team_id);
+      
+      if (existingTryout) {
+        return base44.entities.PlayerTryout.update(existingTryout.id, { [field]: value });
+      } else {
+        return base44.entities.PlayerTryout.create({
+          player_id: playerId,
+          player_name: player?.full_name,
+          current_team: team?.name,
+          [field]: value
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+    }
+  });
+
+  const getAllPlayersWithTryout = () => {
+    const allPlayersData = players.map(p => getPlayerTryoutData(p));
+    
+    // Apply filters
+    let filtered = allPlayersData;
+    
+    if (selectedAgeGroup !== 'all') {
+      filtered = filtered.filter(p => {
+        const team = teams.find(t => t.id === p.team_id);
+        return team?.age_group === selectedAgeGroup;
       });
+    }
+    
+    if (selectedLeague !== 'all') {
+      filtered = filtered.filter(p => {
+        const team = teams.find(t => t.id === p.team_id);
+        return team?.league === selectedLeague;
+      });
+    }
+    
+    if (selectedCoach !== 'all') {
+      filtered = filtered.filter(p => {
+        const team = teams.find(t => t.id === p.team_id);
+        return team?.coach_ids?.includes(selectedCoach);
+      });
+    }
+    
+    if (birthdayFrom) {
+      filtered = filtered.filter(p => !p.date_of_birth || new Date(p.date_of_birth) >= new Date(birthdayFrom));
+    }
+    
+    if (birthdayTo) {
+      filtered = filtered.filter(p => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
+    }
+    
+    // Sort
+    return filtered.sort((a, b) => {
+      if (sortBy === 'team') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
+        if (teamCompare !== 0) return teamCompare;
+      } else if (sortBy === 'age_group') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const extractAge = (ag) => {
+          const match = ag?.match(/U-?(\d+)/i);
+          return match ? parseInt(match[1]) : 0;
+        };
+        const ageCompare = extractAge(teamB?.age_group) - extractAge(teamA?.age_group);
+        if (ageCompare !== 0) return ageCompare;
+      } else if (sortBy === 'league') {
+        const teamA = teams.find(t => t.id === a.team_id);
+        const teamB = teams.find(t => t.id === b.team_id);
+        const leagueCompare = (teamA?.league || '').localeCompare(teamB?.league || '');
+        if (leagueCompare !== 0) return leagueCompare;
+      } else if (sortBy === 'team_role') {
+        const roleCompare = (a.tryout?.team_role || '').localeCompare(b.tryout?.team_role || '');
+        if (roleCompare !== 0) return roleCompare;
+      } else if (sortBy === 'recommendation') {
+        const recCompare = (a.tryout?.recommendation || '').localeCompare(b.tryout?.recommendation || '');
+        if (recCompare !== 0) return recCompare;
+      } else if (sortBy === 'next_season_status') {
+        const statusCompare = (a.tryout?.next_season_status || '').localeCompare(b.tryout?.next_season_status || '');
+        if (statusCompare !== 0) return statusCompare;
+      } else if (sortBy === 'registration_status') {
+        const regCompare = (a.tryout?.registration_status || '').localeCompare(b.tryout?.registration_status || '');
+        if (regCompare !== 0) return regCompare;
+      }
+      
+      const lastNameA = a.full_name?.split(' ').pop() || '';
+      const lastNameB = b.full_name?.split(' ').pop() || '';
+      return lastNameA.localeCompare(lastNameB);
+    });
   };
 
   const onDragEnd = (result) => {
@@ -118,10 +256,15 @@ export default function Tryouts() {
     updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
   };
 
-  const TeamColumn = ({ title, teams, bgColor }) => (
+  const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
     <div className="flex-1 min-w-[420px]">
       <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
         <CardHeader className={`${bgColor} border-b shadow-lg py-6`}>
+          {logoUrl && (
+            <div className="flex justify-center mb-4">
+              <img src={logoUrl} alt={title} className="w-32 h-32 object-contain" />
+            </div>
+          )}
           <CardTitle className="text-white text-center text-2xl font-bold tracking-wide">{title}</CardTitle>
         </CardHeader>
         <CardContent className="p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
@@ -240,12 +383,12 @@ export default function Tryouts() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             Tryouts Dashboard
           </h1>
-          <p className="text-slate-600 text-lg">Drag and drop players between teams • Filter by birthday, league, and coach</p>
+          <p className="text-slate-600 text-lg">Drag and drop players between teams • Filter and sort players</p>
         </div>
 
         <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div>
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">Age Group</label>
                 <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
@@ -311,27 +454,180 @@ export default function Tryouts() {
                   className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
                 />
               </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Sort By</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="border-2 h-12 shadow-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="team">Team</SelectItem>
+                    <SelectItem value="age_group">Age Group</SelectItem>
+                    <SelectItem value="league">League</SelectItem>
+                    <SelectItem value="team_role">Team Role</SelectItem>
+                    <SelectItem value="recommendation">Recommendation</SelectItem>
+                    <SelectItem value="next_season_status">Next Season Status</SelectItem>
+                    <SelectItem value="registration_status">Registration Status</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex gap-6 overflow-x-auto pb-4">
-          <TeamColumn 
-            title="Girls Academy" 
-            teams={gaTeams} 
-            bgColor="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600" 
-          />
-          <TeamColumn 
-            title="Aspire League" 
-            teams={aspireTeams} 
-            bgColor="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600" 
-          />
-          <TeamColumn 
-            title="Other Leagues" 
-            teams={otherTeams} 
-            bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" 
-          />
-        </div>
+        <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="columns">3-Column View</TabsTrigger>
+            <TabsTrigger value="cards">Card View</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="columns">
+            <div className="flex gap-6 overflow-x-auto pb-4">
+              <TeamColumn 
+                title="Girls Academy" 
+                teams={gaTeams} 
+                bgColor="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600"
+                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/688b1cb43_girls-academy-logo-1024x1024-2898394893.png"
+              />
+              <TeamColumn 
+                title="Aspire League" 
+                teams={aspireTeams} 
+                bgColor="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600"
+                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png"
+              />
+              <TeamColumn 
+                title="Other Leagues" 
+                teams={otherTeams} 
+                bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" 
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="cards">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {getAllPlayersWithTryout().map(player => {
+                const team = teams.find(t => t.id === player.team_id);
+                return (
+                  <Card key={player.id} className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all">
+                    <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
+                          {player.jersey_number || <User className="w-7 h-7" />}
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{player.full_name}</CardTitle>
+                          <div className="text-xs text-slate-600 mt-1">{team?.name} • {team?.age_group}</div>
+                        </div>
+                        {player.trapped === 'Yes' && (
+                          <Badge className="bg-red-500 text-white">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Trapped
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-3">
+                      <div>
+                        <Label className="text-xs text-slate-600">Primary Position</Label>
+                        <Select 
+                          value={player.tryout?.primary_position?.toString() || ''} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'primary_position', value: parseInt(value) })}
+                        >
+                          <SelectTrigger className="h-9 mt-1">
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
+                              <SelectItem key={num} value={num.toString()}>Position {num}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Team Role</Label>
+                        <Select 
+                          value={player.tryout?.team_role || ''} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'team_role', value })}
+                        >
+                          <SelectTrigger className="h-9 mt-1">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Indispensable Player">Indispensable Player</SelectItem>
+                            <SelectItem value="GA Starter">GA Starter</SelectItem>
+                            <SelectItem value="GA Rotation">GA Rotation</SelectItem>
+                            <SelectItem value="Aspire Starter">Aspire Starter</SelectItem>
+                            <SelectItem value="Aspire Rotation">Aspire Rotation</SelectItem>
+                            <SelectItem value="United Starter">United Starter</SelectItem>
+                            <SelectItem value="United Rotation">United Rotation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Recommendation</Label>
+                        <Select 
+                          value={player.tryout?.recommendation || ''} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'recommendation', value })}
+                        >
+                          <SelectTrigger className="h-9 mt-1">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Move up">🔼 Move up</SelectItem>
+                            <SelectItem value="Keep">✅ Keep</SelectItem>
+                            <SelectItem value="Move down">🔽 Move down</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Next Year's Team</Label>
+                        <Input 
+                          value={player.tryout?.next_year_team || ''} 
+                          onChange={(e) => updateTryoutField.mutate({ playerId: player.id, field: 'next_year_team', value: e.target.value })}
+                          className="h-9 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Next Season Status</Label>
+                        <Select 
+                          value={player.tryout?.next_season_status || 'N/A'} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'next_season_status', value })}
+                        >
+                          <SelectTrigger className="h-9 mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="N/A">N/A</SelectItem>
+                            <SelectItem value="Accepted Offer">✅ Accepted Offer</SelectItem>
+                            <SelectItem value="Rejected Offer">❌ Rejected Offer</SelectItem>
+                            <SelectItem value="Considering Offer">🤔 Considering Offer</SelectItem>
+                            <SelectItem value="Not Offered">⏳ Not Offered</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-600">Registration Status</Label>
+                        <Select 
+                          value={player.tryout?.registration_status || 'Not Signed'} 
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'registration_status', value })}
+                        >
+                          <SelectTrigger className="h-9 mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Not Signed">⏳ Not Signed</SelectItem>
+                            <SelectItem value="Signed and Paid">✅ Signed and Paid</SelectItem>
+                            <SelectItem value="Signed">📝 Signed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DragDropContext>
   );
