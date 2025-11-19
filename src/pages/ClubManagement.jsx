@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -428,15 +427,12 @@ export default function ClubManagement() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {teamStats.map(team => (
-          <Link key={team.id} to={`${createPageUrl('TeamDetail')}?id=${team.id}`}>
+          <Link key={team.id} to={`${createPageUrl('TeamDashboard')}?teamId=${team.id}`}>
             <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
-              <CardHeader className="border-b border-slate-100" style={{ backgroundColor: `${team.team_color}20` }}>
+              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                    style={{ backgroundColor: team.team_color }}
-                  >
-                    {team.name.charAt(0)}
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-md">
+                    {team.age_group || team.name.charAt(0)}
                   </div>
                   <div>
                     <CardTitle className="text-lg">{team.name}</CardTitle>

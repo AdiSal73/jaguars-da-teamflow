@@ -48,7 +48,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       csvContent = 'full_name,email,phone,specialization,bio\n';
       csvContent += 'Mike Smith,coach@email.com,+1234567890,Technical Training,Experienced coach\n';
     } else if (entityType === 'Team') {
-      csvContent = 'name,age_group,division,season\n';
+      csvContent = 'name,age_group,League,season\n';
       csvContent += 'Elite Squad,U-18,Premier League,2024/2025\n';
     }
     
@@ -225,9 +225,9 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
         records = rows.map(row => ({
           name: row['name'],
           age_group: row['age_group'],
-          division: row['division'],
+          league: row['League'],
           season: row['season'],
-          team_color: '#22c55e'
+          coach_ids: []
         }));
       }
 
