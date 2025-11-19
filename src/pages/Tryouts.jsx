@@ -20,13 +20,8 @@ export default function Tryouts() {
   const [selectedCoach, setSelectedCoach] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
-  const [sortBy, setSortBy] = useState('team_ranking');
+  const [sortBy, setSortBy] = useState('team');
   const [viewMode, setViewMode] = useState('columns');
-
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -45,23 +40,8 @@ export default function Tryouts() {
 
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
-    queryFn: () => base44.entities.Coach.list(),
-    enabled: !!user
+    queryFn: () => base44.entities.Coach.list()
   });
-
-  const userRole = React.useMemo(() => {
-    if (!user) return null;
-    if (user.role === 'admin') return 'admin';
-    const isCoach = coaches.find(c => c.email === user.email);
-    if (isCoach) return 'coach';
-    return 'user';
-  }, [user, coaches]);
-
-  React.useEffect(() => {
-    if (userRole === 'user') {
-      navigate(createPageUrl('Dashboard'));
-    }
-  }, [userRole, navigate]);
 
   const updatePlayerTeamMutation = useMutation({
     mutationFn: ({ playerId, teamId }) => base44.entities.Player.update(playerId, { team_id: teamId }),
@@ -74,11 +54,11 @@ export default function Tryouts() {
     if (!dateOfBirth) return 'Unknown';
     const date = new Date(dateOfBirth);
     const month = date.getMonth() + 1;
-    return (month >= 9 && month <= 12) ? 'Yes' : 'No';
+    return month >= 9 && month <= 12 ? 'Yes' : 'No';
   };
 
   const getPlayerTryoutData = (player) => {
-    const tryout = tryouts.find(t => t.player_id === player.id);
+    const tryout = tryouts.find((t) => t.player_id === player.id);
     const trapped = calculateTrapped(player.date_of_birth);
     return { ...player, tryout, trapped };
   };
@@ -95,49 +75,45 @@ export default function Tryouts() {
 
   const filterByLeague = (teamList) => {
     if (selectedLeague === 'all') return teamList;
-    return teamList.filter(t => t.league === selectedLeague);
+    return teamList.filter((t) => t.league === selectedLeague);
   };
 
   const filterByCoach = (teamList) => {
     if (selectedCoach === 'all') return teamList;
-    return teamList.filter(t => t.coach_ids?.includes(selectedCoach));
+    return teamList.filter((t) => t.coach_ids?.includes(selectedCoach));
   };
 
   const filterByAgeGroup = (teamList) => {
     if (selectedAgeGroup === 'all') return teamList;
-    return teamList.filter(t => t.age_group === selectedAgeGroup);
+    return teamList.filter((t) => t.age_group === selectedAgeGroup);
   };
 
-  const gaTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Girls Academy')))));
-  const aspireTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Aspire')))));
-  const otherTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league !== 'Girls Academy' && t.league !== 'Aspire')))));
+  const gaTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy')))));
+  const aspireTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire')))));
+  const otherTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire')))));
 
   const getTeamPlayers = (team) => {
-    let teamPlayers = players.filter(p => p.team_id === team.id);
+    let teamPlayers = players.filter((p) => p.team_id === team.id);
 
     if (birthdayFrom) {
-      teamPlayers = teamPlayers.filter(p => !p.date_of_birth || new Date(p.date_of_birth) >= new Date(birthdayFrom));
+      teamPlayers = teamPlayers.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) >= new Date(birthdayFrom));
     }
     if (birthdayTo) {
-      teamPlayers = teamPlayers.filter(p => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
+      teamPlayers = teamPlayers.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
     }
 
-    const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
+    const playersWithTryout = teamPlayers.map((p) => getPlayerTryoutData(p));
 
     // Sort based on selected sort option
     return playersWithTryout.sort((a, b) => {
-      if (sortBy === 'team_ranking') {
-        const rankA = a.tryout?.team_ranking || 9999;
-        const rankB = b.tryout?.team_ranking || 9999;
-        return rankA - rankB;
-      } else if (sortBy === 'team') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+      if (sortBy === 'team') {
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
         if (teamCompare !== 0) return teamCompare;
       } else if (sortBy === 'age_group') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const extractAge = (ag) => {
           const match = ag?.match(/U-?(\d+)/i);
           return match ? parseInt(match[1]) : 0;
@@ -145,8 +121,8 @@ export default function Tryouts() {
         const ageCompare = extractAge(teamB?.age_group) - extractAge(teamA?.age_group);
         if (ageCompare !== 0) return ageCompare;
       } else if (sortBy === 'league') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const leagueCompare = (teamA?.league || '').localeCompare(teamB?.league || '');
         if (leagueCompare !== 0) return leagueCompare;
       } else if (sortBy === 'team_role') {
@@ -162,7 +138,7 @@ export default function Tryouts() {
         const regCompare = (a.tryout?.registration_status || '').localeCompare(b.tryout?.registration_status || '');
         if (regCompare !== 0) return regCompare;
       }
-      
+
       // Always alphabetically by last name as secondary sort
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
@@ -172,10 +148,10 @@ export default function Tryouts() {
 
   const updateTryoutField = useMutation({
     mutationFn: async ({ playerId, field, value }) => {
-      const existingTryout = tryouts.find(t => t.player_id === playerId);
-      const player = players.find(p => p.id === playerId);
-      const team = teams.find(t => t.id === player?.team_id);
-      
+      const existingTryout = tryouts.find((t) => t.player_id === playerId);
+      const player = players.find((p) => p.id === playerId);
+      const team = teams.find((t) => t.id === player?.team_id);
+
       if (existingTryout) {
         return base44.entities.PlayerTryout.update(existingTryout.id, { [field]: value });
       } else {
@@ -193,54 +169,50 @@ export default function Tryouts() {
   });
 
   const getAllPlayersWithTryout = () => {
-    const allPlayersData = players.map(p => getPlayerTryoutData(p));
-    
+    const allPlayersData = players.map((p) => getPlayerTryoutData(p));
+
     // Apply filters
     let filtered = allPlayersData;
-    
+
     if (selectedAgeGroup !== 'all') {
-      filtered = filtered.filter(p => {
-        const team = teams.find(t => t.id === p.team_id);
+      filtered = filtered.filter((p) => {
+        const team = teams.find((t) => t.id === p.team_id);
         return team?.age_group === selectedAgeGroup;
       });
     }
-    
+
     if (selectedLeague !== 'all') {
-      filtered = filtered.filter(p => {
-        const team = teams.find(t => t.id === p.team_id);
+      filtered = filtered.filter((p) => {
+        const team = teams.find((t) => t.id === p.team_id);
         return team?.league === selectedLeague;
       });
     }
-    
+
     if (selectedCoach !== 'all') {
-      filtered = filtered.filter(p => {
-        const team = teams.find(t => t.id === p.team_id);
+      filtered = filtered.filter((p) => {
+        const team = teams.find((t) => t.id === p.team_id);
         return team?.coach_ids?.includes(selectedCoach);
       });
     }
-    
+
     if (birthdayFrom) {
-      filtered = filtered.filter(p => !p.date_of_birth || new Date(p.date_of_birth) >= new Date(birthdayFrom));
+      filtered = filtered.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) >= new Date(birthdayFrom));
     }
-    
+
     if (birthdayTo) {
-      filtered = filtered.filter(p => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
+      filtered = filtered.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
     }
-    
+
     // Sort
     return filtered.sort((a, b) => {
-      if (sortBy === 'team_ranking') {
-        const rankA = a.tryout?.team_ranking || 9999;
-        const rankB = b.tryout?.team_ranking || 9999;
-        return rankA - rankB;
-      } else if (sortBy === 'team') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+      if (sortBy === 'team') {
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
         if (teamCompare !== 0) return teamCompare;
       } else if (sortBy === 'age_group') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const extractAge = (ag) => {
           const match = ag?.match(/U-?(\d+)/i);
           return match ? parseInt(match[1]) : 0;
@@ -248,8 +220,8 @@ export default function Tryouts() {
         const ageCompare = extractAge(teamB?.age_group) - extractAge(teamA?.age_group);
         if (ageCompare !== 0) return ageCompare;
       } else if (sortBy === 'league') {
-        const teamA = teams.find(t => t.id === a.team_id);
-        const teamB = teams.find(t => t.id === b.team_id);
+        const teamA = teams.find((t) => t.id === a.team_id);
+        const teamB = teams.find((t) => t.id === b.team_id);
         const leagueCompare = (teamA?.league || '').localeCompare(teamB?.league || '');
         if (leagueCompare !== 0) return leagueCompare;
       } else if (sortBy === 'team_role') {
@@ -265,77 +237,50 @@ export default function Tryouts() {
         const regCompare = (a.tryout?.registration_status || '').localeCompare(b.tryout?.registration_status || '');
         if (regCompare !== 0) return regCompare;
       }
-      
+
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
     });
   };
 
-  const updateRankingMutation = useMutation({
-    mutationFn: async ({ playerId, newRanking }) => {
-      const existingTryout = tryouts.find(t => t.player_id === playerId);
-      const player = players.find(p => p.id === playerId);
-      const team = teams.find(t => t.id === player?.team_id);
-      
-      if (existingTryout) {
-        return base44.entities.PlayerTryout.update(existingTryout.id, { team_ranking: newRanking });
-      } else {
-        return base44.entities.PlayerTryout.create({
-          player_id: playerId,
-          player_name: player?.full_name,
-          current_team: team?.name,
-          team_ranking: newRanking
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['tryouts']);
-    }
-  });
-
   const onDragEnd = (result) => {
     if (!result.destination) return;
 
     const { source, destination, draggableId } = result;
+    if (source.droppableId === destination.droppableId) return;
+
     const playerId = draggableId.replace('player-', '');
-    
-    // If dropped in a different team
-    if (source.droppableId !== destination.droppableId) {
-      const newTeamId = destination.droppableId.replace('team-', '');
-      updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
-    }
-    
-    // Update ranking based on new position
-    const newRanking = destination.index + 1;
-    updateRankingMutation.mutate({ playerId, newRanking });
+    const newTeamId = destination.droppableId.replace('team-', '');
+
+    updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
   };
 
-  const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
-    <div className="flex-1 min-w-[420px]">
+  const TeamColumn = ({ title, teams, bgColor, logoUrl }) =>
+  <div className="flex-1 min-w-[420px]">
       <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
-        <CardHeader className={`${bgColor} border-b shadow-lg py-6`}>
-          {logoUrl && (
-            <div className="flex justify-center mb-4">
+        <CardHeader className="bg-slate-300 p-6 py-6 flex flex-col space-y-1.5 from-purple-600 via-purple-700 to-pink-600 border-b shadow-lg">
+          {logoUrl &&
+        <div className="flex justify-center mb-4">
               <img src={logoUrl} alt={title} className="w-32 h-32 object-contain" />
             </div>
-          )}
+        }
           <CardTitle className="text-white text-center text-2xl font-bold tracking-wide">{title}</CardTitle>
         </CardHeader>
         <CardContent className="p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
           <div className="space-y-4">
-            {teams.map(team => {
-              const teamPlayers = getTeamPlayers(team);
-              return (
-                <Droppable droppableId={`team-${team.id}`} key={team.id}>
-                  {(provided, snapshot) => (
-                    <Card 
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
-                        snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''
-                      }`}
-                    >
+            {teams.map((team) => {
+            const teamPlayers = getTeamPlayers(team);
+            return (
+              <Droppable droppableId={`team-${team.id}`} key={team.id}>
+                  {(provided, snapshot) =>
+                <Card
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
+                  snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''}`
+                  }>
+
                       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -354,83 +299,82 @@ export default function Tryouts() {
                         </div>
                       </CardHeader>
                       <CardContent className="p-3 space-y-2 min-h-[100px]">
-                        {teamPlayers.length === 0 ? (
-                          <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p>
-                        ) : (
-                         teamPlayers.map((player, index) => (
-                           <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                             {(provided, snapshot) => (
-                               <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                style={{
-                                  ...provided.draggableProps.style,
-                                }}
-                                className={`${
-                                  player.trapped === 'Yes' 
-                                    ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                    : 'border-slate-200 bg-white hover:border-emerald-400'
-                                } w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                  snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                }`}
-                                onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
-                               >
-                                 <div className="flex items-center justify-between">
-                                   <div className="flex items-center gap-3 flex-1">
-                                     <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-base">
-                                       #{player.tryout?.team_ranking || index + 1}
-                                     </div>
-                                     <div className="flex-1">
-                                       <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
-                                       <div className="text-xs text-slate-600 mt-0.5 flex gap-2">
-                                         <span>{player.primary_position}</span>
-                                         {player.tryout?.team_role && (
-                                           <>
-                                             <span>•</span>
-                                             <span>{player.tryout.team_role}</span>
-                                           </>
-                                         )}
-                                       </div>
-                                     </div>
-                                   </div>
-                                   <div className="text-right">
-                                     {player.trapped === 'Yes' && (
-                                       <Badge className="bg-red-500 text-white mb-1 shadow-sm">
-                                         <AlertCircle className="w-3 h-3 mr-1" />
-                                         Trapped
-                                       </Badge>
-                                     )}
-                                     {player.tryout?.recommendation && (
-                                       <Badge 
-                                         className={`shadow-sm ${
-                                           player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                           player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                           'bg-blue-500'
-                                         }`}
-                                       >
-                                         {player.tryout.recommendation}
-                                       </Badge>
-                                     )}
-                                   </div>
-                                 </div>
-                               </div>
-                             )}
-                           </Draggable>
-                         ))
-                        )}
+                        {teamPlayers.length === 0 ?
+                    <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p> :
+
+                    teamPlayers.map((player, index) =>
+                    <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                              {(provided, snapshot) =>
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={{
+                          ...provided.draggableProps.style
+                        }}
+                        className={`${
+                        player.trapped === 'Yes' ?
+                        'border-red-400 bg-gradient-to-r from-red-50 to-red-100' :
+                        'border-slate-200 bg-white hover:border-emerald-400'} w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+
+                        snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'}`
+                        }
+                        onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}>
+
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md text-lg">
+                                        {player.jersey_number || <User className="w-6 h-6" />}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
+                                        <div className="text-xs text-slate-600 mt-0.5">{player.position}</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      {player.trapped === 'Yes' &&
+                            <Badge className="bg-red-500 text-white mb-1 shadow-sm">
+                                          <AlertCircle className="w-3 h-3 mr-1" />
+                                          Trapped
+                                        </Badge>
+                            }
+                                      {player.tryout &&
+                            <div className="space-y-1">
+                                          {player.tryout.team_role &&
+                              <div className="text-xs text-slate-600 font-medium">{player.tryout.team_role}</div>
+                              }
+                                          {player.tryout.recommendation &&
+                              <Badge
+                                className={`shadow-sm ${
+                                player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                                player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                                'bg-blue-500'}`
+                                }>
+
+                                              {player.tryout.recommendation}
+                                            </Badge>
+                              }
+                                        </div>
+                            }
+                                    </div>
+                                  </div>
+                                </div>
+                      }
+                            </Draggable>
+                    )
+                    }
                         {provided.placeholder}
                       </CardContent>
                     </Card>
-                  )}
-                </Droppable>
-              );
-            })}
+                }
+                </Droppable>);
+
+          })}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
+
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -453,15 +397,15 @@ export default function Tryouts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
-                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                    {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].sort((a, b) => {
                       const extractAge = (ag) => {
                         const match = ag?.match(/U-?(\d+)/i);
                         return match ? parseInt(match[1]) : 0;
                       };
                       return extractAge(b) - extractAge(a);
-                    }).map(ageGroup => (
-                      <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
-                    ))}
+                    }).map((ageGroup) =>
+                    <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -486,9 +430,9 @@ export default function Tryouts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map(coach => (
-                      <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
-                    ))}
+                    {coaches.map((coach) =>
+                    <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -498,8 +442,8 @@ export default function Tryouts() {
                   type="date"
                   value={birthdayFrom}
                   onChange={(e) => setBirthdayFrom(e.target.value)}
-                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                />
+                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm" />
+
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">Birthday To</label>
@@ -507,8 +451,8 @@ export default function Tryouts() {
                   type="date"
                   value={birthdayTo}
                   onChange={(e) => setBirthdayTo(e.target.value)}
-                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
-                />
+                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm" />
+
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">Sort By</label>
@@ -517,7 +461,6 @@ export default function Tryouts() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="team_ranking">Team Ranking</SelectItem>
                     <SelectItem value="team">Team</SelectItem>
                     <SelectItem value="age_group">Age Group</SelectItem>
                     <SelectItem value="league">League</SelectItem>
@@ -532,7 +475,7 @@ export default function Tryouts() {
           </CardContent>
         </Card>
 
-        <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
+        <Tabs value={viewMode} onValueChange={setViewMode} className="text-slate-800 w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="columns">3-Column View</TabsTrigger>
             <TabsTrigger value="cards">Card View</TabsTrigger>
@@ -541,30 +484,30 @@ export default function Tryouts() {
 
           <TabsContent value="columns">
             <div className="flex gap-6 overflow-x-auto pb-4">
-              <TeamColumn 
-                title="Girls Academy" 
-                teams={gaTeams} 
+              <TeamColumn
+                title="Girls Academy"
+                teams={gaTeams}
                 bgColor="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600"
-                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/688b1cb43_girls-academy-logo-1024x1024-2898394893.png"
-              />
-              <TeamColumn 
-                title="Aspire League" 
-                teams={aspireTeams} 
+                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/688b1cb43_girls-academy-logo-1024x1024-2898394893.png" />
+
+              <TeamColumn
+                title="Aspire League"
+                teams={aspireTeams}
                 bgColor="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600"
-                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png"
-              />
-              <TeamColumn 
-                title="Other Leagues" 
-                teams={otherTeams} 
-                bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" 
-              />
+                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png" />
+
+              <TeamColumn
+                title="Other Leagues"
+                teams={otherTeams}
+                bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" />
+
             </div>
           </TabsContent>
 
           <TabsContent value="cards">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getAllPlayersWithTryout().map(player => {
-                const team = teams.find(t => t.id === player.team_id);
+              {getAllPlayersWithTryout().map((player) => {
+                const team = teams.find((t) => t.id === player.team_id);
                 return (
                   <Card key={player.id} className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all">
                     <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 pb-4">
@@ -576,12 +519,12 @@ export default function Tryouts() {
                           <CardTitle className="text-lg">{player.full_name}</CardTitle>
                           <div className="text-xs text-slate-600 mt-1">{team?.name} • {team?.age_group}</div>
                         </div>
-                        {player.trapped === 'Yes' && (
-                          <Badge className="bg-red-500 text-white">
+                        {player.trapped === 'Yes' &&
+                        <Badge className="bg-red-500 text-white">
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Trapped
                           </Badge>
-                        )}
+                        }
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-blue-50 p-2 rounded">
@@ -605,10 +548,10 @@ export default function Tryouts() {
                     <CardContent className="pt-4 space-y-3">
                       <div>
                         <Label className="text-xs text-slate-600">Primary Position</Label>
-                        <Select 
-                          value={player.tryout?.primary_position || ''} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'primary_position', value })}
-                        >
+                        <Select
+                          value={player.tryout?.primary_position || ''}
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'primary_position', value })}>
+
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
@@ -629,10 +572,10 @@ export default function Tryouts() {
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600">Team Role</Label>
-                        <Select 
-                          value={player.tryout?.team_role || ''} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'team_role', value })}
-                        >
+                        <Select
+                          value={player.tryout?.team_role || ''}
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'team_role', value })}>
+
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
@@ -649,10 +592,10 @@ export default function Tryouts() {
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600">Recommendation</Label>
-                        <Select 
-                          value={player.tryout?.recommendation || ''} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'recommendation', value })}
-                        >
+                        <Select
+                          value={player.tryout?.recommendation || ''}
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'recommendation', value })}>
+
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
@@ -665,28 +608,18 @@ export default function Tryouts() {
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600">Next Year's Team</Label>
-                        <Input 
-                          value={player.tryout?.next_year_team || ''} 
+                        <Input
+                          value={player.tryout?.next_year_team || ''}
                           onChange={(e) => updateTryoutField.mutate({ playerId: player.id, field: 'next_year_team', value: e.target.value })}
-                          className="h-9 mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs text-slate-600">Team Ranking</Label>
-                        <Input 
-                          type="number"
-                          value={player.tryout?.team_ranking || ''} 
-                          onChange={(e) => updateTryoutField.mutate({ playerId: player.id, field: 'team_ranking', value: parseInt(e.target.value) })}
-                          className="h-9 mt-1"
-                          placeholder="1, 2, 3..."
-                        />
+                          className="h-9 mt-1" />
+
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600">Next Season Status</Label>
-                        <Select 
-                          value={player.tryout?.next_season_status || 'N/A'} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'next_season_status', value })}
-                        >
+                        <Select
+                          value={player.tryout?.next_season_status || 'N/A'}
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'next_season_status', value })}>
+
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue />
                           </SelectTrigger>
@@ -701,10 +634,10 @@ export default function Tryouts() {
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600">Registration Status</Label>
-                        <Select 
-                          value={player.tryout?.registration_status || 'Not Signed'} 
-                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'registration_status', value })}
-                        >
+                        <Select
+                          value={player.tryout?.registration_status || 'Not Signed'}
+                          onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'registration_status', value })}>
+
                           <SelectTrigger className="h-9 mt-1">
                             <SelectValue />
                           </SelectTrigger>
@@ -716,8 +649,8 @@ export default function Tryouts() {
                         </Select>
                       </div>
                     </CardContent>
-                  </Card>
-                );
+                  </Card>);
+
               })}
             </div>
           </TabsContent>
@@ -729,12 +662,12 @@ export default function Tryouts() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {teams.map(team => (
-                    <button
-                      key={team.id}
-                      onClick={() => navigate(`${createPageUrl('FormationView')}?teamId=${team.id}`)}
-                      className="p-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl border-2 border-slate-200 hover:border-emerald-500 transition-all hover:shadow-lg"
-                    >
+                  {teams.map((team) =>
+                  <button
+                    key={team.id}
+                    onClick={() => navigate(`${createPageUrl('FormationView')}?teamId=${team.id}`)}
+                    className="p-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl border-2 border-slate-200 hover:border-emerald-500 transition-all hover:shadow-lg">
+
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
                           {team.age_group || team.name.charAt(0)}
@@ -745,13 +678,13 @@ export default function Tryouts() {
                         </div>
                       </div>
                     </button>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </DragDropContext>
-  );
+    </DragDropContext>);
+
 }
