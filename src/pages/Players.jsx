@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, User, Edit, Users, Trash2 } from 'lucide-react';
+import { Plus, Search, User, Edit, Users, Trash2, Upload } from 'lucide-react';
+import BulkImportPlayers from '../components/players/BulkImportPlayers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,6 +51,7 @@ export default function Players() {
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [playerForm, setPlayerForm] = useState({
     full_name: '',
     parent_name: '',
@@ -154,6 +156,17 @@ export default function Players() {
     }
   });
 
+  const bulkImportHandlers = {
+    createPlayers: async (players) => {
+      for (const player of players) {
+        await base44.entities.Player.create(player);
+      }
+    },
+    createTeam: async (teamData) => {
+      return await base44.entities.Team.create(teamData);
+    }
+  };
+
   const resetForm = () => {
     setPlayerForm({
       full_name: '',
@@ -245,10 +258,16 @@ export default function Players() {
           <h1 className="text-3xl font-bold text-slate-900">Players</h1>
           <p className="text-slate-600 mt-1">Manage your club's player roster</p>
         </div>
-        <Button onClick={() => { setEditingPlayer(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Player
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowBulkImport(true)} variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Button onClick={() => { setEditingPlayer(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Player
+          </Button>
+        </div>
       </div>
 
       <div className="mb-6">
