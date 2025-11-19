@@ -414,9 +414,12 @@ export default function Messages() {
       </Tabs>
 
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Send New Message</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              Send New Message
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
@@ -512,12 +515,12 @@ export default function Messages() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowSendDialog(false)}>Cancel</Button>
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => setShowSendDialog(false)} className="h-12 px-8">Cancel</Button>
             <Button
               onClick={handleSendMessage}
               disabled={!newMessage.subject || !newMessage.message || (!newMessage.recipient_id && !newMessage.team_id)}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               <Send className="w-4 h-4 mr-2" />
               Send Message

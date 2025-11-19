@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function Tryouts() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedTeam, setSelectedTeam] = useState('all');
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedCoach, setSelectedCoach] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
@@ -60,11 +60,11 @@ export default function Tryouts() {
 
   const sortTeamsByAge = (teamList) => {
     return [...teamList].sort((a, b) => {
-      const extractAge = (name) => {
-        const match = name.match(/U-?(\d+)/i);
+      const extractAge = (ageGroup) => {
+        const match = ageGroup?.match(/U-?(\d+)/i);
         return match ? parseInt(match[1]) : 0;
       };
-      return extractAge(b.name) - extractAge(a.name);
+      return extractAge(b.age_group) - extractAge(a.age_group);
     });
   };
 
@@ -78,13 +78,14 @@ export default function Tryouts() {
     return teamList.filter(t => t.coach_ids?.includes(selectedCoach));
   };
 
-  const gaTeams = sortTeamsByAge(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Girls Academy'))));
-  const aspireTeams = sortTeamsByAge(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Aspire'))));
-  const otherTeams = sortTeamsByAge(filterByCoach(filterByLeague(teams.filter(t => t.league !== 'Girls Academy' && t.league !== 'Aspire'))));
+  const filterByAgeGroup = (teamList) => {
+    if (selectedAgeGroup === 'all') return teamList;
+    return teamList.filter(t => t.age_group === selectedAgeGroup);
+  };
 
-  const filteredGATeams = selectedTeam === 'all' ? gaTeams : gaTeams.filter(t => t.id === selectedTeam);
-  const filteredAspireTeams = selectedTeam === 'all' ? aspireTeams : aspireTeams.filter(t => t.id === selectedTeam);
-  const filteredOtherTeams = selectedTeam === 'all' ? otherTeams : otherTeams.filter(t => t.id === selectedTeam);
+  const gaTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Girls Academy')))));
+  const aspireTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league === 'Aspire')))));
+  const otherTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter(t => t.league !== 'Girls Academy' && t.league !== 'Aspire')))));
 
   const getTeamPlayers = (team) => {
     let teamPlayers = players.filter(p => p.team_id === team.id);
@@ -118,12 +119,12 @@ export default function Tryouts() {
   };
 
   const TeamColumn = ({ title, teams, bgColor }) => (
-    <div className="flex-1 min-w-[380px]">
-      <Card className="border-none shadow-2xl h-full overflow-hidden">
-        <CardHeader className={`${bgColor} border-b shadow-lg`}>
-          <CardTitle className="text-white text-center text-xl font-bold tracking-wide">{title}</CardTitle>
+    <div className="flex-1 min-w-[420px]">
+      <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
+        <CardHeader className={`${bgColor} border-b shadow-lg py-6`}>
+          <CardTitle className="text-white text-center text-2xl font-bold tracking-wide">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 overflow-y-auto max-h-[calc(100vh-280px)]">
+        <CardContent className="p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
           <div className="space-y-4">
             {teams.map(team => {
               const teamPlayers = getTeamPlayers(team);
@@ -133,26 +134,23 @@ export default function Tryouts() {
                     <Card 
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`border-2 transition-all duration-200 ${
-                        snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02]' : 'shadow-md'
+                      className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
+                        snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''
                       }`}
-                      style={{ borderColor: team.team_color }}
                     >
-                      <CardHeader className="pb-3" style={{ 
-                        backgroundColor: `${team.team_color}20`,
-                        borderBottom: `2px solid ${team.team_color}`
-                      }}>
+                      <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div 
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-                              style={{ backgroundColor: team.team_color }}
-                            >
-                              {team.name.charAt(0)}
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+                              {team.age_group || team.name.charAt(0)}
                             </div>
                             <div>
                               <div className="font-bold text-slate-900 text-lg">{team.name}</div>
-                              <div className="text-xs text-slate-600 font-medium">{teamPlayers.length} players</div>
+                              <div className="text-xs text-slate-600 font-medium flex items-center gap-2">
+                                <span>{team.age_group}</span>
+                                <span>•</span>
+                                <span>{teamPlayers.length} players</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -165,26 +163,29 @@ export default function Tryouts() {
                             <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                               {(provided, snapshot) => (
                                 <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`${
-                                    player.trapped === 'Yes' 
-                                      ? 'border-red-500 bg-gradient-to-r from-red-50 to-red-100' 
-                                      : 'border-slate-200 bg-white hover:border-emerald-300'
-                                  } w-full p-3 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                    snapshot.isDragging ? 'shadow-2xl rotate-2 scale-105 ring-4 ring-blue-400' : 'hover:shadow-lg hover:scale-[1.02]'
-                                  }`}
-                                  onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
+                                 ref={provided.innerRef}
+                                 {...provided.draggableProps}
+                                 {...provided.dragHandleProps}
+                                 style={{
+                                   ...provided.draggableProps.style,
+                                 }}
+                                 className={`${
+                                   player.trapped === 'Yes' 
+                                     ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                     : 'border-slate-200 bg-white hover:border-emerald-400'
+                                 } w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                   snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                 }`}
+                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
                                 >
                                   <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-11 h-11 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                                        {player.jersey_number || <User className="w-5 h-5" />}
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md text-lg">
+                                        {player.jersey_number || <User className="w-6 h-6" />}
                                       </div>
-                                      <div>
-                                        <div className="font-semibold text-slate-900">{player.full_name}</div>
-                                        <div className="text-xs text-slate-600">{player.position}</div>
+                                      <div className="flex-1">
+                                        <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
+                                        <div className="text-xs text-slate-600 mt-0.5">{player.position}</div>
                                       </div>
                                     </div>
                                     <div className="text-right">
@@ -242,19 +243,25 @@ export default function Tryouts() {
           <p className="text-slate-600 text-lg">Drag and drop players between teams • Filter by birthday, league, and coach</p>
         </div>
 
-        <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white to-slate-50">
+        <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="text-sm font-semibold text-slate-700 mb-2 block">Team</label>
-                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                  <SelectTrigger className="border-2">
-                    <SelectValue placeholder="All Teams" />
+                <label className="text-sm font-semibold text-slate-700 mb-2 block">Age Group</label>
+                <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
+                  <SelectTrigger className="border-2 h-12 shadow-sm">
+                    <SelectValue placeholder="All Age Groups" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Teams</SelectItem>
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                    <SelectItem value="all">All Age Groups</SelectItem>
+                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                      const extractAge = (ag) => {
+                        const match = ag?.match(/U-?(\d+)/i);
+                        return match ? parseInt(match[1]) : 0;
+                      };
+                      return extractAge(b) - extractAge(a);
+                    }).map(ageGroup => (
+                      <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -262,7 +269,7 @@ export default function Tryouts() {
               <div>
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">League</label>
                 <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                  <SelectTrigger className="border-2">
+                  <SelectTrigger className="border-2 h-12 shadow-sm">
                     <SelectValue placeholder="All Leagues" />
                   </SelectTrigger>
                   <SelectContent>
@@ -275,7 +282,7 @@ export default function Tryouts() {
               <div>
                 <label className="text-sm font-semibold text-slate-700 mb-2 block">Coach</label>
                 <Select value={selectedCoach} onValueChange={setSelectedCoach}>
-                  <SelectTrigger className="border-2">
+                  <SelectTrigger className="border-2 h-12 shadow-sm">
                     <SelectValue placeholder="All Coaches" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,7 +299,7 @@ export default function Tryouts() {
                   type="date"
                   value={birthdayFrom}
                   onChange={(e) => setBirthdayFrom(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
                 />
               </div>
               <div>
@@ -301,7 +308,7 @@ export default function Tryouts() {
                   type="date"
                   value={birthdayTo}
                   onChange={(e) => setBirthdayTo(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full h-12 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
                 />
               </div>
             </div>
@@ -311,17 +318,17 @@ export default function Tryouts() {
         <div className="flex gap-6 overflow-x-auto pb-4">
           <TeamColumn 
             title="Girls Academy" 
-            teams={filteredGATeams} 
+            teams={gaTeams} 
             bgColor="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600" 
           />
           <TeamColumn 
             title="Aspire League" 
-            teams={filteredAspireTeams} 
+            teams={aspireTeams} 
             bgColor="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600" 
           />
           <TeamColumn 
             title="Other Leagues" 
-            teams={filteredOtherTeams} 
+            teams={otherTeams} 
             bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" 
           />
         </div>

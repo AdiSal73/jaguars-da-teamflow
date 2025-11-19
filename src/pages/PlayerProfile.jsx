@@ -563,7 +563,7 @@ export default function PlayerProfile() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="evaluations" className="space-y-6">
+            <TabsContent value="evaluations" className="space-y-6 mt-6">
               <Card className="border-none shadow-lg">
                 <CardHeader className="border-b border-slate-100">
                   <div className="flex justify-between items-center">
@@ -869,52 +869,62 @@ export default function PlayerProfile() {
       </div>
 
       <Dialog open={showAssessmentDialog} onOpenChange={setShowAssessmentDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>New Physical Assessment</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-red-500 to-orange-500 rounded-full" />
+              New Physical Assessment
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2 gap-6 mt-6">
             <div className="col-span-2">
-              <Label>Date *</Label>
+              <Label className="font-semibold text-slate-700">Date *</Label>
               <Input type="date" value={newAssessment.assessment_date} 
-                onChange={(e) => setNewAssessment({...newAssessment, assessment_date: e.target.value})} />
+                onChange={(e) => setNewAssessment({...newAssessment, assessment_date: e.target.value})}
+                className="border-2 h-12 mt-2" />
             </div>
             <div>
-              <Label>Sprint (seconds) *</Label>
+              <Label className="font-semibold text-slate-700">Sprint (seconds) *</Label>
               <Input type="number" step="0.01" value={newAssessment.sprint} 
                 onChange={(e) => setNewAssessment({...newAssessment, sprint: e.target.value})} 
-                placeholder="e.g., 3.5" />
+                placeholder="e.g., 3.5"
+                className="border-2 h-12 mt-2" />
             </div>
             <div>
-              <Label>Vertical Jump (inches) *</Label>
+              <Label className="font-semibold text-slate-700">Vertical Jump (inches) *</Label>
               <Input type="number" value={newAssessment.vertical} 
                 onChange={(e) => setNewAssessment({...newAssessment, vertical: e.target.value})} 
-                placeholder="e.g., 15" />
+                placeholder="e.g., 15"
+                className="border-2 h-12 mt-2" />
             </div>
             <div>
-              <Label>YIRT (levels) *</Label>
+              <Label className="font-semibold text-slate-700">YIRT (levels) *</Label>
               <Input type="number" value={newAssessment.yirt} 
                 onChange={(e) => setNewAssessment({...newAssessment, yirt: e.target.value})} 
-                placeholder="e.g., 45" />
+                placeholder="e.g., 45"
+                className="border-2 h-12 mt-2" />
             </div>
             <div>
-              <Label>Shuttle (seconds) *</Label>
+              <Label className="font-semibold text-slate-700">Shuttle (seconds) *</Label>
               <Input type="number" step="0.01" value={newAssessment.shuttle} 
                 onChange={(e) => setNewAssessment({...newAssessment, shuttle: e.target.value})} 
-                placeholder="e.g., 4.8" />
+                placeholder="e.g., 4.8"
+                className="border-2 h-12 mt-2" />
             </div>
             <div className="col-span-2">
-              <Label>Notes</Label>
-              <Input value={newAssessment.notes} 
-                onChange={(e) => setNewAssessment({...newAssessment, notes: e.target.value})} />
+              <Label className="font-semibold text-slate-700">Notes</Label>
+              <Textarea value={newAssessment.notes} 
+                onChange={(e) => setNewAssessment({...newAssessment, notes: e.target.value})}
+                className="border-2 mt-2 resize-none"
+                rows={3} />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowAssessmentDialog(false)}>Cancel</Button>
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => setShowAssessmentDialog(false)} className="h-12 px-8">Cancel</Button>
             <Button 
               onClick={() => createAssessmentMutation.mutate({...newAssessment, team_id: player?.team_id || ''})}
               disabled={!newAssessment.sprint || !newAssessment.vertical || !newAssessment.yirt || !newAssessment.shuttle}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               Create Assessment
             </Button>
