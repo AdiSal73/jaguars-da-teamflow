@@ -80,7 +80,7 @@ export default function Players() {
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: async () => {
-      const allPlayers = await base44.entities.Player.list('-created_date');
+      const allPlayers = await base44.entities.Player.list('-created_date', 50);
       if (user?.role === 'admin') return allPlayers;
       if (user?.role === 'coach') {
         const coaches = await base44.entities.Coach.list();
@@ -499,17 +499,21 @@ export default function Players() {
       </Tabs>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingPlayer ? 'Edit Player' : 'Add New Player'}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              {editingPlayer ? 'Edit Player' : 'Add New Player'}
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2 gap-6 mt-6">
             <div className="col-span-2">
-              <Label>Full Name *</Label>
+              <Label className="font-semibold text-slate-700">Full Name *</Label>
               <Input
                 value={playerForm.full_name}
                 onChange={(e) => setPlayerForm({...playerForm, full_name: e.target.value})}
                 placeholder="Enter full name"
+                className="border-2 h-12 mt-2"
               />
             </div>
             <div>
@@ -656,12 +660,12 @@ export default function Players() {
               </Select>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => setShowDialog(false)} className="h-12 px-8">Cancel</Button>
             <Button 
               onClick={handleSave}
               disabled={!playerForm.full_name || !playerForm.position}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               {editingPlayer ? 'Update Player' : 'Add Player'}
             </Button>
