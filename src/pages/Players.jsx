@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -667,6 +666,15 @@ export default function Players() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+        <DialogContent className="max-w-3xl">
+          <BulkImportPlayers 
+            teams={teams}
+            onImportComplete={bulkImportHandlers}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
