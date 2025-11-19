@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trash2, Filter, Upload } from 'lucide-react';
+import { Trash2, Filter, Upload, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import BulkImportTeams from '../components/teams/BulkImportTeams';
+import CoachSelector from '../components/team/CoachSelector';
 
 export default function TeamsTable() {
   const [filterLeague, setFilterLeague] = useState('all');
@@ -18,6 +20,8 @@ export default function TeamsTable() {
   const [birthYearTo, setBirthYearTo] = useState('');
   const [deleteTeamId, setDeleteTeamId] = useState(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -45,6 +49,44 @@ export default function TeamsTable() {
     onSuccess: () => {
       queryClient.invalidateQueries(['teams']);
       setDeleteTeamId(null);
+    }
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (teamIds) => {
+      for (const id of teamIds) {
+        await base44.entities.Team.delete(id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams']);
+      setSelectedTeams([]);
+      setShowBulkDeleteDialog(false);
+    }
+  });
+
+  const updateTeamCoachesMutation = useMutation({
+    mutationFn: async ({ teamId, coachIds }) => {
+      await base44.entities.Team.update(teamId, { coach_ids: coachIds });
+      
+      for (const coach of coaches) {
+        const shouldHaveTeam = coachIds.includes(coach.id);
+        const hasTeam = coach.team_ids?.includes(teamId);
+        
+        if (shouldHaveTeam && !hasTeam) {
+          await base44.entities.Coach.update(coach.id, { 
+            team_ids: [...(coach.team_ids || []), teamId] 
+          });
+        } else if (!shouldHaveTeam && hasTeam) {
+          await base44.entities.Coach.update(coach.id, { 
+            team_ids: coach.team_ids.filter(tid => tid !== teamId) 
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams']);
+      queryClient.invalidateQueries(['coaches']);
     }
   });
 
@@ -171,77 +213,116 @@ export default function TeamsTable() {
         </CardContent>
       </Card>
 
+      {selectedTeams.length > 0 && (
+        <Card className="border-none shadow-lg mb-6 bg-gradient-to-br from-red-50 to-orange-50">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <div className="font-semibold text-slate-900">{selectedTeams.length} teams selected</div>
+              <Button 
+                onClick={() => setShowBulkDeleteDialog(true)}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Selected Teams
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-none shadow-xl">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
                 <tr>
+                  <th className="px-6 py-4 text-center text-sm font-bold w-12">
+                    <Checkbox
+                      checked={selectedTeams.length === filteredTeams.length && filteredTeams.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedTeams(filteredTeams.map(t => t.id));
+                        } else {
+                          setSelectedTeams([]);
+                        }
+                      }}
+                      className="border-white"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-sm font-bold">Team Name</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">Age Group</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">League</th>
                   <th className="px-6 py-4 text-left text-sm font-bold">Season</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Team Color</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Coaches</th>
                   <th className="px-6 py-4 text-center text-sm font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTeams.map((team, idx) => (
-                  <tr key={team.id} className={`border-b hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                    <td className="px-6 py-4">
-                      <Input
-                        value={team.name || ''}
-                        onChange={(e) => handleCellEdit(team.id, 'name', e.target.value)}
-                        className="border-slate-300 focus:border-emerald-500 font-semibold"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Input
-                        value={team.age_group || ''}
-                        onChange={(e) => handleCellEdit(team.id, 'age_group', e.target.value)}
-                        className="border-slate-300 focus:border-emerald-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Input
-                        value={team.league || ''}
-                        onChange={(e) => handleCellEdit(team.id, 'league', e.target.value)}
-                        className="border-slate-300 focus:border-emerald-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <Input
-                        value={team.season || ''}
-                        onChange={(e) => handleCellEdit(team.id, 'season', e.target.value)}
-                        className="border-slate-300 focus:border-emerald-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                {filteredTeams.map((team, idx) => {
+                  const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
+                  return (
+                    <tr key={team.id} className={`border-b hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                      <td className="px-6 py-4 text-center">
+                        <Checkbox
+                          checked={selectedTeams.includes(team.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTeams([...selectedTeams, team.id]);
+                            } else {
+                              setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                            }
+                          }}
+                        />
+                      </td>
+                      <td className="px-6 py-4">
                         <Input
-                          type="color"
-                          value={team.team_color || '#22c55e'}
-                          onChange={(e) => handleCellEdit(team.id, 'team_color', e.target.value)}
-                          className="w-16 h-10"
+                          value={team.name || ''}
+                          onChange={(e) => handleCellEdit(team.id, 'name', e.target.value)}
+                          className="border-slate-300 focus:border-emerald-500 font-semibold"
                         />
-                        <div 
-                          className="w-8 h-8 rounded-full shadow-md"
-                          style={{ backgroundColor: team.team_color }}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Input
+                          value={team.age_group || ''}
+                          onChange={(e) => handleCellEdit(team.id, 'age_group', e.target.value)}
+                          className="border-slate-300 focus:border-emerald-500"
                         />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteTeamId(team.id)}
-                        className="hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Input
+                          value={team.league || ''}
+                          onChange={(e) => handleCellEdit(team.id, 'league', e.target.value)}
+                          className="border-slate-300 focus:border-emerald-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <Input
+                          value={team.season || ''}
+                          onChange={(e) => handleCellEdit(team.id, 'season', e.target.value)}
+                          className="border-slate-300 focus:border-emerald-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <CoachSelector
+                          coaches={coaches}
+                          selectedCoachIds={team.coach_ids || []}
+                          onCoachesChange={(coachIds) => updateTeamCoachesMutation.mutate({ teamId: team.id, coachIds })}
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTeamId(team.id)}
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filteredTeams.length === 0 && (
@@ -265,6 +346,23 @@ export default function TeamsTable() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => deleteTeamMutation.mutate(deleteTeamId)} className="bg-red-600 hover:bg-red-700">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedTeams.length} Teams?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all selected teams. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => bulkDeleteMutation.mutate(selectedTeams)} className="bg-red-600 hover:bg-red-700">
+              Delete Teams
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

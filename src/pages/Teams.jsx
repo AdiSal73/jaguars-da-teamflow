@@ -131,7 +131,6 @@ export default function Teams() {
       age_group: '',
       league: '',
       season: '',
-      team_color: '#22c55e',
       coach_ids: []
     });
   };
@@ -144,7 +143,6 @@ export default function Teams() {
       age_group: team.age_group || '',
       league: team.league || '',
       season: team.season || '',
-      team_color: team.team_color || '#22c55e',
       coach_ids: assignedCoaches
     });
     setShowDialog(true);
@@ -257,49 +255,48 @@ export default function Teams() {
       )}
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingTeam ? 'Edit Team' : 'Create New Team'}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              {editingTeam ? 'Edit Team' : 'Create New Team'}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-6 mt-6">
             <div>
-              <Label>Team Name *</Label>
+              <Label className="font-semibold text-slate-700">Team Name *</Label>
               <Input
                 value={teamForm.name}
                 onChange={(e) => setTeamForm({...teamForm, name: e.target.value})}
                 placeholder="e.g., Elite Squad"
+                className="border-2 h-12 mt-2"
               />
             </div>
             <div>
-              <Label>Age Group *</Label>
+              <Label className="font-semibold text-slate-700">Age Group *</Label>
               <Input
                 value={teamForm.age_group}
                 onChange={(e) => setTeamForm({...teamForm, age_group: e.target.value})}
                 placeholder="e.g., U-15, U-18, Senior"
+                className="border-2 h-12 mt-2"
               />
             </div>
             <div>
-              <Label>League</Label>
+              <Label className="font-semibold text-slate-700">League</Label>
               <Input
                 value={teamForm.league}
                 onChange={(e) => setTeamForm({...teamForm, league: e.target.value})}
                 placeholder="e.g., Premier League"
+                className="border-2 h-12 mt-2"
               />
             </div>
             <div>
-              <Label>Season</Label>
+              <Label className="font-semibold text-slate-700">Season</Label>
               <Input
                 value={teamForm.season}
                 onChange={(e) => setTeamForm({...teamForm, season: e.target.value})}
                 placeholder="e.g., 2024/2025"
-              />
-            </div>
-            <div>
-              <Label>Team Color</Label>
-              <Input
-                type="color"
-                value={teamForm.team_color}
-                onChange={(e) => setTeamForm({...teamForm, team_color: e.target.value})}
+                className="border-2 h-12 mt-2"
               />
             </div>
             <div>
@@ -311,14 +308,14 @@ export default function Teams() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => { setShowDialog(false); setEditingTeam(null); resetForm(); }}>
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => { setShowDialog(false); setEditingTeam(null); resetForm(); }} className="h-12 px-8">
               Cancel
             </Button>
             <Button 
               onClick={handleSave}
               disabled={!teamForm.name || !teamForm.age_group}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               {editingTeam ? 'Update Team' : 'Create Team'}
             </Button>
