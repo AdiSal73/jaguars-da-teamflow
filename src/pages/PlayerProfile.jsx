@@ -88,6 +88,15 @@ export default function PlayerProfile() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const { data: tryout } = useQuery({
+    queryKey: ['tryout', playerId],
+    queryFn: async () => {
+      const tryouts = await base44.entities.PlayerTryout.filter({ player_id: playerId });
+      return tryouts[0] || null;
+    },
+    enabled: !!playerId
+  });
+
   const calculateScores = (sprint, vertical, yirt, shuttle) => {
     const speed = sprint > 0 ? 5 * (20 - 10 * (3.5 * (sprint - 2.8) / sprint)) : 0;
     let power = 0;
@@ -143,6 +152,30 @@ export default function PlayerProfile() {
       setShowEvaluationDialog(false);
     }
   });
+
+  const saveTryoutMutation = useMutation({
+    mutationFn: (data) => {
+      if (tryout?.id) {
+        return base44.entities.PlayerTryout.update(tryout.id, data);
+      } else {
+        return base44.entities.PlayerTryout.create(data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryout', playerId]);
+    }
+  });
+
+  const handleTryoutFieldUpdate = (field, value) => {
+    const data = {
+      ...tryout,
+      player_id: playerId,
+      player_name: player?.full_name,
+      current_team: team?.name,
+      [field]: value
+    };
+    saveTryoutMutation.mutate(data);
+  };
 
   if (!player) return null;
 
@@ -280,10 +313,11 @@ export default function PlayerProfile() {
 
         <div className="lg:col-span-2">
           <Tabs defaultValue="physical" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="physical">Physical</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
+              <TabsTrigger value="tryout">Tryout</TabsTrigger>
               <TabsTrigger value="goals">Goals</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
@@ -601,6 +635,146 @@ export default function PlayerProfile() {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="tryout" className="space-y-6">
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle>Tryout Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Player Name</Label>
+                      <Input value={player.full_name} disabled />
+                    </div>
+                    <div>
+                      <Label>Current Team</Label>
+                      <Input value={team?.name || 'N/A'} disabled />
+                    </div>
+                    <div>
+                      <Label>Primary Position</Label>
+                      <Select 
+                        value={tryout?.primary_position?.toString() || ''} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('primary_position', parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(num => (
+                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Dominant Foot</Label>
+                      <Select 
+                        value={tryout?.dominant_foot || ''} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('dominant_foot', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select dominant foot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Left">Left</SelectItem>
+                          <SelectItem value="Right">Right</SelectItem>
+                          <SelectItem value="Both">Both</SelectItem>
+                          <SelectItem value="Neither">Neither</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Team Role</Label>
+                      <Select 
+                        value={tryout?.team_role || ''} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('team_role', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select team role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Indispensable Player">Indispensable Player</SelectItem>
+                          <SelectItem value="GA Starter">GA Starter</SelectItem>
+                          <SelectItem value="GA Rotation">GA Rotation</SelectItem>
+                          <SelectItem value="Aspire Starter">Aspire Starter</SelectItem>
+                          <SelectItem value="Aspire Rotation">Aspire Rotation</SelectItem>
+                          <SelectItem value="United Starter">United Starter</SelectItem>
+                          <SelectItem value="United Rotation">United Rotation</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Recommendation</Label>
+                      <Select 
+                        value={tryout?.recommendation || ''} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('recommendation', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select recommendation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Move up">Move up</SelectItem>
+                          <SelectItem value="Keep">Keep</SelectItem>
+                          <SelectItem value="Move down">Move down</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Next Year's Team</Label>
+                      <Input 
+                        value={tryout?.next_year_team || ''} 
+                        onChange={(e) => handleTryoutFieldUpdate('next_year_team', e.target.value)}
+                        placeholder="Enter team name"
+                      />
+                    </div>
+                    <div>
+                      <Label>Next Season Status</Label>
+                      <Select 
+                        value={tryout?.next_season_status || 'N/A'} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('next_season_status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="N/A">N/A</SelectItem>
+                          <SelectItem value="Accepted Offer">Accepted Offer</SelectItem>
+                          <SelectItem value="Rejected Offer">Rejected Offer</SelectItem>
+                          <SelectItem value="Considering Offer">Considering Offer</SelectItem>
+                          <SelectItem value="Not Offered">Not Offered</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Registration Status</Label>
+                      <Select 
+                        value={tryout?.registration_status || 'Not Signed'} 
+                        onValueChange={(value) => handleTryoutFieldUpdate('registration_status', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Not Signed">Not Signed</SelectItem>
+                          <SelectItem value="Signed and Paid">Signed and Paid</SelectItem>
+                          <SelectItem value="Signed">Signed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Notes</Label>
+                      <Textarea 
+                        value={tryout?.notes || ''} 
+                        onChange={(e) => handleTryoutFieldUpdate('notes', e.target.value)}
+                        placeholder="Additional notes..."
+                        rows={4}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
