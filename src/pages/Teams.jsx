@@ -166,6 +166,9 @@ export default function Teams() {
           <p className="text-slate-600 mt-1">Manage teams and assign coaches</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => navigate(createPageUrl('TeamsTable'))} variant="outline">
+            View Table
+          </Button>
           <Button onClick={scanAndCreateTeams} variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
             <Scan className="w-4 h-4 mr-2" />
             Scan & Create Teams
@@ -183,12 +186,9 @@ export default function Teams() {
           const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
 
           return (
-            <button
-              key={team.id}
-              onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
-              className="text-left"
+            <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+              onClick={() => handleEdit(team)}
             >
-              <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
                 <CardHeader className="border-b border-slate-100 relative" style={{ backgroundColor: `${team.team_color}20` }}>
                   <CardTitle className="flex items-center gap-3">
                     <div 
@@ -202,14 +202,11 @@ export default function Teams() {
                       <div className="text-sm font-normal text-slate-600">{team.age_group}</div>
                     </div>
                   </CardTitle>
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`); }} className="bg-white shadow-sm">
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`); }} className="bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
                     <BarChart3 className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); handleEdit(team); }} className="bg-white shadow-sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.preventDefault(); setDeleteTeamId(team.id); }} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTeamId(team.id); }} className="bg-white shadow-sm hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -249,7 +246,6 @@ export default function Teams() {
                 </div>
               </CardContent>
             </Card>
-            </button>
           );
         })}
       </div>
