@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
         { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("Evaluations") },
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
         { title: "User Management", url: createPageUrl("UserManagement") },
       ]
     },
