@@ -139,7 +139,6 @@ export default function Tryouts() {
         if (regCompare !== 0) return regCompare;
       }
 
-      // Always alphabetically by last name as secondary sort
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
@@ -273,16 +272,6 @@ export default function Tryouts() {
     return 6; // Others
   };
 
-  const calculateTeamPriority = (team) => {
-    if (team.league === 'Girls Academy') return 1;
-    if (team.league === 'Aspire') return 2;
-    const name = team.name.toLowerCase();
-    if (name.includes('green')) return 3;
-    if (name.includes('white')) return 4;
-    if (name.includes('black')) return 5;
-    return 6; // Others
-  };
-
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
@@ -359,15 +348,15 @@ export default function Tryouts() {
     }
   };
 
-  const TeamColumn = ({ title, teams, bgColor, logoUrl }) =>
-  <div className="flex-1 min-w-[420px]">
+  const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
+    <div className="flex-1 min-w-[420px]">
       <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
         <CardHeader className="bg-slate-300 p-6 py-6 flex flex-col space-y-1.5 from-purple-600 via-purple-700 to-pink-600 border-b shadow-lg">
-          {logoUrl &&
-        <div className="flex justify-center mb-4">
+          {logoUrl && (
+            <div className="flex justify-center mb-4">
               <img src={logoUrl} alt={title} className="w-32 h-32 object-contain" />
             </div>
-        }
+          )}
           <CardTitle className="text-white text-center text-2xl font-bold tracking-wide">{title}</CardTitle>
         </CardHeader>
         <CardContent className="p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
@@ -385,15 +374,15 @@ export default function Tryouts() {
               teamPlayers.sort((a, b) => (a.tryout?.team_ranking || 9999) - (b.tryout?.team_ranking || 9999));
 
               return (
-              <Droppable droppableId={`team-${team.id}`} key={team.id}>
-                  {(provided, snapshot) =>
-                <Card
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
-                  snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''}`
-                  }>
-
+                <Droppable droppableId={`team-${team.id}`} key={team.id}>
+                  {(provided, snapshot) => (
+                    <Card 
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
+                        snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''
+                      }`}
+                    >
                       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -412,83 +401,83 @@ export default function Tryouts() {
                         </div>
                       </CardHeader>
                       <CardContent className="p-3 space-y-2 min-h-[100px]">
-                        {teamPlayers.length === 0 ?
-                    <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p> :
-
-                    teamPlayers.map((player, index) =>
-                    <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                              {(provided, snapshot) =>
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{
-                          ...provided.draggableProps.style
-                        }}
-                        className={`${
-                        player.trapped === 'Yes' ?
-                        'border-red-400 bg-gradient-to-r from-red-50 to-red-100' :
-                        'border-slate-200 bg-white hover:border-emerald-400'} w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-
-                        snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'}`
-                        }
-                        onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}>
-
+                        {teamPlayers.length === 0 ? (
+                          <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p>
+                        ) : (
+                          teamPlayers.map((player, index) => (
+                            <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                 ref={provided.innerRef}
+                                 {...provided.draggableProps}
+                                 {...provided.dragHandleProps}
+                                 style={{
+                                   ...provided.draggableProps.style,
+                                 }}
+                                 className={`${
+                                   player.trapped === 'Yes' 
+                                     ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                     : 'border-slate-200 bg-white hover:border-emerald-400'
+                                 } w-full p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                   snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                 }`}
+                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
+                                >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3 flex-1">
-                                      {/* Ranking Badge */}
                                       <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-base min-w-[2.5rem]">
                                         #{player.tryout?.team_ranking || '?'}
                                       </div>
                                       <div className="flex-1">
                                         <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
-                                        <div className="text-xs text-slate-600 mt-0.5">{player.position}</div>
+                                        <div className="text-xs text-slate-600 mt-0.5 flex gap-2">
+                                          <span>{player.primary_position}</span>
+                                          {player.tryout?.team_role && (
+                                            <>
+                                              <span>•</span>
+                                              <span>{player.tryout.team_role}</span>
+                                            </>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                     <div className="text-right">
-                                      {player.trapped === 'Yes' &&
-                            <Badge className="bg-red-500 text-white mb-1 shadow-sm">
+                                      {player.trapped === 'Yes' && (
+                                        <Badge className="bg-red-500 text-white mb-1 shadow-sm">
                                           <AlertCircle className="w-3 h-3 mr-1" />
                                           Trapped
                                         </Badge>
-                            }
-                                      {player.tryout &&
-                            <div className="space-y-1">
-                                          {player.tryout.team_role &&
-                              <div className="text-xs text-slate-600 font-medium">{player.tryout.team_role}</div>
-                              }
-                                          {player.tryout.recommendation &&
-                              <Badge
-                                className={`shadow-sm ${
-                                player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                'bg-blue-500'}`
-                                }>
-
-                                              {player.tryout.recommendation}
-                                            </Badge>
-                              }
-                                        </div>
-                            }
+                                      )}
+                                      {player.tryout?.recommendation && (
+                                        <Badge 
+                                          className={`shadow-sm ${
+                                            player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                                            player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                                            'bg-blue-500'
+                                          }`}
+                                        >
+                                          {player.tryout.recommendation}
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
-                      }
+                              )}
                             </Draggable>
-                    )
-                    }
+                          ))
+                        )}
                         {provided.placeholder}
                       </CardContent>
                     </Card>
-                }
-                </Droppable>);
-
-          })}
+                  )}
+                </Droppable>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
-    </div>;
-
+    </div>
+  );
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>

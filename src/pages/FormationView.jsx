@@ -294,11 +294,6 @@ export default function FormationView() {
     );
   };
 
-  // Removed duplicate handler to use the one defined above
-  // const handlePositionMouseUp = () => {
-  //   setDraggingPosition(null);
-  // };
-
   React.useEffect(() => {
     if (draggingPosition) {
       window.addEventListener('mousemove', handlePositionMouseMove);
@@ -453,6 +448,10 @@ export default function FormationView() {
                                                 <div className="text-xs font-bold text-slate-900 truncate leading-tight">
                                                   {player.full_name}
                                                 </div>
+                                                <div className="text-[9px] text-slate-600 flex gap-1 items-center flex-wrap">
+                                                   {player.tryout?.team_role && <span>{player.tryout.team_role}</span>}
+                                                   {player.tryout?.recommendation && <span className="font-semibold">• {player.tryout.recommendation}</span>}
+                                                </div>
                                               </div>
                                               <button
                                         onClick={(e) => {
@@ -465,27 +464,6 @@ export default function FormationView() {
                                                 <Edit2 className="w-2.5 h-2.5 text-white" />
                                               </button>
                                             </div>
-                                            {player.tryout &&
-                                    <div className="space-y-0.5 text-[10px]">
-                                                {player.tryout.team_role &&
-                                      <div className="text-slate-600 font-medium truncate">{player.tryout.team_role}</div>
-                                      }
-                                                {player.tryout.recommendation &&
-                                      <Badge
-                                        className={`text-[9px] py-0 px-1.5 h-4 ${
-                                        player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                        player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                        'bg-blue-500'}`
-                                        }>
-                                        
-                                                    {player.tryout.recommendation === 'Move up' && <ArrowUp className="w-2.5 h-2.5 inline mr-0.5" />}
-                                                    {player.tryout.recommendation === 'Move down' && <ArrowDown className="w-2.5 h-2.5 inline mr-0.5" />}
-                                                    {player.tryout.recommendation === 'Keep' && <Minus className="w-2.5 h-2.5 inline mr-0.5" />}
-                                                    {player.tryout.recommendation}
-                                                  </Badge>
-                                      }
-                                              </div>
-                                    }
                                           </div>
                                         </div>
                                 }
@@ -541,9 +519,25 @@ export default function FormationView() {
                                 <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md mb-2">
                                   {player.jersey_number || <User className="w-6 h-6" />}
                                 </div>
-                                <div className="text-xs font-semibold text-slate-900 text-center">
+                                <div className="text-xs font-bold text-slate-900 text-center mb-1">
                                   {player.full_name}
                                 </div>
+                                {player.tryout && (
+                                  <div className="flex flex-col items-center gap-1">
+                                    {player.tryout.team_role && (
+                                      <span className="text-[10px] text-slate-600 bg-slate-200 px-1.5 rounded-full">{player.tryout.team_role}</span>
+                                    )}
+                                    {player.tryout.recommendation && (
+                                       <Badge className={`text-[9px] h-4 px-1.5 ${
+                                          player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                                          player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                                          'bg-blue-500'
+                                       }`}>
+                                          {player.tryout.recommendation}
+                                       </Badge>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
