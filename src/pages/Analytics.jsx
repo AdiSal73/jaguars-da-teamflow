@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, Users, AlertTriangle, BarChart3, Download, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import DataExporter from '../components/export/DataExporter';
 
 export default function Analytics() {
   const [selectedTeam, setSelectedTeam] = useState('all');
@@ -31,6 +32,11 @@ export default function Analytics() {
   const { data: evaluations = [] } = useQuery({
     queryKey: ['evaluations'],
     queryFn: () => base44.entities.Evaluation.list('-evaluation_date')
+  });
+
+  const { data: tryouts = [] } = useQuery({
+    queryKey: ['tryouts'],
+    queryFn: () => base44.entities.PlayerTryout.list()
   });
 
   // Filter data based on selected team
@@ -216,15 +222,15 @@ export default function Analytics() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Performance Analytics</h1>
-        <p className="text-slate-600">Comprehensive insights and trends across your teams</p>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Performance Analytics</h1>
+        <p className="text-sm md:text-base text-slate-600">Comprehensive insights and trends across your teams</p>
       </div>
 
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col md:flex-row gap-4 md:justify-between md:items-center">
         <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-          <SelectTrigger className="w-64">
+          <SelectTrigger className="w-full md:w-64">
             <SelectValue placeholder="Select team" />
           </SelectTrigger>
           <SelectContent>
@@ -232,23 +238,20 @@ export default function Analytics() {
             {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={handleExportData} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export Data
-        </Button>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="assessments">Assessments</TabsTrigger>
-          <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
-          <TabsTrigger value="predictions">At Risk</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-6">
+          <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="assessments" className="text-xs md:text-sm">Assessments</TabsTrigger>
+          <TabsTrigger value="evaluations" className="text-xs md:text-sm">Evaluations</TabsTrigger>
+          <TabsTrigger value="trends" className="text-xs md:text-sm">Trends</TabsTrigger>
+          <TabsTrigger value="predictions" className="text-xs md:text-sm">At Risk</TabsTrigger>
+          <TabsTrigger value="export" className="text-xs md:text-sm">Export</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
+        <TabsContent value="overview" className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <Card className="border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -540,6 +543,16 @@ export default function Analytics() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="export" className="space-y-6">
+          <DataExporter
+            players={filteredPlayers}
+            teams={teams}
+            tryouts={tryouts}
+            assessments={filteredAssessments}
+            evaluations={filteredEvaluations}
+          />
         </TabsContent>
       </Tabs>
     </div>
