@@ -67,7 +67,9 @@ export default function Players() {
     preferred_foot: '',
     jersey_number: '',
     team_id: '',
-    status: 'Active'
+    status: 'Active',
+    is_tryout_player: false,
+    tryout_notes: ''
   });
 
   const queryClient = useQueryClient();
@@ -181,7 +183,9 @@ export default function Players() {
       preferred_foot: '',
       jersey_number: '',
       team_id: '',
-      status: 'Active'
+      status: 'Active',
+      is_tryout_player: false,
+      tryout_notes: ''
     });
   };
 
@@ -210,9 +214,11 @@ export default function Players() {
       preferred_foot: player.preferred_foot || '',
       jersey_number: player.jersey_number || '',
       team_id: player.team_id || '',
-      status: player.status || 'Active'
-    });
-    setShowDialog(true);
+      status: player.status || 'Active',
+      is_tryout_player: player.is_tryout_player || false,
+      tryout_notes: player.tryout_notes || ''
+      });
+      setShowDialog(true);
   };
 
   const handleFieldUpdate = (playerId, field, value) => {
@@ -706,7 +712,17 @@ export default function Players() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+            {playerForm.is_tryout_player && (
+              <div className="col-span-2">
+                <Label>Tryout Notes</Label>
+                <Input
+                  value={playerForm.tryout_notes}
+                  onChange={(e) => setPlayerForm({...playerForm, tryout_notes: e.target.value})}
+                  placeholder="Notes about this tryout player"
+                />
+              </div>
+            )}
+            </div>
           <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
             <Button variant="outline" onClick={() => setShowDialog(false)} className="h-12 px-8">Cancel</Button>
             <Button 

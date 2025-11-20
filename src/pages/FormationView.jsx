@@ -5,11 +5,10 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { User, Edit2, Save, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { User, Edit2, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 
 const positionMapping = {
   'GK': 'GK',
@@ -40,7 +39,6 @@ const formations = {
     { id: 'Right Winger', x: 75, y: 20, label: 'RW' },
     { id: 'Forward', x: 50, y: 15, label: 'ST' },
     { id: 'Left Winger', x: 25, y: 20, label: 'LW' }]
-
   },
   '4-2-3-1': {
     name: '4-2-3-1',
@@ -56,7 +54,6 @@ const formations = {
     { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM' },
     { id: 'Left Winger', x: 25, y: 35, label: 'LW' },
     { id: 'Forward', x: 50, y: 15, label: 'ST' }]
-
   },
   '4-4-2': {
     name: '4-4-2',
@@ -72,7 +69,6 @@ const formations = {
     { id: 'Left Winger', x: 20, y: 45, label: 'LW' },
     { id: 'Forward', x: 60, y: 15, label: 'ST' },
     { id: 'Attacking Midfielder', x: 40, y: 15, label: 'CAM' }]
-
   },
   '3-4-2-1': {
     name: '3-4-2-1',
@@ -88,7 +84,6 @@ const formations = {
     { id: 'Attacking Midfielder', x: 60, y: 28, label: 'CAM' },
     { id: 'Right Winger', x: 40, y: 28, label: 'RW' },
     { id: 'Forward', x: 50, y: 15, label: 'ST' }]
-
   },
   '3-5-2': {
     name: '3-5-2',
@@ -104,7 +99,6 @@ const formations = {
     { id: 'Left Winger', x: 20, y: 50, label: 'LWB' },
     { id: 'Forward', x: 60, y: 15, label: 'ST' },
     { id: 'Right Winger', x: 40, y: 15, label: 'RW' }]
-
   },
   '3-4-1-2': {
     name: '3-4-1-2',
@@ -120,7 +114,6 @@ const formations = {
     { id: 'Attacking Midfielder', x: 50, y: 32, label: 'CAM' },
     { id: 'Forward', x: 60, y: 15, label: 'ST' },
     { id: 'Right Winger', x: 40, y: 15, label: 'RW' }]
-
   }
 };
 
@@ -176,7 +169,6 @@ export default function FormationView() {
         setSelectedFormation(team.formation_settings.formation_name);
       }
     } else {
-      // Reset to default if no custom settings
       setFormationPositions(formations[selectedFormation].positions);
     }
   }, [team?.id, selectedFormation]);
@@ -260,7 +252,6 @@ export default function FormationView() {
     const destPositionId = result.destination.droppableId.replace('position-', '');
     const draggedPlayerId = result.draggableId.replace('player-', '');
 
-    // Update position if changed
     if (sourcePositionId !== destPositionId) {
       updatePlayerPositionMutation.mutate({
         playerId: draggedPlayerId,
@@ -268,7 +259,6 @@ export default function FormationView() {
       });
     }
 
-    // Update ranking
     const newRanking = result.destination.index + 1;
     updateRankingMutation.mutate({
       playerId: draggedPlayerId,
@@ -313,17 +303,17 @@ export default function FormationView() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-8 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">{team?.name || 'Formation View'}</h1>
-          <p className="text-slate-600">Drag players to rank them within each position</p>
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">{team?.name || 'Formation View'}</h1>
+          <p className="text-sm md:text-base text-slate-600">Drag players to rank them within each position</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
           <div>
-            <Label className="mb-2 block text-lg font-semibold">Select Formation</Label>
+            <Label className="mb-2 block text-base md:text-lg font-semibold">Select Formation</Label>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -335,9 +325,9 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-lg font-semibold">Filter by Team</Label>
+            <Label className="mb-2 block text-base md:text-lg font-semibold">Filter by Team</Label>
             <Select value={selectedTeam} onValueChange={(value) => {setSelectedTeam(value);setSelectedAgeGroup('all');}}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -350,9 +340,9 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-lg font-semibold">Filter by Age Group</Label>
+            <Label className="mb-2 block text-base md:text-lg font-semibold">Filter by Age Group</Label>
             <Select value={selectedAgeGroup} onValueChange={(value) => {setSelectedAgeGroup(value);setSelectedTeam('all');}}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -377,13 +367,12 @@ export default function FormationView() {
               ref={fieldRef}
               className="relative w-full"
               style={{
-                paddingBottom: '140%',
+                paddingBottom: 'min(140%, 800px)',
                 background: 'linear-gradient(180deg, #166534 0%, #15803d 50%, #166534 100%)',
                 cursor: draggingPosition ? 'grabbing' : 'default'
               }}>
               
               <div className="absolute inset-0">
-                {/* Field markings overlay */}
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 140" preserveAspectRatio="none">
                   <rect x="2" y="2" width="96" height="136" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                   <line x1="2" y1="70" x2="98" y2="70" stroke="white" strokeWidth="0.3" opacity="0.6" />
@@ -397,8 +386,7 @@ export default function FormationView() {
                   <rect x="42" y="138" width="16" height="2" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                 </svg>
 
-                {/* Player positions */}
-                {formation.positions.map((position, posIdx) => {
+                {formation.positions.map((position) => {
                   const positionPlayers = getPlayersForPosition(position.id);
 
                   return (
@@ -408,49 +396,42 @@ export default function FormationView() {
                       style={{
                         left: `${position.x}%`,
                         top: `${position.y}%`,
-                        width: '300px',
-                        maxHeight: '500px',
+                        width: 'clamp(140px, 25vw, 280px)',
+                        maxHeight: 'min(450px, 50vh)',
                         zIndex: draggingPosition?.id === position.id ? 1000 : 1
                       }}>
                       
                       <Droppable droppableId={`position-${position.id}`}>
-                        {(provided, snapshot) =>
+                        {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}>
                           
-                            <div className="bg-slate-200 p-2 rounded-2xl backdrop-blur-sm shadow-2xl border-2 overflow-y-auto max-h-[450px] transition-all border-slate-300">
-
-                            
+                            <div className="bg-slate-200 p-1.5 md:p-2 rounded-xl md:rounded-2xl backdrop-blur-sm shadow-2xl border-2 overflow-y-auto max-h-[40vh] md:max-h-[450px] transition-all border-slate-300">
                               <div
                               onMouseDown={(e) => handlePositionMouseDown(position, e)}
-                              className="text-center text-sm font-bold text-slate-700 mb-1 sticky top-0 bg-white/95 pb-1 border-b-2 border-slate-300 cursor-move hover:bg-slate-100 rounded-lg px-2 py-1.5">
-                              
+                              className="text-center text-xs md:text-sm font-bold text-slate-700 mb-1 sticky top-0 bg-white/95 pb-1 border-b-2 border-slate-300 cursor-move hover:bg-slate-100 rounded-lg px-2 py-1.5">
                                 {position.label}
                               </div>
                               <div className="space-y-1">
                                 {positionPlayers.length > 0 ?
                               positionPlayers.map((player, index) =>
                               <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                                      {(playerProvided, playerSnapshot) =>
+                                      {(playerProvided, playerSnapshot) => (
                                 <div
                                   ref={playerProvided.innerRef}
                                   {...playerProvided.draggableProps}
                                   {...playerProvided.dragHandleProps}
                                   className={`transition-all ${playerSnapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl' : ''}`}>
                                   
-                                          <div className="bg-white rounded-lg px-2 py-2 border-2 border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
-                                            <div className="flex items-center gap-1.5 mb-1">
-                                              <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                          <div className="bg-white rounded-lg px-1.5 md:px-2 py-2 border-2 border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
+                                            <div className="flex items-center gap-1 md:gap-1.5 mb-1">
+                                              <div className="w-5 h-5 md:w-6 md:h-6 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[10px] md:text-xs flex-shrink-0">
                                                 #{player.tryout?.team_ranking || index + 1}
                                               </div>
                                               <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-slate-900 truncate leading-tight">
+                                                <div className="text-[10px] md:text-xs font-bold text-slate-900 truncate leading-tight">
                                                   {player.full_name}
-                                                </div>
-                                                <div className="text-[9px] text-slate-600 flex gap-1 items-center flex-wrap">
-                                                   {player.tryout?.team_role && <span>{player.tryout.team_role}</span>}
-                                                   {player.tryout?.recommendation && <span className="font-semibold">• {player.tryout.recommendation}</span>}
                                                 </div>
                                               </div>
                                               <button
@@ -459,17 +440,38 @@ export default function FormationView() {
                                           setEditingPlayer(player);
                                           setShowEditDialog(true);
                                         }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                        
-                                                <Edit2 className="w-2.5 h-2.5 text-white" />
+                                        className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                                <Edit2 className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" />
                                               </button>
                                             </div>
+                                            {player.tryout && (
+                                    <div className="space-y-0.5 flex flex-wrap gap-1">
+                                                {player.tryout.team_role && (
+                                      <Button 
+                                        size="sm" 
+                                        className="h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full bg-blue-500 hover:bg-blue-600 pointer-events-none"
+                                      >
+                                        {player.tryout.team_role}
+                                      </Button>
+                                      )}
+                                                {player.tryout.recommendation && (
+                                      <Button
+                                        size="sm"
+                                        className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                        player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                        player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                        'bg-blue-500 hover:bg-blue-600'}`
+                                        }>
+                                                    {player.tryout.recommendation}
+                                                  </Button>
+                                      )}
+                                              </div>
+                                    )}
                                           </div>
                                         </div>
-                                }
+                                )}
                                     </Draggable>
                               ) :
-
                               <div className="text-center py-3">
                                     <div className="text-[10px] text-slate-400">No players</div>
                                   </div>
@@ -478,84 +480,82 @@ export default function FormationView() {
                               </div>
                             </div>
                           </div>
-                        }
+                        )}
                       </Droppable>
                     </div>);
-
                 })}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Players without assigned positions */}
         <Droppable droppableId="position-unassigned">
-          {(provided, snapshot) =>
+          {(provided, snapshot) => (
           <Card
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`mt-6 border-none shadow-lg transition-all ${
+            className={`mt-4 md:mt-6 border-none shadow-lg transition-all ${
             snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''}`
             }>
-            
               <CardHeader>
-                <CardTitle>Unassigned Players</CardTitle>
+                <CardTitle className="text-base md:text-lg">Unassigned Players</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {players.
-                filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position)).
-                map((player, index) =>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+                  {players
+                .filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position))
+                .map((player, index) => (
                 <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                        {(provided, snapshot) =>
+                        {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     className={`transition-all ${snapshot.isDragging ? 'scale-110' : ''}`}>
-                    
-                            <div className="bg-slate-50 rounded-xl p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
+                            <div className="bg-slate-50 rounded-xl p-2 md:p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
                               <div className="flex flex-col items-center">
-                                <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md mb-2">
-                                  {player.jersey_number || <User className="w-6 h-6" />}
+                                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-md mb-2">
+                                  {player.jersey_number || <User className="w-5 h-5 md:w-6 md:h-6" />}
                                 </div>
-                                <div className="text-xs font-bold text-slate-900 text-center mb-1">
+                                <div className="text-[10px] md:text-xs font-bold text-slate-900 text-center mb-1">
                                   {player.full_name}
                                 </div>
                                 {player.tryout && (
-                                  <div className="flex flex-col items-center gap-1">
+                                  <div className="flex flex-col items-center gap-1 w-full">
                                     {player.tryout.team_role && (
-                                      <span className="text-[10px] text-slate-600 bg-slate-200 px-1.5 rounded-full">{player.tryout.team_role}</span>
+                                      <Button size="sm" className="h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full bg-blue-500 hover:bg-blue-600 pointer-events-none w-full">
+                                        {player.tryout.team_role}
+                                      </Button>
                                     )}
                                     {player.tryout.recommendation && (
-                                       <Badge className={`text-[9px] h-4 px-1.5 ${
-                                          player.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                          player.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                          'bg-blue-500'
+                                       <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none w-full ${
+                                          player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                          player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                          'bg-blue-500 hover:bg-blue-600'
                                        }`}>
                                           {player.tryout.recommendation}
-                                       </Badge>
+                                       </Button>
                                     )}
                                   </div>
                                 )}
                               </div>
                             </div>
                           </div>
-                  }
+                  )}
                       </Draggable>
-                )}
+                ))}
                   {provided.placeholder}
                 </div>
                 {players.filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position)).length === 0 &&
-              <p className="text-center text-slate-500 py-4">All players assigned to positions</p>
+              <p className="text-center text-slate-500 py-4 text-sm">All players assigned to positions</p>
               }
               </CardContent>
             </Card>
-          }
+          )}
         </Droppable>
 
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Player</DialogTitle>
             </DialogHeader>
@@ -573,7 +573,6 @@ export default function FormationView() {
                   <Input
                   value={editingPlayer.full_name || ''}
                   onChange={(e) => setEditingPlayer({ ...editingPlayer, full_name: e.target.value })} />
-                
                 </div>
                 <div>
                   <Label className="mb-2 block">Jersey Number</Label>
@@ -581,14 +580,12 @@ export default function FormationView() {
                   type="number"
                   value={editingPlayer.jersey_number || ''}
                   onChange={(e) => setEditingPlayer({ ...editingPlayer, jersey_number: e.target.value })} />
-                
                 </div>
                 <div>
                   <Label className="mb-2 block">Primary Position</Label>
                   <Select
                   value={editingPlayer.primary_position || ''}
                   onValueChange={(value) => setEditingPlayer({ ...editingPlayer, primary_position: value })}>
-                  
                     <SelectTrigger>
                       <SelectValue placeholder="Select position" />
                     </SelectTrigger>
@@ -612,7 +609,6 @@ export default function FormationView() {
                   });
                 }}
                 className="w-full">
-                
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
                 </Button>
@@ -622,5 +618,4 @@ export default function FormationView() {
         </Dialog>
       </div>
     </DragDropContext>);
-
 }
