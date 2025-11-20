@@ -104,13 +104,13 @@ export default function TeamTacticalView() {
 
   return (
     <div className="bg-slate-50 text-slate-800 p-4 min-h-screen from-slate-900 via-slate-800 to-slate-900 md:p-8">
-      <div className="max-w-[1800px] mx-auto">
+      <div className="bg-slate-50 text-slate-800 mx-auto max-w-[1800px]">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-white hover:text-white hover:bg-slate-700">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
 
-        <div className="text-slate-800 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="text-slate-950 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">{team?.name || 'Team Tactical View'}</h1>
             <p className="text-slate-700">{team?.age_group} • {team?.league}</p>
