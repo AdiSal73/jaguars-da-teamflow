@@ -311,6 +311,7 @@ export default function TeamTacticalView() {
               </Droppable>
             </div>
           </Card>
+          </div>
         </div>
       </div>
     </DragDropContext>
