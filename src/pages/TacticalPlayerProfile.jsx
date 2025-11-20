@@ -127,8 +127,8 @@ export default function TacticalPlayerProfile() {
               </div>
 
               {latestAssessment &&
-              <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-                  <div className="text-xs text-slate-400 mb-2">Overall Score</div>
+              <div className="bg-slate-800 mt-6 p-4 rounded-lg">
+                  <div className="text-slate-50 mb-2 text-xs">Overall Score</div>
                   <div className="text-4xl font-bold text-emerald-500">{latestAssessment.overall_score || 0}</div>
                 </div>
               }
