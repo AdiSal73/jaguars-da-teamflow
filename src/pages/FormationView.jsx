@@ -9,6 +9,9 @@ import { User, Edit2, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { createPageUrl } from '@/utils';
+import { useNavigate } from 'react-router-dom';
 
 const positionMapping = {
   'GK': 'GK',
@@ -22,6 +25,16 @@ const positionMapping = {
   'Forward': 'ST',
   'Attacking Midfielder': 'CAM',
   'Left Winger': 'LW'
+};
+
+const teamRoleColors = {
+  'Indispensable Player': 'bg-purple-600 hover:bg-purple-700',
+  'GA Starter': 'bg-emerald-600 hover:bg-emerald-700',
+  'GA Rotation': 'bg-teal-600 hover:bg-teal-700',
+  'Aspire Starter': 'bg-blue-600 hover:bg-blue-700',
+  'Aspire Rotation': 'bg-cyan-600 hover:bg-cyan-700',
+  'United Starter': 'bg-orange-600 hover:bg-orange-700',
+  'United Rotation': 'bg-amber-600 hover:bg-amber-700'
 };
 
 const formations = {
@@ -118,6 +131,7 @@ const formations = {
 };
 
 export default function FormationView() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const teamIdParam = urlParams.get('teamId');
@@ -130,6 +144,7 @@ export default function FormationView() {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [formationPositions, setFormationPositions] = useState(formations['4-3-3'].positions);
   const [draggingPosition, setDraggingPosition] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -161,7 +176,6 @@ export default function FormationView() {
 
   const team = teams.find((t) => t.id === selectedTeam) || (selectedAgeGroup !== 'all' ? { name: `${selectedAgeGroup} Players` } : { name: 'All Players' });
 
-  // Load custom formation from team
   React.useEffect(() => {
     if (team?.formation_settings?.positions) {
       setFormationPositions(team.formation_settings.positions);
@@ -196,16 +210,33 @@ export default function FormationView() {
     }
   };
 
-  const updatePlayerPositionMutation = useMutation({
-    mutationFn: async ({ playerId, newPosition }) => {
-      return base44.entities.Player.update(playerId, {
-        primary_position: newPosition
-      });
+  const updatePlayerMutation = useMutation({
+    mutationFn: async (data) => {
+      return base44.entities.Player.update(editingPlayer.id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
       setShowEditDialog(false);
       setEditingPlayer(null);
+    }
+  });
+
+  const updateTryoutMutation = useMutation({
+    mutationFn: async (data) => {
+      const existingTryout = tryouts.find((t) => t.player_id === editingPlayer.id);
+      if (existingTryout) {
+        return base44.entities.PlayerTryout.update(existingTryout.id, data);
+      } else {
+        return base44.entities.PlayerTryout.create({
+          player_id: editingPlayer.id,
+          player_name: editingPlayer.full_name,
+          current_team: team?.name,
+          ...data
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
     }
   });
 
@@ -253,9 +284,8 @@ export default function FormationView() {
     const draggedPlayerId = result.draggableId.replace('player-', '');
 
     if (sourcePositionId !== destPositionId) {
-      updatePlayerPositionMutation.mutate({
-        playerId: draggedPlayerId,
-        newPosition: destPositionId
+      base44.entities.Player.update(draggedPlayerId, { primary_position: destPositionId }).then(() => {
+        queryClient.invalidateQueries(['players']);
       });
     }
 
@@ -301,17 +331,60 @@ export default function FormationView() {
 
   const formation = { name: formations[selectedFormation].name, positions: formationPositions };
 
+  const handleEditClick = (player, e) => {
+    e.stopPropagation();
+    const playerTryout = tryouts.find(t => t.player_id === player.id);
+    setEditingPlayer(player);
+    setEditForm({
+      full_name: player.full_name || '',
+      jersey_number: player.jersey_number || '',
+      email: player.email || '',
+      phone: player.phone || '',
+      date_of_birth: player.date_of_birth || '',
+      primary_position: player.primary_position || '',
+      team_role: playerTryout?.team_role || '',
+      recommendation: playerTryout?.recommendation || '',
+      tryout_notes: playerTryout?.notes || ''
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = () => {
+    const playerData = {
+      full_name: editForm.full_name,
+      jersey_number: editForm.jersey_number,
+      email: editForm.email,
+      phone: editForm.phone,
+      date_of_birth: editForm.date_of_birth,
+      primary_position: editForm.primary_position
+    };
+
+    const tryoutData = {
+      team_role: editForm.team_role,
+      recommendation: editForm.recommendation,
+      notes: editForm.tryout_notes
+    };
+
+    updatePlayerMutation.mutate(playerData);
+    updateTryoutMutation.mutate(tryoutData);
+  };
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">{team?.name || 'Formation View'}</h1>
-          <p className="text-sm md:text-base text-slate-600">Drag players to rank them within each position</p>
+        <div className="mb-4 md:mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
+            <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl('TeamTacticalView') + `?teamId=${selectedTeam}`)}>
+              View Tactical Analysis
+            </Button>
+          </div>
+          <p className="text-xs md:text-base text-slate-600">Drag players to rank them within each position</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-6">
           <div>
-            <Label className="mb-2 block text-base md:text-lg font-semibold">Select Formation</Label>
+            <Label className="mb-2 block text-sm md:text-lg font-semibold">Select Formation</Label>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
               <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
@@ -325,7 +398,7 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-base md:text-lg font-semibold">Filter by Team</Label>
+            <Label className="mb-2 block text-sm md:text-lg font-semibold">Filter by Team</Label>
             <Select value={selectedTeam} onValueChange={(value) => {setSelectedTeam(value);setSelectedAgeGroup('all');}}>
               <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
@@ -340,7 +413,7 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-base md:text-lg font-semibold">Filter by Age Group</Label>
+            <Label className="mb-2 block text-sm md:text-lg font-semibold">Filter by Age Group</Label>
             <Select value={selectedAgeGroup} onValueChange={(value) => {setSelectedAgeGroup(value);setSelectedTeam('all');}}>
               <SelectTrigger className="h-10 md:h-12">
                 <SelectValue />
@@ -367,7 +440,7 @@ export default function FormationView() {
               ref={fieldRef}
               className="relative w-full"
               style={{
-                paddingBottom: 'min(140%, 800px)',
+                paddingBottom: 'min(140%, 700px)',
                 background: 'linear-gradient(180deg, #166534 0%, #15803d 50%, #166534 100%)',
                 cursor: draggingPosition ? 'grabbing' : 'default'
               }}>
@@ -396,8 +469,8 @@ export default function FormationView() {
                       style={{
                         left: `${position.x}%`,
                         top: `${position.y}%`,
-                        width: 'clamp(100px, 25vw, 180px)',
-                        maxHeight: 'min(300px, 50vh)',
+                        width: 'min(140px, 25vw)',
+                        maxHeight: 'min(250px, 45vh)',
                         zIndex: draggingPosition?.id === position.id ? 1000 : 1
                       }}>
                       
@@ -407,13 +480,13 @@ export default function FormationView() {
                           ref={provided.innerRef}
                           {...provided.droppableProps}>
                           
-                            <div className="bg-slate-200 p-1.5 md:p-2 rounded-xl md:rounded-2xl backdrop-blur-sm shadow-2xl border-2 overflow-y-auto max-h-[40vh] md:max-h-[450px] transition-all border-slate-300">
+                            <div className="bg-slate-200 p-1 md:p-1.5 rounded-lg md:rounded-xl backdrop-blur-sm shadow-2xl border-2 overflow-y-auto max-h-[35vh] md:max-h-[40vh] transition-all border-slate-300">
                               <div
                               onMouseDown={(e) => handlePositionMouseDown(position, e)}
-                              className="text-center text-xs md:text-sm font-bold text-slate-700 mb-1 sticky top-0 bg-white/95 pb-1 border-b-2 border-slate-300 cursor-move hover:bg-slate-100 rounded-lg px-2 py-1.5">
+                              className="text-center text-[10px] md:text-xs font-bold text-slate-700 mb-0.5 md:mb-1 sticky top-0 bg-white/95 pb-0.5 md:pb-1 border-b border-slate-300 cursor-move hover:bg-slate-100 rounded px-1 py-1">
                                 {position.label}
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-0.5 md:space-y-1">
                                 {positionPlayers.length > 0 ?
                               positionPlayers.map((player, index) =>
                               <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
@@ -424,32 +497,28 @@ export default function FormationView() {
                                   {...playerProvided.dragHandleProps}
                                   className={`transition-all ${playerSnapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl' : ''}`}>
                                   
-                                          <div className="bg-white rounded-lg px-1.5 md:px-2 py-2 border-2 border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
-                                            <div className="flex items-center gap-1 md:gap-1.5 mb-1">
-                                              <div className="w-5 h-5 md:w-6 md:h-6 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[10px] md:text-xs flex-shrink-0">
+                                          <div className="bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
+                                            <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
+                                              <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
                                                 #{player.tryout?.team_ranking || index + 1}
                                               </div>
                                               <div className="flex-1 min-w-0">
-                                                <div className="text-[10px] md:text-xs font-bold text-slate-900 truncate leading-tight">
+                                                <div className="text-[8px] md:text-[10px] font-bold text-slate-900 truncate leading-tight">
                                                   {player.full_name}
                                                 </div>
                                               </div>
                                               <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingPlayer(player);
-                                          setShowEditDialog(true);
-                                        }}
-                                        className="absolute -top-1 -right-1 w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                                <Edit2 className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" />
+                                        onClick={(e) => handleEditClick(player, e)}
+                                        className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-slate-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                                                <Edit2 className="w-1.5 h-1.5 md:w-2 md:h-2 text-white" />
                                               </button>
                                             </div>
                                             {player.tryout && (
-                                    <div className="space-y-0.5 flex flex-wrap gap-1">
+                                    <div className="flex flex-wrap gap-0.5 justify-center">
                                                 {player.tryout.team_role && (
                                       <Button 
                                         size="sm" 
-                                        className="h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full bg-blue-500 hover:bg-blue-600 pointer-events-none"
+                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${teamRoleColors[player.tryout.team_role] || 'bg-blue-500 hover:bg-blue-600'}`}
                                       >
                                         {player.tryout.team_role}
                                       </Button>
@@ -457,7 +526,7 @@ export default function FormationView() {
                                                 {player.tryout.recommendation && (
                                       <Button
                                         size="sm"
-                                        className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${
                                         player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
                                         player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
                                         'bg-blue-500 hover:bg-blue-600'}`
@@ -472,8 +541,8 @@ export default function FormationView() {
                                 )}
                                     </Draggable>
                               ) :
-                              <div className="text-center py-3">
-                                    <div className="text-[10px] text-slate-400">No players</div>
+                              <div className="text-center py-2">
+                                    <div className="text-[8px] text-slate-400">No players</div>
                                   </div>
                               }
                                 {provided.placeholder}
@@ -498,13 +567,15 @@ export default function FormationView() {
             snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''}`
             }>
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Unassigned Players</CardTitle>
+                <CardTitle className="text-sm md:text-lg">Unassigned Players</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                   {players
                 .filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position))
-                .map((player, index) => (
+                .map((player, index) => {
+                  const playerTryout = tryouts.find(t => t.player_id === player.id);
+                  return (
                 <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                         {(provided, snapshot) => (
                   <div
@@ -512,28 +583,28 @@ export default function FormationView() {
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     className={`transition-all ${snapshot.isDragging ? 'scale-110' : ''}`}>
-                            <div className="bg-slate-50 rounded-xl p-2 md:p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
+                            <div className="bg-slate-50 rounded-lg p-2 md:p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
                               <div className="flex flex-col items-center">
-                                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-md mb-2">
-                                  {player.jersey_number || <User className="w-5 h-5 md:w-6 md:h-6" />}
+                                <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-md mb-1 md:mb-2">
+                                  {player.jersey_number || <User className="w-4 h-4 md:w-6 md:h-6" />}
                                 </div>
-                                <div className="text-[10px] md:text-xs font-bold text-slate-900 text-center mb-1">
+                                <div className="text-[9px] md:text-xs font-bold text-slate-900 text-center mb-0.5 md:mb-1">
                                   {player.full_name}
                                 </div>
-                                {player.tryout && (
-                                  <div className="flex flex-col items-center gap-1 w-full">
-                                    {player.tryout.team_role && (
-                                      <Button size="sm" className="h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full bg-blue-500 hover:bg-blue-600 pointer-events-none w-full">
-                                        {player.tryout.team_role}
+                                {playerTryout && (
+                                  <div className="flex flex-col items-center gap-0.5 md:gap-1 w-full">
+                                    {playerTryout.team_role && (
+                                      <Button size="sm" className={`h-3 md:h-5 px-1 md:px-1.5 text-[7px] md:text-[9px] rounded-full pointer-events-none w-full ${teamRoleColors[playerTryout.team_role] || 'bg-blue-500'}`}>
+                                        {playerTryout.team_role}
                                       </Button>
                                     )}
-                                    {player.tryout.recommendation && (
-                                       <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none w-full ${
-                                          player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                          player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                          'bg-blue-500 hover:bg-blue-600'
+                                    {playerTryout.recommendation && (
+                                       <Button size="sm" className={`h-3 md:h-5 px-1 md:px-1.5 text-[7px] md:text-[9px] rounded-full pointer-events-none w-full ${
+                                          playerTryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                                          playerTryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                                          'bg-blue-500'
                                        }`}>
-                                          {player.tryout.recommendation}
+                                          {playerTryout.recommendation}
                                        </Button>
                                     )}
                                   </div>
@@ -543,11 +614,11 @@ export default function FormationView() {
                           </div>
                   )}
                       </Draggable>
-                ))}
+                )})}
                   {provided.placeholder}
                 </div>
                 {players.filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position)).length === 0 &&
-              <p className="text-center text-slate-500 py-4 text-sm">All players assigned to positions</p>
+              <p className="text-center text-slate-500 py-3 md:py-4 text-xs md:text-sm">All players assigned to positions</p>
               }
               </CardContent>
             </Card>
@@ -555,37 +626,50 @@ export default function FormationView() {
         </Droppable>
 
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="w-[95vw] max-w-md">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Player</DialogTitle>
+              <DialogTitle>Edit Player - {editForm.full_name}</DialogTitle>
             </DialogHeader>
             {editingPlayer &&
-            <div className="space-y-4">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2">
-                    {editingPlayer.jersey_number || <User className="w-8 h-8" />}
-                  </div>
-                  <div className="font-semibold text-lg">{editingPlayer.full_name}</div>
-                  <div className="text-sm text-slate-600">{editingPlayer.primary_position}</div>
-                </div>
-                <div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="col-span-2">
                   <Label className="mb-2 block">Full Name</Label>
                   <Input
-                  value={editingPlayer.full_name || ''}
-                  onChange={(e) => setEditingPlayer({ ...editingPlayer, full_name: e.target.value })} />
+                    value={editForm.full_name}
+                    onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
                 </div>
                 <div>
                   <Label className="mb-2 block">Jersey Number</Label>
                   <Input
-                  type="number"
-                  value={editingPlayer.jersey_number || ''}
-                  onChange={(e) => setEditingPlayer({ ...editingPlayer, jersey_number: e.target.value })} />
+                    type="number"
+                    value={editForm.jersey_number}
+                    onChange={(e) => setEditForm({ ...editForm, jersey_number: e.target.value })} />
                 </div>
                 <div>
+                  <Label className="mb-2 block">Email</Label>
+                  <Input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="mb-2 block">Phone</Label>
+                  <Input
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="mb-2 block">Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={editForm.date_of_birth}
+                    onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} />
+                </div>
+                <div className="col-span-2">
                   <Label className="mb-2 block">Primary Position</Label>
                   <Select
-                  value={editingPlayer.primary_position || ''}
-                  onValueChange={(value) => setEditingPlayer({ ...editingPlayer, primary_position: value })}>
+                    value={editForm.primary_position}
+                    onValueChange={(value) => setEditForm({ ...editForm, primary_position: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select position" />
                     </SelectTrigger>
@@ -596,22 +680,56 @@ export default function FormationView() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                onClick={() => {
-                  base44.entities.Player.update(editingPlayer.id, {
-                    full_name: editingPlayer.full_name,
-                    jersey_number: editingPlayer.jersey_number,
-                    primary_position: editingPlayer.primary_position
-                  }).then(() => {
-                    queryClient.invalidateQueries(['players']);
-                    setShowEditDialog(false);
-                    setEditingPlayer(null);
-                  });
-                }}
-                className="w-full">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </Button>
+                <div>
+                  <Label className="mb-2 block">Team Role</Label>
+                  <Select
+                    value={editForm.team_role}
+                    onValueChange={(value) => setEditForm({ ...editForm, team_role: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Indispensable Player">Indispensable Player</SelectItem>
+                      <SelectItem value="GA Starter">GA Starter</SelectItem>
+                      <SelectItem value="GA Rotation">GA Rotation</SelectItem>
+                      <SelectItem value="Aspire Starter">Aspire Starter</SelectItem>
+                      <SelectItem value="Aspire Rotation">Aspire Rotation</SelectItem>
+                      <SelectItem value="United Starter">United Starter</SelectItem>
+                      <SelectItem value="United Rotation">United Rotation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-2 block">Recommendation</Label>
+                  <Select
+                    value={editForm.recommendation}
+                    onValueChange={(value) => setEditForm({ ...editForm, recommendation: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Move up">🔼 Move up</SelectItem>
+                      <SelectItem value="Keep">✅ Keep</SelectItem>
+                      <SelectItem value="Move down">🔽 Move down</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2">
+                  <Label className="mb-2 block">Notes</Label>
+                  <Textarea
+                    rows={3}
+                    value={editForm.tryout_notes}
+                    onChange={(e) => setEditForm({ ...editForm, tryout_notes: e.target.value })} />
+                </div>
+                <div className="col-span-2 flex justify-between gap-3">
+                  <Button variant="outline" onClick={() => navigate(`${createPageUrl('PlayerProfile')}?id=${editingPlayer.id}`)}>
+                    View Full Profile
+                  </Button>
+                  <Button onClick={handleSaveEdit} className="flex-1">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </div>
               </div>
             }
           </DialogContent>

@@ -3,18 +3,32 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, TrendingUp, BarChart3, Award, Megaphone } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const teamId = urlParams.get('teamId');
+
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editTeamForm, setEditTeamForm] = useState({
+    name: '',
+    age_group: '',
+    league: '',
+    season: '',
+    head_coach_id: ''
+  });
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -61,6 +75,30 @@ export default function TeamDashboard() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  React.useEffect(() => {
+    if (team) {
+      setEditTeamForm({
+        name: team.name || '',
+        age_group: team.age_group || '',
+        league: team.league || '',
+        season: team.season || '',
+        head_coach_id: team.head_coach_id || ''
+      });
+    }
+  }, [team]);
+
+  const updateTeamMutation = useMutation({
+    mutationFn: (updatedData) => base44.entities.Team.update(teamId, updatedData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['team', teamId]);
+      setShowEditDialog(false);
+    }
+  });
+
+  const handleEditSubmit = () => {
+    updateTeamMutation.mutate(editTeamForm);
+  };
+
   const teamCoaches = coaches.filter(c => c.team_ids?.includes(teamId));
 
   const upcomingEvents = events
@@ -69,7 +107,7 @@ export default function TeamDashboard() {
     .slice(0, 5);
 
   const positionBreakdown = players.reduce((acc, p) => {
-    acc[p.position] = (acc[p.position] || 0) + 1;
+    acc[p.primary_position] = (acc[p.primary_position] || 0) + 1;
     return acc;
   }, {});
 
@@ -95,112 +133,119 @@ export default function TeamDashboard() {
         latestScore: latest?.overall_score || 0
       };
     })
+    .filter(Boolean)
     .sort((a, b) => b.latestScore - a.latestScore)
     .slice(0, 5);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 md:mb-6">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Teams
       </Button>
 
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center gap-4 mb-4">
           <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+            className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white text-xl md:text-2xl font-bold"
             style={{ backgroundColor: team?.team_color || '#22c55e' }}
           >
             {team?.name?.charAt(0)}
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">{team?.name}</h1>
-            <p className="text-slate-600">{team?.age_group} • {team?.league}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name}</h1>
+              <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
+                <Edit2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Edit Team</span>
+              </Button>
+            </div>
+            <p className="text-sm md:text-base text-slate-600">{team?.age_group} • {team?.league}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
         <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Players</div>
-                <div className="text-3xl font-bold text-slate-900">{players.length}</div>
+                <div className="text-xs md:text-sm text-slate-600">Players</div>
+                <div className="text-xl md:text-3xl font-bold text-slate-900">{players.length}</div>
               </div>
-              <Users className="w-8 h-8 text-emerald-500" />
+              <Users className="w-5 h-5 md:w-8 md:h-8 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Coaches</div>
-                <div className="text-3xl font-bold text-slate-900">{teamCoaches.length}</div>
+                <div className="text-xs md:text-sm text-slate-600">Coaches</div>
+                <div className="text-xl md:text-3xl font-bold text-slate-900">{teamCoaches.length}</div>
               </div>
-              <Activity className="w-8 h-8 text-blue-500" />
+              <Activity className="w-5 h-5 md:w-8 md:h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Assessments</div>
-                <div className="text-3xl font-bold text-slate-900">{assessments.length}</div>
+                <div className="text-xs md:text-sm text-slate-600">Assessments</div>
+                <div className="text-xl md:text-3xl font-bold text-slate-900">{assessments.length}</div>
               </div>
-              <BarChart3 className="w-8 h-8 text-purple-500" />
+              <BarChart3 className="w-5 h-5 md:w-8 md:h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Upcoming Events</div>
-                <div className="text-3xl font-bold text-slate-900">{upcomingEvents.length}</div>
+                <div className="text-xs md:text-sm text-slate-600">Events</div>
+                <div className="text-xl md:text-3xl font-bold text-slate-900">{upcomingEvents.length}</div>
               </div>
-              <Calendar className="w-8 h-8 text-orange-500" />
+              <Calendar className="w-5 h-5 md:w-8 md:h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="roster" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="roster">Roster</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="roster" className="mt-6 space-y-6">
+        <TabsContent value="roster" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
           <Card className="border-none shadow-lg">
             <CardHeader>
-              <CardTitle>Team Roster</CardTitle>
+              <CardTitle className="text-base md:text-lg">Team Roster</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {players.map(player => (
                   <button
                     key={player.id}
                     onClick={() => navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
-                    className="p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 border-transparent hover:border-emerald-500"
+                    className="p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 border-transparent hover:border-emerald-500"
                   >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="flex items-center gap-2 md:gap-3 mb-2">
+                      <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base">
                         {player.jersey_number || player.full_name?.charAt(0)}
                       </div>
                       <div className="flex-1">
-                        <div className="font-semibold text-slate-900">{player.full_name}</div>
-                        <div className="text-sm text-slate-600">{player.position}</div>
+                        <div className="font-semibold text-slate-900 text-sm md:text-base">{player.full_name}</div>
+                        <div className="text-xs text-slate-600">{player.primary_position}</div>
                       </div>
                     </div>
-                    <Badge className={player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}>
+                    <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                       {player.status}
                     </Badge>
                   </button>
@@ -209,17 +254,17 @@ export default function TeamDashboard() {
             </CardContent>
           </Card>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <Card className="border-none shadow-lg">
               <CardHeader>
-                <CardTitle>Position Breakdown</CardTitle>
+                <CardTitle className="text-base md:text-lg">Position Breakdown</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 md:p-6">
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={positionData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="position" />
-                    <YAxis />
+                    <XAxis dataKey="position" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Bar dataKey="count" fill="#10b981" />
                   </BarChart>
@@ -229,25 +274,25 @@ export default function TeamDashboard() {
 
             <Card className="border-none shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-yellow-600" />
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                  <Award className="w-4 h-4 md:w-5 md:h-5 text-yellow-600" />
                   Top Performers
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="p-4 md:p-6">
+                <div className="space-y-2 md:space-y-3">
                   {topPerformers.map((player, idx) => (
                     <div key={player.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm">
                           {idx + 1}
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-900">{player.full_name}</div>
-                          <div className="text-xs text-slate-600">{player.position}</div>
+                          <div className="font-semibold text-slate-900 text-sm md:text-base">{player.full_name}</div>
+                          <div className="text-xs text-slate-600">{player.primary_position}</div>
                         </div>
                       </div>
-                      <div className="text-xl font-bold text-emerald-600">{player.latestScore}</div>
+                      <div className="text-lg md:text-xl font-bold text-emerald-600">{player.latestScore}</div>
                     </div>
                   ))}
                 </div>
@@ -256,37 +301,37 @@ export default function TeamDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="performance" className="mt-6">
+        <TabsContent value="performance" className="mt-4 md:mt-6">
           <TeamPerformanceAnalytics teamId={teamId} teamName={team?.name} />
         </TabsContent>
 
-        <TabsContent value="schedule" className="mt-6">
+        <TabsContent value="schedule" className="mt-4 md:mt-6">
           <Card className="border-none shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-emerald-600" />
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
                 Upcoming Events
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
               {upcomingEvents.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No upcoming events</p>
+                <p className="text-center text-slate-500 py-6 md:py-8 text-sm">No upcoming events</p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {upcomingEvents.map(event => (
-                    <div key={event.id} className="p-4 bg-slate-50 rounded-xl">
-                      <div className="flex justify-between items-start mb-2">
+                    <div key={event.id} className="p-3 bg-slate-50 rounded-xl">
+                      <div className="flex justify-between items-start mb-1 md:mb-2">
                         <div>
-                          <div className="font-semibold text-slate-900">{event.title}</div>
-                          <div className="text-sm text-slate-600">{event.description}</div>
+                          <div className="font-semibold text-slate-900 text-sm">{event.title}</div>
+                          <div className="text-xs text-slate-600">{event.description}</div>
                         </div>
-                        <Badge>{event.event_type}</Badge>
+                        <Badge className="text-[10px]">{event.event_type}</Badge>
                       </div>
-                      <div className="text-sm text-slate-600">
+                      <div className="text-xs text-slate-600">
                         {new Date(event.date).toLocaleDateString()} • {event.start_time} - {event.end_time}
                       </div>
                       {event.location && (
-                        <div className="text-sm text-slate-500 mt-1">📍 {event.location}</div>
+                        <div className="text-xs text-slate-500 mt-1">📍 {event.location}</div>
                       )}
                     </div>
                   ))}
@@ -296,16 +341,16 @@ export default function TeamDashboard() {
           </Card>
 
           {performanceTrend.length > 0 && (
-            <Card className="border-none shadow-lg mt-6">
+            <Card className="border-none shadow-lg mt-4 md:mt-6">
               <CardHeader>
-                <CardTitle>Performance Trend</CardTitle>
+                <CardTitle className="text-base md:text-lg">Performance Trend</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+              <CardContent className="p-4 md:p-6">
+                <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={performanceTrend}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={[0, 100]} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Line type="monotone" dataKey="overall" stroke="#10b981" strokeWidth={2} />
                   </LineChart>
@@ -315,29 +360,29 @@ export default function TeamDashboard() {
           )}
         </TabsContent>
 
-        <TabsContent value="announcements" className="mt-6">
+        <TabsContent value="announcements" className="mt-4 md:mt-6">
           <Card className="border-none shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Megaphone className="w-5 h-5 text-emerald-600" />
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <Megaphone className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
                 Recent Announcements
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
               {announcements.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No announcements</p>
+                <p className="text-center text-slate-500 py-6 md:py-8 text-sm">No announcements</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2 md:space-y-3">
                   {announcements.map(announcement => (
-                    <div key={announcement.id} className="p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-slate-900">{announcement.title}</h3>
-                        <Badge className={announcement.priority === 'high' ? 'bg-red-100 text-red-800' : 'bg-slate-200 text-slate-700'}>
+                    <div key={announcement.id} className="p-3 bg-slate-50 rounded-xl">
+                      <div className="flex items-start justify-between mb-1 md:mb-2">
+                        <h3 className="font-semibold text-slate-900 text-sm">{announcement.title}</h3>
+                        <Badge className={`text-[10px] ${announcement.priority === 'high' ? 'bg-red-100 text-red-800' : 'bg-slate-200 text-slate-700'}`}>
                           {announcement.priority}
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-700 mb-2">{announcement.message}</p>
-                      <div className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-700 mb-1 md:mb-2">{announcement.message}</p>
+                      <div className="text-[10px] text-slate-500">
                         {new Date(announcement.created_date).toLocaleDateString()}
                       </div>
                     </div>
@@ -348,6 +393,74 @@ export default function TeamDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="w-[95vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+          </DialogHeader>
+          {team && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="teamName" className="mb-2 block">Team Name</Label>
+                <Input
+                  id="teamName"
+                  value={editTeamForm.name}
+                  onChange={(e) => setEditTeamForm({ ...editTeamForm, name: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="ageGroup" className="mb-2 block">Age Group</Label>
+                <Input
+                  id="ageGroup"
+                  value={editTeamForm.age_group}
+                  onChange={(e) => setEditTeamForm({ ...editTeamForm, age_group: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="league" className="mb-2 block">League</Label>
+                <Input
+                  id="league"
+                  value={editTeamForm.league}
+                  onChange={(e) => setEditTeamForm({ ...editTeamForm, league: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="season" className="mb-2 block">Season</Label>
+                <Input
+                  id="season"
+                  value={editTeamForm.season}
+                  onChange={(e) => setEditTeamForm({ ...editTeamForm, season: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label htmlFor="headCoach" className="mb-2 block">Head Coach</Label>
+                <Select
+                  value={editTeamForm.head_coach_id || ''}
+                  onValueChange={(value) => setEditTeamForm({ ...editTeamForm, head_coach_id: value })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select a coach" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coaches.map(coach => (
+                      <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleEditSubmit} className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
