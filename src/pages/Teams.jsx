@@ -19,6 +19,9 @@ export default function Teams() {
   const [editingTeam, setEditingTeam] = useState(null);
   const [deleteTeamId, setDeleteTeamId] = useState(null);
   const [viewAnalyticsTeam, setViewAnalyticsTeam] = useState(null);
+  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterCoach, setFilterCoach] = useState('all');
+  const [filterLeague, setFilterLeague] = useState('all');
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
@@ -156,6 +159,16 @@ export default function Teams() {
     }
   };
 
+  const filteredTeams = teams.filter(team => {
+    if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
+    if (filterLeague !== 'all' && team.league !== filterLeague) return false;
+    if (filterCoach !== 'all') {
+      const coach = coaches.find(c => c.id === filterCoach);
+      if (!coach?.team_ids?.includes(team.id)) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -178,8 +191,63 @@ export default function Teams() {
         </div>
       </div>
 
+      <Card className="mb-6 border-none shadow-lg">
+        <CardContent className="p-6">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <Label className="mb-2 block">Filter by Age Group</Label>
+              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Age Groups</SelectItem>
+                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                    const extractAge = (ag) => {
+                      const match = ag?.match(/U-?(\d+)/i);
+                      return match ? parseInt(match[1]) : 0;
+                    };
+                    return extractAge(b) - extractAge(a);
+                  }).map(ag => (
+                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block">Filter by Coach</Label>
+              <Select value={filterCoach} onValueChange={setFilterCoach}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches</SelectItem>
+                  {coaches.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block">Filter by League</Label>
+              <Select value={filterLeague} onValueChange={setFilterLeague}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
+                    <SelectItem key={league} value={league}>{league}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {teams.map(team => {
+        {filteredTeams.map(team => {
           const teamPlayers = players.filter(p => p.team_id === team.id);
           const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
 

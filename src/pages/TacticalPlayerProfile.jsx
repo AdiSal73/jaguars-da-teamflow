@@ -77,123 +77,123 @@ export default function TacticalPlayerProfile() {
   };
 
   return (
-    <div className="bg-slate-50 text-white p-4 min-h-screen from-slate-900 via-slate-800 to-slate-900 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-white hover:text-white hover:bg-slate-700">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-white hover:text-white hover:bg-slate-700/50">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
 
-        <div className="grid md:grid-cols-[300px_1fr] gap-6">
+        <div className="grid md:grid-cols-[320px_1fr] gap-6">
           {/* Left Panel - Player Info */}
-          <Card className="bg-gray-300 text-zinc-800 rounded-xl border shadow border-slate-700 backdrop-blur-sm">
-            <div className="bg-slate-50 p-6 space-y-6">
+          <Card className="bg-slate-800/70 border-slate-600 backdrop-blur-md">
+            <div className="p-6 space-y-6">
               <div className="text-center">
-                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-6xl font-bold mb-4">
+                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-6xl font-bold mb-4 shadow-2xl">
                   {player?.jersey_number || player?.full_name?.charAt(0)}
                 </div>
-                <h2 className="text-2xl font-bold mb-1">{player?.full_name}</h2>
-                <p className="text-slate-800 text-sm">{player?.primary_position}</p>
-                <Badge className="mt-2 bg-emerald-600">{player?.status}</Badge>
+                <h2 className="text-2xl font-bold mb-1 text-white">{player?.full_name}</h2>
+                <p className="text-slate-300 text-sm">{player?.primary_position}</p>
+                <Badge className="mt-2 bg-emerald-600 text-white">{player?.status}</Badge>
               </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Team</span>
-                  <span className="font-semibold">{team?.name || 'N/A'}</span>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Team</span>
+                  <span className="font-semibold text-white">{team?.name || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Age Group</span>
-                  <span className="font-semibold">{team?.age_group || 'N/A'}</span>
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Age Group</span>
+                  <span className="font-semibold text-white">{team?.age_group || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Date of Birth</span>
-                  <span className="font-semibold">
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Date of Birth</span>
+                  <span className="font-semibold text-white">
                     {player?.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Preferred Foot</span>
-                  <span className="font-semibold">{player?.preferred_foot || 'N/A'}</span>
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Preferred Foot</span>
+                  <span className="font-semibold text-white">{player?.preferred_foot || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Height</span>
-                  <span className="font-semibold">{player?.height ? `${player.height} cm` : 'N/A'}</span>
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Height</span>
+                  <span className="font-semibold text-white">{player?.height ? `${player.height} cm` : 'N/A'}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-800">Weight</span>
-                  <span className="font-semibold">{player?.weight ? `${player.weight} kg` : 'N/A'}</span>
+                <div className="flex justify-between py-2 border-b border-slate-600">
+                  <span className="text-slate-400">Weight</span>
+                  <span className="font-semibold text-white">{player?.weight ? `${player.weight} kg` : 'N/A'}</span>
                 </div>
               </div>
 
-              {latestAssessment &&
-              <div className="bg-slate-800 mt-6 p-4 rounded-lg">
-                  <div className="text-slate-50 mb-2 text-xs">Overall Score</div>
-                  <div className="text-4xl font-bold text-emerald-500">{latestAssessment.overall_score || 0}</div>
+              {latestAssessment && (
+                <div className="mt-6 p-5 bg-gradient-to-br from-emerald-600/20 to-blue-600/20 rounded-xl border border-emerald-500/30 backdrop-blur-sm">
+                  <div className="text-slate-300 mb-2 text-sm font-medium">Overall Score</div>
+                  <div className="text-5xl font-bold text-emerald-400">{latestAssessment.overall_score || 0}</div>
                 </div>
-              }
+              )}
             </div>
           </Card>
 
           {/* Right Panel - Attributes */}
           <div className="space-y-4">
-            {attributes.map((section) =>
-            <Card key={section.category} className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-                <div className="bg-slate-50 text-slate-800 p-4 md:p-6">
-                  <h3 className="text-lg font-bold mb-4 border-b border-slate-700 pb-2">{section.category}</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {section.items.map((attr) =>
-                  <div key={attr.name} className="space-y-2">
-                        <div className="bg-slate-50 text-slate-800 flex justify-between items-center">
-                          <span className="text-slate-800 text-sm">{attr.name}</span>
-                          <span className="text-lg font-bold">{attr.value}</span>
+            {attributes.map((section) => (
+              <Card key={section.category} className="bg-slate-800/70 border-slate-600 backdrop-blur-md">
+                <div className="p-4 md:p-6">
+                  <h3 className="text-xl font-bold mb-5 border-b border-slate-600 pb-3 text-white">{section.category}</h3>
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {section.items.map((attr) => (
+                      <div key={attr.name} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-300 font-medium">{attr.name}</span>
+                          <span className="text-2xl font-bold text-white">{attr.value}</span>
                         </div>
-                        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-3 bg-slate-700/50 rounded-full overflow-hidden border border-slate-600">
                           <div
-                        className={`h-full ${getBarColor(attr.value, attr.max)} transition-all duration-300`}
-                        style={{ width: `${attr.value / attr.max * 100}%` }} />
-
+                            className={`h-full ${getBarColor(attr.value, attr.max)} transition-all duration-500 shadow-lg`}
+                            style={{ width: `${(attr.value / attr.max) * 100}%` }}
+                          />
                         </div>
                       </div>
-                  )}
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+
+            {latestEval && (
+              <Card className="bg-slate-800/70 border-slate-600 backdrop-blur-md">
+                <div className="p-4 md:p-6">
+                  <h3 className="text-xl font-bold mb-5 border-b border-slate-600 pb-3 text-white">Development Notes</h3>
+                  <div className="space-y-4">
+                    {latestEval.player_strengths && (
+                      <div className="p-4 bg-emerald-600/10 rounded-lg border border-emerald-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="w-5 h-5 text-emerald-400" />
+                          <span className="text-sm font-bold text-emerald-400">Strengths</span>
+                        </div>
+                        <p className="text-sm text-slate-200 leading-relaxed">{latestEval.player_strengths}</p>
+                      </div>
+                    )}
+                    {latestEval.areas_of_growth && (
+                      <div className="p-4 bg-orange-600/10 rounded-lg border border-orange-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingDown className="w-5 h-5 text-orange-400" />
+                          <span className="text-sm font-bold text-orange-400">Areas of Growth</span>
+                        </div>
+                        <p className="text-sm text-slate-200 leading-relaxed">{latestEval.areas_of_growth}</p>
+                      </div>
+                    )}
+                    {latestEval.training_focus && (
+                      <div className="p-4 bg-blue-600/10 rounded-lg border border-blue-500/30">
+                        <div className="text-sm font-bold text-blue-400 mb-2">Training Focus</div>
+                        <p className="text-sm text-slate-200 leading-relaxed">{latestEval.training_focus}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
             )}
-
-            {latestEval &&
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-                <div className="p-4 md:p-6">
-                  <h3 className="text-lg font-bold mb-4 border-b border-slate-700 pb-2">Development Notes</h3>
-                  <div className="space-y-4">
-                    {latestEval.player_strengths &&
-                  <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="w-4 h-4 text-emerald-500" />
-                          <span className="text-sm font-semibold text-emerald-500">Strengths</span>
-                        </div>
-                        <p className="text-sm text-slate-300 pl-6">{latestEval.player_strengths}</p>
-                      </div>
-                  }
-                    {latestEval.areas_of_growth &&
-                  <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingDown className="w-4 h-4 text-orange-500" />
-                          <span className="text-sm font-semibold text-orange-500">Areas of Growth</span>
-                        </div>
-                        <p className="text-sm text-slate-300 pl-6">{latestEval.areas_of_growth}</p>
-                      </div>
-                  }
-                    {latestEval.training_focus &&
-                  <div>
-                        <div className="text-sm font-semibold text-blue-500 mb-2">Training Focus</div>
-                        <p className="text-sm text-slate-300 pl-6">{latestEval.training_focus}</p>
-                      </div>
-                  }
-                  </div>
-                </div>
-              </Card>
-            }
           </div>
         </div>
       </div>

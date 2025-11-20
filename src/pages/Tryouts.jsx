@@ -434,7 +434,16 @@ export default function Tryouts() {
                                         </Badge>
                                       )}
                                       {player.tryout?.team_role && (
-                                        <Button size="sm" className="h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full bg-blue-500 hover:bg-blue-600 pointer-events-none">
+                                        <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                          player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
+                                          player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                          player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
+                                          player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
+                                          player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
+                                          player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
+                                          player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
+                                          'bg-blue-500 hover:bg-blue-600'
+                                        }`}>
                                           {player.tryout.team_role}
                                         </Button>
                                       )}

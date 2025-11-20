@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, getDay, parseISO, isBefore, isAfter, addMinutes, parse } from 'date-fns';
 import { User, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
-import ShareBookingLink from '../components/booking/ShareBookingLink';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -28,7 +27,13 @@ export default function BookSession() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
   });
 
   const { data: coaches = [] } = useQuery({
@@ -203,12 +208,9 @@ export default function BookSession() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-6 md:mb-8 flex flex-col md:flex-row gap-4 md:justify-between md:items-start">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Book a Training Session</h1>
-          <p className="text-sm md:text-base text-slate-600 mt-1">Select a coach, date, and time for your session</p>
-        </div>
-        {selectedCoach && <ShareBookingLink coachId={selectedCoach.id} />}
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Book a Training Session</h1>
+        <p className="text-sm md:text-base text-slate-600 mt-1">Select a coach, date, and time for your session</p>
       </div>
 
       {/* Coach Selection */}

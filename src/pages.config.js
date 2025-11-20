@@ -13,7 +13,6 @@ import UnassignedRecords from './pages/UnassignedRecords';
 import CoachManagement from './pages/CoachManagement';
 import Availability from './pages/Availability';
 import UserManagement from './pages/UserManagement';
-import Analytics from './pages/Analytics';
 import PublicBooking from './pages/PublicBooking';
 import PlayerAssessmentAnalytics from './pages/PlayerAssessmentAnalytics';
 import BookingsTable from './pages/BookingsTable';
@@ -48,7 +47,6 @@ export const PAGES = {
     "CoachManagement": CoachManagement,
     "Availability": Availability,
     "UserManagement": UserManagement,
-    "Analytics": Analytics,
     "PublicBooking": PublicBooking,
     "PlayerAssessmentAnalytics": PlayerAssessmentAnalytics,
     "BookingsTable": BookingsTable,
