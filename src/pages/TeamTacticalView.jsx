@@ -110,12 +110,12 @@ export default function TeamTacticalView() {
           Back
         </Button>
 
-        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="text-slate-800 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">{team?.name || 'Team Tactical View'}</h1>
             <p className="text-slate-700">{team?.age_group} • {team?.league}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="bg-slate-50 text-gray-800 flex gap-3">
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
               <SelectTrigger className="w-40 bg-slate-800 border-slate-600">
                 <SelectValue />
@@ -202,8 +202,8 @@ export default function TeamTacticalView() {
                   return (
                     <button
                       key={player.id}
-                      onClick={() => navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${player.id}`)}
-                      className="w-full p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-all text-left border border-slate-600 hover:border-emerald-500">
+                      onClick={() => navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${player.id}`)} className="bg-slate-50 text-slate-900 p-3 text-left rounded-lg w-full hover:bg-slate-700 transition-all border border-slate-600 hover:border-emerald-500">
+
 
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
