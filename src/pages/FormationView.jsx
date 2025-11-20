@@ -396,8 +396,8 @@ export default function FormationView() {
                       style={{
                         left: `${position.x}%`,
                         top: `${position.y}%`,
-                        width: 'clamp(140px, 25vw, 280px)',
-                        maxHeight: 'min(450px, 50vh)',
+                        width: 'clamp(100px, 25vw, 180px)',
+                        maxHeight: 'min(300px, 50vh)',
                         zIndex: draggingPosition?.id === position.id ? 1000 : 1
                       }}>
                       
