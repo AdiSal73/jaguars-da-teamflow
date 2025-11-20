@@ -244,16 +244,122 @@ export default function Tryouts() {
     });
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
+  const calculateTeamPriority = (team) => {
+    if (team.league === 'Girls Academy') return 1;
+    if (team.league === 'Aspire') return 2;
+    const name = team.name.toLowerCase();
+    if (name.includes('green')) return 3;
+    if (name.includes('white')) return 4;
+    if (name.includes('black')) return 5;
+    return 6; // Others
+  };
 
+  const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-    if (source.droppableId === destination.droppableId) return;
+    if (!destination) return;
 
     const playerId = draggableId.replace('player-', '');
-    const newTeamId = destination.droppableId.replace('team-', '');
+    const sourceTeamId = source.droppableId.replace('team-', '');
+    const destTeamId = destination.droppableId.replace('team-', '');
 
-    updatePlayerTeamMutation.mutate({ playerId, teamId: newTeamId });
+    // Optimistically update UI could be complex here, so we'll rely on the refetch
+    
+    // 1. Update the player's team if changed
+    if (sourceTeamId !== destTeamId) {
+       await base44.entities.Player.update(playerId, { team_id: destTeamId });
+    }
+
+    // 2. Recalculate rankings for the ENTIRE age group
+    // We need to know the age group of the teams involved.
+    // Assuming dragging happens within an age group or we just re-rank the age group of the DESTINATION team.
+    const destTeam = teams.find(t => t.id === destTeamId);
+    const ageGroup = destTeam?.age_group;
+
+    if (!ageGroup) return;
+
+    // Get all teams in this age group
+    const ageGroupTeams = teams.filter(t => t.age_group === ageGroup);
+    
+    // Sort teams by hierarchy
+    ageGroupTeams.sort((a, b) => {
+        const pA = calculateTeamPriority(a);
+        const pB = calculateTeamPriority(b);
+        if (pA !== pB) return pA - pB;
+        return a.name.localeCompare(b.name);
+    });
+
+    // Get all players in these teams
+    let allPlayers = players.filter(p => ageGroupTeams.some(t => t.id === p.team_id));
+    
+    // If we just moved the player, our local 'players' state might be stale regarding the team_id of the moved player
+    // So manually update the moved player's team_id for the calculation
+    allPlayers = allPlayers.map(p => p.id === playerId ? { ...p, team_id: destTeamId } : p);
+
+    // Now we need to order players within each team.
+    // For the destination team, we need to respect the drag index.
+    // For other teams, we keep their existing ranking order.
+
+    const updates = [];
+    let currentRank = 1;
+
+    for (const team of ageGroupTeams) {
+        // Get players for this team
+        let teamPlayers = allPlayers.filter(p => p.team_id === team.id);
+        
+        // Sort players in this team
+        if (team.id === destTeamId) {
+            // This is the team we dropped into. 
+            // We need to reconstruct the order.
+            // The dragged player is at destination.index
+            // Remove dragged player from array if present (it shouldn't be if we filtered by team_id correctly, but just in case)
+            teamPlayers = teamPlayers.filter(p => p.id !== playerId);
+            
+            // Sort remaining by current ranking
+            teamPlayers.sort((a, b) => {
+                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
+                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
+                return rankA - rankB;
+            });
+            
+            // Insert dragged player at new index
+            const draggedPlayerObj = players.find(p => p.id === playerId); // Use original player object but with new team assumed
+            if (draggedPlayerObj) {
+                teamPlayers.splice(destination.index, 0, { ...draggedPlayerObj, team_id: destTeamId });
+            }
+        } else if (team.id === sourceTeamId) {
+             // This is the team we dragged FROM (if different)
+             // Players are just those remaining, sorted by rank
+             teamPlayers.sort((a, b) => {
+                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
+                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
+                return rankA - rankB;
+            });
+        } else {
+            // Unaffected team, just sort by rank
+            teamPlayers.sort((a, b) => {
+                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
+                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
+                return rankA - rankB;
+            });
+        }
+
+        // Assign ranks
+        for (const p of teamPlayers) {
+            const tryout = tryouts.find(t => t.player_id === p.id);
+            if (tryout?.team_ranking !== currentRank) {
+                updates.push({
+                    tryoutId: tryout?.id,
+                    playerId: p.id,
+                    ranking: currentRank
+                });
+            }
+            currentRank++;
+        }
+    }
+
+    if (updates.length > 0) {
+        updateRankingMutation.mutate(updates);
+    }
   };
 
   const TeamColumn = ({ title, teams, bgColor, logoUrl }) =>
@@ -533,7 +639,20 @@ export default function Tryouts() {
                         </div>
                         <div className="bg-purple-50 p-2 rounded">
                           <div className="text-slate-600">Dominant Foot</div>
-                          <div className="font-semibold text-slate-900">{player.tryout?.dominant_foot || 'N/A'}</div>
+                          <Select 
+                            value={player.tryout?.dominant_foot || ''} 
+                            onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'dominant_foot', value })}
+                          >
+                            <SelectTrigger className="h-6 text-xs p-0 border-none bg-transparent font-semibold text-slate-900 focus:ring-0">
+                              <SelectValue placeholder="N/A" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Left">Left</SelectItem>
+                              <SelectItem value="Right">Right</SelectItem>
+                              <SelectItem value="Both">Both</SelectItem>
+                              <SelectItem value="Neither">Neither</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="bg-emerald-50 p-2 rounded">
                           <div className="text-slate-600">Team Role</div>

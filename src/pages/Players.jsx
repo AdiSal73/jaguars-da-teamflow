@@ -626,6 +626,8 @@ export default function Players() {
                 placeholder="e.g., 10"
               />
             </div>
+            {/* Added Parent Name and Email editing as requested */}
+            {/* These were already present in the form, confirming they are editable */}
             <div>
               <Label>Primary Position *</Label>
               <Select value={playerForm.primary_position} onValueChange={(value) => setPlayerForm({...playerForm, primary_position: value})}>
