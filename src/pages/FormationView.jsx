@@ -168,6 +168,42 @@ export default function FormationView() {
 
   const team = teams.find((t) => t.id === selectedTeam) || (selectedAgeGroup !== 'all' ? { name: `${selectedAgeGroup} Players` } : { name: 'All Players' });
 
+  // Load custom formation from team
+  React.useEffect(() => {
+    if (team?.formation_settings?.positions) {
+      setFormationPositions(team.formation_settings.positions);
+      if (team.formation_settings.formation_name) {
+        setSelectedFormation(team.formation_settings.formation_name);
+      }
+    } else {
+      // Reset to default if no custom settings
+      setFormationPositions(formations[selectedFormation].positions);
+    }
+  }, [team?.id, selectedFormation]);
+
+  const saveFormationSettingsMutation = useMutation({
+    mutationFn: async (positions) => {
+      if (selectedTeam && selectedTeam !== 'all') {
+        return base44.entities.Team.update(selectedTeam, {
+          formation_settings: {
+            formation_name: selectedFormation,
+            positions: positions
+          }
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams']);
+    }
+  });
+
+  const handlePositionMouseUp = () => {
+    if (draggingPosition) {
+       setDraggingPosition(null);
+       saveFormationSettingsMutation.mutate(formationPositions);
+    }
+  };
+
   const updatePlayerPositionMutation = useMutation({
     mutationFn: async ({ playerId, newPosition }) => {
       return base44.entities.Player.update(playerId, {
@@ -258,9 +294,10 @@ export default function FormationView() {
     );
   };
 
-  const handlePositionMouseUp = () => {
-    setDraggingPosition(null);
-  };
+  // Removed duplicate handler to use the one defined above
+  // const handlePositionMouseUp = () => {
+  //   setDraggingPosition(null);
+  // };
 
   React.useEffect(() => {
     if (draggingPosition) {

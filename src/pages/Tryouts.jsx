@@ -168,6 +168,25 @@ export default function Tryouts() {
     }
   });
 
+  const updateRankingMutation = useMutation({
+    mutationFn: async (updates) => {
+      await Promise.all(updates.map(u => {
+         if (u.tryoutId) {
+             return base44.entities.PlayerTryout.update(u.tryoutId, { team_ranking: u.ranking });
+         } else {
+             return base44.entities.PlayerTryout.create({
+                 player_id: u.playerId,
+                 team_ranking: u.ranking
+             });
+         }
+      }));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['players']);
+    }
+  });
+
   const getAllPlayersWithTryout = () => {
     const allPlayersData = players.map((p) => getPlayerTryoutData(p));
 
@@ -254,6 +273,16 @@ export default function Tryouts() {
     return 6; // Others
   };
 
+  const calculateTeamPriority = (team) => {
+    if (team.league === 'Girls Academy') return 1;
+    if (team.league === 'Aspire') return 2;
+    const name = team.name.toLowerCase();
+    if (name.includes('green')) return 3;
+    if (name.includes('white')) return 4;
+    if (name.includes('black')) return 5;
+    return 6; // Others
+  };
+
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
@@ -262,25 +291,19 @@ export default function Tryouts() {
     const sourceTeamId = source.droppableId.replace('team-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
-    // Optimistically update UI could be complex here, so we'll rely on the refetch
-    
     // 1. Update the player's team if changed
     if (sourceTeamId !== destTeamId) {
        await base44.entities.Player.update(playerId, { team_id: destTeamId });
     }
 
     // 2. Recalculate rankings for the ENTIRE age group
-    // We need to know the age group of the teams involved.
-    // Assuming dragging happens within an age group or we just re-rank the age group of the DESTINATION team.
-    const destTeam = teams.find(t => t.id === destTeamId);
+    const destTeam = teams.find((t) => t.id === destTeamId);
     const ageGroup = destTeam?.age_group;
 
     if (!ageGroup) return;
 
-    // Get all teams in this age group
-    const ageGroupTeams = teams.filter(t => t.age_group === ageGroup);
+    const ageGroupTeams = teams.filter((t) => t.age_group === ageGroup);
     
-    // Sort teams by hierarchy
     ageGroupTeams.sort((a, b) => {
         const pA = calculateTeamPriority(a);
         const pB = calculateTeamPriority(b);
@@ -288,65 +311,39 @@ export default function Tryouts() {
         return a.name.localeCompare(b.name);
     });
 
-    // Get all players in these teams
-    let allPlayers = players.filter(p => ageGroupTeams.some(t => t.id === p.team_id));
+    let allPlayers = players.filter((p) => ageGroupTeams.some((t) => t.id === p.team_id));
     
-    // If we just moved the player, our local 'players' state might be stale regarding the team_id of the moved player
-    // So manually update the moved player's team_id for the calculation
-    allPlayers = allPlayers.map(p => p.id === playerId ? { ...p, team_id: destTeamId } : p);
-
-    // Now we need to order players within each team.
-    // For the destination team, we need to respect the drag index.
-    // For other teams, we keep their existing ranking order.
+    // Manually update the moved player's team_id for calculation
+    allPlayers = allPlayers.map((p) => p.id === playerId ? { ...p, team_id: destTeamId } : p);
 
     const updates = [];
     let currentRank = 1;
 
     for (const team of ageGroupTeams) {
-        // Get players for this team
-        let teamPlayers = allPlayers.filter(p => p.team_id === team.id);
+        let teamPlayers = allPlayers.filter((p) => p.team_id === team.id);
         
-        // Sort players in this team
         if (team.id === destTeamId) {
-            // This is the team we dropped into. 
-            // We need to reconstruct the order.
-            // The dragged player is at destination.index
-            // Remove dragged player from array if present (it shouldn't be if we filtered by team_id correctly, but just in case)
-            teamPlayers = teamPlayers.filter(p => p.id !== playerId);
-            
-            // Sort remaining by current ranking
+            teamPlayers = teamPlayers.filter((p) => p.id !== playerId);
             teamPlayers.sort((a, b) => {
-                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
-                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
+                const rankA = tryouts.find((t) => t.player_id === a.id)?.team_ranking || 9999;
+                const rankB = tryouts.find((t) => t.player_id === b.id)?.team_ranking || 9999;
                 return rankA - rankB;
             });
-            
-            // Insert dragged player at new index
-            const draggedPlayerObj = players.find(p => p.id === playerId); // Use original player object but with new team assumed
+            const draggedPlayerObj = players.find((p) => p.id === playerId);
             if (draggedPlayerObj) {
                 teamPlayers.splice(destination.index, 0, { ...draggedPlayerObj, team_id: destTeamId });
             }
-        } else if (team.id === sourceTeamId) {
-             // This is the team we dragged FROM (if different)
-             // Players are just those remaining, sorted by rank
-             teamPlayers.sort((a, b) => {
-                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
-                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
-                return rankA - rankB;
-            });
         } else {
-            // Unaffected team, just sort by rank
-            teamPlayers.sort((a, b) => {
-                const rankA = tryouts.find(t => t.player_id === a.id)?.team_ranking || 9999;
-                const rankB = tryouts.find(t => t.player_id === b.id)?.team_ranking || 9999;
+             teamPlayers.sort((a, b) => {
+                const rankA = tryouts.find((t) => t.player_id === a.id)?.team_ranking || 9999;
+                const rankB = tryouts.find((t) => t.player_id === b.id)?.team_ranking || 9999;
                 return rankA - rankB;
             });
         }
 
-        // Assign ranks
         for (const p of teamPlayers) {
-            const tryout = tryouts.find(t => t.player_id === p.id);
-            if (tryout?.team_ranking !== currentRank) {
+            const tryout = tryouts.find((t) => t.player_id === p.id);
+            if (tryout?.team_ranking !== currentRank || !tryout) {
                 updates.push({
                     tryoutId: tryout?.id,
                     playerId: p.id,
@@ -375,9 +372,19 @@ export default function Tryouts() {
         </CardHeader>
         <CardContent className="p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
           <div className="space-y-4">
-            {teams.map((team) => {
-            const teamPlayers = getTeamPlayers(team);
-            return (
+            {teams
+              .sort((a, b) => {
+                  const pA = calculateTeamPriority(a);
+                  const pB = calculateTeamPriority(b);
+                  if (pA !== pB) return pA - pB;
+                  return a.name.localeCompare(b.name);
+              })
+              .map((team) => {
+              const teamPlayers = getTeamPlayers(team);
+              // Ensure sorted by ranking within column
+              teamPlayers.sort((a, b) => (a.tryout?.team_ranking || 9999) - (b.tryout?.team_ranking || 9999));
+
+              return (
               <Droppable droppableId={`team-${team.id}`} key={team.id}>
                   {(provided, snapshot) =>
                 <Card
@@ -429,8 +436,9 @@ export default function Tryouts() {
 
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3 flex-1">
-                                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md text-lg">
-                                        {player.jersey_number || <User className="w-6 h-6" />}
+                                      {/* Ranking Badge */}
+                                      <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-base min-w-[2.5rem]">
+                                        #{player.tryout?.team_ranking || '?'}
                                       </div>
                                       <div className="flex-1">
                                         <div className="font-bold text-slate-900 text-base">{player.full_name}</div>
