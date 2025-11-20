@@ -51,17 +51,17 @@ export default function TeamTacticalView() {
     queryFn: () => base44.entities.PlayerTryout.list()
   });
 
-  const team = teams.find(t => t.id === selectedTeam);
-  const players = allPlayers.filter(p => p.team_id === selectedTeam);
+  const team = teams.find((t) => t.id === selectedTeam);
+  const players = allPlayers.filter((p) => p.team_id === selectedTeam);
 
   const getPlayerStats = (playerId) => {
-    const playerAssessments = assessments.filter(a => a.player_id === playerId).sort((a, b) => 
-      new Date(b.assessment_date) - new Date(a.assessment_date)
+    const playerAssessments = assessments.filter((a) => a.player_id === playerId).sort((a, b) =>
+    new Date(b.assessment_date) - new Date(a.assessment_date)
     );
-    const playerEvaluations = evaluations.filter(e => e.player_id === playerId).sort((a, b) => 
-      new Date(b.created_date) - new Date(a.created_date)
+    const playerEvaluations = evaluations.filter((e) => e.player_id === playerId).sort((a, b) =>
+    new Date(b.created_date) - new Date(a.created_date)
     );
-    const tryout = tryouts.find(t => t.player_id === playerId);
+    const tryout = tryouts.find((t) => t.player_id === playerId);
 
     return {
       assessment: playerAssessments[0],
@@ -72,18 +72,18 @@ export default function TeamTacticalView() {
 
   const formations = {
     '4-3-3': [
-      { pos: 'GK', x: 50, y: 90 },
-      { pos: 'RB', x: 80, y: 70 }, { pos: 'RCB', x: 60, y: 70 }, { pos: 'LCB', x: 40, y: 70 }, { pos: 'LB', x: 20, y: 70 },
-      { pos: 'CM', x: 65, y: 45 }, { pos: 'DM', x: 50, y: 50 }, { pos: 'CAM', x: 35, y: 45 },
-      { pos: 'RW', x: 75, y: 20 }, { pos: 'ST', x: 50, y: 15 }, { pos: 'LW', x: 25, y: 20 }
-    ],
+    { pos: 'GK', x: 50, y: 90 },
+    { pos: 'RB', x: 80, y: 70 }, { pos: 'RCB', x: 60, y: 70 }, { pos: 'LCB', x: 40, y: 70 }, { pos: 'LB', x: 20, y: 70 },
+    { pos: 'CM', x: 65, y: 45 }, { pos: 'DM', x: 50, y: 50 }, { pos: 'CAM', x: 35, y: 45 },
+    { pos: 'RW', x: 75, y: 20 }, { pos: 'ST', x: 50, y: 15 }, { pos: 'LW', x: 25, y: 20 }],
+
     '4-2-3-1': [
-      { pos: 'GK', x: 50, y: 90 },
-      { pos: 'RB', x: 80, y: 70 }, { pos: 'RCB', x: 60, y: 70 }, { pos: 'LCB', x: 40, y: 70 }, { pos: 'LB', x: 20, y: 70 },
-      { pos: 'DM', x: 60, y: 55 }, { pos: 'CM', x: 40, y: 55 },
-      { pos: 'RW', x: 75, y: 35 }, { pos: 'CAM', x: 50, y: 35 }, { pos: 'LW', x: 25, y: 35 },
-      { pos: 'ST', x: 50, y: 15 }
-    ]
+    { pos: 'GK', x: 50, y: 90 },
+    { pos: 'RB', x: 80, y: 70 }, { pos: 'RCB', x: 60, y: 70 }, { pos: 'LCB', x: 40, y: 70 }, { pos: 'LB', x: 20, y: 70 },
+    { pos: 'DM', x: 60, y: 55 }, { pos: 'CM', x: 40, y: 55 },
+    { pos: 'RW', x: 75, y: 35 }, { pos: 'CAM', x: 50, y: 35 }, { pos: 'LW', x: 25, y: 35 },
+    { pos: 'ST', x: 50, y: 15 }]
+
   };
 
   const positionMap = {
@@ -103,7 +103,7 @@ export default function TeamTacticalView() {
   const formationPositions = formations[selectedFormation] || formations['4-3-3'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-8">
+    <div className="bg-slate-50 text-slate-800 p-4 min-h-screen from-slate-900 via-slate-800 to-slate-900 md:p-8">
       <div className="max-w-[1800px] mx-auto">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-white hover:text-white hover:bg-slate-700">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -113,7 +113,7 @@ export default function TeamTacticalView() {
         <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">{team?.name || 'Team Tactical View'}</h1>
-            <p className="text-slate-400">{team?.age_group} • {team?.league}</p>
+            <p className="text-slate-700">{team?.age_group} • {team?.league}</p>
           </div>
           <div className="flex gap-3">
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
@@ -130,9 +130,9 @@ export default function TeamTacticalView() {
                 <SelectValue placeholder="Select team" />
               </SelectTrigger>
               <SelectContent>
-                {teams.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
+                {teams.map((t) =>
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -140,7 +140,7 @@ export default function TeamTacticalView() {
 
         <div className="grid lg:grid-cols-[1fr_500px] gap-6">
           {/* Formation View */}
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm overflow-hidden">
+          <Card className="bg-slate-50 text-card-foreground rounded-xl border shadow border-slate-700 backdrop-blur-sm overflow-hidden">
             <div className="relative w-full" style={{ paddingBottom: '140%', maxHeight: '800px', background: 'linear-gradient(180deg, #166534 0%, #15803d 50%, #166534 100%)' }}>
               <div className="absolute inset-0">
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 140" preserveAspectRatio="none">
@@ -153,11 +153,11 @@ export default function TeamTacticalView() {
                 </svg>
 
                 {formationPositions.map((formPos) => {
-                  const fullPosition = Object.keys(positionMap).find(key => positionMap[key] === formPos.pos);
-                  const positionPlayers = players.filter(p => p.primary_position === fullPosition);
+                  const fullPosition = Object.keys(positionMap).find((key) => positionMap[key] === formPos.pos);
+                  const positionPlayers = players.filter((p) => p.primary_position === fullPosition);
                   const topPlayer = positionPlayers.sort((a, b) => {
-                    const tryoutA = tryouts.find(t => t.player_id === a.id);
-                    const tryoutB = tryouts.find(t => t.player_id === b.id);
+                    const tryoutA = tryouts.find((t) => t.player_id === a.id);
+                    const tryoutB = tryouts.find((t) => t.player_id === b.id);
                     return (tryoutA?.team_ranking || 9999) - (tryoutB?.team_ranking || 9999);
                   })[0];
 
@@ -169,18 +169,18 @@ export default function TeamTacticalView() {
                       style={{
                         left: `${formPos.x}%`,
                         top: `${formPos.y}%`
-                      }}
-                    >
+                      }}>
+
                       <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-800/90 border-2 border-white rounded-full flex items-center justify-center font-bold text-xs md:text-sm shadow-xl group-hover:scale-110 transition-transform">
-                          {topPlayer?.jersey_number || <User className="w-6 h-6 text-white" />}
+                        <div className="bg-slate-50 text-slate-800 text-xs font-bold rounded-full w-12 h-12 md:w-16 md:h-16 border-2 border-white flex items-center justify-center md:text-sm shadow-xl group-hover:scale-110 transition-transform">
+                          {topPlayer?.jersey_number || <User className="bg-zinc-800 text-white lucide lucide-user w-6 h-6" />}
                         </div>
-                        <div className="mt-1 md:mt-2 px-2 py-0.5 md:py-1 bg-slate-800/90 rounded text-[10px] md:text-xs font-bold shadow-lg border border-white/30">
+                        <div className="bg-slate-200 text-[10px] mt-1 px-2 py-0.5 font-bold rounded md:mt-2 md:py-1 md:text-xs shadow-lg border border-white/30">
                           {topPlayer?.full_name?.split(' ').pop() || formPos.pos}
                         </div>
                       </div>
-                    </button>
-                  );
+                    </button>);
+
                 })}
               </div>
             </div>
@@ -188,54 +188,54 @@ export default function TeamTacticalView() {
 
           {/* Player List */}
           <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm h-fit">
-            <div className="p-4 md:p-6">
+            <div className="bg-slate-800 text-slate-50 p-4 md:p-6">
               <h3 className="text-xl font-bold mb-4 border-b border-slate-700 pb-3">Squad Selection</h3>
               <div className="space-y-2 max-h-[700px] overflow-y-auto">
-                {players
-                  .sort((a, b) => {
-                    const tryoutA = tryouts.find(t => t.player_id === a.id);
-                    const tryoutB = tryouts.find(t => t.player_id === b.id);
-                    return (tryoutA?.team_ranking || 9999) - (tryoutB?.team_ranking || 9999);
-                  })
-                  .map((player) => {
-                    const stats = getPlayerStats(player.id);
-                    return (
-                      <button
-                        key={player.id}
-                        onClick={() => navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${player.id}`)}
-                        className="w-full p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-all text-left border border-slate-600 hover:border-emerald-500"
-                      >
+                {players.
+                sort((a, b) => {
+                  const tryoutA = tryouts.find((t) => t.player_id === a.id);
+                  const tryoutB = tryouts.find((t) => t.player_id === b.id);
+                  return (tryoutA?.team_ranking || 9999) - (tryoutB?.team_ranking || 9999);
+                }).
+                map((player) => {
+                  const stats = getPlayerStats(player.id);
+                  return (
+                    <button
+                      key={player.id}
+                      onClick={() => navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${player.id}`)}
+                      className="w-full p-3 bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-all text-left border border-slate-600 hover:border-emerald-500">
+
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
                             {player.jersey_number || <User className="w-5 h-5" />}
                           </div>
                           <div className="flex-1">
                             <div className="font-bold text-sm">{player.full_name}</div>
-                            <div className="text-xs text-slate-400">{player.primary_position}</div>
+                            <div className="text-slate-800 text-xs">{player.primary_position}</div>
                           </div>
-                          {stats.assessment && (
-                            <div className="text-right">
+                          {stats.assessment &&
+                        <div className="text-right">
                               <div className="text-2xl font-bold text-emerald-500">{stats.assessment.overall_score}</div>
                               <div className="text-[10px] text-slate-500">Overall</div>
                             </div>
-                          )}
+                        }
                         </div>
-                        {stats.tryout?.team_role && (
-                          <Badge className={`${teamRoleColors[stats.tryout.team_role]} text-white text-[10px] mr-2`}>
+                        {stats.tryout?.team_role &&
+                      <Badge className={`${teamRoleColors[stats.tryout.team_role]} text-white text-[10px] mr-2`}>
                             {stats.tryout.team_role}
                           </Badge>
-                        )}
-                        {stats.tryout?.recommendation && (
-                          <Badge className={`text-[10px] ${
-                            stats.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                            stats.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                            'bg-blue-500'
-                          }`}>
+                      }
+                        {stats.tryout?.recommendation &&
+                      <Badge className={`text-[10px] ${
+                      stats.tryout.recommendation === 'Move up' ? 'bg-emerald-500' :
+                      stats.tryout.recommendation === 'Move down' ? 'bg-orange-500' :
+                      'bg-blue-500'}`
+                      }>
                             {stats.tryout.recommendation}
                           </Badge>
-                        )}
-                        {stats.assessment && (
-                          <div className="grid grid-cols-4 gap-2 mt-3 text-[10px]">
+                      }
+                        {stats.assessment &&
+                      <div className="grid grid-cols-4 gap-2 mt-3 text-[10px]">
                             <div className="text-center">
                               <div className="text-red-400 font-bold">{stats.assessment.speed_score}</div>
                               <div className="text-slate-500">Speed</div>
@@ -253,15 +253,15 @@ export default function TeamTacticalView() {
                               <div className="text-slate-500">Agility</div>
                             </div>
                           </div>
-                        )}
-                      </button>
-                    );
-                  })}
+                      }
+                      </button>);
+
+                })}
               </div>
             </div>
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
