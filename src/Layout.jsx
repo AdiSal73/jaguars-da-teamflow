@@ -19,8 +19,8 @@ import {
   SidebarTrigger,
   SidebarMenuSub,
   SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "@/components/ui/sidebar";
+  SidebarMenuSubButton } from
+"@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import NotificationCenter from "./components/notifications/NotificationCenter";
 
@@ -55,7 +55,7 @@ export default function Layout({ children, currentPageName }) {
   const getUserRole = () => {
     if (!user) return null;
     if (user.role === 'admin') return 'admin';
-    const isCoach = coaches.find(c => c.email === user.email);
+    const isCoach = coaches.find((c) => c.email === user.email);
     if (isCoach) return 'coach';
     return 'user';
   };
@@ -65,7 +65,7 @@ export default function Layout({ children, currentPageName }) {
   // Redirect user role to their player profile
   React.useEffect(() => {
     if (userRole === 'user' && players.length > 0 && location.pathname === '/') {
-      const currentPlayer = players.find(p => p.email === user.email);
+      const currentPlayer = players.find((p) => p.email === user.email);
       if (currentPlayer) {
         navigate(`/player-profile?id=${currentPlayer.id}`);
       }
@@ -73,46 +73,46 @@ export default function Layout({ children, currentPageName }) {
   }, [userRole, players, location.pathname, user, navigate]);
 
   const allNavigationItems = [
-    { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin"] },
-    { title: "Coach Dashboard", url: createPageUrl("CoachDashboard"), icon: LayoutDashboard, roles: ["coach"] },
-    { title: "Analytics", url: createPageUrl("Analytics"), icon: BarChart3, roles: ["admin"] },
-    {
-      title: "Club Management",
-      url: createPageUrl("ClubManagement"),
-      icon: Settings,
-      roles: ["admin"],
-      submenu: [
-        { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
-        { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
-        { title: "User Management", url: createPageUrl("UserManagement") },
-      ]
-    },
-    { title: "Coach Management", url: createPageUrl("CoachManagement"), icon: UserCog, roles: ["admin"] },
-    { title: "Tryouts", url: createPageUrl("Tryouts"), icon: Users, roles: ["admin", "coach"] },
-    {
-      title: "Teams",
-      url: createPageUrl("Teams"),
-      icon: Shield,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
-        { title: "Announcements", url: createPageUrl("TeamCommunication") },
-        { title: "Team Drills", url: createPageUrl("TeamDrills") },
-      ]
-    },
-    { title: "Players", url: createPageUrl("Players"), icon: Users, roles: ["admin"] },
-    { title: "Training Plans", url: createPageUrl("TrainingPlans"), icon: TrendingUp, roles: ["admin", "coach"] },
-    { title: "Messages", url: createPageUrl("Messages"), icon: MessageSquare, roles: ["admin", "coach", "user"] },
-    { title: "Bulk Email", url: createPageUrl("BulkEmail"), icon: MessageSquare, roles: ["admin", "coach"] },
-    { title: "Availability", url: createPageUrl("Availability"), icon: Clock, roles: ["admin", "coach"] },
-    { title: "Book Session", url: createPageUrl("BookSession"), icon: Calendar, roles: ["admin", "coach", "user"] },
-    { title: "My Bookings", url: createPageUrl("MyBookings"), icon: Calendar, roles: ["user"] },
-    { title: "Manage Bookings", url: createPageUrl("BookingsTable"), icon: Calendar, roles: ["admin", "coach"] },
-  ];
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard, roles: ["admin"] },
+  { title: "Coach Dashboard", url: createPageUrl("CoachDashboard"), icon: LayoutDashboard, roles: ["coach"] },
+  { title: "Analytics", url: createPageUrl("Analytics"), icon: BarChart3, roles: ["admin"] },
+  {
+    title: "Club Management",
+    url: createPageUrl("ClubManagement"),
+    icon: Settings,
+    roles: ["admin"],
+    submenu: [
+    { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
+    { title: "Assessments", url: createPageUrl("Assessments") },
+    { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+    { title: "User Management", url: createPageUrl("UserManagement") }]
 
-  const navigationItems = allNavigationItems.filter(item => 
-    userRole && item.roles.includes(userRole)
+  },
+  { title: "Coach Management", url: createPageUrl("CoachManagement"), icon: UserCog, roles: ["admin"] },
+  { title: "Tryouts", url: createPageUrl("Tryouts"), icon: Users, roles: ["admin", "coach"] },
+  {
+    title: "Teams",
+    url: createPageUrl("Teams"),
+    icon: Shield,
+    roles: ["admin", "coach"],
+    submenu: [
+    { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
+    { title: "Announcements", url: createPageUrl("TeamCommunication") },
+    { title: "Team Drills", url: createPageUrl("TeamDrills") }]
+
+  },
+  { title: "Players", url: createPageUrl("Players"), icon: Users, roles: ["admin"] },
+  { title: "Training Plans", url: createPageUrl("TrainingPlans"), icon: TrendingUp, roles: ["admin", "coach"] },
+  { title: "Messages", url: createPageUrl("Messages"), icon: MessageSquare, roles: ["admin", "coach", "user"] },
+  { title: "Bulk Email", url: createPageUrl("BulkEmail"), icon: MessageSquare, roles: ["admin", "coach"] },
+  { title: "Availability", url: createPageUrl("Availability"), icon: Clock, roles: ["admin", "coach"] },
+  { title: "Book Session", url: createPageUrl("BookSession"), icon: Calendar, roles: ["admin", "coach", "user"] },
+  { title: "My Bookings", url: createPageUrl("MyBookings"), icon: Calendar, roles: ["user"] },
+  { title: "Manage Bookings", url: createPageUrl("BookingsTable"), icon: Calendar, roles: ["admin", "coach"] }];
+
+
+  const navigationItems = allNavigationItems.filter((item) =>
+  userRole && item.roles.includes(userRole)
   );
 
   if (!user || !userRole) return <div>Loading...</div>;
@@ -140,9 +140,9 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationItems.map((item) => (
-                    item.submenu ? (
-                      <Collapsible key={item.title} className="group/collapsible">
+                  {navigationItems.map((item) =>
+                  item.submenu ?
+                  <Collapsible key={item.title} className="group/collapsible">
                         <SidebarMenuItem>
                           <CollapsibleTrigger asChild>
                             <SidebarMenuButton className="hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 text-slate-700">
@@ -160,35 +160,35 @@ export default function Layout({ children, currentPageName }) {
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
-                              {item.submenu.map((subItem) => (
-                                <SidebarMenuSubItem key={subItem.title}>
+                              {item.submenu.map((subItem) =>
+                          <SidebarMenuSubItem key={subItem.title}>
                                   <SidebarMenuSubButton asChild>
                                     <Link to={subItem.url} className={location.pathname === subItem.url ? 'bg-emerald-50 text-emerald-700' : ''}>
                                       <span className="font-medium">{subItem.title}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
-                              ))}
+                          )}
                             </SidebarMenuSub>
                           </CollapsibleContent>
                         </SidebarMenuItem>
-                      </Collapsible>
-                    ) : (
-                      <SidebarMenuItem key={item.title}>
-                       <SidebarMenuButton 
-                         asChild 
-                         className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
-                           location.pathname === item.url ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md hover:text-white' : 'text-slate-700'
-                         }`}
-                       >
+                      </Collapsible> :
+
+                  <SidebarMenuItem key={item.title}>
+                       <SidebarMenuButton
+                      asChild
+                      className={`hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 rounded-xl mb-1 ${
+                      location.pathname === item.url ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md hover:text-white' : 'text-slate-700'}`
+                      }>
+
                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                            <item.icon className="w-5 h-5" />
                            <span className="font-medium group-data-[collapsible=icon]:hidden">{item.title}</span>
                          </Link>
                        </SidebarMenuButton>
                       </SidebarMenuItem>
-                    )
-                  ))}
+
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -208,8 +208,8 @@ export default function Layout({ children, currentPageName }) {
             </div>
             <button
               onClick={() => base44.auth.logout()}
-              className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200 font-medium text-slate-700"
-            >
+              className="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200 font-medium text-slate-700">
+
               <LogOut className="w-5 h-5" />
               <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
             </button>
@@ -221,7 +221,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
-                <h1 className="text-xl font-bold text-slate-900 md:hidden">Soccer Hub</h1>
+                <h1 className="text-xl font-bold text-slate-900 md:hidden">Club Management</h1>
               </div>
               <NotificationCenter />
             </div>
@@ -232,6 +232,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </main>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>);
+
 }
