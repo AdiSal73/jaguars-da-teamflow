@@ -3,19 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Upload, TrendingUp, Users, Activity, BarChart3, Shield, RefreshCw, Trash2 } from 'lucide-react';
+import { Upload, TrendingUp, Users, Activity, BarChart3, Shield, RefreshCw, Trash2, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BulkImportDialog from '../components/import/BulkImportDialog';
+import AutoSyncDialog from '../components/club/AutoSyncDialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
   AlertDialog,
@@ -32,11 +27,10 @@ export default function ClubManagement() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [showDuplicatesDialog, setShowDuplicatesDialog] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [duplicateReport, setDuplicateReport] = useState(null);
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterCoach, setFilterCoach] = useState('all');
-  const [filterLeague, setFilterLeague] = useState('all');
+  const [filterClub, setFilterClub] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
 
@@ -67,16 +61,6 @@ export default function ClubManagement() {
     queryFn: () => base44.entities.Coach.list()
   });
 
-  const { data: unassignedEvaluations = [] } = useQuery({
-    queryKey: ['unassignedEvaluations'],
-    queryFn: () => base44.entities.UnassignedEvaluation.filter({ assigned: false })
-  });
-
-  const { data: unassignedAssessments = [] } = useQuery({
-    queryKey: ['unassignedAssessments'],
-    queryFn: () => base44.entities.UnassignedPhysicalAssessment.filter({ assigned: false })
-  });
-
   const findDuplicates = async () => {
     const duplicates = {
       players: [],
@@ -85,7 +69,6 @@ export default function ClubManagement() {
       evaluations: []
     };
 
-    // Find duplicate players
     const playersByName = {};
     for (const player of players) {
       const key = player.full_name?.toLowerCase().trim();
@@ -100,7 +83,6 @@ export default function ClubManagement() {
       }
     }
 
-    // Find duplicate teams
     const teamsByName = {};
     for (const team of teams) {
       const key = team.name?.toLowerCase().trim();
@@ -115,7 +97,6 @@ export default function ClubManagement() {
       }
     }
 
-    // Find duplicate assessments - by player name AND date
     const assessmentsByKey = {};
     for (const assessment of assessments) {
       const player = players.find(p => p.id === assessment.player_id);
@@ -137,7 +118,6 @@ export default function ClubManagement() {
       }
     }
 
-    // Find duplicate evaluations - by player name AND date
     const evaluationsByKey = {};
     for (const evaluation of evaluations) {
       const player = players.find(p => p.id === evaluation.player_id);
@@ -207,74 +187,6 @@ export default function ClubManagement() {
     }
   };
 
-  const handleAutoSync = async () => {
-    setSyncing(true);
-    let syncedCount = 0;
-
-    try {
-      // Auto-assign unassigned evaluations
-      for (const unassignedEval of unassignedEvaluations) {
-        const player = players.find(p =>
-          p.full_name?.toLowerCase() === unassignedEval.player_name?.toLowerCase()
-        );
-
-        if (player) {
-          await base44.entities.Evaluation.create({
-            player_id: player.id,
-            evaluation_date: unassignedEval.date,
-            evaluator_name: unassignedEval.evaluator,
-            technical_skills: unassignedEval.technical_skills,
-            tactical_awareness: unassignedEval.tactical_awareness,
-            physical_attributes: unassignedEval.physical_attributes,
-            mental_attributes: unassignedEval.mental_attributes,
-            teamwork: unassignedEval.teamwork,
-            overall_rating: unassignedEval.overall_rating,
-            strengths: unassignedEval.strengths,
-            areas_for_improvement: unassignedEval.areas_for_improvement,
-            notes: unassignedEval.notes
-          });
-
-          await base44.entities.UnassignedEvaluation.update(unassignedEval.id, { assigned: true });
-          syncedCount++;
-        }
-      }
-
-      // Auto-assign unassigned assessments
-      for (const unassignedAssess of unassignedAssessments) {
-        const player = players.find(p =>
-          p.full_name?.toLowerCase() === unassignedAssess.player_name?.toLowerCase()
-        );
-
-        if (player) {
-          await base44.entities.PhysicalAssessment.create({
-            player_id: player.id,
-            assessment_date: unassignedAssess.assessment_date,
-            speed: unassignedAssess.speed,
-            agility: unassignedAssess.agility,
-            power: unassignedAssess.power,
-            endurance: unassignedAssess.endurance,
-            sprint_time: unassignedAssess.sprint_time,
-            vertical_jump: unassignedAssess.vertical_jump,
-            cooper_test: unassignedAssess.cooper_test,
-            assessor: unassignedAssess.team_name,
-            notes: `Position: ${unassignedAssess.position || 'N/A'}`
-          });
-
-          await base44.entities.UnassignedPhysicalAssessment.update(unassignedAssess.id, { assigned: true });
-          syncedCount++;
-        }
-      }
-
-      queryClient.invalidateQueries();
-      alert(`Auto-sync complete! Synced ${syncedCount} records.`);
-    } catch (error) {
-      alert('Error during auto-sync: ' + error.message);
-    }
-
-    setSyncing(false);
-    setShowSyncDialog(false);
-  };
-
   const calculateOverallScore = (assessment) => {
     const speed = assessment.speed || 0;
     const agility = assessment.agility || 0;
@@ -283,7 +195,6 @@ export default function ClubManagement() {
     return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
   };
 
-  // Calculate team statistics
   const teamStats = teams.map(team => {
     const teamPlayers = players.filter(p => p.team_id === team.id);
     const teamPlayerIds = teamPlayers.map(p => p.id);
@@ -291,15 +202,11 @@ export default function ClubManagement() {
     const teamEvaluations = evaluations.filter(e => teamPlayerIds.includes(e.player_id));
 
     const avgPhysical = teamAssessments.length > 0
-      ? Math.round(
-          teamAssessments.reduce((sum, a) => sum + calculateOverallScore(a), 0) / teamAssessments.length
-        )
+      ? Math.round(teamAssessments.reduce((sum, a) => sum + (a.overall_score || calculateOverallScore(a)), 0) / teamAssessments.length)
       : 0;
 
     const avgRating = teamEvaluations.length > 0
-      ? Math.round(
-          teamEvaluations.reduce((sum, e) => sum + (e.overall_rating || 0), 0) / teamEvaluations.length
-        )
+      ? Math.round(teamEvaluations.reduce((sum, e) => sum + (e.overall_rating || 0), 0) / teamEvaluations.length)
       : 0;
 
     return {
@@ -312,7 +219,6 @@ export default function ClubManagement() {
     };
   });
 
-  // Club-wide statistics
   const clubStats = {
     totalPlayers: players.length,
     totalTeams: teams.length,
@@ -320,120 +226,122 @@ export default function ClubManagement() {
     totalAssessments: assessments.length,
     totalEvaluations: evaluations.length,
     avgPhysical: assessments.length > 0
-      ? Math.round(
-          assessments.reduce((sum, a) => sum + calculateOverallScore(a), 0) / assessments.length
-        )
+      ? Math.round(assessments.reduce((sum, a) => sum + (a.overall_score || calculateOverallScore(a)), 0) / assessments.length)
       : 0
   };
 
-  // Team comparison data
-  const comparisonData = teamStats.map(team => ({
-    name: team.name.substring(0, 10),
+  const comparisonData = teamStats.slice(0, 8).map(team => ({
+    name: team.name?.substring(0, 10) || 'Unknown',
     players: team.playerCount,
     physical: team.avgPhysical,
     rating: team.avgRating
   }));
 
+  const uniqueClubs = [...new Set(teams.map(t => t.league).filter(Boolean))];
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Club Management</h1>
-          <p className="text-slate-600 mt-1">Comprehensive overview of your club's performance</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
+            <Building2 className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
+            Club Management
+          </h1>
+          <p className="text-sm md:text-base text-slate-600 mt-1">Comprehensive overview of your club's performance</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={findDuplicates} variant="outline">
-            <Trash2 className="w-4 h-4 mr-2" />
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          <Button onClick={findDuplicates} variant="outline" size="sm" className="text-xs md:text-sm">
+            <Trash2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
             Find Duplicates
           </Button>
-          <Button onClick={() => setShowSyncDialog(true)} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Auto-Sync Data
+          <Button onClick={() => setShowSyncDialog(true)} variant="outline" size="sm" className="text-xs md:text-sm">
+            <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+            Auto-Sync
           </Button>
-          <Button onClick={() => setShowImportDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Upload className="w-4 h-4 mr-2" />
-            Bulk Import
+          <Button onClick={() => setShowImportDialog(true)} className="bg-emerald-600 hover:bg-emerald-700" size="sm">
+            <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+            Import
           </Button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6 md:mb-8">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-white">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Teams</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1">{clubStats.totalTeams}</div>
+                <div className="text-xs md:text-sm text-slate-600">Teams</div>
+                <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{clubStats.totalTeams}</div>
               </div>
-              <Shield className="w-8 h-8 text-emerald-500" />
+              <Shield className="w-6 h-6 md:w-8 md:h-8 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-white">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Players</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1">{clubStats.totalPlayers}</div>
+                <div className="text-xs md:text-sm text-slate-600">Players</div>
+                <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{clubStats.totalPlayers}</div>
               </div>
-              <Users className="w-8 h-8 text-blue-500" />
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-purple-50 to-white">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Coaches</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1">{clubStats.totalCoaches}</div>
+                <div className="text-xs md:text-sm text-slate-600">Coaches</div>
+                <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{clubStats.totalCoaches}</div>
               </div>
-              <Users className="w-8 h-8 text-purple-500" />
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-orange-50 to-white">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Assessments</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1">{clubStats.totalAssessments}</div>
+                <div className="text-xs md:text-sm text-slate-600">Assessments</div>
+                <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{clubStats.totalAssessments}</div>
               </div>
-              <Activity className="w-8 h-8 text-orange-500" />
+              <Activity className="w-6 h-6 md:w-8 md:h-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-pink-50 to-white col-span-2 md:col-span-1">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-600">Avg Score</div>
-                <div className="text-3xl font-bold text-slate-900 mt-1">{clubStats.avgPhysical}</div>
+                <div className="text-xs md:text-sm text-slate-600">Avg Score</div>
+                <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{clubStats.avgPhysical}</div>
               </div>
-              <TrendingUp className="w-8 h-8 text-pink-500" />
+              <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-pink-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-none shadow-lg mb-8">
+      <Card className="border-none shadow-lg mb-6 md:mb-8">
         <CardHeader>
-          <CardTitle>Team Performance Comparison</CardTitle>
+          <CardTitle className="text-base md:text-lg">Team Performance Comparison</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+        <CardContent className="p-4 md:p-6">
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={comparisonData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" style={{ fontSize: '12px' }} />
-              <YAxis style={{ fontSize: '12px' }} />
+              <XAxis dataKey="name" style={{ fontSize: '10px' }} />
+              <YAxis style={{ fontSize: '10px' }} />
               <Tooltip />
-              <Legend />
-              <Bar dataKey="players" name="Players" fill="#3b82f6" />
-              <Bar dataKey="physical" name="Avg Physical" fill="#22c55e" />
-              <Bar dataKey="rating" name="Avg Rating" fill="#f59e0b" />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Bar dataKey="players" name="Players" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="physical" name="Avg Physical" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="rating" name="Avg Rating" fill="#f59e0b" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -441,14 +349,14 @@ export default function ClubManagement() {
 
       <Card className="mb-6 border-none shadow-lg">
         <CardHeader>
-          <CardTitle>Filter Teams</CardTitle>
+          <CardTitle className="text-base md:text-lg">Filter Teams</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-4 gap-4">
+        <CardContent className="p-4 md:p-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <div>
-              <Label className="mb-2 block">Age Group</Label>
+              <Label className="mb-2 block text-xs md:text-sm">Age Group</Label>
               <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -466,9 +374,9 @@ export default function ClubManagement() {
               </Select>
             </div>
             <div>
-              <Label className="mb-2 block">Coach</Label>
+              <Label className="mb-2 block text-xs md:text-sm">Coach</Label>
               <Select value={filterCoach} onValueChange={setFilterCoach}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -480,35 +388,45 @@ export default function ClubManagement() {
               </Select>
             </div>
             <div>
-              <Label className="mb-2 block">League</Label>
-              <Select value={filterLeague} onValueChange={setFilterLeague}>
-                <SelectTrigger>
+              <Label className="mb-2 block text-xs md:text-sm">Club</Label>
+              <Select value={filterClub} onValueChange={setFilterClub}>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Leagues</SelectItem>
-                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
-                    <SelectItem key={league} value={league}>{league}</SelectItem>
+                  <SelectItem value="all">All Clubs</SelectItem>
+                  {uniqueClubs.map(club => (
+                    <SelectItem key={club} value={club}>{club}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="mb-2 block">Birthday Range</Label>
+              <Label className="mb-2 block text-xs md:text-sm">Birthday Range</Label>
               <div className="flex gap-2">
-                <Input type="date" value={birthdayFrom} onChange={(e) => setBirthdayFrom(e.target.value)} placeholder="From" />
-                <Input type="date" value={birthdayTo} onChange={(e) => setBirthdayTo(e.target.value)} placeholder="To" />
+                <Input 
+                  type="date" 
+                  value={birthdayFrom} 
+                  onChange={(e) => setBirthdayFrom(e.target.value)} 
+                  className="h-9 md:h-10 text-xs"
+                />
+                <Input 
+                  type="date" 
+                  value={birthdayTo} 
+                  onChange={(e) => setBirthdayTo(e.target.value)} 
+                  className="h-9 md:h-10 text-xs"
+                />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {teamStats
           .filter(team => {
             if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
-            if (filterLeague !== 'all' && team.league !== filterLeague) return false;
+            if (filterClub !== 'all' && team.league !== filterClub) return false;
             if (filterCoach !== 'all') {
               const coach = coaches.find(c => c.id === filterCoach);
               if (!coach?.team_ids?.includes(team.id)) return false;
@@ -527,30 +445,30 @@ export default function ClubManagement() {
           })
           .map(team => (
           <Link key={team.id} to={`${createPageUrl('TeamDashboard')}?teamId=${team.id}`}>
-            <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
-              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50">
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group">
+              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-md">
-                    {team.age_group || team.name.charAt(0)}
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-base md:text-xl font-bold shadow-md group-hover:scale-110 transition-transform">
+                    {team.age_group || team.name?.charAt(0)}
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">{team.name}</CardTitle>
-                    <p className="text-sm text-slate-600">{team.age_group}</p>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm md:text-lg truncate">{team.name}</CardTitle>
+                    <p className="text-xs md:text-sm text-slate-600">{team.age_group}</p>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{team.playerCount}</div>
-                    <div className="text-xs text-slate-600 mt-1">Players</div>
+              <CardContent className="pt-4 md:pt-6 p-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+                  <div className="text-center p-2 md:p-3 bg-blue-50 rounded-lg">
+                    <div className="text-lg md:text-2xl font-bold text-blue-600">{team.playerCount}</div>
+                    <div className="text-[10px] md:text-xs text-slate-600 mt-1">Players</div>
                   </div>
-                  <div className="text-center p-3 bg-emerald-50 rounded-lg">
-                    <div className="text-2xl font-bold text-emerald-600">{team.avgPhysical}</div>
-                    <div className="text-xs text-slate-600 mt-1">Avg Physical</div>
+                  <div className="text-center p-2 md:p-3 bg-emerald-50 rounded-lg">
+                    <div className="text-lg md:text-2xl font-bold text-emerald-600">{team.avgPhysical}</div>
+                    <div className="text-[10px] md:text-xs text-slate-600 mt-1">Avg Physical</div>
                   </div>
                 </div>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Assessments:</span>
                     <span className="font-semibold">{team.assessmentCount}</span>
@@ -564,8 +482,8 @@ export default function ClubManagement() {
                     <span className="font-semibold">{team.avgRating}/10</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4">
-                  <BarChart3 className="w-4 h-4 mr-2" />
+                <Button variant="outline" className="w-full mt-3 md:mt-4 text-xs md:text-sm h-8 md:h-9">
+                  <BarChart3 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                   View Dashboard
                 </Button>
               </CardContent>
@@ -582,22 +500,13 @@ export default function ClubManagement() {
         }}
       />
 
-      <AlertDialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Auto-Sync Unassigned Data</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will automatically assign unassigned evaluations and physical assessments by matching player names.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAutoSync} disabled={syncing} className="bg-emerald-600 hover:bg-emerald-700">
-              {syncing ? 'Syncing...' : 'Start Auto-Sync'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AutoSyncDialog
+        open={showSyncDialog}
+        onOpenChange={setShowSyncDialog}
+        onComplete={() => {
+          queryClient.invalidateQueries();
+        }}
+      />
 
       <AlertDialog open={showDuplicatesDialog} onOpenChange={setShowDuplicatesDialog}>
         <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -634,7 +543,7 @@ export default function ClubManagement() {
               {duplicateReport.assessments.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Assessments ({duplicateReport.assessments.length})</h3>
-                  {duplicateReport.assessments.map((dup, i) => (
+                  {duplicateReport.assessments.slice(0, 5).map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.playerName}</div>
                       <div className="text-slate-600">
@@ -642,12 +551,15 @@ export default function ClubManagement() {
                       </div>
                     </div>
                   ))}
+                  {duplicateReport.assessments.length > 5 && (
+                    <p className="text-sm text-slate-500">...and {duplicateReport.assessments.length - 5} more</p>
+                  )}
                 </div>
               )}
               {duplicateReport.evaluations.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Evaluations ({duplicateReport.evaluations.length})</h3>
-                  {duplicateReport.evaluations.map((dup, i) => (
+                  {duplicateReport.evaluations.slice(0, 5).map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.playerName}</div>
                       <div className="text-slate-600">
@@ -655,6 +567,9 @@ export default function ClubManagement() {
                       </div>
                     </div>
                   ))}
+                  {duplicateReport.evaluations.length > 5 && (
+                    <p className="text-sm text-slate-500">...and {duplicateReport.evaluations.length - 5} more</p>
+                  )}
                 </div>
               )}
               {duplicateReport.players.length === 0 && duplicateReport.teams.length === 0 && duplicateReport.assessments.length === 0 && duplicateReport.evaluations.length === 0 && (
