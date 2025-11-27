@@ -23,7 +23,6 @@ import TeamDrills from './pages/TeamDrills';
 import MyBookings from './pages/MyBookings';
 import BulkEmail from './pages/BulkEmail';
 import Tryouts from './pages/Tryouts';
-import TeamsTable from './pages/TeamsTable';
 import EvaluationsNew from './pages/EvaluationsNew';
 import FormationView from './pages/FormationView';
 import TacticalPlayerProfile from './pages/TacticalPlayerProfile';
@@ -57,7 +56,6 @@ export const PAGES = {
     "MyBookings": MyBookings,
     "BulkEmail": BulkEmail,
     "Tryouts": Tryouts,
-    "TeamsTable": TeamsTable,
     "EvaluationsNew": EvaluationsNew,
     "FormationView": FormationView,
     "TacticalPlayerProfile": TacticalPlayerProfile,

@@ -513,13 +513,13 @@ export default function Tryouts() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">League</label>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Club</label>
                 <Select value={selectedLeague} onValueChange={setSelectedLeague}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue placeholder="All Leagues" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Leagues</SelectItem>
+                    <SelectItem value="all">All Clubs</SelectItem>
                     <SelectItem value="Girls Academy">Girls Academy</SelectItem>
                     <SelectItem value="Aspire">Aspire</SelectItem>
                   </SelectContent>
@@ -564,7 +564,7 @@ export default function Tryouts() {
                   <SelectContent>
                     <SelectItem value="team">Team</SelectItem>
                     <SelectItem value="age_group">Age Group</SelectItem>
-                    <SelectItem value="league">League</SelectItem>
+                    <SelectItem value="league">Club</SelectItem>
                     <SelectItem value="team_role">Team Role</SelectItem>
                     <SelectItem value="recommendation">Recommendation</SelectItem>
                     <SelectItem value="next_season_status">Next Season Status</SelectItem>
