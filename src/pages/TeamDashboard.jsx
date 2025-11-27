@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -101,6 +101,41 @@ export default function TeamDashboard() {
 
   const teamCoaches = coaches.filter(c => c.team_ids?.includes(teamId));
 
+  // Calculate detailed team analytics
+  const teamAnalytics = React.useMemo(() => {
+    const playersWithAssessments = players.filter(p => 
+      assessments.some(a => a.player_id === p.id)
+    );
+    
+    const assessmentRate = players.length > 0 
+      ? Math.round((playersWithAssessments.length / players.length) * 100)
+      : 0;
+
+    const activePlayers = players.filter(p => p.status === 'Active').length;
+    const retentionRate = players.length > 0 
+      ? Math.round((activePlayers / players.length) * 100)
+      : 0;
+
+    const avgPhysical = assessments.length > 0
+      ? {
+          speed: Math.round(assessments.reduce((sum, a) => sum + (a.speed_score || 0), 0) / assessments.length),
+          power: Math.round(assessments.reduce((sum, a) => sum + (a.power_score || 0), 0) / assessments.length),
+          endurance: Math.round(assessments.reduce((sum, a) => sum + (a.endurance_score || 0), 0) / assessments.length),
+          agility: Math.round(assessments.reduce((sum, a) => sum + (a.agility_score || 0), 0) / assessments.length),
+          overall: Math.round(assessments.reduce((sum, a) => sum + (a.overall_score || 0), 0) / assessments.length),
+        }
+      : { speed: 0, power: 0, endurance: 0, agility: 0, overall: 0 };
+
+    return { assessmentRate, retentionRate, avgPhysical, activePlayers };
+  }, [players, assessments]);
+
+  const radarData = [
+    { attribute: 'Speed', value: teamAnalytics.avgPhysical.speed, fullMark: 100 },
+    { attribute: 'Power', value: teamAnalytics.avgPhysical.power, fullMark: 100 },
+    { attribute: 'Endurance', value: teamAnalytics.avgPhysical.endurance, fullMark: 100 },
+    { attribute: 'Agility', value: teamAnalytics.avgPhysical.agility, fullMark: 100 },
+  ];
+
   const upcomingEvents = events
     .filter(e => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -165,51 +200,75 @@ export default function TeamDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-3 md:p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-8">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-white">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs md:text-sm text-slate-600">Players</div>
-                <div className="text-xl md:text-3xl font-bold text-slate-900">{players.length}</div>
+                <div className="text-[10px] md:text-xs text-slate-600">Players</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{players.length}</div>
               </div>
-              <Users className="w-5 h-5 md:w-8 md:h-8 text-emerald-500" />
+              <Users className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-3 md:p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-white">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs md:text-sm text-slate-600">Coaches</div>
-                <div className="text-xl md:text-3xl font-bold text-slate-900">{teamCoaches.length}</div>
+                <div className="text-[10px] md:text-xs text-slate-600">Avg Score</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{teamAnalytics.avgPhysical.overall}</div>
               </div>
-              <Activity className="w-5 h-5 md:w-8 md:h-8 text-blue-500" />
+              <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-3 md:p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-purple-50 to-white">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs md:text-sm text-slate-600">Assessments</div>
-                <div className="text-xl md:text-3xl font-bold text-slate-900">{assessments.length}</div>
+                <div className="text-[10px] md:text-xs text-slate-600">Assessment Rate</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{teamAnalytics.assessmentRate}%</div>
               </div>
-              <BarChart3 className="w-5 h-5 md:w-8 md:h-8 text-purple-500" />
+              <Target className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-3 md:p-6">
+        <Card className="border-none shadow-lg bg-gradient-to-br from-orange-50 to-white">
+          <CardContent className="p-3 md:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs md:text-sm text-slate-600">Events</div>
-                <div className="text-xl md:text-3xl font-bold text-slate-900">{upcomingEvents.length}</div>
+                <div className="text-[10px] md:text-xs text-slate-600">Retention</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{teamAnalytics.retentionRate}%</div>
               </div>
-              <Calendar className="w-5 h-5 md:w-8 md:h-8 text-orange-500" />
+              <Activity className="w-5 h-5 md:w-6 md:h-6 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-gradient-to-br from-pink-50 to-white">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] md:text-xs text-slate-600">Assessments</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{assessments.length}</div>
+              </div>
+              <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-pink-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg bg-gradient-to-br from-cyan-50 to-white">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] md:text-xs text-slate-600">Events</div>
+                <div className="text-lg md:text-2xl font-bold text-slate-900">{upcomingEvents.length}</div>
+              </div>
+              <Calendar className="w-5 h-5 md:w-6 md:h-6 text-cyan-500" />
             </div>
           </CardContent>
         </Card>
@@ -298,8 +357,52 @@ export default function TeamDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+            </div>
+
+            {/* Team Physical Profile */}
+            <Card className="border-none shadow-lg mt-6">
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg">Team Physical Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <ResponsiveContainer width="100%" height={250}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="attribute" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+                    <Radar 
+                      name="Team Average" 
+                      dataKey="value" 
+                      stroke="#10b981" 
+                      fill="#10b981" 
+                      fillOpacity={0.3}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-red-50 rounded-xl text-center">
+                    <p className="text-2xl md:text-3xl font-bold text-red-600">{teamAnalytics.avgPhysical.speed}</p>
+                    <p className="text-xs text-slate-600 mt-1">Speed</p>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-xl text-center">
+                    <p className="text-2xl md:text-3xl font-bold text-blue-600">{teamAnalytics.avgPhysical.power}</p>
+                    <p className="text-xs text-slate-600 mt-1">Power</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50 rounded-xl text-center">
+                    <p className="text-2xl md:text-3xl font-bold text-emerald-600">{teamAnalytics.avgPhysical.endurance}</p>
+                    <p className="text-xs text-slate-600 mt-1">Endurance</p>
+                  </div>
+                  <div className="p-4 bg-pink-50 rounded-xl text-center">
+                    <p className="text-2xl md:text-3xl font-bold text-pink-600">{teamAnalytics.avgPhysical.agility}</p>
+                    <p className="text-xs text-slate-600 mt-1">Agility</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            </Card>
+            </TabsContent>
 
         <TabsContent value="performance" className="mt-4 md:mt-6">
           <TeamPerformanceAnalytics teamId={teamId} teamName={team?.name} />
