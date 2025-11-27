@@ -48,8 +48,8 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
       csvContent = 'full_name,email,phone,specialization,bio\n';
       csvContent += 'Mike Smith,coach@email.com,+1234567890,Technical Training,Experienced coach\n';
     } else if (entityType === 'Team') {
-      csvContent = 'name,age_group,League,season\n';
-      csvContent += 'Elite Squad,U-18,Premier League,2024/2025\n';
+      csvContent = 'name,age_group,Club,season\n';
+      csvContent += 'Elite Squad,U-18,Soccer Academy,2024/2025\n';
     }
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -225,7 +225,7 @@ export default function BulkImportDialog({ open, onOpenChange, onSuccess }) {
         records = rows.map(row => ({
           name: row['name'],
           age_group: row['age_group'],
-          league: row['League'],
+          league: row['Club'] || row['League'],
           season: row['season'],
           coach_ids: []
         }));
