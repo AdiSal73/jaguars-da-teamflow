@@ -27,6 +27,8 @@ const positionMapping = {
   'Left Winger': 'LW'
 };
 
+// Renamed from League to Club for consistency
+
 const teamRoleColors = {
   'Indispensable Player': 'bg-purple-600 hover:bg-purple-700',
   'GA Starter': 'bg-emerald-600 hover:bg-emerald-700',
