@@ -112,10 +112,15 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin"] 
     },
     { 
-      title: "Training Plans", 
-      url: createPageUrl("TrainingPlans"), 
-      icon: TrendingUp, 
-      roles: ["admin", "coach"] 
+      title: "tryouts",
+      icon: Activity,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Tryouts", url: createPageUrl("tryouts") },
+        { title: "Depth Chart", url: createPageUrl("Fieldview") },
+        { title: "Assessments", url: createPageUrl("Assessments") },
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+      ]
     },
     {
       title: "Bookings",
