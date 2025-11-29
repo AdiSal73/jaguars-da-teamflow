@@ -1,17 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { User, Edit2, Save } from 'lucide-react';
+import { User, Edit2, Save, Plus, Search, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 const positionMapping = {
   'GK': 'GK',
@@ -147,6 +148,12 @@ export default function FormationView() {
   const [formationPositions, setFormationPositions] = useState(formations['4-3-3'].positions);
   const [draggingPosition, setDraggingPosition] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [showSaveFormationDialog, setShowSaveFormationDialog] = useState(false);
+  const [newFormationName, setNewFormationName] = useState('');
+  const [selectedSavedFormation, setSelectedSavedFormation] = useState(null);
+  const [unassignedSearch, setUnassignedSearch] = useState('');
+  const [unassignedSortBy, setUnassignedSortBy] = useState('name');
+  const [unassignedFilterLeague, setUnassignedFilterLeague] = useState('all');
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -162,6 +169,53 @@ export default function FormationView() {
     queryKey: ['tryouts'],
     queryFn: () => base44.entities.PlayerTryout.list()
   });
+
+  const { data: savedFormations = [] } = useQuery({
+    queryKey: ['savedFormations'],
+    queryFn: () => base44.entities.SavedFormation.list()
+  });
+
+  const saveFormationMutation = useMutation({
+    mutationFn: (data) => base44.entities.SavedFormation.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['savedFormations']);
+      setShowSaveFormationDialog(false);
+      setNewFormationName('');
+    }
+  });
+
+  const deleteFormationMutation = useMutation({
+    mutationFn: (id) => base44.entities.SavedFormation.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['savedFormations']);
+      setSelectedSavedFormation(null);
+    }
+  });
+
+  const handleSaveNewFormation = () => {
+    if (!newFormationName.trim()) return;
+    saveFormationMutation.mutate({
+      name: newFormationName,
+      team_id: selectedTeam !== 'all' ? selectedTeam : null,
+      age_group: selectedAgeGroup !== 'all' ? selectedAgeGroup : null,
+      base_formation: selectedFormation,
+      positions: formationPositions,
+      player_assignments: formationPositions.map(pos => ({
+        position_id: pos.id,
+        player_ids: getPlayersForPosition(pos.id).map(p => p.id)
+      }))
+    });
+  };
+
+  const handleLoadSavedFormation = (formation) => {
+    setSelectedSavedFormation(formation);
+    if (formation.base_formation && formations[formation.base_formation]) {
+      setSelectedFormation(formation.base_formation);
+    }
+    if (formation.positions) {
+      setFormationPositions(formation.positions);
+    }
+  };
 
   const players = allPlayers.filter((player) => {
     if (selectedTeam !== 'all') {
@@ -333,6 +387,45 @@ export default function FormationView() {
 
   const formation = { name: formations[selectedFormation].name, positions: formationPositions };
 
+  // Filtered and sorted unassigned players
+  const unassignedPlayers = useMemo(() => {
+    let filtered = players.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position));
+    
+    // Search filter
+    if (unassignedSearch) {
+      const search = unassignedSearch.toLowerCase();
+      filtered = filtered.filter(p => p.full_name?.toLowerCase().includes(search));
+    }
+    
+    // League filter
+    if (unassignedFilterLeague !== 'all') {
+      filtered = filtered.filter(p => {
+        const playerTeam = teams.find(t => t.id === p.team_id);
+        return playerTeam?.league === unassignedFilterLeague;
+      });
+    }
+    
+    // Sorting
+    return filtered.sort((a, b) => {
+      if (unassignedSortBy === 'name') {
+        const lastNameA = a.full_name?.split(' ').pop() || '';
+        const lastNameB = b.full_name?.split(' ').pop() || '';
+        return lastNameA.localeCompare(lastNameB);
+      } else if (unassignedSortBy === 'birthYear') {
+        const yearA = a.date_of_birth ? new Date(a.date_of_birth).getFullYear() : 9999;
+        const yearB = b.date_of_birth ? new Date(b.date_of_birth).getFullYear() : 9999;
+        return yearA - yearB;
+      } else if (unassignedSortBy === 'team') {
+        const teamA = teams.find(t => t.id === a.team_id)?.name || '';
+        const teamB = teams.find(t => t.id === b.team_id)?.name || '';
+        return teamA.localeCompare(teamB);
+      }
+      return 0;
+    });
+  }, [players, teams, unassignedSearch, unassignedSortBy, unassignedFilterLeague]);
+
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+
   const handleEditClick = (player, e) => {
     e.stopPropagation();
     const playerTryout = tryouts.find(t => t.player_id === player.id);
@@ -384,11 +477,11 @@ export default function FormationView() {
           <p className="text-xs md:text-base text-slate-600">Drag players to rank them within each position</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
           <div>
-            <Label className="mb-2 block text-sm md:text-lg font-semibold">Select Formation</Label>
+            <Label className="mb-2 block text-sm font-semibold">Formation</Label>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
-              <SelectTrigger className="h-10 md:h-12">
+              <SelectTrigger className="h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -400,9 +493,9 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-sm md:text-lg font-semibold">Filter by Team</Label>
+            <Label className="mb-2 block text-sm font-semibold">Team</Label>
             <Select value={selectedTeam} onValueChange={(value) => {setSelectedTeam(value);setSelectedAgeGroup('all');}}>
-              <SelectTrigger className="h-10 md:h-12">
+              <SelectTrigger className="h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -415,9 +508,9 @@ export default function FormationView() {
           </div>
 
           <div>
-            <Label className="mb-2 block text-sm md:text-lg font-semibold">Filter by Age Group</Label>
+            <Label className="mb-2 block text-sm font-semibold">Age Group</Label>
             <Select value={selectedAgeGroup} onValueChange={(value) => {setSelectedAgeGroup(value);setSelectedTeam('all');}}>
-              <SelectTrigger className="h-10 md:h-12">
+              <SelectTrigger className="h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -433,6 +526,33 @@ export default function FormationView() {
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label className="mb-2 block text-sm font-semibold">Saved Formations</Label>
+            <div className="flex gap-2">
+              <Select value={selectedSavedFormation?.id || ''} onValueChange={(id) => {
+                const f = savedFormations.find(sf => sf.id === id);
+                if (f) handleLoadSavedFormation(f);
+              }}>
+                <SelectTrigger className="h-10 flex-1">
+                  <SelectValue placeholder="Load saved..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {savedFormations.map(sf => (
+                    <SelectItem key={sf.id} value={sf.id}>{sf.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="icon" variant="outline" className="h-10 w-10" onClick={() => setShowSaveFormationDialog(true)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+              {selectedSavedFormation && (
+                <Button size="icon" variant="outline" className="h-10 w-10 text-red-600 hover:bg-red-50" onClick={() => deleteFormationMutation.mutate(selectedSavedFormation.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -568,23 +688,58 @@ export default function FormationView() {
             className={`mt-4 md:mt-6 border-none shadow-lg transition-all ${
             snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''}`
             }>
-              <CardHeader>
-                <CardTitle className="text-sm md:text-lg">Unassigned Players</CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <CardTitle className="text-sm md:text-lg">Unassigned Players ({unassignedPlayers.length})</CardTitle>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        placeholder="Search..."
+                        value={unassignedSearch}
+                        onChange={e => setUnassignedSearch(e.target.value)}
+                        className="h-8 pl-8 w-32 md:w-40 text-xs"
+                      />
+                    </div>
+                    <Select value={unassignedSortBy} onValueChange={setUnassignedSortBy}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <ArrowUpDown className="w-3 h-3 mr-1" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="birthYear">Birth Year</SelectItem>
+                        <SelectItem value="team">Team</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={unassignedFilterLeague} onValueChange={setUnassignedFilterLeague}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue placeholder="Club" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Clubs</SelectItem>
+                        {uniqueLeagues.map(league => (
+                          <SelectItem key={league} value={league}>{league}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
-                  {players
-                .filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position))
-                .map((player, index) => {
-                  const playerTryout = tryouts.find(t => t.player_id === player.id);
-                  return (
-                <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                        {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className={`transition-all ${snapshot.isDragging ? 'scale-110' : ''}`}>
+                  {unassignedPlayers.map((player, index) => {
+                    const playerTryout = tryouts.find(t => t.player_id === player.id);
+                    const playerTeam = teams.find(t => t.id === player.team_id);
+                    const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
+                    return (
+                      <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                        {(dragProvided, dragSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            className={`transition-all ${dragSnapshot.isDragging ? 'scale-110' : ''}`}>
                             <div className="bg-slate-50 rounded-lg p-2 md:p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
                               <div className="flex flex-col items-center">
                                 <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-md mb-1 md:mb-2">
@@ -592,6 +747,10 @@ export default function FormationView() {
                                 </div>
                                 <div className="text-[9px] md:text-xs font-bold text-slate-900 text-center mb-0.5 md:mb-1">
                                   {player.full_name}
+                                </div>
+                                <div className="flex flex-wrap gap-1 justify-center mb-1">
+                                  {birthYear && <Badge variant="outline" className="text-[7px] px-1 py-0">{birthYear}</Badge>}
+                                  {playerTeam && <Badge variant="outline" className="text-[7px] px-1 py-0 truncate max-w-[60px]">{playerTeam.name}</Badge>}
                                 </div>
                                 {playerTryout && (
                                   <div className="flex flex-col items-center gap-0.5 md:gap-1 w-full">
@@ -614,18 +773,55 @@ export default function FormationView() {
                               </div>
                             </div>
                           </div>
-                  )}
+                        )}
                       </Draggable>
-                )})}
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
-                {players.filter((player) => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position)).length === 0 &&
-              <p className="text-center text-slate-500 py-3 md:py-4 text-xs md:text-sm">All players assigned to positions</p>
-              }
+                {unassignedPlayers.length === 0 &&
+                  <p className="text-center text-slate-500 py-3 md:py-4 text-xs md:text-sm">
+                    {unassignedSearch || unassignedFilterLeague !== 'all' ? 'No matching players found' : 'All players assigned to positions'}
+                  </p>
+                }
               </CardContent>
             </Card>
           )}
         </Droppable>
+
+        {/* Save Formation Dialog */}
+        <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Save Formation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label className="mb-2 block">Formation Name</Label>
+                <Input
+                  value={newFormationName}
+                  onChange={e => setNewFormationName(e.target.value)}
+                  placeholder="e.g., U-15 GA Match Day"
+                />
+              </div>
+              <div className="text-sm text-slate-600">
+                <p>This will save:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Position locations on field</li>
+                  <li>Player rankings in each position</li>
+                  <li>Base formation: {selectedFormation}</li>
+                </ul>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowSaveFormationDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleSaveNewFormation} disabled={!newFormationName.trim()} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Formation
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
