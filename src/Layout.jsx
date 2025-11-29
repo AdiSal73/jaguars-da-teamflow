@@ -117,7 +117,7 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "Tryouts", url: createPageUrl("tryouts") },
-        { title: "Depth Chart", url: createPageUrl("Fieldview") },
+        { title: "Depth Chart", url: createPageUrl("Formationview") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
       ]
