@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -75,6 +75,26 @@ export default function TeamDashboard() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: tryouts = [] } = useQuery({
+    queryKey: ['teamTryouts', teamId],
+    queryFn: async () => {
+      const all = await base44.entities.PlayerTryout.list();
+      const playerIds = players.map(p => p.id);
+      return all.filter(t => playerIds.includes(t.player_id));
+    },
+    enabled: players.length > 0
+  });
+
+  const { data: evaluations = [] } = useQuery({
+    queryKey: ['teamEvaluations', teamId],
+    queryFn: async () => {
+      const all = await base44.entities.Evaluation.list();
+      const playerIds = players.map(p => p.id);
+      return all.filter(e => playerIds.includes(e.player_id));
+    },
+    enabled: players.length > 0
+  });
+
   React.useEffect(() => {
     if (team) {
       setEditTeamForm({
@@ -128,6 +148,89 @@ export default function TeamDashboard() {
 
     return { assessmentRate, retentionRate, avgPhysical, activePlayers };
   }, [players, assessments]);
+
+  // Tryout analytics
+  const tryoutAnalytics = React.useMemo(() => {
+    const total = tryouts.length;
+    
+    // Registration status breakdown
+    const registrationBreakdown = {
+      'Signed and Paid': tryouts.filter(t => t.registration_status === 'Signed and Paid').length,
+      'Signed': tryouts.filter(t => t.registration_status === 'Signed').length,
+      'Not Signed': tryouts.filter(t => !t.registration_status || t.registration_status === 'Not Signed').length
+    };
+    
+    // Recommendation breakdown
+    const recommendationBreakdown = {
+      'Move up': tryouts.filter(t => t.recommendation === 'Move up').length,
+      'Keep': tryouts.filter(t => t.recommendation === 'Keep').length,
+      'Move down': tryouts.filter(t => t.recommendation === 'Move down').length,
+      'None': tryouts.filter(t => !t.recommendation).length
+    };
+    
+    // Next season status
+    const seasonStatusBreakdown = {
+      'Accepted Offer': tryouts.filter(t => t.next_season_status === 'Accepted Offer').length,
+      'Rejected Offer': tryouts.filter(t => t.next_season_status === 'Rejected Offer').length,
+      'Considering Offer': tryouts.filter(t => t.next_season_status === 'Considering Offer').length,
+      'Not Offered': tryouts.filter(t => t.next_season_status === 'Not Offered').length,
+      'N/A': tryouts.filter(t => !t.next_season_status || t.next_season_status === 'N/A').length
+    };
+
+    // Team role breakdown
+    const roleBreakdown = tryouts.reduce((acc, t) => {
+      if (t.team_role) {
+        acc[t.team_role] = (acc[t.team_role] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
+    return { total, registrationBreakdown, recommendationBreakdown, seasonStatusBreakdown, roleBreakdown };
+  }, [tryouts]);
+
+  // Evaluation analytics
+  const evaluationAnalytics = React.useMemo(() => {
+    if (evaluations.length === 0) return null;
+
+    const latestByPlayer = {};
+    evaluations.forEach(e => {
+      if (!latestByPlayer[e.player_id] || new Date(e.created_date) > new Date(latestByPlayer[e.player_id].created_date)) {
+        latestByPlayer[e.player_id] = e;
+      }
+    });
+
+    const latestEvals = Object.values(latestByPlayer);
+    const avg = (key) => Math.round(latestEvals.reduce((sum, e) => sum + (e[key] || 0), 0) / latestEvals.length * 10) / 10;
+
+    return {
+      avgGrowthMindset: avg('growth_mindset'),
+      avgResilience: avg('resilience'),
+      avgEfficiency: avg('efficiency_in_execution'),
+      avgAthleticism: avg('athleticism'),
+      avgTeamFocus: avg('team_focus'),
+      avgDefOrganized: avg('defending_organized'),
+      avgDefFinalThird: avg('defending_final_third'),
+      avgDefTransition: avg('defending_transition'),
+      avgAttOrganized: avg('attacking_organized'),
+      avgAttFinalThird: avg('attacking_final_third'),
+      avgAttTransition: avg('attacking_in_transition'),
+      totalEvaluations: evaluations.length,
+      playersEvaluated: latestEvals.length
+    };
+  }, [evaluations]);
+
+  const registrationPieData = [
+    { name: 'Signed & Paid', value: tryoutAnalytics.registrationBreakdown['Signed and Paid'], color: '#10b981' },
+    { name: 'Signed', value: tryoutAnalytics.registrationBreakdown['Signed'], color: '#3b82f6' },
+    { name: 'Not Signed', value: tryoutAnalytics.registrationBreakdown['Not Signed'], color: '#ef4444' }
+  ].filter(d => d.value > 0);
+
+  const recommendationPieData = [
+    { name: 'Move Up', value: tryoutAnalytics.recommendationBreakdown['Move up'], color: '#10b981' },
+    { name: 'Keep', value: tryoutAnalytics.recommendationBreakdown['Keep'], color: '#3b82f6' },
+    { name: 'Move Down', value: tryoutAnalytics.recommendationBreakdown['Move down'], color: '#f59e0b' },
+    { name: 'None', value: tryoutAnalytics.recommendationBreakdown['None'], color: '#94a3b8' }
+  ].filter(d => d.value > 0);
 
   const radarData = [
     { attribute: 'Speed', value: teamAnalytics.avgPhysical.speed, fullMark: 100 },
@@ -275,8 +378,9 @@ export default function TeamDashboard() {
       </div>
 
       <Tabs defaultValue="roster" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="roster">Roster</TabsTrigger>
+          <TabsTrigger value="tryouts">Tryouts</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
@@ -403,6 +507,179 @@ export default function TeamDashboard() {
             </CardContent>
             </Card>
             </TabsContent>
+
+        <TabsContent value="tryouts" className="mt-4 md:mt-6 space-y-4">
+          {/* Tryout Overview Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-white">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-8 h-8 text-emerald-500" />
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{tryoutAnalytics.registrationBreakdown['Signed and Paid']}</div>
+                    <div className="text-xs text-slate-600">Signed & Paid</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-white">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-8 h-8 text-blue-500" />
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{tryoutAnalytics.seasonStatusBreakdown['Considering Offer']}</div>
+                    <div className="text-xs text-slate-600">Considering</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-none shadow-lg bg-gradient-to-br from-green-50 to-white">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <ArrowUp className="w-8 h-8 text-green-500" />
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{tryoutAnalytics.recommendationBreakdown['Move up']}</div>
+                    <div className="text-xs text-slate-600">Move Up</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-none shadow-lg bg-gradient-to-br from-orange-50 to-white">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <ArrowDown className="w-8 h-8 text-orange-500" />
+                  <div>
+                    <div className="text-2xl font-bold text-slate-900">{tryoutAnalytics.recommendationBreakdown['Move down']}</div>
+                    <div className="text-xs text-slate-600">Move Down</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-sm">Registration Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {registrationPieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={registrationPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                        {registrationPieData.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center py-8 text-slate-500 text-sm">No tryout data</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-sm">Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recommendationPieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={recommendationPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                        {recommendationPieData.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-center py-8 text-slate-500 text-sm">No recommendation data</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Player Tryout List */}
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-sm">Player Tryout Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {players.map(player => {
+                  const tryout = tryouts.find(t => t.player_id === player.id);
+                  return (
+                    <div key={player.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          {player.jersey_number || player.full_name?.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm text-slate-900">{player.full_name}</div>
+                          <div className="text-xs text-slate-500">{player.primary_position}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {tryout?.team_role && (
+                          <Badge className="text-[10px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>
+                        )}
+                        {tryout?.recommendation && (
+                          <Badge className={`text-[10px] ${
+                            tryout.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-800' :
+                            tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {tryout.recommendation}
+                          </Badge>
+                        )}
+                        {tryout?.registration_status && (
+                          <Badge className={`text-[10px] ${
+                            tryout.registration_status === 'Signed and Paid' ? 'bg-emerald-100 text-emerald-800' :
+                            tryout.registration_status === 'Signed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {tryout.registration_status}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Evaluation Summary */}
+          {evaluationAnalytics && (
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-sm">Team Evaluation Averages ({evaluationAnalytics.playersEvaluated} players)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {[
+                    { label: 'Growth Mindset', value: evaluationAnalytics.avgGrowthMindset, color: '#8b5cf6' },
+                    { label: 'Resilience', value: evaluationAnalytics.avgResilience, color: '#ec4899' },
+                    { label: 'Efficiency', value: evaluationAnalytics.avgEfficiency, color: '#f59e0b' },
+                    { label: 'Athleticism', value: evaluationAnalytics.avgAthleticism, color: '#10b981' },
+                    { label: 'Team Focus', value: evaluationAnalytics.avgTeamFocus, color: '#3b82f6' },
+                    { label: 'Def. Organized', value: evaluationAnalytics.avgDefOrganized, color: '#ef4444' }
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="text-center p-3 bg-slate-50 rounded-lg">
+                      <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                      <div className="text-[10px] text-slate-600 mt-1">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="performance" className="mt-4 md:mt-6">
           <TeamPerformanceAnalytics teamId={teamId} teamName={team?.name} />
