@@ -197,7 +197,7 @@ export default function TeamTacticalView() {
                   return (
                     <button
                       key={formPos.pos}
-                      onClick={() => topPlayer && navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${topPlayer.id}`)}
+                      onClick={() => topPlayer && navigate(`${createPageUrl('TacticalPlayerDashboard')}?id=${topPlayer.id}`)}
                       className="absolute transform -translate-x-1/2 -translate-y-1/2 group"
                       style={{
                         left: `${formPos.x}%`,
@@ -243,7 +243,7 @@ export default function TeamTacticalView() {
                                 {...provided.dragHandleProps}
                               >
                                 <button
-                                  onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('TacticalPlayerProfile')}?id=${player.id}`)}
+                                  onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('TacticalPlayerDashboard')}?id=${player.id}`)}
                                   className={`w-full p-3 rounded-lg transition-all text-left border-2 ${
                                     snapshot.isDragging 
                                       ? 'bg-slate-600 border-emerald-400 shadow-2xl scale-105' 

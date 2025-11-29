@@ -396,7 +396,7 @@ export default function TeamDashboard() {
                 {players.map(player => (
                   <button
                     key={player.id}
-                    onClick={() => navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
+                    onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
                     className="p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 border-transparent hover:border-emerald-500"
                   >
                     <div className="flex items-center gap-2 md:gap-3 mb-2">

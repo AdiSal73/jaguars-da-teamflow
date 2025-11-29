@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createPageUrl } from '@/utils';
+
+// PlayerProfile replaced with PlayerDashboard
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 
@@ -920,7 +922,7 @@ export default function FormationView() {
                     onChange={(e) => setEditForm({ ...editForm, tryout_notes: e.target.value })} />
                 </div>
                 <div className="col-span-2 flex justify-between gap-3">
-                  <Button variant="outline" onClick={() => navigate(`${createPageUrl('PlayerProfile')}?id=${editingPlayer.id}`)}>
+                  <Button variant="outline" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${editingPlayer.id}`)}>
                     View Full Profile
                   </Button>
                   <Button onClick={handleSaveEdit} className="flex-1">
