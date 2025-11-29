@@ -349,7 +349,7 @@ export default function Players() {
               const team = teams.find(t => t.id === player.team_id);
               return (
                 <div key={player.id} className="relative group">
-                  <Link to={`${createPageUrl('PlayerProfile')}?id=${player.id}`}>
+                  <Link to={`${createPageUrl('PlayerDashboard')}?id=${player.id}`}>
                     <Card className="hover:shadow-lg transition-all duration-300 border-none">
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
