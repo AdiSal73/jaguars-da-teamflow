@@ -157,7 +157,11 @@ export default function PlayerDashboard() {
   });
 
   const handleSaveAll = async () => {
-    await updatePlayerMutation.mutateAsync(playerForm);
+    const playerData = {
+      ...playerForm,
+      jersey_number: playerForm.jersey_number ? Number(playerForm.jersey_number) : null
+    };
+    await updatePlayerMutation.mutateAsync(playerData);
     await updateTryoutMutation.mutateAsync(tryoutForm);
     setIsEditing(false);
   };
