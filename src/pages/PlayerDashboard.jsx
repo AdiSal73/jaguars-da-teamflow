@@ -42,6 +42,35 @@ const metricLabels = {
   attacking_in_transition: 'Att. Transition'
 };
 
+function SliderMetric({ label, value, onChange, color, isEditing }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <Label className="text-xs font-medium text-slate-700">{label}</Label>
+        <span className="text-sm font-bold" style={{ color }}>{value}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div 
+            className="h-full rounded-full transition-all"
+            style={{ width: `${value * 10}%`, backgroundColor: color }}
+          />
+        </div>
+        {isEditing && (
+          <Slider
+            value={[value]}
+            onValueChange={([v]) => onChange(v)}
+            min={1}
+            max={10}
+            step={1}
+            className="w-24"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PlayerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -227,33 +256,6 @@ export default function PlayerDashboard() {
   }));
 
   if (!player) return null;
-
-  const SliderMetric = ({ label, value, onChange, color }) => (
-    <div className="space-y-1">
-      <div className="flex justify-between items-center">
-        <Label className="text-xs font-medium text-slate-700">{label}</Label>
-        <span className="text-sm font-bold" style={{ color }}>{value}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-          <div 
-            className="h-full rounded-full transition-all"
-            style={{ width: `${value * 10}%`, backgroundColor: color }}
-          />
-        </div>
-        {isEditing && (
-          <Slider
-            value={[value]}
-            onValueChange={([v]) => onChange(v)}
-            min={1}
-            max={10}
-            step={1}
-            className="w-24"
-          />
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
@@ -575,6 +577,7 @@ export default function PlayerDashboard() {
                     value={evaluationForm[key] || latestEvaluation[key] || 5}
                     onChange={v => setEvaluationForm({...evaluationForm, [key]: v})}
                     color={metricColors[key]}
+                    isEditing={isEditing}
                   />
                 ))}
                 <div className="text-[10px] font-semibold text-slate-700 mt-3 mb-1">Defending</div>
@@ -585,6 +588,7 @@ export default function PlayerDashboard() {
                     value={evaluationForm[key] || latestEvaluation[key] || 5}
                     onChange={v => setEvaluationForm({...evaluationForm, [key]: v})}
                     color={metricColors[key]}
+                    isEditing={isEditing}
                   />
                 ))}
                 <div className="text-[10px] font-semibold text-slate-700 mt-3 mb-1">Attacking</div>
@@ -595,6 +599,7 @@ export default function PlayerDashboard() {
                     value={evaluationForm[key] || latestEvaluation[key] || 5}
                     onChange={v => setEvaluationForm({...evaluationForm, [key]: v})}
                     color={metricColors[key]}
+                    isEditing={isEditing}
                   />
                 ))}
               </div>
