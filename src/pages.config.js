@@ -27,6 +27,7 @@ import EvaluationsNew from './pages/EvaluationsNew';
 import FormationView from './pages/FormationView';
 import TacticalPlayerProfile from './pages/TacticalPlayerProfile';
 import TeamTacticalView from './pages/TeamTacticalView';
+import PlayerDashboard from './pages/PlayerDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "FormationView": FormationView,
     "TacticalPlayerProfile": TacticalPlayerProfile,
     "TeamTacticalView": TeamTacticalView,
+    "PlayerDashboard": PlayerDashboard,
 }
 
 export const pagesConfig = {
