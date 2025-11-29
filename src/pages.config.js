@@ -1,6 +1,5 @@
 import Dashboard from './pages/Dashboard';
 import Players from './pages/Players';
-import PlayerProfile from './pages/PlayerProfile';
 import BookSession from './pages/BookSession';
 import Teams from './pages/Teams';
 import Assessments from './pages/Assessments';
@@ -27,14 +26,12 @@ import EvaluationsNew from './pages/EvaluationsNew';
 import FormationView from './pages/FormationView';
 import TacticalPlayerProfile from './pages/TacticalPlayerProfile';
 import TeamTacticalView from './pages/TeamTacticalView';
-import PlayerDashboard from './pages/PlayerDashboard';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Dashboard": Dashboard,
     "Players": Players,
-    "PlayerProfile": PlayerProfile,
     "BookSession": BookSession,
     "Teams": Teams,
     "Assessments": Assessments,
@@ -61,7 +58,6 @@ export const PAGES = {
     "FormationView": FormationView,
     "TacticalPlayerProfile": TacticalPlayerProfile,
     "TeamTacticalView": TeamTacticalView,
-    "PlayerDashboard": PlayerDashboard,
 }
 
 export const pagesConfig = {
