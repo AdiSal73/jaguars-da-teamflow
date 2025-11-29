@@ -61,7 +61,7 @@ export default function Layout({ children, currentPageName }) {
     if (userRole === 'user' && players.length > 0 && location.pathname === '/') {
       const currentPlayer = players.find(p => p.email === user.email);
       if (currentPlayer) {
-        navigate(`/player-profile?id=${currentPlayer.id}`);
+        navigate(`/player-dashboard?id=${currentPlayer.id}`);
       }
     }
   }, [userRole, players, location.pathname, user, navigate]);
@@ -100,9 +100,7 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "All Players", url: createPageUrl("Players") },
-        { title: "Tryouts", url: createPageUrl("Tryouts") },
-        { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+        { title: "Player Dashboard", url: createPageUrl("PlayerDashboard") },
       ]
     },
     { 
@@ -112,12 +110,12 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin"] 
     },
     { 
-      title: "tryouts",
-      icon: Activity,
+      title: "Tryouts",
+      icon: TrendingUp,
       roles: ["admin", "coach"],
       submenu: [
-        { title: "Tryouts", url: createPageUrl("tryouts") },
-        { title: "Depth Chart", url: createPageUrl("Formationview") },
+        { title: "Tryout Board", url: createPageUrl("Tryouts") },
+        { title: "Depth Chart", url: createPageUrl("FormationView") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
       ]
