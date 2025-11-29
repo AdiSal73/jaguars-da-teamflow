@@ -414,7 +414,7 @@ export default function Tryouts() {
                                  } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
                                    snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
                                  }`}
-                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerProfile')}?id=${player.id}`)}
+                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
