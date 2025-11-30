@@ -246,13 +246,13 @@ export default function Teams() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-xs md:text-sm">Club</Label>
+                <Label className="mb-2 block text-xs md:text-sm">League</Label>
                 <Select value={filterClub} onValueChange={setFilterClub}>
                   <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Clubs</SelectItem>
+                    <SelectItem value="all">All Leagues</SelectItem>
                     {uniqueClubs.map(club => (
                       <SelectItem key={club} value={club}>{club}</SelectItem>
                     ))}
