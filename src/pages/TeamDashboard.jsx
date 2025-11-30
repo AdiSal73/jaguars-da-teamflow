@@ -272,10 +272,11 @@ export default function TeamDashboard() {
       const latest = playerAssessments.sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
       return {
         ...p,
-        latestScore: latest?.overall_score || 0
+        latestScore: latest?.overall_score || 0,
+        latestAssessment: latest
       };
     })
-    .filter(Boolean)
+    .filter(p => p.latestScore > 0)
     .sort((a, b) => b.latestScore - a.latestScore)
     .slice(0, 5);
 
@@ -386,7 +387,7 @@ export default function TeamDashboard() {
           <TabsTrigger value="roster">Roster</TabsTrigger>
           <TabsTrigger value="tryouts">Tryouts</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
         </TabsList>
 
@@ -662,7 +663,7 @@ export default function TeamDashboard() {
                           <div className="text-xs text-slate-500">{player.primary_position}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {tryout?.team_role && (
                           <Badge className="text-[10px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>
                         )}
@@ -673,6 +674,15 @@ export default function TeamDashboard() {
                             'bg-blue-100 text-blue-800'
                           }`}>
                             {tryout.recommendation}
+                          </Badge>
+                        )}
+                        {tryout?.next_season_status && tryout.next_season_status !== 'N/A' && (
+                          <Badge className={`text-[10px] ${
+                            tryout.next_season_status === 'Accepted Offer' ? 'bg-emerald-100 text-emerald-800' :
+                            tryout.next_season_status === 'Rejected Offer' ? 'bg-red-100 text-red-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {tryout.next_season_status}
                           </Badge>
                         )}
                         {tryout?.registration_status && (
@@ -723,56 +733,151 @@ export default function TeamDashboard() {
           <TeamPerformanceAnalytics teamId={teamId} teamName={team?.name} />
         </TabsContent>
 
-        <TabsContent value="schedule" className="mt-4 md:mt-6">
-          <Card className="border-none shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                <Calendar className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
-                Upcoming Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              {upcomingEvents.length === 0 ? (
-                <p className="text-center text-slate-500 py-6 md:py-8 text-sm">No upcoming events</p>
-              ) : (
-                <div className="space-y-2 md:space-y-3">
-                  {upcomingEvents.map(event => (
-                    <div key={event.id} className="p-3 bg-slate-50 rounded-xl">
-                      <div className="flex justify-between items-start mb-1 md:mb-2">
-                        <div>
-                          <div className="font-semibold text-slate-900 text-sm">{event.title}</div>
-                          <div className="text-xs text-slate-600">{event.description}</div>
-                        </div>
-                        <Badge className="text-[10px]">{event.event_type}</Badge>
-                      </div>
-                      <div className="text-xs text-slate-600">
-                        {new Date(event.date).toLocaleDateString()} • {event.start_time} - {event.end_time}
-                      </div>
-                      {event.location && (
-                        <div className="text-xs text-slate-500 mt-1">📍 {event.location}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="evaluations" className="mt-4 md:mt-6 space-y-4">
+          {evaluationAnalytics ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Card className="border-none shadow-lg bg-gradient-to-br from-purple-50 to-white">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-600">{evaluationAnalytics.playersEvaluated}</div>
+                    <div className="text-xs text-slate-600">Players Evaluated</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-white">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600">{evaluationAnalytics.totalEvaluations}</div>
+                    <div className="text-xs text-slate-600">Total Evaluations</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-white">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-emerald-600">{evaluationAnalytics.avgAthleticism}</div>
+                    <div className="text-xs text-slate-600">Avg Athleticism</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-none shadow-lg bg-gradient-to-br from-orange-50 to-white">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold text-orange-600">{evaluationAnalytics.avgTeamFocus}</div>
+                    <div className="text-xs text-slate-600">Avg Team Focus</div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {performanceTrend.length > 0 && (
-            <Card className="border-none shadow-lg mt-4 md:mt-6">
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg">Performance Trend</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={performanceTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="overall" stroke="#10b981" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-sm">Mental & Character Averages</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-5 gap-3">
+                    {[
+                      { label: 'Growth Mindset', value: evaluationAnalytics.avgGrowthMindset, color: '#8b5cf6' },
+                      { label: 'Resilience', value: evaluationAnalytics.avgResilience, color: '#ec4899' },
+                      { label: 'Efficiency', value: evaluationAnalytics.avgEfficiency, color: '#f59e0b' },
+                      { label: 'Athleticism', value: evaluationAnalytics.avgAthleticism, color: '#10b981' },
+                      { label: 'Team Focus', value: evaluationAnalytics.avgTeamFocus, color: '#3b82f6' }
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="text-center p-3 bg-slate-50 rounded-lg">
+                        <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                        <div className="text-[9px] text-slate-600 mt-1">{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card className="border-none shadow-lg bg-red-50">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Defending Averages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Organized', value: evaluationAnalytics.avgDefOrganized },
+                        { label: 'Final Third', value: evaluationAnalytics.avgDefFinalThird },
+                        { label: 'Transition', value: evaluationAnalytics.avgDefTransition }
+                      ].map(({ label, value }) => (
+                        <div key={label} className="text-center p-3 bg-white rounded-lg">
+                          <div className="text-xl font-bold text-red-600">{value}</div>
+                          <div className="text-[9px] text-slate-600 mt-1">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-lg bg-green-50">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Attacking Averages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Organized', value: evaluationAnalytics.avgAttOrganized },
+                        { label: 'Final Third', value: evaluationAnalytics.avgAttFinalThird },
+                        { label: 'In Transition', value: evaluationAnalytics.avgAttTransition }
+                      ].map(({ label, value }) => (
+                        <div key={label} className="text-center p-3 bg-white rounded-lg">
+                          <div className="text-xl font-bold text-green-600">{value}</div>
+                          <div className="text-[9px] text-slate-600 mt-1">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-none shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-sm">Player Evaluation Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {players.map(player => {
+                      const playerEvals = evaluations.filter(e => e.player_id === player.id);
+                      const latestEval = playerEvals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+                      if (!latestEval) return null;
+                      const avgMental = Math.round(((latestEval.growth_mindset || 0) + (latestEval.resilience || 0) + (latestEval.team_focus || 0)) / 3 * 10) / 10;
+                      const avgDef = Math.round(((latestEval.defending_organized || 0) + (latestEval.defending_final_third || 0) + (latestEval.defending_transition || 0)) / 3 * 10) / 10;
+                      const avgAtt = Math.round(((latestEval.attacking_organized || 0) + (latestEval.attacking_final_third || 0) + (latestEval.attacking_in_transition || 0)) / 3 * 10) / 10;
+                      return (
+                        <div key={player.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                              {player.jersey_number || player.full_name?.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm text-slate-900">{player.full_name}</div>
+                              <div className="text-xs text-slate-500">{player.primary_position}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-center">
+                              <div className="text-sm font-bold text-purple-600">{avgMental}</div>
+                              <div className="text-[8px] text-slate-500">Mental</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm font-bold text-red-600">{avgDef}</div>
+                              <div className="text-[8px] text-slate-500">Def</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-sm font-bold text-green-600">{avgAtt}</div>
+                              <div className="text-[8px] text-slate-500">Att</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }).filter(Boolean)}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card className="border-none shadow-lg">
+              <CardContent className="p-12 text-center">
+                <BarChart3 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-600 mb-2">No Evaluation Data</h3>
+                <p className="text-sm text-slate-500">Create evaluations for players to see analytics here</p>
               </CardContent>
             </Card>
           )}
