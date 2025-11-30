@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { createPageUrl } from '@/utils';
+import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus } from 'lucide-react';
+import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +68,8 @@ export default function PlayerDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [playerForm, setPlayerForm] = useState({});
   const [tryoutForm, setTryoutForm] = useState({});
+  const [assessmentIndex, setAssessmentIndex] = useState(0);
+  const [evaluationIndex, setEvaluationIndex] = useState(0);
 
   const { data: player, isLoading: playerLoading } = useQuery({
     queryKey: ['player', playerId],
@@ -107,8 +111,13 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.Player.list()
   });
 
-  const latestAssessment = assessments[0];
-  const latestEvaluation = evaluations[0];
+  const { data: allTeams = [] } = useQuery({
+    queryKey: ['allTeams'],
+    queryFn: () => base44.entities.Team.list()
+  });
+
+  const currentAssessment = assessments[assessmentIndex] || null;
+  const currentEvaluation = evaluations[evaluationIndex] || null;
   const team = teams.find(t => t.id === player?.team_id);
 
   React.useEffect(() => {
@@ -120,11 +129,17 @@ export default function PlayerDashboard() {
         date_of_birth: player.date_of_birth || '',
         jersey_number: player.jersey_number || '',
         primary_position: player.primary_position || '',
+        secondary_position: player.secondary_position || '',
         parent_name: player.parent_name || '',
         status: player.status || 'Active'
       });
     }
   }, [player]);
+
+  React.useEffect(() => {
+    setAssessmentIndex(0);
+    setEvaluationIndex(0);
+  }, [playerId]);
 
   React.useEffect(() => {
     if (tryout) {
@@ -176,13 +191,20 @@ export default function PlayerDashboard() {
   const previousPlayer = currentPlayerIndex > 0 ? sortedPlayers[currentPlayerIndex - 1] : null;
   const nextPlayer = currentPlayerIndex < sortedPlayers.length - 1 ? sortedPlayers[currentPlayerIndex + 1] : null;
 
-  // Analytics data
+  // Get unique team names for combobox
+  const existingTeamNames = [...new Set(allTeams.map(t => t.name).filter(Boolean))];
+
+  // Analytics data with raw metrics in tooltip
   const physicalTrendData = assessments.slice().reverse().map(a => ({
     date: new Date(a.assessment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     Speed: a.speed_score || 0,
     Power: a.power_score || 0,
     Endurance: a.endurance_score || 0,
-    Agility: a.agility_score || 0
+    Agility: a.agility_score || 0,
+    sprint: a.sprint,
+    vertical: a.vertical,
+    yirt: a.yirt,
+    shuttle: a.shuttle
   }));
 
   const evaluationTrendData = evaluations.slice().reverse().map(e => ({
@@ -287,6 +309,22 @@ export default function PlayerDashboard() {
                 <p className="text-sm font-medium">{team?.name || 'N/A'}</p>
               </div>
               <div>
+                <Label className="text-[10px] text-slate-500">Status</Label>
+                {isEditing ? (
+                  <Select value={playerForm.status} onValueChange={v => setPlayerForm({...playerForm, status: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Injured">Injured</SelectItem>
+                      <SelectItem value="Suspended">Suspended</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{player.status}</Badge>
+                )}
+              </div>
+              <div>
                 <Label className="text-[10px] text-slate-500">DOB</Label>
                 {isEditing ? (
                   <Input type="date" value={playerForm.date_of_birth} onChange={e => setPlayerForm({...playerForm, date_of_birth: e.target.value})} className="h-8 text-xs" />
@@ -381,7 +419,13 @@ export default function PlayerDashboard() {
               <div>
                 <Label className="text-[10px] text-slate-500">Next Year Team</Label>
                 {isEditing ? (
-                  <Input value={tryoutForm.next_year_team} onChange={e => setTryoutForm({...tryoutForm, next_year_team: e.target.value})} className="h-8 text-xs" />
+                  <ComboboxInput
+                    value={tryoutForm.next_year_team}
+                    onChange={(val) => setTryoutForm({...tryoutForm, next_year_team: val})}
+                    options={existingTeamNames}
+                    placeholder="Select or type team"
+                    className="text-xs"
+                  />
                 ) : (
                   <p className="text-sm font-medium">{tryout?.next_year_team || 'N/A'}</p>
                 )}
@@ -436,37 +480,54 @@ export default function PlayerDashboard() {
         <Card className="border-none shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center justify-between">
-              Physical Assessment
-              {latestAssessment && <span className="text-[10px] font-normal text-slate-500">{new Date(latestAssessment.assessment_date).toLocaleDateString()}</span>}
+              <div className="flex items-center gap-2">
+                Physical Assessment
+                {assessments.length > 1 && (
+                  <span className="text-[10px] text-slate-400">({assessmentIndex + 1}/{assessments.length})</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {assessments.length > 1 && (
+                  <>
+                    <button onClick={() => setAssessmentIndex(Math.min(assessmentIndex + 1, assessments.length - 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setAssessmentIndex(Math.max(assessmentIndex - 1, 0))} disabled={assessmentIndex <= 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                {currentAssessment && <span className="text-[10px] font-normal text-slate-500">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</span>}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {latestAssessment ? (
+            {currentAssessment ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2 bg-red-50 rounded-lg text-center">
                     <div className="text-[10px] text-red-600">Sprint (20m)</div>
-                    <div className="text-lg font-bold text-red-700">{latestAssessment.sprint?.toFixed(2)}s</div>
+                    <div className="text-lg font-bold text-red-700">{currentAssessment.sprint?.toFixed(2)}s</div>
                   </div>
                   <div className="p-2 bg-blue-50 rounded-lg text-center">
                     <div className="text-[10px] text-blue-600">Vertical</div>
-                    <div className="text-lg font-bold text-blue-700">{latestAssessment.vertical}"</div>
+                    <div className="text-lg font-bold text-blue-700">{currentAssessment.vertical}"</div>
                   </div>
                   <div className="p-2 bg-emerald-50 rounded-lg text-center">
                     <div className="text-[10px] text-emerald-600">YIRT</div>
-                    <div className="text-lg font-bold text-emerald-700">{latestAssessment.yirt}</div>
+                    <div className="text-lg font-bold text-emerald-700">{currentAssessment.yirt}</div>
                   </div>
                   <div className="p-2 bg-pink-50 rounded-lg text-center">
                     <div className="text-[10px] text-pink-600">Shuttle</div>
-                    <div className="text-lg font-bold text-pink-700">{latestAssessment.shuttle?.toFixed(2)}s</div>
+                    <div className="text-lg font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}s</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
                   {[
-                    { label: 'Speed', score: latestAssessment.speed_score, color: '#ef4444' },
-                    { label: 'Power', score: latestAssessment.power_score, color: '#3b82f6' },
-                    { label: 'Endurance', score: latestAssessment.endurance_score, color: '#10b981' },
-                    { label: 'Agility', score: latestAssessment.agility_score, color: '#ec4899' }
+                    { label: 'Speed', score: currentAssessment.speed_score, color: '#ef4444' },
+                    { label: 'Power', score: currentAssessment.power_score, color: '#3b82f6' },
+                    { label: 'Endurance', score: currentAssessment.endurance_score, color: '#10b981' },
+                    { label: 'Agility', score: currentAssessment.agility_score, color: '#ec4899' }
                   ].map(({ label, score, color }) => (
                     <div key={label} className="text-center">
                       <div className="relative w-10 h-10 mx-auto">
@@ -486,7 +547,7 @@ export default function PlayerDashboard() {
                 </div>
                 <div className="text-center p-2 bg-slate-900 rounded-lg">
                   <div className="text-[10px] text-white/70">Overall</div>
-                  <div className="text-xl font-bold text-white">{latestAssessment.overall_score || 0}</div>
+                  <div className="text-xl font-bold text-white">{currentAssessment.overall_score || 0}</div>
                 </div>
               </div>
             ) : (
@@ -499,19 +560,39 @@ export default function PlayerDashboard() {
         <Card className="border-none shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center justify-between">
-              Evaluation
-              {latestEvaluation && <span className="text-[10px] font-normal text-slate-500">{new Date(latestEvaluation.created_date).toLocaleDateString()}</span>}
+              <div className="flex items-center gap-2">
+                Evaluation
+                {evaluations.length > 1 && (
+                  <span className="text-[10px] text-slate-400">({evaluationIndex + 1}/{evaluations.length})</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {evaluations.length > 1 && (
+                  <>
+                    <button onClick={() => setEvaluationIndex(Math.min(evaluationIndex + 1, evaluations.length - 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setEvaluationIndex(Math.max(evaluationIndex - 1, 0))} disabled={evaluationIndex <= 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}`)}>
+                  <Plus className="w-3 h-3 mr-1" />New
+                </Button>
+              </div>
             </CardTitle>
+            {currentEvaluation && <span className="text-[10px] font-normal text-slate-500">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
           </CardHeader>
           <CardContent>
-            {latestEvaluation ? (
+            {currentEvaluation ? (
               <div className="space-y-2">
                 <div className="text-[10px] font-semibold text-slate-700 mb-1">Mental & Character</div>
                 {['growth_mindset', 'resilience', 'efficiency_in_execution', 'athleticism', 'team_focus'].map(key => (
                   <SliderBar
                     key={key}
                     label={metricLabels[key]}
-                    value={latestEvaluation[key]}
+                    value={currentEvaluation[key]}
                     color={metricColors[key]}
                   />
                 ))}
@@ -520,7 +601,7 @@ export default function PlayerDashboard() {
                   <SliderBar
                     key={key}
                     label={metricLabels[key]}
-                    value={latestEvaluation[key]}
+                    value={currentEvaluation[key]}
                     color={metricColors[key]}
                   />
                 ))}
@@ -529,13 +610,18 @@ export default function PlayerDashboard() {
                   <SliderBar
                     key={key}
                     label={metricLabels[key]}
-                    value={latestEvaluation[key]}
+                    value={currentEvaluation[key]}
                     color={metricColors[key]}
                   />
                 ))}
               </div>
             ) : (
-              <p className="text-center text-slate-500 py-6 text-sm">No evaluations yet</p>
+              <div className="text-center py-4">
+                <p className="text-slate-500 text-sm mb-2">No evaluations yet</p>
+                <Button size="sm" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}`)} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4 mr-1" />Create Evaluation
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -599,14 +685,14 @@ export default function PlayerDashboard() {
       )}
 
       {/* Development Notes */}
-      {latestEvaluation && (
+      {currentEvaluation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <Card className="border-none shadow-lg bg-green-50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-green-800">Strengths</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-green-700">{latestEvaluation.player_strengths || 'Not specified'}</p>
+              <p className="text-sm text-green-700">{currentEvaluation.player_strengths || 'Not specified'}</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-lg bg-orange-50">
@@ -614,7 +700,7 @@ export default function PlayerDashboard() {
               <CardTitle className="text-sm text-orange-800">Areas of Growth</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-orange-700">{latestEvaluation.areas_of_growth || 'Not specified'}</p>
+              <p className="text-sm text-orange-700">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-lg bg-blue-50">
@@ -622,7 +708,7 @@ export default function PlayerDashboard() {
               <CardTitle className="text-sm text-blue-800">Training Focus</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-blue-700">{latestEvaluation.training_focus || 'Not specified'}</p>
+              <p className="text-sm text-blue-700">{currentEvaluation.training_focus || 'Not specified'}</p>
             </CardContent>
           </Card>
         </div>
