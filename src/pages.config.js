@@ -22,6 +22,7 @@ import FormationView from './pages/FormationView';
 import TeamTacticalView from './pages/TeamTacticalView';
 import PlayerDashboard from './pages/PlayerDashboard';
 import PlayerComparison from './pages/PlayerComparison';
+import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "TeamTacticalView": TeamTacticalView,
     "PlayerDashboard": PlayerDashboard,
     "PlayerComparison": PlayerComparison,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {

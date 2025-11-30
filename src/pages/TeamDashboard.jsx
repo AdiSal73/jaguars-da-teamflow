@@ -56,8 +56,11 @@ export default function TeamDashboard() {
     queryKey: ['teamAssessments', teamId],
     queryFn: async () => {
       const all = await base44.entities.PhysicalAssessment.list();
-      return all.filter(a => a.team_id === teamId);
-    }
+      // Get assessments for all players in the team (by player_id, not just team_id)
+      const teamPlayerIds = players.map(p => p.id);
+      return all.filter(a => a.team_id === teamId || teamPlayerIds.includes(a.player_id));
+    },
+    enabled: players.length > 0
   });
 
   const { data: events = [] } = useQuery({
