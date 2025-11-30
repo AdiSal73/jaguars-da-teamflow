@@ -5,7 +5,6 @@ import Teams from './pages/Teams';
 import Assessments from './pages/Assessments';
 import TeamDashboard from './pages/TeamDashboard';
 import ClubManagement from './pages/ClubManagement';
-import TrainingPlans from './pages/TrainingPlans';
 import Messages from './pages/Messages';
 import UnassignedRecords from './pages/UnassignedRecords';
 import CoachManagement from './pages/CoachManagement';
@@ -34,7 +33,6 @@ export const PAGES = {
     "Assessments": Assessments,
     "TeamDashboard": TeamDashboard,
     "ClubManagement": ClubManagement,
-    "TrainingPlans": TrainingPlans,
     "Messages": Messages,
     "UnassignedRecords": UnassignedRecords,
     "CoachManagement": CoachManagement,
