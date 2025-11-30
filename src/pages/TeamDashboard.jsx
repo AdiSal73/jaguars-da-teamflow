@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export default function TeamDashboard() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedPlayersForCompare, setSelectedPlayersForCompare] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [editTeamForm, setEditTeamForm] = useState({
     name: '',
     age_group: '',
@@ -258,6 +260,106 @@ export default function TeamDashboard() {
     count
   }));
 
+  // Export function for team data
+  const handleTeamExport = (format, selectedOptions) => {
+    if (format === 'csv') {
+      const headers = ['Player Name', 'Jersey', 'Position', 'Status', 'DOB', 'Email', 'Phone',
+        'Team Role', 'Recommendation', 'Next Season Status', 'Registration',
+        'Sprint', 'Vertical', 'YIRT', 'Shuttle', 'Speed', 'Power', 'Endurance', 'Agility', 'Overall',
+        'Growth Mindset', 'Resilience', 'Athleticism', 'Team Focus', 'Def Organized', 'Att Organized'];
+      
+      const rows = players.map(player => {
+        const tryout = tryouts.find(t => t.player_id === player.id);
+        const playerAssessments = assessments.filter(a => a.player_id === player.id);
+        const latestAssessment = playerAssessments.sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+        const playerEvals = evaluations.filter(e => e.player_id === player.id);
+        const latestEval = playerEvals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        
+        return [
+          player.full_name || '',
+          player.jersey_number || '',
+          player.primary_position || '',
+          player.status || '',
+          player.date_of_birth || '',
+          player.email || '',
+          player.phone || '',
+          tryout?.team_role || '',
+          tryout?.recommendation || '',
+          tryout?.next_season_status || '',
+          tryout?.registration_status || '',
+          latestAssessment?.sprint?.toFixed(2) || '',
+          latestAssessment?.vertical || '',
+          latestAssessment?.yirt || '',
+          latestAssessment?.shuttle?.toFixed(2) || '',
+          latestAssessment?.speed_score || '',
+          latestAssessment?.power_score || '',
+          latestAssessment?.endurance_score || '',
+          latestAssessment?.agility_score || '',
+          latestAssessment?.overall_score || '',
+          latestEval?.growth_mindset || '',
+          latestEval?.resilience || '',
+          latestEval?.athleticism || '',
+          latestEval?.team_focus || '',
+          latestEval?.defending_organized || '',
+          latestEval?.attacking_organized || ''
+        ];
+      });
+
+      const csv = generateCSV(headers, rows);
+      downloadFile(csv, `team_${team?.name?.replace(/\s+/g, '_') || 'export'}.csv`);
+    } else {
+      const playersTableRows = players.map(player => {
+        const tryout = tryouts.find(t => t.player_id === player.id);
+        const playerAssessments = assessments.filter(a => a.player_id === player.id);
+        const latestAssessment = playerAssessments.sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+        const playerEvals = evaluations.filter(e => e.player_id === player.id);
+        const latestEval = playerEvals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+        
+        return `<tr>
+          <td>${player.full_name || ''}</td>
+          <td>${player.jersey_number || ''}</td>
+          <td>${player.primary_position || ''}</td>
+          <td>${tryout?.team_role || ''}</td>
+          <td>${tryout?.recommendation || ''}</td>
+          <td>${latestAssessment?.overall_score || '-'}</td>
+          <td>${latestEval?.athleticism || '-'}</td>
+        </tr>`;
+      }).join('');
+
+      const sections = [
+        {
+          title: 'Team Overview',
+          content: `
+            <table>
+              <tr><th>Team</th><td>${team?.name || ''}</td></tr>
+              <tr><th>Age Group</th><td>${team?.age_group || ''}</td></tr>
+              <tr><th>League</th><td>${team?.league || ''}</td></tr>
+              <tr><th>Total Players</th><td>${players.length}</td></tr>
+              <tr><th>Avg Physical Score</th><td>${teamAnalytics.avgPhysical.overall}</td></tr>
+            </table>
+          `
+        },
+        {
+          title: 'Player Roster',
+          content: `
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Jersey</th><th>Position</th><th>Role</th><th>Rec</th><th>Physical</th><th>Athletic</th></tr>
+              </thead>
+              <tbody>
+                ${playersTableRows}
+              </tbody>
+            </table>
+          `
+        }
+      ];
+
+      const html = generatePDFContent(`Team Report: ${team?.name || 'Team'}`, sections);
+      printPDF(html);
+    }
+    setShowExportDialog(false);
+  };
+
   const performanceTrend = assessments
     .sort((a, b) => new Date(a.assessment_date) - new Date(b.assessment_date))
     .slice(-10)
@@ -298,6 +400,10 @@ export default function TeamDashboard() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name}</h1>
+              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
+                <FileDown className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Export</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
                 <Edit2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 <span className="hidden md:inline">Edit Team</span>
@@ -992,6 +1098,19 @@ export default function TeamDashboard() {
         assessments={assessments}
         evaluations={evaluations}
         tryouts={tryouts}
+      />
+
+      <ExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        title={`Export ${team?.name || 'Team'} Data`}
+        options={[
+          { id: 'players', label: 'Player Information' },
+          { id: 'tryouts', label: 'Tryout Data' },
+          { id: 'assessments', label: 'Physical Assessments' },
+          { id: 'evaluations', label: 'Evaluations' }
+        ]}
+        onExport={handleTeamExport}
       />
     </div>
   );
