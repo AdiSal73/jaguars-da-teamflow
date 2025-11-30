@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown } from 'lucide-react';
 import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -70,6 +71,19 @@ export default function PlayerDashboard() {
   const [tryoutForm, setTryoutForm] = useState({});
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
+  const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
 
   const { data: player, isLoading: playerLoading } = useQuery({
     queryKey: ['player', playerId],
@@ -194,6 +208,160 @@ export default function PlayerDashboard() {
   // Get unique team names for combobox
   const existingTeamNames = [...new Set(allTeams.map(t => t.name).filter(Boolean))];
 
+  // Export functions
+  const handleExport = (format, selectedOptions) => {
+    if (format === 'csv') {
+      const headers = ['Field', 'Value'];
+      const rows = [
+        ['Name', player.full_name],
+        ['Jersey Number', player.jersey_number || ''],
+        ['Position', player.primary_position || ''],
+        ['Team', team?.name || ''],
+        ['Status', player.status || ''],
+        ['DOB', player.date_of_birth || ''],
+        ['Email', player.email || ''],
+        ['Phone', player.phone || ''],
+        ['Parent', player.parent_name || '']
+      ];
+
+      if (selectedOptions.includes('tryout') && isAdminOrCoach && tryout) {
+        rows.push(
+          ['--- Tryout Info ---', ''],
+          ['Team Role', tryout.team_role || ''],
+          ['Recommendation', tryout.recommendation || ''],
+          ['Next Year Team', tryout.next_year_team || ''],
+          ['Next Season Status', tryout.next_season_status || ''],
+          ['Registration Status', tryout.registration_status || ''],
+          ['Dominant Foot', tryout.dominant_foot || ''],
+          ['Notes', tryout.notes || '']
+        );
+      }
+
+      if (selectedOptions.includes('assessment') && currentAssessment) {
+        rows.push(
+          ['--- Physical Assessment ---', ''],
+          ['Date', currentAssessment.assessment_date || ''],
+          ['Sprint (20m)', currentAssessment.sprint?.toFixed(2) || ''],
+          ['Vertical', currentAssessment.vertical || ''],
+          ['YIRT', currentAssessment.yirt || ''],
+          ['Shuttle', currentAssessment.shuttle?.toFixed(2) || ''],
+          ['Speed Score', currentAssessment.speed_score || ''],
+          ['Power Score', currentAssessment.power_score || ''],
+          ['Endurance Score', currentAssessment.endurance_score || ''],
+          ['Agility Score', currentAssessment.agility_score || ''],
+          ['Overall Score', currentAssessment.overall_score || '']
+        );
+      }
+
+      if (selectedOptions.includes('evaluation') && currentEvaluation) {
+        rows.push(
+          ['--- Evaluation ---', ''],
+          ['Date', new Date(currentEvaluation.created_date).toLocaleDateString()],
+          ['Growth Mindset', currentEvaluation.growth_mindset || ''],
+          ['Resilience', currentEvaluation.resilience || ''],
+          ['Efficiency', currentEvaluation.efficiency_in_execution || ''],
+          ['Athleticism', currentEvaluation.athleticism || ''],
+          ['Team Focus', currentEvaluation.team_focus || ''],
+          ['Defending Organized', currentEvaluation.defending_organized || ''],
+          ['Defending Final Third', currentEvaluation.defending_final_third || ''],
+          ['Defending Transition', currentEvaluation.defending_transition || ''],
+          ['Attacking Organized', currentEvaluation.attacking_organized || ''],
+          ['Attacking Final Third', currentEvaluation.attacking_final_third || ''],
+          ['Attacking In Transition', currentEvaluation.attacking_in_transition || ''],
+          ['Strengths', currentEvaluation.player_strengths || ''],
+          ['Areas of Growth', currentEvaluation.areas_of_growth || ''],
+          ['Training Focus', currentEvaluation.training_focus || '']
+        );
+      }
+
+      const csv = generateCSV(headers, rows);
+      downloadFile(csv, `player_${player.full_name.replace(/\s+/g, '_')}.csv`);
+    } else {
+      const sections = [
+        {
+          title: 'Player Information',
+          content: `
+            <table>
+              <tr><th>Name</th><td>${player.full_name}</td></tr>
+              <tr><th>Jersey</th><td>${player.jersey_number || 'N/A'}</td></tr>
+              <tr><th>Position</th><td>${player.primary_position || 'N/A'}</td></tr>
+              <tr><th>Team</th><td>${team?.name || 'N/A'}</td></tr>
+              <tr><th>Status</th><td>${player.status || 'N/A'}</td></tr>
+              <tr><th>DOB</th><td>${player.date_of_birth || 'N/A'}</td></tr>
+              <tr><th>Email</th><td>${player.email || 'N/A'}</td></tr>
+              <tr><th>Phone</th><td>${player.phone || 'N/A'}</td></tr>
+            </table>
+          `
+        }
+      ];
+
+      if (selectedOptions.includes('tryout') && isAdminOrCoach && tryout) {
+        sections.push({
+          title: 'Tryout Information',
+          content: `
+            <table>
+              <tr><th>Team Role</th><td>${tryout.team_role || 'N/A'}</td></tr>
+              <tr><th>Recommendation</th><td>${tryout.recommendation || 'N/A'}</td></tr>
+              <tr><th>Next Year Team</th><td>${tryout.next_year_team || 'N/A'}</td></tr>
+              <tr><th>Next Season Status</th><td>${tryout.next_season_status || 'N/A'}</td></tr>
+              <tr><th>Registration</th><td>${tryout.registration_status || 'N/A'}</td></tr>
+              <tr><th>Notes</th><td>${tryout.notes || 'N/A'}</td></tr>
+            </table>
+          `
+        });
+      }
+
+      if (selectedOptions.includes('assessment') && currentAssessment) {
+        sections.push({
+          title: 'Physical Assessment',
+          content: `
+            <table>
+              <tr><th>Date</th><td>${currentAssessment.assessment_date || 'N/A'}</td></tr>
+              <tr><th>Sprint (20m)</th><td>${currentAssessment.sprint?.toFixed(2) || 'N/A'}s</td></tr>
+              <tr><th>Vertical</th><td>${currentAssessment.vertical || 'N/A'}"</td></tr>
+              <tr><th>YIRT</th><td>${currentAssessment.yirt || 'N/A'}</td></tr>
+              <tr><th>Shuttle</th><td>${currentAssessment.shuttle?.toFixed(2) || 'N/A'}s</td></tr>
+              <tr><th>Speed</th><td>${currentAssessment.speed_score || 'N/A'}</td></tr>
+              <tr><th>Power</th><td>${currentAssessment.power_score || 'N/A'}</td></tr>
+              <tr><th>Endurance</th><td>${currentAssessment.endurance_score || 'N/A'}</td></tr>
+              <tr><th>Agility</th><td>${currentAssessment.agility_score || 'N/A'}</td></tr>
+              <tr><th>Overall</th><td>${currentAssessment.overall_score || 'N/A'}</td></tr>
+            </table>
+          `
+        });
+      }
+
+      if (selectedOptions.includes('evaluation') && currentEvaluation) {
+        sections.push({
+          title: 'Evaluation',
+          content: `
+            <table>
+              <tr><th>Growth Mindset</th><td>${currentEvaluation.growth_mindset || 'N/A'}</td></tr>
+              <tr><th>Resilience</th><td>${currentEvaluation.resilience || 'N/A'}</td></tr>
+              <tr><th>Athleticism</th><td>${currentEvaluation.athleticism || 'N/A'}</td></tr>
+              <tr><th>Team Focus</th><td>${currentEvaluation.team_focus || 'N/A'}</td></tr>
+              <tr><th>Defending Organized</th><td>${currentEvaluation.defending_organized || 'N/A'}</td></tr>
+              <tr><th>Attacking Organized</th><td>${currentEvaluation.attacking_organized || 'N/A'}</td></tr>
+              <tr><th>Strengths</th><td>${currentEvaluation.player_strengths || 'N/A'}</td></tr>
+              <tr><th>Areas of Growth</th><td>${currentEvaluation.areas_of_growth || 'N/A'}</td></tr>
+            </table>
+          `
+        });
+      }
+
+      const html = generatePDFContent(`Player Report: ${player.full_name}`, sections);
+      printPDF(html);
+    }
+    setShowExportDialog(false);
+  };
+
+  const exportOptions = [
+    { id: 'player', label: 'Player Information' },
+    { id: 'assessment', label: 'Physical Assessment' },
+    { id: 'evaluation', label: 'Evaluation Data' },
+    ...(isAdminOrCoach ? [{ id: 'tryout', label: 'Tryout Information' }] : [])
+  ];
+
   // Analytics data with raw metrics in tooltip
   const physicalTrendData = assessments.slice().reverse().map(a => ({
     date: new Date(a.assessment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -251,6 +419,10 @@ export default function PlayerDashboard() {
           </Button>
           <Button variant="outline" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)}>
             <ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
+            <FileDown className="w-4 h-4 mr-1" />
+            Export
           </Button>
           <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-emerald-600 hover:bg-emerald-700">
             {isEditing ? <><Save className="w-4 h-4 mr-2" />Save All</> : 'Edit'}
@@ -362,7 +534,8 @@ export default function PlayerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Tryout Info */}
+        {/* Tryout Info - Only visible to admin/coach */}
+        {isAdminOrCoach && (
         <Card className="border-none shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Tryout Info</CardTitle>
@@ -475,6 +648,7 @@ export default function PlayerDashboard() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Physical Assessment */}
         <Card className="border-none shadow-lg">
@@ -734,6 +908,14 @@ export default function PlayerDashboard() {
           </Card>
         </div>
       )}
+
+      <ExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        title="Export Player Data"
+        options={exportOptions}
+        onExport={handleExport}
+      />
     </div>
   );
 }
