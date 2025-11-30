@@ -116,6 +116,7 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Depth Chart", url: createPageUrl("FormationView") },
+        { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
       ]
