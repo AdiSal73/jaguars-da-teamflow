@@ -1,4 +1,3 @@
-import Dashboard from './pages/Dashboard';
 import Players from './pages/Players';
 import BookSession from './pages/BookSession';
 import Teams from './pages/Teams';
@@ -27,7 +26,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
     "Players": Players,
     "BookSession": BookSession,
     "Teams": Teams,
