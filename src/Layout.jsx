@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { 
-  LayoutDashboard, Users, Shield, Calendar, Activity, LogOut, 
-  ChevronDown, Clock, BarChart3, UserCog, MessageSquare, 
-  TrendingUp, Settings, Menu, X, Bell
-} from "lucide-react";
+    LayoutDashboard, Users, Shield, Calendar, Activity, LogOut, 
+    ChevronDown, Clock, BarChart3, UserCog, MessageSquare, 
+    TrendingUp, Settings, Menu, X
+  } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -48,108 +48,125 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const getUserRole = () => {
-    if (!user) return null;
-    if (user.role === 'admin') return 'admin';
-    const isCoach = coaches.find(c => c.email === user.email);
-    if (isCoach) return 'coach';
-    return 'user';
-  };
+        if (!user) return null;
+        if (user.role === 'admin') return 'admin';
+        if (user.role === 'parent') return 'parent';
+        const isCoach = coaches.find(c => c.email === user.email);
+        if (isCoach) return 'coach';
+        return 'user';
+      };
 
-  const userRole = getUserRole();
+      const userRole = getUserRole();
 
   React.useEffect(() => {
-    if (userRole === 'user' && players.length > 0 && location.pathname === '/') {
-      const currentPlayer = players.find(p => p.email === user.email);
-      if (currentPlayer) {
-        navigate(`/player-dashboard?id=${currentPlayer.id}`);
-      }
-    }
-  }, [userRole, players, location.pathname, user, navigate]);
+        if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
+          let currentPlayer;
+          if (userRole === 'parent' && user.player_id) {
+            currentPlayer = players.find(p => p.id === user.player_id);
+          } else {
+            currentPlayer = players.find(p => p.email === user.email);
+          }
+          if (currentPlayer) {
+            navigate(`/player-dashboard?id=${currentPlayer.id}`);
+          }
+        }
+      }, [userRole, players, location.pathname, user, navigate]);
 
   const navigationItems = [
-    { 
-      title: "Dashboard", 
-      url: userRole === 'coach' ? createPageUrl("CoachDashboard") : createPageUrl("Dashboard"), 
-      icon: LayoutDashboard, 
-      roles: ["admin", "coach"] 
-    },
-    {
-      title: "Club",
-      icon: Shield,
-      roles: ["admin"],
-      submenu: [
-        { title: "Overview", url: createPageUrl("ClubManagement") },
-        { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
-        { title: "User Management", url: createPageUrl("UserManagement") },
-      ]
-    },
-    {
-      title: "Teams",
-      icon: Users,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "All Teams", url: createPageUrl("Teams") },
-        { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
-        { title: "Announcements", url: createPageUrl("TeamCommunication") },
-        { title: "Drills Library", url: createPageUrl("TeamDrills") },
-      ]
-    },
-    {
-      title: "Players",
-      icon: Activity,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "All Players", url: createPageUrl("Players") },
-        { title: "Player Dashboard", url: createPageUrl("PlayerDashboard") },
-      ]
-    },
-    { 
-      title: "Coaches", 
-      url: createPageUrl("CoachManagement"), 
-      icon: UserCog, 
-      roles: ["admin"] 
-    },
-    { 
-      title: "Tryouts",
-      icon: TrendingUp,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "Tryout Board", url: createPageUrl("Tryouts") },
-        { title: "Depth Chart", url: createPageUrl("FormationView") },
-        { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
-        { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
-      ]
-    },
-    {
-      title: "Bookings",
-      icon: Calendar,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "Availability", url: createPageUrl("Availability") },
-        { title: "Manage Bookings", url: createPageUrl("BookingsTable") },
-        { title: "Book Session", url: createPageUrl("BookSession") },
-      ]
-    },
-    { 
-      title: "Messages", 
-      url: createPageUrl("Messages"), 
-      icon: MessageSquare, 
-      roles: ["admin", "coach", "user"] 
-    },
-    { 
-      title: "Book Session", 
-      url: createPageUrl("BookSession"), 
-      icon: Calendar, 
-      roles: ["user"] 
-    },
-    { 
-      title: "My Bookings", 
-      url: createPageUrl("MyBookings"), 
-      icon: Clock, 
-      roles: ["user"] 
-    },
-  ];
+        { 
+          title: "Analytics", 
+          url: createPageUrl("Analytics"), 
+          icon: BarChart3, 
+          roles: ["admin"] 
+        },
+        { 
+          title: "Dashboard", 
+          url: createPageUrl("CoachDashboard"), 
+          icon: LayoutDashboard, 
+          roles: ["coach"] 
+        },
+        {
+          title: "Club",
+          icon: Shield,
+          roles: ["admin"],
+          submenu: [
+            { title: "Overview", url: createPageUrl("ClubManagement") },
+            { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
+            { title: "User Management", url: createPageUrl("UserManagement") },
+          ]
+        },
+        {
+          title: "Teams",
+          icon: Users,
+          roles: ["admin", "coach"],
+          submenu: [
+            { title: "All Teams", url: createPageUrl("Teams") },
+            { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
+            { title: "Announcements", url: createPageUrl("TeamCommunication") },
+            { title: "Drills Library", url: createPageUrl("TeamDrills") },
+          ]
+        },
+        {
+          title: "Players",
+          icon: Activity,
+          roles: ["admin", "coach"],
+          submenu: [
+            { title: "All Players", url: createPageUrl("Players") },
+          ]
+        },
+        { 
+          title: "Coaches", 
+          url: createPageUrl("CoachManagement"), 
+          icon: UserCog, 
+          roles: ["admin"] 
+        },
+        { 
+          title: "Tryouts",
+          icon: TrendingUp,
+          roles: ["admin", "coach"],
+          submenu: [
+            { title: "Tryout Board", url: createPageUrl("Tryouts") },
+            { title: "Depth Chart", url: createPageUrl("FormationView") },
+            { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
+            { title: "Assessments", url: createPageUrl("Assessments") },
+            { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+          ]
+        },
+        {
+          title: "Bookings",
+          icon: Calendar,
+          roles: ["admin", "coach"],
+          submenu: [
+            { title: "Availability", url: createPageUrl("Availability") },
+            { title: "Manage Bookings", url: createPageUrl("BookingsTable") },
+            { title: "Book Session", url: createPageUrl("BookSession") },
+          ]
+        },
+        { 
+          title: "Messages", 
+          url: createPageUrl("Messages"), 
+          icon: MessageSquare, 
+          roles: ["admin", "coach", "user", "parent"] 
+        },
+        { 
+          title: "My Profile", 
+          url: createPageUrl("PlayerDashboard"), 
+          icon: Activity, 
+          roles: ["user", "parent"] 
+        },
+        { 
+          title: "Book Session", 
+          url: createPageUrl("BookSession"), 
+          icon: Calendar, 
+          roles: ["user", "parent"] 
+        },
+        { 
+          title: "My Bookings", 
+          url: createPageUrl("MyBookings"), 
+          icon: Clock, 
+          roles: ["user", "parent"] 
+        },
+      ];
 
   const filteredNavItems = navigationItems.filter(item => 
     userRole && item.roles.includes(userRole)
@@ -254,11 +271,14 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem className="text-slate-600">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                                            onClick={() => navigate(createPageUrl('UserManagement'))}
+                                            className="text-slate-600"
+                                          >
+                                            <Settings className="w-4 h-4 mr-2" />
+                                            Settings
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={() => base44.auth.logout()}
                     className="text-red-600 focus:text-red-700 focus:bg-red-50"
