@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { User, Edit2, Save, Plus, Search, ArrowUpDown, Trash2, Info } from 'lucide-react';
+import { User, Edit2, Save, Plus, Search, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import PlayerInfoTooltip from '../components/player/PlayerInfoTooltip';
+import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 
 const positionMapping = {
   'GK': 'GK',
@@ -155,7 +155,7 @@ export default function FormationView() {
   const [unassignedSearch, setUnassignedSearch] = useState('');
   const [unassignedSortBy, setUnassignedSortBy] = useState('name');
   const [unassignedFilterLeague, setUnassignedFilterLeague] = useState('all');
-  const [tooltipPlayer, setTooltipPlayer] = useState(null);
+  
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -631,54 +631,56 @@ export default function FormationView() {
                                   {...playerProvided.dragHandleProps}
                                   className={`transition-all ${playerSnapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl' : ''}`}>
                                   
-                                          <div className="bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
-                                            <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
-                                                                                                <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
-                                                                                                  #{player.tryout?.team_ranking || index + 1}
-                                                                                                </div>
-                                                                                                <div className="flex-1 min-w-0">
-                                                                                                  <div className="text-[8px] md:text-[10px] font-bold text-slate-900 truncate leading-tight">
-                                                                                                    {player.full_name}
-                                                                                                  </div>
-                                                                                                  {player.date_of_birth && (
-                                                                                                    <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
-                                                                                                  )}
-                                                                                                </div>
-                                                                                                <button
-                                                                                          onClick={(e) => { e.stopPropagation(); setTooltipPlayer(player); }}
-                                                                                          className="w-3 h-3 hover:bg-slate-200 rounded flex items-center justify-center opacity-50 hover:opacity-100">
-                                                                                                  <Info className="w-2 h-2" />
-                                                                                                </button>
-                                                                                                <button
-                                                                                          onClick={(e) => handleEditClick(player, e)}
-                                                                                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-slate-800 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                                                                                                  <Edit2 className="w-1.5 h-1.5 md:w-2 md:h-2 text-white" />
-                                                                                                </button>
+                                          <PlayerHoverTooltip
+                                                                                            player={player}
+                                                                                            tryout={player.tryout}
+                                                                                            evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
+                                                                                            assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
+                                                                                          >
+                                                                                          <div className="bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border border-slate-300 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative">
+                                                                                            <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
+                                                                                                                                                <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
+                                                                                                                                                  #{player.tryout?.team_ranking || index + 1}
+                                                                                                                                                </div>
+                                                                                                                                                <div className="flex-1 min-w-0">
+                                                                                                                                                  <div className="text-[8px] md:text-[10px] font-bold text-slate-900 truncate leading-tight">
+                                                                                                                                                    {player.full_name}
+                                                                                                                                                  </div>
+                                                                                                                                                  {player.date_of_birth && (
+                                                                                                                                                    <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
+                                                                                                                                                  )}
+                                                                                                                                                </div>
+                                                                                                                                                <button
+                                                                                                                                          onClick={(e) => handleEditClick(player, e)}
+                                                                                                                                          className="w-3 h-3 hover:bg-slate-200 rounded flex items-center justify-center opacity-50 hover:opacity-100">
+                                                                                                                                                  <Edit2 className="w-2 h-2" />
+                                                                                                                                                </button>
+                                                                                                                                              </div>
+                                                                                            {player.tryout && (
+                                                                                    <div className="flex flex-wrap gap-0.5 justify-center">
+                                                                                                {player.tryout.team_role && (
+                                                                                      <Button 
+                                                                                        size="sm" 
+                                                                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${teamRoleColors[player.tryout.team_role] || 'bg-blue-500 hover:bg-blue-600'}`}
+                                                                                      >
+                                                                                        {player.tryout.team_role}
+                                                                                      </Button>
+                                                                                      )}
+                                                                                                {player.tryout.recommendation && (
+                                                                                      <Button
+                                                                                        size="sm"
+                                                                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${
+                                                                                        player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                                                                        player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                                                                        'bg-blue-500 hover:bg-blue-600'}`
+                                                                                        }>
+                                                                                                    {player.tryout.recommendation}
+                                                                                                  </Button>
+                                                                                      )}
                                                                                               </div>
-                                            {player.tryout && (
-                                    <div className="flex flex-wrap gap-0.5 justify-center">
-                                                {player.tryout.team_role && (
-                                      <Button 
-                                        size="sm" 
-                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${teamRoleColors[player.tryout.team_role] || 'bg-blue-500 hover:bg-blue-600'}`}
-                                      >
-                                        {player.tryout.team_role}
-                                      </Button>
-                                      )}
-                                                {player.tryout.recommendation && (
-                                      <Button
-                                        size="sm"
-                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${
-                                        player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                        player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                        'bg-blue-500 hover:bg-blue-600'}`
-                                        }>
-                                                    {player.tryout.recommendation}
-                                                  </Button>
-                                      )}
-                                              </div>
-                                    )}
-                                          </div>
+                                                                                    )}
+                                                                                          </div>
+                                                                                          </PlayerHoverTooltip>
                                         </div>
                                 )}
                                     </Draggable>
@@ -953,16 +955,7 @@ export default function FormationView() {
           </DialogContent>
         </Dialog>
 
-                {tooltipPlayer && (
-                  <PlayerInfoTooltip
-                    open={!!tooltipPlayer}
-                    onClose={() => setTooltipPlayer(null)}
-                    player={tooltipPlayer}
-                    tryout={tryouts.find(t => t.player_id === tooltipPlayer.id)}
-                    evaluation={evaluations.filter(e => e.player_id === tooltipPlayer.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
-                    assessment={assessments.filter(a => a.player_id === tooltipPlayer.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
-                  />
-                )}
+
                 </div>
               </DragDropContext>);
         }
