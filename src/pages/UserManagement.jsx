@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save, Users as UsersIcon, Plus } from 'lucide-react';
+import { Shield, Save, Users as UsersIcon, Plus, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -30,18 +33,30 @@ export default function UserManagement() {
   const [localPermissions, setLocalPermissions] = useState({
     admin: null,
     coach: null,
-    user: null
+    user: null,
+    parent: null
+  });
+
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserForm, setEditUserForm] = useState({ role: '', player_id: '' });
+
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list()
   });
 
   useEffect(() => {
     const adminPerms = permissions.find(p => p.role_name === 'admin');
     const coachPerms = permissions.find(p => p.role_name === 'coach');
     const userPerms = permissions.find(p => p.role_name === 'user');
+    const parentPerms = permissions.find(p => p.role_name === 'parent');
 
     setLocalPermissions({
       admin: adminPerms?.permissions || getDefaultPermissions('admin'),
       coach: coachPerms?.permissions || getDefaultPermissions('coach'),
-      user: userPerms?.permissions || getDefaultPermissions('user')
+      user: userPerms?.permissions || getDefaultPermissions('user'),
+      parent: parentPerms?.permissions || getDefaultPermissions('parent')
     });
   }, [permissions]);
 
@@ -94,9 +109,37 @@ export default function UserManagement() {
 
   const getUserRole = (user) => {
     if (user.role === 'admin') return 'admin';
+    if (user.role === 'parent') return 'parent';
     const isCoach = coaches.find(c => c.email === user.email);
     if (isCoach) return 'coach';
     return 'user';
+  };
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, data }) => {
+      return base44.entities.User.update(userId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users']);
+      setShowEditUserDialog(false);
+      setEditingUser(null);
+    }
+  });
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setEditUserForm({
+      role: user.role || 'user',
+      player_id: user.player_id || ''
+    });
+    setShowEditUserDialog(true);
+  };
+
+  const handleSaveUser = () => {
+    updateUserMutation.mutate({
+      userId: editingUser.id,
+      data: editUserForm
+    });
   };
 
   const toggleCoachRole = async (user) => {
@@ -156,6 +199,25 @@ export default function UserManagement() {
         access_club_management: false,
         send_messages: true
       };
+    } else if (role === 'parent') {
+      return {
+        view_all_players: false,
+        edit_all_players: false,
+        view_all_teams: false,
+        edit_all_teams: false,
+        view_all_assessments: false,
+        create_assessments: false,
+        view_all_evaluations: false,
+        create_evaluations: false,
+        view_all_bookings: false,
+        manage_bookings: false,
+        view_all_training_plans: false,
+        create_training_plans: false,
+        manage_coaches: false,
+        manage_users: false,
+        access_club_management: false,
+        send_messages: true
+      };
     } else {
       return {
         view_all_players: false,
@@ -207,7 +269,7 @@ export default function UserManagement() {
     });
   };
 
-  if (!localPermissions.admin || !localPermissions.coach || !localPermissions.user) {
+  if (!localPermissions.admin || !localPermissions.coach || !localPermissions.user || !localPermissions.parent) {
     return <div>Loading...</div>;
   }
 
@@ -222,11 +284,12 @@ export default function UserManagement() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="admin">Admin Role</TabsTrigger>
-          <TabsTrigger value="coach">Coach Role</TabsTrigger>
-          <TabsTrigger value="user">User/Player Role</TabsTrigger>
+          <TabsTrigger value="admin">Admin</TabsTrigger>
+          <TabsTrigger value="coach">Coach</TabsTrigger>
+          <TabsTrigger value="user">Player</TabsTrigger>
+          <TabsTrigger value="parent">Parent</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -258,20 +321,36 @@ export default function UserManagement() {
                           <Badge className={
                             userRole === 'admin' ? 'bg-purple-100 text-purple-800' :
                             userRole === 'coach' ? 'bg-blue-100 text-blue-800' :
+                            userRole === 'parent' ? 'bg-orange-100 text-orange-800' :
                             'bg-slate-100 text-slate-800'
                           }>
                             {userRole}
                           </Badge>
+                          {userRole === 'parent' && user.player_id && (
+                            <span className="ml-2 text-xs text-slate-500">
+                              → {players.find(p => p.id === user.player_id)?.full_name || 'Unknown'}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleCoachRole(user)}
-                            disabled={userRole === 'admin'}
-                          >
-                            {userRole === 'coach' ? 'Remove Coach' : 'Make Coach'}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCoachRole(user)}
+                              disabled={userRole === 'admin' || userRole === 'parent'}
+                            >
+                              {userRole === 'coach' ? 'Remove Coach' : 'Make Coach'}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -282,7 +361,7 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
 
-        {['admin', 'coach', 'user'].map(role => (
+        {['admin', 'coach', 'user', 'parent'].map(role => (
           <TabsContent key={role} value={role}>
             <Card className="border-none shadow-lg">
               <CardHeader>
@@ -317,6 +396,55 @@ export default function UserManagement() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User - {editingUser?.full_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label className="mb-2 block">Role</Label>
+              <Select value={editUserForm.role} onValueChange={(v) => setEditUserForm({ ...editUserForm, role: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Player</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {editUserForm.role === 'parent' && (
+              <div>
+                <Label className="mb-2 block">Assigned Player</Label>
+                <Select value={editUserForm.player_id || ''} onValueChange={(v) => setEditUserForm({ ...editUserForm, player_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map(player => (
+                      <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">Parent will be able to view this player's dashboard</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>Cancel</Button>
+              <Button onClick={handleSaveUser} className="bg-emerald-600 hover:bg-emerald-700">
+                <Save className="w-4 h-4 mr-2" />
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
