@@ -6,25 +6,20 @@ import Assessments from './pages/Assessments';
 import TeamDashboard from './pages/TeamDashboard';
 import ClubManagement from './pages/ClubManagement';
 import TrainingPlans from './pages/TrainingPlans';
-import TrainingPlanDetail from './pages/TrainingPlanDetail';
 import Messages from './pages/Messages';
 import UnassignedRecords from './pages/UnassignedRecords';
 import CoachManagement from './pages/CoachManagement';
 import Availability from './pages/Availability';
 import UserManagement from './pages/UserManagement';
-import PublicBooking from './pages/PublicBooking';
-import PlayerAssessmentAnalytics from './pages/PlayerAssessmentAnalytics';
 import BookingsTable from './pages/BookingsTable';
 import CoachDashboard from './pages/CoachDashboard';
 import TeamCalendar from './pages/TeamCalendar';
 import TeamCommunication from './pages/TeamCommunication';
 import TeamDrills from './pages/TeamDrills';
 import MyBookings from './pages/MyBookings';
-import BulkEmail from './pages/BulkEmail';
 import Tryouts from './pages/Tryouts';
 import EvaluationsNew from './pages/EvaluationsNew';
 import FormationView from './pages/FormationView';
-import TacticalPlayerProfile from './pages/TacticalPlayerProfile';
 import TeamTacticalView from './pages/TeamTacticalView';
 import PlayerDashboard from './pages/PlayerDashboard';
 import PlayerComparison from './pages/PlayerComparison';
@@ -40,25 +35,20 @@ export const PAGES = {
     "TeamDashboard": TeamDashboard,
     "ClubManagement": ClubManagement,
     "TrainingPlans": TrainingPlans,
-    "TrainingPlanDetail": TrainingPlanDetail,
     "Messages": Messages,
     "UnassignedRecords": UnassignedRecords,
     "CoachManagement": CoachManagement,
     "Availability": Availability,
     "UserManagement": UserManagement,
-    "PublicBooking": PublicBooking,
-    "PlayerAssessmentAnalytics": PlayerAssessmentAnalytics,
     "BookingsTable": BookingsTable,
     "CoachDashboard": CoachDashboard,
     "TeamCalendar": TeamCalendar,
     "TeamCommunication": TeamCommunication,
     "TeamDrills": TeamDrills,
     "MyBookings": MyBookings,
-    "BulkEmail": BulkEmail,
     "Tryouts": Tryouts,
     "EvaluationsNew": EvaluationsNew,
     "FormationView": FormationView,
-    "TacticalPlayerProfile": TacticalPlayerProfile,
     "TeamTacticalView": TeamTacticalView,
     "PlayerDashboard": PlayerDashboard,
     "PlayerComparison": PlayerComparison,
