@@ -644,7 +644,28 @@ export default function PlayerDashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
+                    <Tooltip 
+                      contentStyle={{ fontSize: 11 }} 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-2 border rounded shadow-lg text-xs">
+                              <p className="font-bold mb-1">{data.date}</p>
+                              <p>Sprint: {data.sprint?.toFixed(2)}s</p>
+                              <p>Vertical: {data.vertical}"</p>
+                              <p>YIRT: {data.yirt}</p>
+                              <p>Shuttle: {data.shuttle?.toFixed(2)}s</p>
+                              <hr className="my-1" />
+                              {payload.map((p, i) => (
+                                <p key={i} style={{ color: p.color }}>{p.name}: {p.value}</p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
                     <Line type="monotone" dataKey="Speed" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
                     <Line type="monotone" dataKey="Power" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
