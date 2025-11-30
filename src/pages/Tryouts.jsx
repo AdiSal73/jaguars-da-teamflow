@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, AlertCircle, Info } from 'lucide-react';
+import { User, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import PlayerInfoTooltip from '../components/player/PlayerInfoTooltip';
+import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 
 export default function Tryouts() {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function Tryouts() {
   const [birthdayTo, setBirthdayTo] = useState('');
   const [sortBy, setSortBy] = useState('team');
   const [viewMode, setViewMode] = useState('columns');
-  const [tooltipPlayer, setTooltipPlayer] = useState(null);
+  
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -412,77 +412,78 @@ export default function Tryouts() {
                           teamPlayers.map((player, index) => (
                             <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                               {(provided, snapshot) => (
-                                <div
-                                 ref={provided.innerRef}
-                                 {...provided.draggableProps}
-                                 {...provided.dragHandleProps}
-                                 style={{
-                                   ...provided.draggableProps.style,
-                                 }}
-                                 className={`${
-                                   player.trapped === 'Yes' 
-                                     ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                     : 'border-slate-200 bg-white hover:border-emerald-400'
-                                 } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                   snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                 }`}
-                                 onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                                      <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
-                                        #{player.tryout?.team_ranking || '?'}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                        <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
-                                          {player.primary_position}
-                                          {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setTooltipPlayer(player); }}
-                                        className="p-1 hover:bg-slate-200 rounded opacity-50 hover:opacity-100"
-                                      >
-                                        <Info className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                      {player.trapped === 'Yes' && (
-                                        <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5">
-                                          <AlertCircle className="w-2 h-2 md:w-3 md:h-3 mr-0.5" />
-                                          Trapped
-                                        </Badge>
-                                      )}
-                                      {player.tryout?.team_role && (
-                                        <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                          player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
-                                          player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                          player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
-                                          player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
-                                          player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
-                                          player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
-                                          player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
-                                          'bg-blue-500 hover:bg-blue-600'
-                                        }`}>
-                                          {player.tryout.team_role}
-                                        </Button>
-                                      )}
-                                      {player.tryout?.recommendation && (
-                                        <Button 
-                                          size="sm"
-                                          className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                            player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                            player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                            'bg-blue-500 hover:bg-blue-600'
-                                          }`}
-                                        >
-                                          {player.tryout.recommendation}
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
+                                <PlayerHoverTooltip 
+                                                                        player={player}
+                                                                        tryout={player.tryout}
+                                                                        evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
+                                                                        assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
+                                                                      >
+                                                                      <div
+                                                                       ref={provided.innerRef}
+                                                                       {...provided.draggableProps}
+                                                                       {...provided.dragHandleProps}
+                                                                       style={{
+                                                                         ...provided.draggableProps.style,
+                                                                       }}
+                                                                       className={`${
+                                                                         player.trapped === 'Yes' 
+                                                                           ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                                                           : 'border-slate-200 bg-white hover:border-emerald-400'
+                                                                       } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                                                         snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                                                       }`}
+                                                                       onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                                                                      >
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                                                                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
+                                                                              #{player.tryout?.team_ranking || '?'}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                              <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
+                                                                              <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
+                                                                                {player.primary_position}
+                                                                                {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
+                                                                              </div>
+                                                                            </div>
+                                                                          </div>
+                                                                          <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                                                            {player.trapped === 'Yes' && (
+                                                                              <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5">
+                                                                                <AlertCircle className="w-2 h-2 md:w-3 md:h-3 mr-0.5" />
+                                                                                Trapped
+                                                                              </Badge>
+                                                                            )}
+                                                                            {player.tryout?.team_role && (
+                                                                              <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                                                                player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
+                                                                                player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                                                                player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
+                                                                                player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
+                                                                                player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
+                                                                                player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
+                                                                                player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
+                                                                                'bg-blue-500 hover:bg-blue-600'
+                                                                              }`}>
+                                                                                {player.tryout.team_role}
+                                                                              </Button>
+                                                                            )}
+                                                                            {player.tryout?.recommendation && (
+                                                                              <Button 
+                                                                                size="sm"
+                                                                                className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                                                                  player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                                                                  player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                                                                  'bg-blue-500 hover:bg-blue-600'
+                                                                                }`}
+                                                                              >
+                                                                                {player.tryout.recommendation}
+                                                                              </Button>
+                                                                            )}
+                                                                          </div>
+                                                                        </div>
+                                                                      </div>
+                                                                      </PlayerHoverTooltip>
                               )}
                             </Draggable>
                           ))
@@ -812,16 +813,7 @@ export default function Tryouts() {
           </TabsContent>
         </Tabs>
       </div>
-    {tooltipPlayer && (
-        <PlayerInfoTooltip
-          open={!!tooltipPlayer}
-          onClose={() => setTooltipPlayer(null)}
-          player={tooltipPlayer}
-          tryout={tryouts.find(t => t.player_id === tooltipPlayer.id)}
-          evaluation={evaluations.filter(e => e.player_id === tooltipPlayer.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
-          assessment={assessments.filter(a => a.player_id === tooltipPlayer.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
-        />
-      )}
+
     </DragDropContext>
   );
 }
