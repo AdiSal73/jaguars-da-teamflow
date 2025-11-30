@@ -193,7 +193,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3 group">
+            <Link to={createPageUrl("Analytics")} className="flex items-center gap-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-emerald-200 transition-all">
                 <Shield className="w-6 h-6 text-white" />
               </div>
