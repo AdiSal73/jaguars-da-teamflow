@@ -3,13 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
+import PlayerComparisonModal from '../components/player/PlayerComparisonModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -22,6 +24,8 @@ export default function TeamDashboard() {
   const teamId = urlParams.get('teamId');
 
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedPlayersForCompare, setSelectedPlayersForCompare] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [editTeamForm, setEditTeamForm] = useState({
     name: '',
     age_group: '',
@@ -388,31 +392,65 @@ export default function TeamDashboard() {
 
         <TabsContent value="roster" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
           <Card className="border-none shadow-lg">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base md:text-lg">Team Roster</CardTitle>
+              {selectedPlayersForCompare.length >= 2 && (
+                <Button onClick={() => setShowCompareModal(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <GitCompare className="w-4 h-4 mr-2" />
+                  Compare ({selectedPlayersForCompare.length})
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                {players.map(player => (
-                  <button
-                    key={player.id}
-                    onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                    className="p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 border-transparent hover:border-emerald-500"
-                  >
-                    <div className="flex items-center gap-2 md:gap-3 mb-2">
-                      <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base">
-                        {player.jersey_number || player.full_name?.charAt(0)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-slate-900 text-sm md:text-base">{player.full_name}</div>
-                        <div className="text-xs text-slate-600">{player.primary_position}</div>
+                {players.map(player => {
+                  const tryout = tryouts.find(t => t.player_id === player.id);
+                  const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
+                  const isSelected = selectedPlayersForCompare.includes(player.id);
+                  return (
+                    <div key={player.id} className={`p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-emerald-500'}`}>
+                      <div className="flex items-start gap-2">
+                        <Checkbox 
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedPlayersForCompare([...selectedPlayersForCompare, player.id]);
+                            } else {
+                              setSelectedPlayersForCompare(selectedPlayersForCompare.filter(id => id !== player.id));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <button
+                          onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                          className="flex-1 text-left"
+                        >
+                          <div className="flex items-center gap-2 md:gap-3 mb-2">
+                            <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-base">
+                              {player.jersey_number || player.full_name?.charAt(0)}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-slate-900 text-sm md:text-base">{player.full_name}</div>
+                              <div className="text-xs text-slate-600">{player.primary_position}</div>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {birthYear && <Badge variant="outline" className="text-[9px]">{birthYear}</Badge>}
+                            <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                              {player.status}
+                            </Badge>
+                            {tryout?.team_role && <Badge className="text-[9px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>}
+                            {tryout?.recommendation && (
+                              <Badge className={`text-[9px] ${tryout.recommendation === 'Move up' ? 'bg-green-100 text-green-800' : tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                                {tryout.recommendation}
+                              </Badge>
+                            )}
+                          </div>
+                        </button>
                       </div>
                     </div>
-                    <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                      {player.status}
-                    </Badge>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -841,6 +879,15 @@ export default function TeamDashboard() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PlayerComparisonModal
+        open={showCompareModal}
+        onClose={() => setShowCompareModal(false)}
+        players={players.filter(p => selectedPlayersForCompare.includes(p.id))}
+        assessments={assessments}
+        evaluations={evaluations}
+        tryouts={tryouts}
+      />
     </div>
   );
 }
