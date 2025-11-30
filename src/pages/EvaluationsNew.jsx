@@ -28,6 +28,8 @@ export default function EvaluationsNew() {
   const [showDialog, setShowDialog] = useState(false);
   const [deleteEvalId, setDeleteEvalId] = useState(null);
   const [search, setSearch] = useState('');
+  const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
+
   const [formData, setFormData] = useState({
     player_id: '',
     player_name: '',
@@ -42,6 +44,7 @@ export default function EvaluationsNew() {
     athleticism: 5,
     team_focus: 5,
     primary_position: '',
+    secondary_position: '',
     preferred_foot: 'Right',
     defending_organized: 5,
     defending_final_third: 5,
@@ -103,6 +106,7 @@ export default function EvaluationsNew() {
       athleticism: 5,
       team_focus: 5,
       primary_position: '',
+      secondary_position: '',
       preferred_foot: 'Right',
       defending_organized: 5,
       defending_final_third: 5,
@@ -127,7 +131,8 @@ export default function EvaluationsNew() {
         player_name: player.full_name,
         birth_year: birthYear,
         team_name: team?.name || '',
-        primary_position: player.position || '',
+        primary_position: player.primary_position || '',
+        secondary_position: player.secondary_position || '',
         preferred_foot: player.preferred_foot || 'Right'
       });
     }
@@ -365,11 +370,30 @@ export default function EvaluationsNew() {
                   </div>
                   <div>
                     <Label className="font-semibold">Primary Position</Label>
-                    <Input
-                      value={formData.primary_position}
-                      onChange={(e) => setFormData({...formData, primary_position: e.target.value})}
-                      className="border-2 h-12"
-                    />
+                    <Select value={formData.primary_position} onValueChange={(val) => setFormData({...formData, primary_position: val})}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue placeholder="Select position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POSITIONS.map(pos => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Secondary Position (Optional)</Label>
+                    <Select value={formData.secondary_position} onValueChange={(val) => setFormData({...formData, secondary_position: val})}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue placeholder="Select position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>None</SelectItem>
+                        {POSITIONS.map(pos => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label className="font-semibold">Preferred Foot</Label>
