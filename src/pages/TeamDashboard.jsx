@@ -546,17 +546,19 @@ export default function TeamDashboard() {
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {birthYear && <Badge variant="outline" className="text-[9px]">{birthYear}</Badge>}
-                            <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                              {player.status}
-                            </Badge>
-                            {tryout?.team_role && <Badge className="text-[9px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>}
-                            {tryout?.recommendation && (
-                              <Badge className={`text-[9px] ${tryout.recommendation === 'Move up' ? 'bg-green-100 text-green-800' : tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
-                                {tryout.recommendation}
-                              </Badge>
-                            )}
-                          </div>
+                                                            {birthYear && <Badge variant="outline" className="text-[9px]">{birthYear}</Badge>}
+                                                            <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                                                              {player.status}
+                                                            </Badge>
+                                                          </div>
+                                                          <div className="flex flex-wrap gap-1 mt-1">
+                                                            {tryout?.team_role && <Badge className="text-[9px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>}
+                                                            {tryout?.recommendation && (
+                                                              <Badge className={`text-[9px] ${tryout.recommendation === 'Move up' ? 'bg-green-100 text-green-800' : tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                                                                {tryout.recommendation}
+                                                              </Badge>
+                                                            )}
+                                                          </div>
                         </button>
                       </div>
                     </div>
