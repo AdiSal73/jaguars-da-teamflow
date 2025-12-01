@@ -395,7 +395,7 @@ export default function CoachDashboard() {
                   >
                     <div className="absolute inset-0">
                       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <rect x="2" y="2" width="96" height="96" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
+                        <rect x="2" y="2" width="250" height="250" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                         <line x1="2" y1="50" x2="98" y2="50" stroke="white" strokeWidth="0.3" opacity="0.6" />
                         <circle cx="50" cy="50" r="8" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                       </svg>
