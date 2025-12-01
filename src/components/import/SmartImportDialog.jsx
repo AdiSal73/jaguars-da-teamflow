@@ -6,7 +6,49 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle, XCircle, AlertTriangle, Upload, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { CheckCircle, XCircle, AlertTriangle, Upload, Loader2, Download, Info } from 'lucide-react';
+
+const FIELD_CONFIGS = {
+  players: {
+    fields: [
+      { key: 'parent_name', label: 'Parent Name', required: false },
+      { key: 'email', label: 'Email', required: false },
+      { key: 'phone_number', label: 'Phone Number', required: false },
+      { key: 'player_last_name', label: 'Player Last Name', required: true },
+      { key: 'player_first_name', label: 'Player First Name', required: true },
+      { key: 'date_of_birth', label: 'Date of Birth', required: false },
+      { key: 'gender', label: 'Gender', required: true },
+      { key: 'grade', label: 'Grade', required: false },
+      { key: 'team_name', label: 'Team Name', required: false },
+      { key: 'season', label: 'Season', required: false }
+    ],
+    template: 'Parent Name,Email,Phone Number,Player Last Name,Player First Name,Date of Birth,Gender,Grade,Team Name,Season'
+  },
+  teams: {
+    fields: [
+      { key: 'team_name', label: 'Team Name', required: true },
+      { key: 'age_group', label: 'Age Group', required: true },
+      { key: 'gender', label: 'Gender', required: true },
+      { key: 'league', label: 'League', required: false },
+      { key: 'season', label: 'Season', required: false },
+      { key: 'coach', label: 'Coach', required: false },
+      { key: 'branch', label: 'Branch', required: false }
+    ],
+    template: 'Team Name,Age Group,Gender,League,Season,Coach,Branch'
+  },
+  coaches: {
+    fields: [
+      { key: 'first_name', label: 'First Name', required: true },
+      { key: 'last_name', label: 'Last Name', required: true },
+      { key: 'email_address', label: 'Email Address', required: false },
+      { key: 'phone_number', label: 'Phone Number', required: false },
+      { key: 'branch', label: 'Branch', required: false }
+    ],
+    template: 'First Name,Last Name,Email Address,Phone Number,Branch'
+  }
+};
 
 export default function SmartImportDialog({ 
   open, 
@@ -14,14 +56,28 @@ export default function SmartImportDialog({
   entityType, 
   existingData = [],
   teams = [],
+  coaches = [],
   players = [],
-  onImport 
+  onImport,
+  onBulkImport
 }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
   const [previewData, setPreviewData] = useState(null);
+  const [duplicateActions, setDuplicateActions] = useState({});
+
+  const config = FIELD_CONFIGS[entityType] || {};
+
+  const downloadTemplate = () => {
+    const blob = new Blob([config.template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${entityType}_template.csv`;
+    a.click();
+  };
 
   const parseCSV = (text) => {
     const lines = text.split('\n');
@@ -29,63 +85,90 @@ export default function SmartImportDialog({
     
     const records = [];
     for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      const values = lines[i].match(/(".*?"|[^,]+)/g) || [];
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = line.match(/(".*?"|[^,]+)/g) || [];
       const record = {};
+      let hasData = false;
+      
       headers.forEach((h, idx) => {
         let val = (values[idx] || '').replace(/^"|"$/g, '').replace(/""/g, '"').trim();
         record[h] = val;
+        if (val) hasData = true;
       });
-      records.push(record);
+      
+      if (hasData) {
+        records.push(record);
+      }
     }
     return { headers, records };
   };
 
-  const findBestTeamMatch = (teamName, teams) => {
+  const normalizeRecord = (record, entityType) => {
+    if (entityType === 'players') {
+      const firstName = record.player_first_name || '';
+      const lastName = record.player_last_name || '';
+      return {
+        ...record,
+        full_name: `${firstName} ${lastName}`.trim(),
+        phone: record.phone_number || record.phone,
+        email: record.email
+      };
+    }
+    if (entityType === 'teams') {
+      return {
+        ...record,
+        name: record.team_name || record.name
+      };
+    }
+    if (entityType === 'coaches') {
+      const firstName = record.first_name || '';
+      const lastName = record.last_name || '';
+      return {
+        ...record,
+        full_name: `${firstName} ${lastName}`.trim(),
+        email: record.email_address || record.email,
+        phone: record.phone_number || record.phone
+      };
+    }
+    return record;
+  };
+
+  const findBestTeamMatch = (teamName) => {
     if (!teamName) return null;
     const normalizedName = teamName.toLowerCase().trim();
-    
-    // Exact match
-    let match = teams.find(t => t.name.toLowerCase() === normalizedName);
+    let match = teams.find(t => t.name?.toLowerCase() === normalizedName);
     if (match) return match;
-    
-    // Partial match
     match = teams.find(t => 
-      t.name.toLowerCase().includes(normalizedName) || 
-      normalizedName.includes(t.name.toLowerCase())
+      t.name?.toLowerCase().includes(normalizedName) || 
+      normalizedName.includes(t.name?.toLowerCase() || '')
     );
-    if (match) return match;
-    
-    // Match by age group in name
-    const ageMatch = teamName.match(/U-?(\d+)/i);
-    if (ageMatch) {
-      match = teams.find(t => t.age_group?.includes(ageMatch[1]));
-      if (match) return match;
-    }
-    
-    return null;
+    return match || null;
   };
 
-  const findPlayerByName = (name, players) => {
-    if (!name) return null;
-    const normalizedName = name.toLowerCase().trim();
-    return players.find(p => p.full_name?.toLowerCase().trim() === normalizedName);
+  const findCoachMatch = (coachName) => {
+    if (!coachName) return null;
+    const normalizedName = coachName.toLowerCase().trim();
+    return coaches.find(c => c.full_name?.toLowerCase().includes(normalizedName));
   };
 
-  const checkDuplicate = (record, existing, entityType) => {
+  const checkDuplicate = (record, entityType) => {
+    const normalized = normalizeRecord(record, entityType);
+    
     if (entityType === 'players') {
-      return existing.find(p => 
-        p.full_name?.toLowerCase() === record.full_name?.toLowerCase() ||
-        (record.email && p.email?.toLowerCase() === record.email?.toLowerCase())
+      return existingData.find(p => 
+        p.full_name?.toLowerCase() === normalized.full_name?.toLowerCase() ||
+        (normalized.email && p.email?.toLowerCase() === normalized.email?.toLowerCase())
       );
     }
     if (entityType === 'teams') {
-      return existing.find(t => t.name?.toLowerCase() === record.name?.toLowerCase());
+      return existingData.find(t => t.name?.toLowerCase() === normalized.name?.toLowerCase());
     }
     if (entityType === 'coaches') {
-      return existing.find(c => 
-        c.email?.toLowerCase() === record.email?.toLowerCase() ||
-        c.full_name?.toLowerCase() === record.full_name?.toLowerCase()
+      return existingData.find(c => 
+        c.email?.toLowerCase() === normalized.email?.toLowerCase() ||
+        c.full_name?.toLowerCase() === normalized.full_name?.toLowerCase()
       );
     }
     return null;
@@ -99,34 +182,42 @@ export default function SmartImportDialog({
     const text = await selectedFile.text();
     const { headers, records } = parseCSV(text);
     
-    // Analyze records for duplicates and matches
-    const analyzed = records.map(record => {
-      const duplicate = checkDuplicate(record, existingData, entityType);
+    const analyzed = records.map((record, idx) => {
+      const normalized = normalizeRecord(record, entityType);
+      const duplicate = checkDuplicate(record, entityType);
       let teamMatch = null;
-      let playerMatches = [];
+      let coachMatch = null;
       
-      if (entityType === 'players' && record.team_name) {
-        teamMatch = findBestTeamMatch(record.team_name, teams);
+      if (entityType === 'players') {
+        teamMatch = findBestTeamMatch(record.team_name);
       }
-      
-      if (entityType === 'parents') {
-        const playerNames = (record.player_names || '').split(';').filter(Boolean);
-        playerMatches = playerNames.map(name => ({
-          name,
-          match: findPlayerByName(name.trim(), players)
-        }));
+      if (entityType === 'teams') {
+        coachMatch = findCoachMatch(record.coach);
       }
       
       return {
         ...record,
+        _normalized: normalized,
+        _idx: idx,
         _isDuplicate: !!duplicate,
         _duplicateOf: duplicate,
         _teamMatch: teamMatch,
-        _playerMatches: playerMatches
+        _coachMatch: coachMatch
       };
     });
     
+    const initialActions = {};
+    analyzed.forEach((r, idx) => {
+      if (r._isDuplicate) {
+        initialActions[idx] = 'skip';
+      }
+    });
+    setDuplicateActions(initialActions);
     setPreviewData({ headers, records: analyzed });
+  };
+
+  const handleDuplicateAction = (idx, action) => {
+    setDuplicateActions(prev => ({ ...prev, [idx]: action }));
   };
 
   const handleImport = async () => {
@@ -137,70 +228,102 @@ export default function SmartImportDialog({
     
     const results = {
       created: [],
+      updated: [],
       skipped: [],
-      errors: [],
-      parentsCreated: []
+      errors: []
     };
     
-    const recordsToImport = previewData.records.filter(r => !r._isDuplicate);
-    const total = recordsToImport.length;
+    const recordsToProcess = previewData.records;
+    const total = recordsToProcess.length;
     
-    for (let i = 0; i < recordsToImport.length; i++) {
-      const record = recordsToImport[i];
-      setProgress(Math.round(((i + 1) / total) * 100));
+    // Batch processing to avoid rate limits
+    const BATCH_SIZE = 5;
+    const DELAY_MS = 500;
+    
+    for (let i = 0; i < recordsToProcess.length; i += BATCH_SIZE) {
+      const batch = recordsToProcess.slice(i, i + BATCH_SIZE);
       
-      try {
-        if (entityType === 'players') {
-          const playerData = {
-            full_name: record.full_name,
-            email: record.email || undefined,
-            phone: record.phone || undefined,
-            date_of_birth: record.date_of_birth || undefined,
-            gender: record.gender || 'Female',
-            primary_position: record.primary_position || record.position || undefined,
-            jersey_number: record.jersey_number ? Number(record.jersey_number) : undefined,
-            status: record.status || 'Active',
-            parent_name: record.parent_name || undefined,
-            team_id: record._teamMatch?.id || undefined
-          };
-          
-          const created = await onImport('player', playerData);
-          results.created.push({ ...record, _createdId: created?.id });
-          
-          // Auto-create parent if parent_name and parent_email exist
-          if (record.parent_name && record.parent_email) {
-            results.parentsCreated.push({
-              name: record.parent_name,
-              email: record.parent_email,
-              playerId: created?.id
-            });
+      await Promise.all(batch.map(async (record) => {
+        const action = record._isDuplicate ? (duplicateActions[record._idx] || 'skip') : 'create';
+        
+        try {
+          if (action === 'skip') {
+            results.skipped.push(record);
+            return;
           }
-        } else if (entityType === 'teams') {
-          const teamData = {
-            name: record.name,
-            age_group: record.age_group,
-            league: record.league || undefined,
-            gender: record.gender || 'Female',
-            season: record.season || undefined
-          };
-          await onImport('team', teamData);
-          results.created.push(record);
-        } else if (entityType === 'coaches') {
-          const coachData = {
-            full_name: record.full_name,
-            email: record.email,
-            phone: record.phone || undefined,
-            specialization: record.specialization || 'General Coaching'
-          };
-          await onImport('coach', coachData);
-          results.created.push(record);
+          
+          if (entityType === 'players') {
+            const playerData = {
+              full_name: record._normalized.full_name,
+              email: record._normalized.email || undefined,
+              phone: record._normalized.phone || undefined,
+              date_of_birth: record.date_of_birth || undefined,
+              gender: record.gender || 'Female',
+              grade: record.grade || undefined,
+              parent_name: record.parent_name || undefined,
+              team_id: record._teamMatch?.id || undefined,
+              status: 'Active'
+            };
+            
+            if (action === 'replace' && record._duplicateOf) {
+              await onImport('player_update', { id: record._duplicateOf.id, data: playerData });
+              results.updated.push(record);
+            } else {
+              await onImport('player', playerData);
+              results.created.push(record);
+            }
+          } else if (entityType === 'teams') {
+            const teamData = {
+              name: record._normalized.name,
+              age_group: record.age_group,
+              league: record.league || undefined,
+              gender: record.gender || 'Female',
+              season: record.season || undefined
+            };
+            
+            if (action === 'replace' && record._duplicateOf) {
+              await onImport('team_update', { id: record._duplicateOf.id, data: teamData });
+              results.updated.push(record);
+            } else {
+              const newTeam = await onImport('team', teamData);
+              if (record._coachMatch && newTeam?.id) {
+                const coach = record._coachMatch;
+                const updatedTeamIds = [...(coach.team_ids || []), newTeam.id];
+                await onImport('coach_update', { id: coach.id, data: { team_ids: updatedTeamIds } });
+              }
+              results.created.push(record);
+            }
+          } else if (entityType === 'coaches') {
+            const coachData = {
+              full_name: record._normalized.full_name,
+              first_name: record.first_name,
+              last_name: record.last_name,
+              email: record._normalized.email || undefined,
+              phone: record._normalized.phone || undefined,
+              branch: record.branch || undefined,
+              specialization: 'General Coaching'
+            };
+            
+            if (action === 'replace' && record._duplicateOf) {
+              await onImport('coach_update', { id: record._duplicateOf.id, data: coachData });
+              results.updated.push(record);
+            } else {
+              await onImport('coach', coachData);
+              results.created.push(record);
+            }
+          }
+        } catch (error) {
+          results.errors.push({ record, error: error.message });
         }
-      } catch (error) {
-        results.errors.push({ record, error: error.message });
+      }));
+      
+      setProgress(Math.round(((i + batch.length) / total) * 100));
+      
+      if (i + BATCH_SIZE < recordsToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
       }
     }
     
-    results.skipped = previewData.records.filter(r => r._isDuplicate);
     setResults(results);
     setImporting(false);
   };
@@ -211,6 +334,7 @@ export default function SmartImportDialog({
     setResults(null);
     setProgress(0);
     setImporting(false);
+    setDuplicateActions({});
   };
 
   const handleClose = () => {
@@ -218,38 +342,56 @@ export default function SmartImportDialog({
     onClose();
   };
 
+  const duplicateRecords = previewData?.records.filter(r => r._isDuplicate) || [];
+  const newRecords = previewData?.records.filter(r => !r._isDuplicate) || [];
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            Smart Import {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
+            Import {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
           </DialogTitle>
         </DialogHeader>
 
         {!previewData && !results && (
           <div className="space-y-4 py-4">
-            <div>
+            <div className="flex items-center justify-between">
               <Label>Select CSV File</Label>
-              <Input 
-                type="file" 
-                accept=".csv"
-                onChange={handleFileSelect}
-                className="mt-2"
-              />
+              <Button variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download className="w-4 h-4 mr-2" />
+                Download Template
+              </Button>
             </div>
-            <div className="text-sm text-slate-500">
-              <p className="font-medium mb-2">Expected columns for {entityType}:</p>
-              {entityType === 'players' && (
-                <p>full_name, email, phone, date_of_birth, gender, primary_position, team_name, jersey_number, parent_name, parent_email</p>
-              )}
-              {entityType === 'teams' && (
-                <p>name, age_group, league, gender, season</p>
-              )}
-              {entityType === 'coaches' && (
-                <p>full_name, email, phone, specialization</p>
-              )}
+            <Input 
+              type="file" 
+              accept=".csv"
+              onChange={handleFileSelect}
+            />
+            
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-900 mb-2">Required Fields for {entityType}:</p>
+                  <div className="grid grid-cols-2 gap-1 text-sm">
+                    {config.fields?.map(field => (
+                      <div key={field.key} className="flex items-center gap-1">
+                        {field.required ? (
+                          <span className="text-red-500">*</span>
+                        ) : (
+                          <span className="text-transparent">*</span>
+                        )}
+                        <span className={field.required ? 'font-medium text-blue-900' : 'text-blue-700'}>
+                          {field.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">* Required fields</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -258,10 +400,10 @@ export default function SmartImportDialog({
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <Badge className="bg-emerald-100 text-emerald-800">
-                {previewData.records.filter(r => !r._isDuplicate).length} New
+                {newRecords.length} New
               </Badge>
               <Badge className="bg-orange-100 text-orange-800">
-                {previewData.records.filter(r => r._isDuplicate).length} Duplicates (will skip)
+                {duplicateRecords.length} Duplicates
               </Badge>
               {entityType === 'players' && (
                 <Badge className="bg-blue-100 text-blue-800">
@@ -272,7 +414,7 @@ export default function SmartImportDialog({
 
             <ScrollArea className="flex-1 border rounded-lg">
               <div className="p-2 space-y-2">
-                {previewData.records.slice(0, 50).map((record, idx) => (
+                {previewData.records.map((record, idx) => (
                   <div 
                     key={idx} 
                     className={`p-3 rounded-lg border ${
@@ -287,32 +429,49 @@ export default function SmartImportDialog({
                           <CheckCircle className="w-4 h-4 text-emerald-500" />
                         )}
                         <span className="font-medium">
-                          {record.full_name || record.name}
+                          {record._normalized?.full_name || record._normalized?.name}
                         </span>
+                        {record._normalized?.email && (
+                          <span className="text-xs text-slate-500">({record._normalized.email})</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {record._isDuplicate && (
-                          <Badge variant="outline" className="text-orange-600">Duplicate</Badge>
-                        )}
                         {record._teamMatch && (
                           <Badge className="bg-blue-100 text-blue-800 text-xs">
                             → {record._teamMatch.name}
                           </Badge>
                         )}
+                        {record._coachMatch && (
+                          <Badge className="bg-purple-100 text-purple-800 text-xs">
+                            Coach: {record._coachMatch.full_name}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    {entityType === 'players' && record.team_name && !record._teamMatch && (
-                      <div className="text-xs text-orange-600 mt-1">
-                        No team match found for: {record.team_name}
+                    
+                    {record._isDuplicate && (
+                      <div className="mt-3 p-2 bg-orange-100 rounded">
+                        <p className="text-xs text-orange-800 mb-2">
+                          Duplicate of: <span className="font-medium">{record._duplicateOf?.full_name || record._duplicateOf?.name}</span>
+                        </p>
+                        <RadioGroup
+                          value={duplicateActions[record._idx] || 'skip'}
+                          onValueChange={(val) => handleDuplicateAction(record._idx, val)}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="skip" id={`skip-${idx}`} />
+                            <Label htmlFor={`skip-${idx}`} className="text-xs">Skip (keep existing)</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="replace" id={`replace-${idx}`} />
+                            <Label htmlFor={`replace-${idx}`} className="text-xs">Replace (update existing)</Label>
+                          </div>
+                        </RadioGroup>
                       </div>
                     )}
                   </div>
                 ))}
-                {previewData.records.length > 50 && (
-                  <div className="text-center text-slate-500 py-2">
-                    ... and {previewData.records.length - 50} more records
-                  </div>
-                )}
               </div>
             </ScrollArea>
 
@@ -333,7 +492,7 @@ export default function SmartImportDialog({
                 disabled={importing}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {importing ? 'Importing...' : `Import ${previewData.records.filter(r => !r._isDuplicate).length} Records`}
+                {importing ? 'Importing...' : 'Import Records'}
               </Button>
             </div>
           </div>
@@ -341,16 +500,21 @@ export default function SmartImportDialog({
 
         {results && (
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="p-4 bg-emerald-50 rounded-lg text-center">
                 <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-emerald-700">{results.created.length}</div>
                 <div className="text-sm text-emerald-600">Created</div>
               </div>
+              <div className="p-4 bg-blue-50 rounded-lg text-center">
+                <CheckCircle className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-700">{results.updated.length}</div>
+                <div className="text-sm text-blue-600">Updated</div>
+              </div>
               <div className="p-4 bg-orange-50 rounded-lg text-center">
                 <AlertTriangle className="w-8 h-8 text-orange-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-orange-700">{results.skipped.length}</div>
-                <div className="text-sm text-orange-600">Skipped (Duplicates)</div>
+                <div className="text-sm text-orange-600">Skipped</div>
               </div>
               <div className="p-4 bg-red-50 rounded-lg text-center">
                 <XCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
@@ -359,20 +523,12 @@ export default function SmartImportDialog({
               </div>
             </div>
 
-            {results.parentsCreated.length > 0 && (
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <div className="font-medium text-blue-800">
-                  {results.parentsCreated.length} parents will need to be invited
-                </div>
-              </div>
-            )}
-
             {results.errors.length > 0 && (
               <ScrollArea className="h-32 border rounded-lg">
                 <div className="p-2 space-y-1">
                   {results.errors.map((err, idx) => (
                     <div key={idx} className="text-sm text-red-600">
-                      {err.record.full_name || err.record.name}: {err.error}
+                      {err.record._normalized?.full_name || err.record._normalized?.name}: {err.error}
                     </div>
                   ))}
                 </div>
