@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
-import PlayerComparisonModal from '../components/player/PlayerComparisonModal';
+import EnhancedPlayerComparisonModal from '../components/player/EnhancedPlayerComparisonModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -1094,14 +1094,14 @@ export default function TeamDashboard() {
         </DialogContent>
       </Dialog>
 
-      <PlayerComparisonModal
-        open={showCompareModal}
-        onClose={() => setShowCompareModal(false)}
-        players={players.filter(p => selectedPlayersForCompare.includes(p.id))}
-        assessments={assessments}
-        evaluations={evaluations}
-        tryouts={tryouts}
-      />
+      <EnhancedPlayerComparisonModal
+                    open={showCompareModal}
+                    onClose={() => setShowCompareModal(false)}
+                    players={players.filter(p => selectedPlayersForCompare.includes(p.id))}
+                    assessments={assessments}
+                    evaluations={evaluations}
+                    tryouts={tryouts}
+                  />
 
       <ExportDialog
         open={showExportDialog}
