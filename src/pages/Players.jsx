@@ -368,10 +368,9 @@ export default function Players() {
           </div>
           </div>
 
-      <Tabs defaultValue="cards" className="w-full">
+      <Tabs value="cards" className="w-full">
         <TabsList>
-          <TabsTrigger value="cards">Card View</TabsTrigger>
-          <TabsTrigger value="table">Table View</TabsTrigger>
+          <TabsTrigger value="cards" onClick={() => {}}>Card View</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cards">
@@ -436,8 +435,7 @@ export default function Players() {
             </div>
           )}
         </TabsContent>
-
-        <TabsContent value="table">
+      </Tabs>
           <Card className="border-none shadow-lg mb-6">
             <CardHeader>
               <div className="flex justify-between items-center">

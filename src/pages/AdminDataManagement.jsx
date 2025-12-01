@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import SmartImportDialog from '../components/import/SmartImportDialog';
+import CleanSyncDataDialog from '../components/club/CleanSyncDataDialog';
 
 export default function AdminDataManagement() {
   const queryClient = useQueryClient();
@@ -25,6 +26,7 @@ export default function AdminDataManagement() {
   const [importEntityType, setImportEntityType] = useState('');
   const [deleteAllType, setDeleteAllType] = useState(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [showCleanDialog, setShowCleanDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -220,14 +222,36 @@ export default function AdminDataManagement() {
     setDeleteAllType(null);
   };
 
+  const handleCleanData = async (action, data) => {
+    if (action === 'delete_player') {
+      await base44.entities.Player.delete(data);
+      queryClient.invalidateQueries(['players']);
+    } else if (action === 'delete_team') {
+      await base44.entities.Team.delete(data);
+      queryClient.invalidateQueries(['teams']);
+    } else if (action === 'delete_coach') {
+      await base44.entities.Coach.delete(data);
+      queryClient.invalidateQueries(['coaches']);
+    } else if (action === 'update_player') {
+      await base44.entities.Player.update(data.id, data.data);
+      queryClient.invalidateQueries(['players']);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Shield className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" />
-          Admin Data Management
-        </h1>
-        <p className="text-slate-600 mt-1">Import/Export data and manage assignments</p>
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <Shield className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" />
+            Admin Data Management
+          </h1>
+          <p className="text-slate-600 mt-1">Import/Export data and manage assignments</p>
+        </div>
+        <Button onClick={() => setShowCleanDialog(true)} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          Clean & Sync Data
+        </Button>
       </div>
 
       <Tabs defaultValue="import-export" className="w-full">
@@ -500,6 +524,15 @@ export default function AdminDataManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CleanSyncDataDialog
+        open={showCleanDialog}
+        onClose={() => setShowCleanDialog(false)}
+        players={players}
+        teams={teams}
+        coaches={coaches}
+        onCleanData={handleCleanData}
+      />
     </div>
   );
 }
