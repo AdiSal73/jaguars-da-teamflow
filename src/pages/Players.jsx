@@ -124,6 +124,12 @@ export default function Players() {
     enabled: !!user
   });
 
+  const { data: tryouts = [] } = useQuery({
+    queryKey: ['tryouts'],
+    queryFn: () => base44.entities.PlayerTryout.list(),
+    enabled: !!user
+  });
+
   const createPlayerMutation = useMutation({
     mutationFn: (data) => base44.entities.Player.create(data),
     onSuccess: () => {
@@ -359,6 +365,7 @@ export default function Players() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlayers.map(player => {
               const team = teams.find(t => t.id === player.team_id);
+              const tryout = tryouts.find(t => t.player_id === player.id);
               const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
               return (
                 <div key={player.id} className="relative group">
@@ -378,8 +385,20 @@ export default function Players() {
                              {team && <span>{team.name}</span>}
                              {team?.league && <span> • {team.league}</span>}
                            </div>
-                           <div className="flex flex-wrap gap-2">
+                           <div className="flex flex-wrap gap-1">
                              <Badge className={statusColors[player.status]}>{player.status}</Badge>
+                             {tryout?.team_role && (
+                               <Badge className="bg-purple-100 text-purple-800 text-[10px]">{tryout.team_role}</Badge>
+                             )}
+                             {tryout?.recommendation && (
+                               <Badge className={`text-[10px] ${
+                                 tryout.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-800' :
+                                 tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' :
+                                 'bg-blue-100 text-blue-800'
+                               }`}>
+                                 {tryout.recommendation}
+                               </Badge>
+                             )}
                            </div>
                           </div>
                         </div>
@@ -638,7 +657,6 @@ export default function Players() {
                 <SelectContent>
                   <SelectItem value="Male">Male</SelectItem>
                   <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
