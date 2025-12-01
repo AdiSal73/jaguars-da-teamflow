@@ -14,7 +14,7 @@ import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
-import { getPositionBorderColor, getPositionBorderStyle } from '../components/player/positionColors';
+import { getPositionBorderColor } from '../components/player/positionColors';
 
 const positionMapping = {
   'GK': 'GK',
@@ -638,7 +638,7 @@ export default function FormationView() {
                                                                                             evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
                                                                                             assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
                                                                                           >
-                                                                                          <div className="bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border-2 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative" style={{ borderColor: getPositionBorderStyle(player.primary_position) }}>
+                                                                                          <div className={`bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border-2 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative ${getPositionBorderColor(player.primary_position)}`}>
                                                                                             <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
                                                                                                                                                 <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
                                                                                                                                                   #{player.tryout?.team_ranking || index + 1}
