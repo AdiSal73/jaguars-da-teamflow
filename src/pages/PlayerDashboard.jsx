@@ -130,6 +130,16 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.Team.list()
   });
 
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list()
+  });
+
+  // Get parents assigned to this player
+  const assignedParents = allUsers.filter(u => 
+    u.role === 'parent' && (u.player_ids || []).includes(playerId)
+  );
+
   const currentAssessment = assessments[assessmentIndex] || null;
   const currentEvaluation = evaluations[evaluationIndex] || null;
   const team = teams.find(t => t.id === player?.team_id);
@@ -523,16 +533,28 @@ export default function PlayerDashboard() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="w-3 h-3 text-slate-400" />
-                {isEditing ? (
-                  <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" />
-                ) : (
-                  <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                                    <Phone className="w-3 h-3 text-slate-400" />
+                                    {isEditing ? (
+                                      <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" />
+                                    ) : (
+                                      <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Parent Contacts */}
+                                {assignedParents.length > 0 && (
+                                  <div className="border-t pt-2 mt-2">
+                                    <div className="text-[10px] font-semibold text-slate-500 mb-1">Assigned Parents</div>
+                                    {assignedParents.map(parent => (
+                                      <div key={parent.id} className="text-xs text-slate-600 mb-1">
+                                        <div className="font-medium">{parent.full_name}</div>
+                                        <div className="text-slate-500">{parent.email}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
 
         {/* Tryout Info - Only visible to admin/coach */}
         {isAdminOrCoach && (
