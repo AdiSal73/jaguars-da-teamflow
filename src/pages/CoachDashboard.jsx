@@ -415,7 +415,7 @@ export default function CoachDashboard() {
                                   width: '120px'
                                 }}
                               >
-                                <div className="bg-white/90 width=300 p-2 rounded-lg shadow-lg">
+                                <div className="bg-white/90 p-2 rounded-lg shadow-lg">
                                   <div className="text-center text-xs font-bold text-slate-700 mb-1 border-b pb-1">
                                     {position.label}
                                   </div>
