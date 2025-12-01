@@ -59,7 +59,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "BookSession",
+    mainPage: "Tryouts",
     Pages: PAGES,
     Layout: __Layout,
 };
