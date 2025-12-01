@@ -436,7 +436,8 @@ export default function Players() {
           )}
         </TabsContent>
       </Tabs>
-          <Card className="border-none shadow-lg mb-6">
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Bulk Actions</CardTitle>
@@ -605,8 +606,6 @@ export default function Players() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
