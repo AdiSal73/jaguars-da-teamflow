@@ -39,6 +39,9 @@ export default function PlayerRoleAssignment() {
   const [filterLeague, setFilterLeague] = useState('all');
   const [filterGender, setFilterGender] = useState('Female');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [roleFilterTeam, setRoleFilterTeam] = useState('all');
+  const [roleFilterAgeGroup, setRoleFilterAgeGroup] = useState('all');
+  const [roleFilterLeague, setRoleFilterLeague] = useState('all');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -119,12 +122,19 @@ export default function PlayerRoleAssignment() {
       const tryout = tryouts.find(t => t.player_id === player.id);
       const role = tryout?.team_role;
       if (role && result[role]) {
-        result[role].push({ ...player, tryout });
+        const team = teams.find(t => t.id === player.team_id);
+        const matchesTeam = roleFilterTeam === 'all' || player.team_id === roleFilterTeam;
+        const matchesAgeGroup = roleFilterAgeGroup === 'all' || team?.age_group === roleFilterAgeGroup;
+        const matchesLeague = roleFilterLeague === 'all' || team?.league === roleFilterLeague;
+        
+        if (matchesTeam && matchesAgeGroup && matchesLeague) {
+          result[role].push({ ...player, tryout });
+        }
       }
     });
 
     return result;
-  }, [filteredPlayers, tryouts, roles]);
+  }, [filteredPlayers, tryouts, roles, roleFilterTeam, roleFilterAgeGroup, roleFilterLeague, teams]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -157,20 +167,57 @@ export default function PlayerRoleAssignment() {
       <DragDropContext onDragEnd={handleDragEnd}>
         {/* Main Content - Role Containers */}
         <div className="flex-1 p-4 overflow-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900">Player Role Assignment</h1>
-              <p className="text-sm text-slate-600">Drag players from the sidebar to assign roles</p>
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-slate-900">Player Role Assignment</h1>
+                <p className="text-sm text-slate-600">Drag players from the sidebar to assign roles</p>
+              </div>
+              <Select value={filterGender} onValueChange={setFilterGender}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Female">Girls</SelectItem>
+                  <SelectItem value="Male">Boys</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={filterGender} onValueChange={setFilterGender}>
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Female">Girls</SelectItem>
-                <SelectItem value="Male">Boys</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-2">
+              <Select value={roleFilterTeam} onValueChange={setRoleFilterTeam}>
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {teams.filter(t => t.gender === filterGender || !t.gender).map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={roleFilterAgeGroup} onValueChange={setRoleFilterAgeGroup}>
+                <SelectTrigger className="h-8 w-28 text-xs">
+                  <SelectValue placeholder="All Ages" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ages</SelectItem>
+                  {uniqueAgeGroups.map(ag => (
+                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={roleFilterLeague} onValueChange={setRoleFilterLeague}>
+                <SelectTrigger className="h-8 w-28 text-xs">
+                  <SelectValue placeholder="All Leagues" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  {uniqueLeagues.map(l => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
