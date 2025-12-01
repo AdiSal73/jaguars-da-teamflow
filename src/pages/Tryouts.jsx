@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
+import { getPositionBorderColor } from '../components/player/positionColors';
 
 export default function Tryouts() {
   const navigate = useNavigate();
@@ -426,12 +427,12 @@ export default function Tryouts() {
                                                                          ...provided.draggableProps.style,
                                                                        }}
                                                                        className={`${
-                                                                         player.trapped === 'Yes' 
-                                                                           ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                                                           : 'border-slate-200 bg-white hover:border-emerald-400'
-                                                                       } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                                                         snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                                                       }`}
+                                                                                                                player.trapped === 'Yes' 
+                                                                                                                  ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                                                                                                  : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
+                                                                                                              } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                                                                                                snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                                                                                              }`}
                                                                        onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
                                                                       >
                                                                         <div className="flex items-center justify-between gap-2">

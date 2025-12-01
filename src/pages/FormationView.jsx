@@ -14,6 +14,7 @@ import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
+import { getPositionBorderColor, getPositionBorderStyle } from '../components/player/positionColors';
 
 const positionMapping = {
   'GK': 'GK',
