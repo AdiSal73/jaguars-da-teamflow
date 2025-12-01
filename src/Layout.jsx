@@ -91,7 +91,6 @@ export default function Layout({ children, currentPageName }) {
               roles: ["admin"],
               submenu: [
                 { title: "Overview", url: createPageUrl("ClubManagement") },
-                { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
                 { title: "User Management", url: createPageUrl("UserManagement") },
                 { title: "Data Management", url: createPageUrl("AdminDataManagement") },
                 { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") },
@@ -134,48 +133,10 @@ export default function Layout({ children, currentPageName }) {
                 { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
               ]
             },
-            {
-              title: "Calendar",
-              icon: Calendar,
-              roles: ["admin", "coach"],
-              submenu: [
-                { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
-                { title: "Announcements", url: createPageUrl("TeamCommunication") },
-                { title: "Drills Library", url: createPageUrl("TeamDrills") },
-              ]
-            },
-            {
-              title: "Bookings",
-              icon: Clock,
-              roles: ["admin", "coach"],
-              submenu: [
-                { title: "Availability", url: createPageUrl("Availability") },
-                { title: "Manage Bookings", url: createPageUrl("BookingsTable") },
-                { title: "Book Session", url: createPageUrl("BookSession") },
-              ]
-            },
-            { 
-              title: "Messages", 
-              url: createPageUrl("Messages"), 
-              icon: MessageSquare, 
-              roles: ["admin", "coach", "user", "parent"] 
-            },
             { 
               title: "My Profile", 
               url: createPageUrl("PlayerDashboard"), 
               icon: Activity, 
-              roles: ["user", "parent"] 
-            },
-            { 
-              title: "Book Session", 
-              url: createPageUrl("BookSession"), 
-              icon: Calendar, 
-              roles: ["user", "parent"] 
-            },
-            { 
-              title: "My Bookings", 
-              url: createPageUrl("MyBookings"), 
-              icon: Clock, 
               roles: ["user", "parent"] 
             },
           ];
