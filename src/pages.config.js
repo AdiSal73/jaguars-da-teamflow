@@ -23,6 +23,8 @@ import PlayerDashboard from './pages/PlayerDashboard';
 import PlayerComparison from './pages/PlayerComparison';
 import Analytics from './pages/Analytics';
 import AdminDataManagement from './pages/AdminDataManagement';
+import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
+import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +54,8 @@ export const PAGES = {
     "PlayerComparison": PlayerComparison,
     "Analytics": Analytics,
     "AdminDataManagement": AdminDataManagement,
+    "PlayerRoleAssignment": PlayerRoleAssignment,
+    "ClubSettingsAdmin": ClubSettingsAdmin,
 }
 
 export const pagesConfig = {
