@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Plus, Search, User, Edit, Users, Trash2, Upload } from 'lucide-react';
 import BulkImportPlayers from '../components/players/BulkImportPlayers';
+import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -347,10 +348,11 @@ export default function Players() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlayers.map(player => {
               const team = teams.find(t => t.id === player.team_id);
+              const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
               return (
                 <div key={player.id} className="relative group">
                   <Link to={`${createPageUrl('PlayerDashboard')}?id=${player.id}`}>
-                    <Card className="hover:shadow-lg transition-all duration-300 border-none">
+                    <Card className={`hover:shadow-lg transition-all duration-300 border-2 ${getPositionBorderColor(player.primary_position)}`}>
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
@@ -358,10 +360,15 @@ export default function Players() {
                           </div>
                           <div className="flex-1">
                            <h3 className="font-bold text-lg text-slate-900">{player.full_name}</h3>
-                           <p className="text-sm text-slate-600 mb-2">{player.primary_position || 'No position'}</p>
+                           <p className="text-sm text-slate-600 mb-1">{player.primary_position || 'No position'}</p>
+                           <div className="text-xs text-slate-500 mb-2">
+                             {birthYear && <span>{birthYear}</span>}
+                             {birthYear && team && <span> • </span>}
+                             {team && <span>{team.name}</span>}
+                             {team?.league && <span> • {team.league}</span>}
+                           </div>
                            <div className="flex flex-wrap gap-2">
                              <Badge className={statusColors[player.status]}>{player.status}</Badge>
-                             {team && <Badge variant="outline">{team.name}</Badge>}
                            </div>
                           </div>
                         </div>
