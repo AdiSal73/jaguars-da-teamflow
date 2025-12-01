@@ -73,112 +73,112 @@ export default function Layout({ children, currentPageName }) {
               }, [userRole, players, location.pathname, user, navigate]);
 
   const navigationItems = [
-        { 
-          title: "Analytics", 
-          url: createPageUrl("Analytics"), 
-          icon: BarChart3, 
-          roles: ["admin"] 
-        },
-        { 
-          title: "Dashboard", 
-          url: createPageUrl("CoachDashboard"), 
-          icon: LayoutDashboard, 
-          roles: ["coach"] 
-        },
-        {
-                        title: "Club",
-                        icon: Shield,
-                        roles: ["admin"],
-                        submenu: [
-                          { title: "Overview", url: createPageUrl("ClubManagement") },
-                          { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
-                          { title: "User Management", url: createPageUrl("UserManagement") },
-                          { title: "Data Management", url: createPageUrl("AdminDataManagement") },
-                        ]
-                      },
-        {
-                        title: "Boys Teams",
-                        icon: Users,
-                        roles: ["admin", "coach"],
-                        submenu: [
-                          { title: "All Boys Teams", url: createPageUrl("Teams") + "?gender=Boys" },
-                          { title: "Boys Players", url: createPageUrl("Players") + "?gender=Boys" },
-                        ]
-                      },
-                      {
-                        title: "Girls Teams",
-                        icon: Users,
-                        roles: ["admin", "coach"],
-                        submenu: [
-                          { title: "All Girls Teams", url: createPageUrl("Teams") + "?gender=Girls" },
-                          { title: "Girls Players", url: createPageUrl("Players") + "?gender=Girls" },
-                        ]
-                      },
-                      {
-                        title: "All Teams",
-                        icon: Shield,
-                        roles: ["admin", "coach"],
-                        submenu: [
-                          { title: "All Teams", url: createPageUrl("Teams") },
-                          { title: "All Players", url: createPageUrl("Players") },
-                          { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
-                          { title: "Announcements", url: createPageUrl("TeamCommunication") },
-                          { title: "Drills Library", url: createPageUrl("TeamDrills") },
-                        ]
-                      },
-        { 
-          title: "Coaches", 
-          url: createPageUrl("CoachManagement"), 
-          icon: UserCog, 
-          roles: ["admin"] 
-        },
-        { 
-          title: "Tryouts",
-          icon: TrendingUp,
-          roles: ["admin", "coach"],
-          submenu: [
-            { title: "Tryout Board", url: createPageUrl("Tryouts") },
-            { title: "Depth Chart", url: createPageUrl("FormationView") },
-            { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
-            { title: "Assessments", url: createPageUrl("Assessments") },
-            { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
-          ]
-        },
-        {
-          title: "Bookings",
-          icon: Calendar,
-          roles: ["admin", "coach"],
-          submenu: [
-            { title: "Availability", url: createPageUrl("Availability") },
-            { title: "Manage Bookings", url: createPageUrl("BookingsTable") },
-            { title: "Book Session", url: createPageUrl("BookSession") },
-          ]
-        },
-        { 
-          title: "Messages", 
-          url: createPageUrl("Messages"), 
-          icon: MessageSquare, 
-          roles: ["admin", "coach", "user", "parent"] 
-        },
-        { 
-          title: "My Profile", 
-          url: createPageUrl("PlayerDashboard"), 
-          icon: Activity, 
-          roles: ["user", "parent"] 
-        },
-        { 
-          title: "Book Session", 
-          url: createPageUrl("BookSession"), 
-          icon: Calendar, 
-          roles: ["user", "parent"] 
-        },
-        { 
-          title: "My Bookings", 
-          url: createPageUrl("MyBookings"), 
-          icon: Clock, 
-          roles: ["user", "parent"] 
-        },
-      ];
+            { 
+              title: "Analytics", 
+              url: createPageUrl("Analytics"), 
+              icon: BarChart3, 
+              roles: ["admin"] 
+            },
+            { 
+              title: "Dashboard", 
+              url: createPageUrl("CoachDashboard"), 
+              icon: LayoutDashboard, 
+              roles: ["coach"] 
+            },
+            {
+              title: "Club",
+              icon: Shield,
+              roles: ["admin"],
+              submenu: [
+                { title: "Overview", url: createPageUrl("ClubManagement") },
+                { title: "Unassigned Records", url: createPageUrl("UnassignedRecords") },
+                { title: "User Management", url: createPageUrl("UserManagement") },
+                { title: "Data Management", url: createPageUrl("AdminDataManagement") },
+                { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") },
+              ]
+            },
+            {
+              title: "Boys",
+              icon: Users,
+              roles: ["admin", "coach"],
+              submenu: [
+                { title: "Teams", url: createPageUrl("Teams") + "?gender=Boys" },
+                { title: "Players", url: createPageUrl("Players") + "?gender=Male" },
+              ]
+            },
+            {
+              title: "Girls",
+              icon: Users,
+              roles: ["admin", "coach"],
+              submenu: [
+                { title: "Teams", url: createPageUrl("Teams") + "?gender=Girls" },
+                { title: "Players", url: createPageUrl("Players") + "?gender=Female" },
+              ]
+            },
+            { 
+              title: "Coaches", 
+              url: createPageUrl("CoachManagement"), 
+              icon: UserCog, 
+              roles: ["admin"] 
+            },
+            { 
+              title: "Tryouts",
+              icon: TrendingUp,
+              roles: ["admin", "coach"],
+              submenu: [
+                { title: "Tryout Board", url: createPageUrl("Tryouts") },
+                { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
+                { title: "Depth Chart", url: createPageUrl("FormationView") },
+                { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
+                { title: "Assessments", url: createPageUrl("Assessments") },
+                { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+              ]
+            },
+            {
+              title: "Calendar",
+              icon: Calendar,
+              roles: ["admin", "coach"],
+              submenu: [
+                { title: "Team Calendar", url: createPageUrl("TeamCalendar") },
+                { title: "Announcements", url: createPageUrl("TeamCommunication") },
+                { title: "Drills Library", url: createPageUrl("TeamDrills") },
+              ]
+            },
+            {
+              title: "Bookings",
+              icon: Clock,
+              roles: ["admin", "coach"],
+              submenu: [
+                { title: "Availability", url: createPageUrl("Availability") },
+                { title: "Manage Bookings", url: createPageUrl("BookingsTable") },
+                { title: "Book Session", url: createPageUrl("BookSession") },
+              ]
+            },
+            { 
+              title: "Messages", 
+              url: createPageUrl("Messages"), 
+              icon: MessageSquare, 
+              roles: ["admin", "coach", "user", "parent"] 
+            },
+            { 
+              title: "My Profile", 
+              url: createPageUrl("PlayerDashboard"), 
+              icon: Activity, 
+              roles: ["user", "parent"] 
+            },
+            { 
+              title: "Book Session", 
+              url: createPageUrl("BookSession"), 
+              icon: Calendar, 
+              roles: ["user", "parent"] 
+            },
+            { 
+              title: "My Bookings", 
+              url: createPageUrl("MyBookings"), 
+              icon: Clock, 
+              roles: ["user", "parent"] 
+            },
+          ];
 
   const filteredNavItems = navigationItems.filter(item => 
     userRole && item.roles.includes(userRole)
