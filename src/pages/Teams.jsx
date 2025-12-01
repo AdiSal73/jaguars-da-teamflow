@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Users, User, Edit, Trash2, BarChart3, Scan, Table, Grid, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Users, User, Edit, Trash2, BarChart3, Table, Grid, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import TeamAnalyticsCard from '../components/team/TeamAnalyticsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CoachSelector from '../components/team/CoachSelector';
 
 export default function Teams() {
@@ -23,15 +22,6 @@ export default function Teams() {
   const [viewAnalyticsTeam, setViewAnalyticsTeam] = useState(null);
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
-
-  // Check URL params for gender filter
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const genderParam = params.get('gender');
-    if (genderParam) {
-      setFilterGender(genderParam);
-    }
-  }, []);
   const [filterCoach, setFilterCoach] = useState('all');
   const [filterClub, setFilterClub] = useState('all');
   const [viewMode, setViewMode] = useState('cards');
@@ -41,10 +31,18 @@ export default function Teams() {
     name: '',
     age_group: '',
     league: '',
+    gender: 'Female',
     season: '',
-    team_color: '#22c55e',
     coach_ids: []
   });
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const genderParam = params.get('gender');
+    if (genderParam) {
+      setFilterGender(genderParam);
+    }
+  }, []);
 
   const queryClient = useQueryClient();
 
@@ -88,13 +86,9 @@ export default function Teams() {
         const hasTeam = coach.team_ids?.includes(editingTeam.id);
         
         if (shouldHaveTeam && !hasTeam) {
-          await base44.entities.Coach.update(coach.id, { 
-            team_ids: [...(coach.team_ids || []), editingTeam.id] 
-          });
+          await base44.entities.Coach.update(coach.id, { team_ids: [...(coach.team_ids || []), editingTeam.id] });
         } else if (!shouldHaveTeam && hasTeam) {
-          await base44.entities.Coach.update(coach.id, { 
-            team_ids: coach.team_ids.filter(tid => tid !== editingTeam.id) 
-          });
+          await base44.entities.Coach.update(coach.id, { team_ids: coach.team_ids.filter(tid => tid !== editingTeam.id) });
         }
       }
       queryClient.invalidateQueries(['teams']);
@@ -115,19 +109,11 @@ export default function Teams() {
 
   const updateTeamFieldMutation = useMutation({
     mutationFn: ({ id, field, value }) => base44.entities.Team.update(id, { [field]: value }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['teams']);
-    }
+    onSuccess: () => queryClient.invalidateQueries(['teams'])
   });
 
   const resetForm = () => {
-    setTeamForm({
-      name: '',
-      age_group: '',
-      league: '',
-      season: '',
-      coach_ids: []
-    });
+    setTeamForm({ name: '', age_group: '', league: '', gender: 'Female', season: '', coach_ids: [] });
   };
 
   const handleEdit = (team) => {
@@ -137,6 +123,7 @@ export default function Teams() {
       name: team.name || '',
       age_group: team.age_group || '',
       league: team.league || '',
+      gender: team.gender || 'Female',
       season: team.season || '',
       coach_ids: assignedCoaches
     });
@@ -164,6 +151,11 @@ export default function Teams() {
     let result = teams.filter(team => {
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
       if (filterClub !== 'all' && team.league !== filterClub) return false;
+      if (filterGender !== 'all') {
+        if (filterGender === 'Boys' && team.gender !== 'Male') return false;
+        if (filterGender === 'Girls' && team.gender !== 'Female') return false;
+        if (filterGender !== 'Boys' && filterGender !== 'Girls' && team.gender !== filterGender) return false;
+      }
       if (filterCoach !== 'all') {
         const coach = coaches.find(c => c.id === filterCoach);
         if (!coach?.team_ids?.includes(team.id)) return false;
@@ -174,26 +166,19 @@ export default function Teams() {
     result.sort((a, b) => {
       let aVal = a[sortField] || '';
       let bVal = b[sortField] || '';
-      
       if (sortField === 'playerCount') {
         aVal = players.filter(p => p.team_id === a.id).length;
         bVal = players.filter(p => p.team_id === b.id).length;
       }
-
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-
-      if (sortDirection === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
+      return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
 
     return result;
-  }, [teams, filterAgeGroup, filterClub, filterCoach, coaches, sortField, sortDirection, players]);
+  }, [teams, filterAgeGroup, filterClub, filterGender, filterCoach, coaches, sortField, sortDirection, players]);
 
   const uniqueClubs = [...new Set(teams.map(t => t.league).filter(Boolean))];
 
@@ -204,47 +189,52 @@ export default function Teams() {
 
   return (
     <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Teams Management</h1>
-          <p className="text-sm md:text-base text-slate-600 mt-1">Manage teams and assign coaches</p>
+          <p className="text-sm text-slate-600 mt-1">Manage teams and assign coaches</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => { setEditingTeam(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Team
-          </Button>
-        </div>
+        <Button onClick={() => { setEditingTeam(null); resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Team
+        </Button>
       </div>
 
       <Card className="mb-6 border-none shadow-lg">
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
               <div>
-                <Label className="mb-2 block text-xs md:text-sm">Age Group</Label>
+                <Label className="mb-2 block text-xs">Age Group</Label>
                 <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-                  <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
+                  <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
-                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
-                      const extractAge = (ag) => {
-                        const match = ag?.match(/U-?(\d+)/i);
-                        return match ? parseInt(match[1]) : 0;
-                      };
-                      return extractAge(b) - extractAge(a);
-                    }).map(ag => (
+                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort().map(ag => (
                       <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-xs md:text-sm">Coach</Label>
+                <Label className="mb-2 block text-xs">Gender</Label>
+                <Select value={filterGender} onValueChange={setFilterGender}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Girls">Girls</SelectItem>
+                    <SelectItem value="Boys">Boys</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block text-xs">Coach</Label>
                 <Select value={filterCoach} onValueChange={setFilterCoach}>
-                  <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
+                  <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,9 +246,9 @@ export default function Teams() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-xs md:text-sm">League</Label>
+                <Label className="mb-2 block text-xs">League</Label>
                 <Select value={filterClub} onValueChange={setFilterClub}>
-                  <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
+                  <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,20 +261,10 @@ export default function Teams() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'cards' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('cards')}
-                className={viewMode === 'cards' ? 'bg-emerald-600' : ''}
-              >
+              <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')} className={viewMode === 'cards' ? 'bg-emerald-600' : ''}>
                 <Grid className="w-4 h-4" />
               </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className={viewMode === 'table' ? 'bg-emerald-600' : ''}
-              >
+              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className={viewMode === 'table' ? 'bg-emerald-600' : ''}>
                 <Table className="w-4 h-4" />
               </Button>
             </div>
@@ -293,70 +273,63 @@ export default function Teams() {
       </Card>
 
       {viewMode === 'cards' ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTeams.map(team => {
             const teamPlayers = players.filter(p => p.team_id === team.id);
             const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
+            const isMaleTeam = team.gender === 'Male';
 
             return (
-              <Card key={team.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer relative"
+              <Card 
+                key={team.id} 
+                className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer relative ${isMaleTeam ? 'bg-slate-800' : 'bg-white'}`}
                 onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
               >
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setViewAnalyticsTeam(team); }} className="h-8 w-8 bg-white shadow-sm">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setViewAnalyticsTeam(team); }} className={`h-8 w-8 shadow-sm ${isMaleTeam ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white'}`}>
                     <BarChart3 className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(team); }} className="h-8 w-8 bg-white shadow-sm">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(team); }} className={`h-8 w-8 shadow-sm ${isMaleTeam ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white'}`}>
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTeamId(team.id); }} className="h-8 w-8 bg-white shadow-sm hover:bg-red-50 hover:text-red-600">
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteTeamId(team.id); }} className={`h-8 w-8 shadow-sm hover:bg-red-50 hover:text-red-600 ${isMaleTeam ? 'bg-slate-700 text-white' : 'bg-white'}`}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50 p-4">
+                <CardHeader className={`border-b p-4 ${isMaleTeam ? 'bg-slate-900 border-slate-700' : 'border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50'}`}>
                   <CardTitle className="flex items-center gap-3">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md group-hover:scale-110 transition-transform">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform ${isMaleTeam ? 'bg-slate-700 text-white' : 'bg-gradient-to-br from-emerald-500 to-blue-500 text-white'}`}>
                       {team.age_group || team.name?.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm md:text-lg truncate">{team.name}</div>
-                      <div className="text-xs md:text-sm font-normal text-slate-600">{team.age_group}</div>
+                      <div className={`text-sm truncate ${isMaleTeam ? 'text-white' : ''}`}>{team.name}</div>
+                      <div className={`text-xs font-normal ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>{team.age_group}</div>
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4 md:pt-6 p-4">
-                  <div className="space-y-2 md:space-y-3">
+                <CardContent className={`pt-4 p-4 ${isMaleTeam ? 'text-slate-300' : ''}`}>
+                  <div className="space-y-2">
                     {team.league && (
-                      <div className="flex justify-between text-xs md:text-sm">
-                        <span className="text-slate-600">Club:</span>
-                        <span className="font-medium text-slate-900">{team.league}</span>
+                      <div className="flex justify-between text-xs">
+                        <span className={isMaleTeam ? 'text-slate-400' : 'text-slate-600'}>Club:</span>
+                        <span className={`font-medium ${isMaleTeam ? 'text-white' : 'text-slate-900'}`}>{team.league}</span>
                       </div>
                     )}
-                    {team.season && (
-                      <div className="flex justify-between text-xs md:text-sm">
-                        <span className="text-slate-600">Season:</span>
-                        <span className="font-medium text-slate-900">{team.season}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-xs md:text-sm">
-                      <span className="text-slate-600">Players:</span>
-                      <span className="font-medium text-slate-900 flex items-center gap-1">
-                        <Users className="w-3 h-3 md:w-4 md:h-4" />
-                        {teamPlayers.length}
+                    <div className="flex justify-between text-xs">
+                      <span className={isMaleTeam ? 'text-slate-400' : 'text-slate-600'}>Players:</span>
+                      <span className={`font-medium flex items-center gap-1 ${isMaleTeam ? 'text-white' : 'text-slate-900'}`}>
+                        <Users className="w-3 h-3" />{teamPlayers.length}
                       </span>
                     </div>
                     {teamCoaches.length > 0 && (
-                      <div className="pt-2 md:pt-3 border-t border-slate-100">
-                        <div className="text-[10px] md:text-xs text-slate-600 mb-1 md:mb-2">Assigned Coaches:</div>
+                      <div className={`pt-2 border-t ${isMaleTeam ? 'border-slate-700' : 'border-slate-100'}`}>
+                        <div className={`text-[10px] mb-1 ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>Coaches:</div>
                         {teamCoaches.slice(0, 2).map(coach => (
-                          <div key={coach.id} className="flex items-center gap-1 md:gap-2 text-xs md:text-sm mb-1">
-                            <User className="w-3 h-3 text-emerald-600" />
-                            <span className="text-slate-700 truncate">{coach.full_name}</span>
+                          <div key={coach.id} className="flex items-center gap-1 text-xs mb-1">
+                            <User className={`w-3 h-3 ${isMaleTeam ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                            <span className={`truncate ${isMaleTeam ? 'text-slate-300' : 'text-slate-700'}`}>{coach.full_name}</span>
                           </div>
                         ))}
-                        {teamCoaches.length > 2 && (
-                          <span className="text-[10px] text-slate-500">+{teamCoaches.length - 2} more</span>
-                        )}
                       </div>
                     )}
                   </div>
@@ -372,132 +345,60 @@ export default function Teams() {
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
                   <tr>
-                    <th 
-                      className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold cursor-pointer hover:bg-slate-700"
-                      onClick={() => handleSort('name')}
-                    >
-                      <div className="flex items-center">
-                        Team Name <SortIcon field="name" />
-                      </div>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('name')}>
+                      <div className="flex items-center">Team Name <SortIcon field="name" /></div>
                     </th>
-                    <th 
-                      className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold cursor-pointer hover:bg-slate-700"
-                      onClick={() => handleSort('age_group')}
-                    >
-                      <div className="flex items-center">
-                        Age Group <SortIcon field="age_group" />
-                      </div>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('age_group')}>
+                      <div className="flex items-center">Age Group <SortIcon field="age_group" /></div>
                     </th>
-                    <th 
-                      className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold cursor-pointer hover:bg-slate-700"
-                      onClick={() => handleSort('league')}
-                    >
-                      <div className="flex items-center">
-                        Club <SortIcon field="league" />
-                      </div>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Gender</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Club</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('playerCount')}>
+                      <div className="flex items-center">Players <SortIcon field="playerCount" /></div>
                     </th>
-                    <th 
-                      className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold cursor-pointer hover:bg-slate-700"
-                      onClick={() => handleSort('season')}
-                    >
-                      <div className="flex items-center">
-                        Season <SortIcon field="season" />
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold cursor-pointer hover:bg-slate-700"
-                      onClick={() => handleSort('playerCount')}
-                    >
-                      <div className="flex items-center">
-                        Players <SortIcon field="playerCount" />
-                      </div>
-                    </th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-bold">Coaches</th>
-                    <th className="px-4 md:px-6 py-3 md:py-4 text-center text-xs md:text-sm font-bold">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Coaches</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTeams.map((team, idx) => {
                     const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
                     const teamPlayers = players.filter(p => p.team_id === team.id);
-                    
                     return (
-                      <tr 
-                        key={team.id} 
-                        className={`border-b hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
-                      >
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <Input
-                            value={team.name || ''}
-                            onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'name', value: e.target.value })}
-                            className="border-transparent hover:border-slate-300 focus:border-emerald-500 font-semibold text-xs md:text-sm h-8 md:h-9"
-                          />
+                      <tr key={team.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                        <td className="px-4 py-3">
+                          <Input value={team.name || ''} onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'name', value: e.target.value })} className="border-transparent hover:border-slate-300 font-semibold text-xs h-8" />
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <Input
-                            value={team.age_group || ''}
-                            onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'age_group', value: e.target.value })}
-                            className="border-transparent hover:border-slate-300 focus:border-emerald-500 text-xs md:text-sm h-8 md:h-9"
-                          />
+                        <td className="px-4 py-3">
+                          <Input value={team.age_group || ''} onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'age_group', value: e.target.value })} className="border-transparent hover:border-slate-300 text-xs h-8" />
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <Input
-                            value={team.league || ''}
-                            onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'league', value: e.target.value })}
-                            className="border-transparent hover:border-slate-300 focus:border-emerald-500 text-xs md:text-sm h-8 md:h-9"
-                          />
+                        <td className="px-4 py-3">
+                          <Select value={team.gender || ''} onValueChange={(v) => updateTeamFieldMutation.mutate({ id: team.id, field: 'gender', value: v })}>
+                            <SelectTrigger className="h-8 text-xs w-24"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Female">Female</SelectItem>
+                              <SelectItem value="Male">Male</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <Input
-                            value={team.season || ''}
-                            onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'season', value: e.target.value })}
-                            className="border-transparent hover:border-slate-300 focus:border-emerald-500 text-xs md:text-sm h-8 md:h-9"
-                          />
+                        <td className="px-4 py-3">
+                          <Input value={team.league || ''} onChange={(e) => updateTeamFieldMutation.mutate({ id: team.id, field: 'league', value: e.target.value })} className="border-transparent hover:border-slate-300 text-xs h-8" />
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
-                          <span className="flex items-center gap-1 text-xs md:text-sm font-medium">
-                            <Users className="w-3 h-3 md:w-4 md:h-4 text-slate-500" />
-                            {teamPlayers.length}
-                          </span>
+                        <td className="px-4 py-3">
+                          <span className="flex items-center gap-1 text-xs font-medium"><Users className="w-3 h-3 text-slate-500" />{teamPlayers.length}</span>
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4">
+                        <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {teamCoaches.slice(0, 2).map(coach => (
-                              <span key={coach.id} className="text-[10px] md:text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                                {coach.full_name}
-                              </span>
+                              <span key={coach.id} className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">{coach.full_name}</span>
                             ))}
-                            {teamCoaches.length > 2 && (
-                              <span className="text-[10px] md:text-xs text-slate-500">+{teamCoaches.length - 2}</span>
-                            )}
                           </div>
                         </td>
-                        <td className="px-4 md:px-6 py-3 md:py-4 text-center">
+                        <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 md:h-8 md:w-8"
-                              onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
-                            >
-                              <BarChart3 className="w-3 h-3 md:w-4 md:h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 md:h-8 md:w-8"
-                              onClick={() => handleEdit(team)}
-                            >
-                              <Edit className="w-3 h-3 md:w-4 md:h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 md:h-8 md:w-8 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => setDeleteTeamId(team.id)}
-                            >
-                              <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}><BarChart3 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(team)}><Edit className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-50 hover:text-red-600" onClick={() => setDeleteTeamId(team.id)}><Trash2 className="w-3 h-3" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -505,85 +406,51 @@ export default function Teams() {
                   })}
                 </tbody>
               </table>
-              {filteredTeams.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
-                  No teams found matching your filters
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {teams.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-slate-500">No teams yet. Create your first team to get started.</p>
-        </div>
-      )}
-
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <div className="w-2 h-6 md:h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
-              {editingTeam ? 'Edit Team' : 'Create New Team'}
-            </DialogTitle>
+            <DialogTitle>{editingTeam ? 'Edit Team' : 'Create New Team'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+          <div className="space-y-4 mt-4">
             <div>
-              <Label className="font-semibold text-slate-700 text-sm">Team Name *</Label>
-              <Input
-                value={teamForm.name}
-                onChange={(e) => setTeamForm({...teamForm, name: e.target.value})}
-                placeholder="e.g., Elite Squad"
-                className="border-2 h-10 md:h-12 mt-2"
-              />
+              <Label>Team Name *</Label>
+              <Input value={teamForm.name} onChange={(e) => setTeamForm({...teamForm, name: e.target.value})} className="mt-1" />
             </div>
             <div>
-              <Label className="font-semibold text-slate-700 text-sm">Age Group *</Label>
-              <Input
-                value={teamForm.age_group}
-                onChange={(e) => setTeamForm({...teamForm, age_group: e.target.value})}
-                placeholder="e.g., U-15, U-18, Senior"
-                className="border-2 h-10 md:h-12 mt-2"
-              />
+              <Label>Age Group *</Label>
+              <Input value={teamForm.age_group} onChange={(e) => setTeamForm({...teamForm, age_group: e.target.value})} className="mt-1" />
             </div>
             <div>
-              <Label className="font-semibold text-slate-700 text-sm">Club</Label>
-              <Input
-                value={teamForm.league}
-                onChange={(e) => setTeamForm({...teamForm, league: e.target.value})}
-                placeholder="e.g., Soccer Academy"
-                className="border-2 h-10 md:h-12 mt-2"
-              />
+              <Label>Gender *</Label>
+              <Select value={teamForm.gender} onValueChange={(v) => setTeamForm({...teamForm, gender: v})}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <Label className="font-semibold text-slate-700 text-sm">Season</Label>
-              <Input
-                value={teamForm.season}
-                onChange={(e) => setTeamForm({...teamForm, season: e.target.value})}
-                placeholder="e.g., 2024/2025"
-                className="border-2 h-10 md:h-12 mt-2"
-              />
+              <Label>Club/League</Label>
+              <Input value={teamForm.league} onChange={(e) => setTeamForm({...teamForm, league: e.target.value})} className="mt-1" />
             </div>
             <div>
-              <Label className="mb-3 block text-sm">Assign Coaches</Label>
-              <CoachSelector 
-                coaches={coaches}
-                selectedCoachIds={teamForm.coach_ids}
-                onCoachesChange={(ids) => setTeamForm({...teamForm, coach_ids: ids})}
-              />
+              <Label>Season</Label>
+              <Input value={teamForm.season} onChange={(e) => setTeamForm({...teamForm, season: e.target.value})} className="mt-1" />
+            </div>
+            <div>
+              <Label className="mb-2 block">Assign Coaches</Label>
+              <CoachSelector coaches={coaches} selectedCoachIds={teamForm.coach_ids} onCoachesChange={(ids) => setTeamForm({...teamForm, coach_ids: ids})} />
             </div>
           </div>
-          <div className="flex justify-end gap-3 md:gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t">
-            <Button variant="outline" onClick={() => { setShowDialog(false); setEditingTeam(null); resetForm(); }} className="h-10 md:h-12 px-6 md:px-8">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={!teamForm.name || !teamForm.age_group}
-              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-10 md:h-12 px-6 md:px-8 text-sm md:text-base font-semibold shadow-lg"
-            >
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button variant="outline" onClick={() => { setShowDialog(false); setEditingTeam(null); resetForm(); }}>Cancel</Button>
+            <Button onClick={handleSave} disabled={!teamForm.name || !teamForm.age_group} className="bg-emerald-600 hover:bg-emerald-700">
               {editingTeam ? 'Update Team' : 'Create Team'}
             </Button>
           </div>
@@ -594,15 +461,11 @@ export default function Teams() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Team?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this team. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete this team.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteTeamMutation.mutate(deleteTeamId)} className="bg-red-600 hover:bg-red-700">
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => deleteTeamMutation.mutate(deleteTeamId)} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -610,14 +473,9 @@ export default function Teams() {
       <Dialog open={!!viewAnalyticsTeam} onOpenChange={() => setViewAnalyticsTeam(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-600" />
-              Team Analytics - {viewAnalyticsTeam?.name}
-            </DialogTitle>
+            <DialogTitle>Team Analytics - {viewAnalyticsTeam?.name}</DialogTitle>
           </DialogHeader>
-          {viewAnalyticsTeam && (
-            <TeamAnalyticsCard teamId={viewAnalyticsTeam.id} teamName={viewAnalyticsTeam.name} />
-          )}
+          {viewAnalyticsTeam && <TeamAnalyticsCard teamId={viewAnalyticsTeam.id} teamName={viewAnalyticsTeam.name} />}
         </DialogContent>
       </Dialog>
     </div>
