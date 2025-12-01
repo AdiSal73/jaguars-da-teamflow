@@ -599,11 +599,9 @@ export default function Tryouts() {
           </CardContent>
         </Card>
 
-        <Tabs value={viewMode} onValueChange={setViewMode} className="text-slate-800 w-full">
+        <Tabs value="columns" className="text-slate-800 w-full">
           <TabsList className="mb-4 md:mb-6 grid grid-cols-3 w-full md:w-auto">
             <TabsTrigger value="columns" className="text-xs md:text-sm">3-Column</TabsTrigger>
-            <TabsTrigger value="cards" className="text-xs md:text-sm">Cards</TabsTrigger>
-            <TabsTrigger value="formation" className="text-xs md:text-sm">Formation</TabsTrigger>
           </TabsList>
 
           <TabsContent value="columns">
