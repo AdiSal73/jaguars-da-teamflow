@@ -220,7 +220,7 @@ export default function Teams() {
       <Card className="mb-6 border-none shadow-lg">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 flex-1">
               <div>
                 <Label className="mb-2 block text-xs md:text-sm">Age Group</Label>
                 <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
