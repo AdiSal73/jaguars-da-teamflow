@@ -59,18 +59,18 @@ export default function Layout({ children, currentPageName }) {
       const userRole = getUserRole();
 
   React.useEffect(() => {
-        if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
-          let currentPlayer;
-          if (userRole === 'parent' && user.player_id) {
-            currentPlayer = players.find(p => p.id === user.player_id);
-          } else {
-            currentPlayer = players.find(p => p.email === user.email);
-          }
-          if (currentPlayer) {
-            navigate(`/player-dashboard?id=${currentPlayer.id}`);
-          }
-        }
-      }, [userRole, players, location.pathname, user, navigate]);
+                if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
+                  let currentPlayer;
+                  if (userRole === 'parent' && (user.player_ids || []).length > 0) {
+                    currentPlayer = players.find(p => p.id === user.player_ids[0]);
+                  } else {
+                    currentPlayer = players.find(p => p.email === user.email);
+                  }
+                  if (currentPlayer) {
+                    navigate(`/player-dashboard?id=${currentPlayer.id}`);
+                  }
+                }
+              }, [userRole, players, location.pathname, user, navigate]);
 
   const navigationItems = [
         { 
