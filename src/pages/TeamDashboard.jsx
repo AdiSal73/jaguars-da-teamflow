@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare, FileDown } from 'lucide-react';
+import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -518,7 +519,7 @@ export default function TeamDashboard() {
                   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
                   const isSelected = selectedPlayersForCompare.includes(player.id);
                   return (
-                    <div key={player.id} className={`p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-emerald-500'}`}>
+                    <div key={player.id} className={`p-3 md:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all text-left border-2 ${isSelected ? 'border-blue-500 bg-blue-50' : `${getPositionBorderColor(player.primary_position)} hover:border-emerald-500`}`}>
                       <div className="flex items-start gap-2">
                         <Checkbox 
                           checked={isSelected}
