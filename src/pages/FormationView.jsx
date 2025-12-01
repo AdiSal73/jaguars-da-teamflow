@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 import { getPositionBorderColor } from '../components/player/positionColors';
+import EditablePlayerCard from '../components/player/EditablePlayerCard';
 
 const positionMapping = {
   'GK': 'GK',
@@ -186,6 +187,11 @@ export default function FormationView() {
   const { data: evaluations = [] } = useQuery({
     queryKey: ['evaluations'],
     queryFn: () => base44.entities.Evaluation.list()
+  });
+
+  const { data: clubSettings = [] } = useQuery({
+    queryKey: ['clubSettings'],
+    queryFn: () => base44.entities.ClubSettings.list()
   });
 
   const saveFormationMutation = useMutation({
@@ -752,53 +758,28 @@ export default function FormationView() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                   {unassignedPlayers.map((player, index) => {
-                    const playerTryout = tryouts.find(t => t.player_id === player.id);
-                    const playerTeam = teams.find(t => t.id === player.team_id);
-                    const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
-                    return (
-                      <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                        {(dragProvided, dragSnapshot) => (
-                          <div
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                            {...dragProvided.dragHandleProps}
-                            className={`transition-all ${dragSnapshot.isDragging ? 'scale-110' : ''}`}>
-                            <div className="bg-slate-50 rounded-lg p-2 md:p-3 border-2 border-slate-200 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-lg">
-                              <div className="flex flex-col items-center">
-                                <div className="w-8 h-8 md:w-12 md:h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-md mb-1 md:mb-2">
-                                  {player.jersey_number || <User className="w-4 h-4 md:w-6 md:h-6" />}
-                                </div>
-                                <div className="text-[9px] md:text-xs font-bold text-slate-900 text-center mb-0.5 md:mb-1">
-                                  {player.full_name}
-                                </div>
-                                <div className="flex flex-wrap gap-1 justify-center mb-1">
-                                  {birthYear && <Badge variant="outline" className="text-[7px] px-1 py-0">{birthYear}</Badge>}
-                                  {playerTeam && <Badge variant="outline" className="text-[7px] px-1 py-0 truncate max-w-[60px]">{playerTeam.name}</Badge>}
-                                </div>
-                                {playerTryout && (
-                                  <div className="flex flex-col items-center gap-0.5 md:gap-1 w-full">
-                                    {playerTryout.team_role && (
-                                      <Button size="sm" className={`h-3 md:h-5 px-1 md:px-1.5 text-[7px] md:text-[9px] rounded-full pointer-events-none w-full ${teamRoleColors[playerTryout.team_role] || 'bg-blue-500'}`}>
-                                        {playerTryout.team_role}
-                                      </Button>
-                                    )}
-                                    {playerTryout.recommendation && (
-                                       <Button size="sm" className={`h-3 md:h-5 px-1 md:px-1.5 text-[7px] md:text-[9px] rounded-full pointer-events-none w-full ${
-                                          playerTryout.recommendation === 'Move up' ? 'bg-emerald-500' :
-                                          playerTryout.recommendation === 'Move down' ? 'bg-orange-500' :
-                                          'bg-blue-500'
-                                       }`}>
-                                          {playerTryout.recommendation}
-                                       </Button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    );
+                  const playerTryout = tryouts.find(t => t.player_id === player.id);
+                  const playerTeam = teams.find(t => t.id === player.team_id);
+                  return (
+                    <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                      {(dragProvided, dragSnapshot) => (
+                        <div
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
+                          {...dragProvided.dragHandleProps}
+                          className={`transition-all ${dragSnapshot.isDragging ? 'scale-110' : ''}`}>
+                          <EditablePlayerCard
+                            player={player}
+                            tryout={playerTryout}
+                            team={playerTeam}
+                            teams={teams}
+                            clubSettings={clubSettings}
+                            className="cursor-grab active:cursor-grabbing"
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  );
                   })}
                   {provided.placeholder}
                 </div>
