@@ -22,6 +22,16 @@ export default function Teams() {
   const [deleteTeamId, setDeleteTeamId] = useState(null);
   const [viewAnalyticsTeam, setViewAnalyticsTeam] = useState(null);
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterGender, setFilterGender] = useState('all');
+
+  // Check URL params for gender filter
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const genderParam = params.get('gender');
+    if (genderParam) {
+      setFilterGender(genderParam);
+    }
+  }, []);
   const [filterCoach, setFilterCoach] = useState('all');
   const [filterClub, setFilterClub] = useState('all');
   const [viewMode, setViewMode] = useState('cards');

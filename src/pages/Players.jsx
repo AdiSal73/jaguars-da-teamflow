@@ -49,6 +49,16 @@ export default function Players() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterGender, setFilterGender] = useState('all');
+
+  // Check URL params for gender filter
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const genderParam = params.get('gender');
+    if (genderParam) {
+      setFilterGender(genderParam);
+    }
+  }, []);
   const [showDialog, setShowDialog] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -249,7 +259,8 @@ export default function Players() {
       const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
       const team = teams.find(t => t.id === player.team_id);
       const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
-      return matchesSearch && matchesTeam && matchesAgeGroup;
+      const matchesGender = filterGender === 'all' || team?.gender === filterGender || player.gender === filterGender;
+      return matchesSearch && matchesTeam && matchesAgeGroup && matchesGender;
     })
     .sort((a, b) => {
       // Sort by team first
