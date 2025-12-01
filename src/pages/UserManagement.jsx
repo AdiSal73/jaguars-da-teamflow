@@ -39,7 +39,7 @@ export default function UserManagement() {
 
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ role: '', player_id: '' });
+  const [editUserForm, setEditUserForm] = useState({ role: '', player_ids: [] });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -130,7 +130,7 @@ export default function UserManagement() {
     setEditingUser(user);
     setEditUserForm({
       role: user.role || 'user',
-      player_id: user.player_id || ''
+      player_ids: user.player_ids || []
     });
     setShowEditUserDialog(true);
   };
@@ -326,9 +326,9 @@ export default function UserManagement() {
                           }>
                             {userRole}
                           </Badge>
-                          {userRole === 'parent' && user.player_id && (
+                          {userRole === 'parent' && (user.player_ids || []).length > 0 && (
                             <span className="ml-2 text-xs text-slate-500">
-                              → {players.find(p => p.id === user.player_id)?.full_name || 'Unknown'}
+                              → {(user.player_ids || []).map(pid => players.find(p => p.id === pid)?.full_name).filter(Boolean).join(', ') || 'Unknown'}
                             </span>
                           )}
                         </TableCell>
@@ -420,18 +420,28 @@ export default function UserManagement() {
             
             {editUserForm.role === 'parent' && (
               <div>
-                <Label className="mb-2 block">Assigned Player</Label>
-                <Select value={editUserForm.player_id || ''} onValueChange={(v) => setEditUserForm({ ...editUserForm, player_id: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a player" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {players.map(player => (
-                      <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-500 mt-1">Parent will be able to view this player's dashboard</p>
+                <Label className="mb-2 block">Assigned Players (Multiple)</Label>
+                <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
+                  {players.map(player => (
+                    <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(editUserForm.player_ids || []).includes(player.id)}
+                        onChange={(e) => {
+                          const currentIds = editUserForm.player_ids || [];
+                          if (e.target.checked) {
+                            setEditUserForm({ ...editUserForm, player_ids: [...currentIds, player.id] });
+                          } else {
+                            setEditUserForm({ ...editUserForm, player_ids: currentIds.filter(id => id !== player.id) });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{player.full_name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Parent will be able to view these players' dashboards</p>
               </div>
             )}
 
