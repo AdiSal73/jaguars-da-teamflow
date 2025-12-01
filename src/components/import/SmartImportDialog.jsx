@@ -88,17 +88,41 @@ export default function SmartImportDialog({
       const line = lines[i].trim();
       if (!line) continue;
       
-      const values = line.match(/(".*?"|[^,]+)/g) || [];
+      // Handle CSV with commas inside quotes
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
       const record = {};
-      let hasData = false;
+      let hasRequiredData = false;
       
       headers.forEach((h, idx) => {
         let val = (values[idx] || '').replace(/^"|"$/g, '').replace(/""/g, '"').trim();
         record[h] = val;
-        if (val) hasData = true;
       });
       
-      if (hasData) {
+      // Check if record has meaningful data (at least one required field or name)
+      const hasName = record.full_name || record.player_first_name || record.player_last_name || 
+                      record.first_name || record.last_name || record.team_name || record.name;
+      const hasEmail = record.email || record.email_address;
+      
+      if (hasName || hasEmail) {
+        hasRequiredData = true;
+      }
+      
+      if (hasRequiredData) {
         records.push(record);
       }
     }
@@ -347,7 +371,7 @@ export default function SmartImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />

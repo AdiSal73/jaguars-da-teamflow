@@ -87,8 +87,13 @@ export default function PlayerRoleAssignment() {
   };
 
   const roles = getRolesForGender(filterGender);
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueAgeGroups = useMemo(() => {
+    return [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
+  }, [teams]);
+  
+  const uniqueLeagues = useMemo(() => {
+    return [...new Set(teams.map(t => t.league).filter(Boolean))];
+  }, [teams]);
 
   const filteredPlayers = useMemo(() => {
     return players.filter(player => {
