@@ -317,7 +317,7 @@ export default function Players() {
             className="pl-10"
           />
         </div>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
           <div>
             <Label className="mb-2 block">Filter by Team</Label>
             <Select value={filterTeam} onValueChange={setFilterTeam}>
@@ -333,27 +333,40 @@ export default function Players() {
             </Select>
           </div>
           <div>
-            <Label className="mb-2 block">Filter by Age Group</Label>
-            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Age Groups" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Age Groups</SelectItem>
-                {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
-                  const extractAge = (ag) => {
-                    const match = ag?.match(/U-?(\d+)/i);
-                    return match ? parseInt(match[1]) : 0;
-                  };
-                  return extractAge(b) - extractAge(a);
-                }).map(ageGroup => (
-                  <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Label className="mb-2 block">Filter by Age Group</Label>
+              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Age Groups" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Age Groups</SelectItem>
+                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                    const extractAge = (ag) => {
+                      const match = ag?.match(/U-?(\d+)/i);
+                      return match ? parseInt(match[1]) : 0;
+                    };
+                    return extractAge(b) - extractAge(a);
+                  }).map(ageGroup => (
+                    <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block">Filter by Gender</Label>
+              <Select value={filterGender} onValueChange={setFilterGender}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Female">Girls</SelectItem>
+                  <SelectItem value="Male">Boys</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-      </div>
+          </div>
 
       <Tabs defaultValue="cards" className="w-full">
         <TabsList>
