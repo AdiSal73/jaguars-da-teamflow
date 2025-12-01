@@ -13,12 +13,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import SmartImportDialog from '../components/import/SmartImportDialog';
 
 export default function AdminDataManagement() {
   const queryClient = useQueryClient();
   const [showParentDialog, setShowParentDialog] = useState(false);
   const [editingParent, setEditingParent] = useState(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importEntityType, setImportEntityType] = useState('');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -81,8 +84,12 @@ export default function AdminDataManagement() {
   };
 
   const exportPlayers = () => {
-    const headers = ['full_name', 'email', 'phone', 'date_of_birth', 'gender', 'primary_position', 'team_id', 'jersey_number', 'status'];
-    exportCSV(players, 'players.csv', headers);
+    const data = players.map(p => ({
+      ...p,
+      team_name: teams.find(t => t.id === p.team_id)?.name || ''
+    }));
+    const headers = ['full_name', 'email', 'phone', 'date_of_birth', 'gender', 'primary_position', 'team_name', 'jersey_number', 'status', 'parent_name'];
+    exportCSV(data, 'players.csv', headers);
   };
 
   const exportTeams = () => {
@@ -96,52 +103,37 @@ export default function AdminDataManagement() {
   };
 
   const exportParents = () => {
-    const parentData = parents.map(p => ({
-      full_name: p.full_name,
-      email: p.email,
-      player_ids: (p.player_ids || []).join(';')
-    }));
-    const headers = ['full_name', 'email', 'player_ids'];
+    const parentData = parents.map(p => {
+      const playerNames = (p.player_ids || []).map(pid => players.find(pl => pl.id === pid)?.full_name).filter(Boolean);
+      return {
+        full_name: p.full_name,
+        email: p.email,
+        player_names: playerNames.join(';')
+      };
+    });
+    const headers = ['full_name', 'email', 'player_names'];
     exportCSV(parentData, 'parents.csv', headers);
   };
 
-  // CSV Import Functions
-  const handleImport = async (file, entityType) => {
-    const text = await file.text();
-    const lines = text.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    
-    const records = [];
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      const values = lines[i].match(/(".*?"|[^,]+)/g) || [];
-      const record = {};
-      headers.forEach((h, idx) => {
-        let val = (values[idx] || '').replace(/^"|"$/g, '').replace(/""/g, '"');
-        record[h] = val;
-      });
-      records.push(record);
+  const handleImportCallback = async (entityType, data) => {
+    if (entityType === 'player') {
+      const result = await base44.entities.Player.create(data);
+      queryClient.invalidateQueries(['players']);
+      return result;
+    } else if (entityType === 'team') {
+      const result = await base44.entities.Team.create(data);
+      queryClient.invalidateQueries(['teams']);
+      return result;
+    } else if (entityType === 'coach') {
+      const result = await base44.entities.Coach.create(data);
+      queryClient.invalidateQueries(['coaches']);
+      return result;
     }
+  };
 
-    try {
-      if (entityType === 'players') {
-        for (const record of records) {
-          await base44.entities.Player.create(record);
-        }
-      } else if (entityType === 'teams') {
-        for (const record of records) {
-          await base44.entities.Team.create(record);
-        }
-      } else if (entityType === 'coaches') {
-        for (const record of records) {
-          await base44.entities.Coach.create(record);
-        }
-      }
-      queryClient.invalidateQueries([entityType]);
-      toast.success(`Imported ${records.length} ${entityType}`);
-    } catch (error) {
-      toast.error(`Import failed: ${error.message}`);
-    }
+  const openImportDialog = (type) => {
+    setImportEntityType(type);
+    setImportDialogOpen(true);
   };
 
   const handleEditParent = (parent) => {
@@ -158,17 +150,17 @@ export default function AdminDataManagement() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Shield className="w-8 h-8 text-emerald-600" />
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+          <Shield className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" />
           Admin Data Management
         </h1>
         <p className="text-slate-600 mt-1">Import/Export data and manage assignments</p>
       </div>
 
       <Tabs defaultValue="import-export" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="import-export">Import/Export</TabsTrigger>
           <TabsTrigger value="players-teams">Players → Teams</TabsTrigger>
           <TabsTrigger value="coaches-teams">Coaches → Teams</TabsTrigger>
@@ -190,15 +182,10 @@ export default function AdminDataManagement() {
                   <Download className="w-4 h-4 mr-2" />
                   Export Players CSV
                 </Button>
-                <div>
-                  <Label>Import Players CSV</Label>
-                  <Input 
-                    type="file" 
-                    accept=".csv"
-                    onChange={(e) => e.target.files?.[0] && handleImport(e.target.files[0], 'players')}
-                    className="mt-1"
-                  />
-                </div>
+                <Button onClick={() => openImportDialog('players')} variant="outline" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Smart Import Players
+                </Button>
               </CardContent>
             </Card>
 
@@ -215,15 +202,10 @@ export default function AdminDataManagement() {
                   <Download className="w-4 h-4 mr-2" />
                   Export Teams CSV
                 </Button>
-                <div>
-                  <Label>Import Teams CSV</Label>
-                  <Input 
-                    type="file" 
-                    accept=".csv"
-                    onChange={(e) => e.target.files?.[0] && handleImport(e.target.files[0], 'teams')}
-                    className="mt-1"
-                  />
-                </div>
+                <Button onClick={() => openImportDialog('teams')} variant="outline" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Smart Import Teams
+                </Button>
               </CardContent>
             </Card>
 
@@ -240,15 +222,10 @@ export default function AdminDataManagement() {
                   <Download className="w-4 h-4 mr-2" />
                   Export Coaches CSV
                 </Button>
-                <div>
-                  <Label>Import Coaches CSV</Label>
-                  <Input 
-                    type="file" 
-                    accept=".csv"
-                    onChange={(e) => e.target.files?.[0] && handleImport(e.target.files[0], 'coaches')}
-                    className="mt-1"
-                  />
-                </div>
+                <Button onClick={() => openImportDialog('coaches')} variant="outline" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Smart Import Coaches
+                </Button>
               </CardContent>
             </Card>
 
@@ -265,6 +242,7 @@ export default function AdminDataManagement() {
                   <Download className="w-4 h-4 mr-2" />
                   Export Parents CSV
                 </Button>
+                <p className="text-xs text-slate-500">Parents must be invited via User Management</p>
               </CardContent>
             </Card>
           </div>
@@ -276,43 +254,45 @@ export default function AdminDataManagement() {
               <CardTitle>Assign Players to Teams</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Player</TableHead>
-                    <TableHead>Current Team</TableHead>
-                    <TableHead>Assign to Team</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {players.slice(0, 50).map(player => (
-                    <TableRow key={player.id}>
-                      <TableCell className="font-medium">{player.full_name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {teams.find(t => t.id === player.team_id)?.name || 'Unassigned'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select 
-                          value={player.team_id || ''} 
-                          onValueChange={(v) => updatePlayerMutation.mutate({ id: player.id, data: { team_id: v } })}
-                        >
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select team" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={null}>Unassigned</SelectItem>
-                            {teams.map(t => (
-                              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
+              <div className="max-h-[60vh] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Player</TableHead>
+                      <TableHead>Current Team</TableHead>
+                      <TableHead>Assign to Team</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {players.slice(0, 100).map(player => (
+                      <TableRow key={player.id}>
+                        <TableCell className="font-medium">{player.full_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {teams.find(t => t.id === player.team_id)?.name || 'Unassigned'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={player.team_id || ''} 
+                            onValueChange={(v) => updatePlayerMutation.mutate({ id: player.id, data: { team_id: v || null } })}
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder="Select team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={null}>Unassigned</SelectItem>
+                              {teams.map(t => (
+                                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -461,6 +441,16 @@ export default function AdminDataManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SmartImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        entityType={importEntityType}
+        existingData={importEntityType === 'players' ? players : importEntityType === 'teams' ? teams : coaches}
+        teams={teams}
+        players={players}
+        onImport={handleImportCallback}
+      />
     </div>
   );
 }

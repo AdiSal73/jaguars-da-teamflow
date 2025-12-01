@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, Users, Filter } from 'lucide-react';
-import { getPositionBorderColor } from '../components/player/positionColors';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, Users, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import EditablePlayerCard from '../components/player/EditablePlayerCard';
 
 const DEFAULT_FEMALE_ROLES = [
   'Indispensable Player',
@@ -34,7 +35,10 @@ export default function PlayerRoleAssignment() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
+  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterLeague, setFilterLeague] = useState('all');
   const [filterGender, setFilterGender] = useState('Female');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -80,18 +84,35 @@ export default function PlayerRoleAssignment() {
   };
 
   const roles = getRolesForGender(filterGender);
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
 
   const filteredPlayers = useMemo(() => {
     return players.filter(player => {
       const matchesSearch = player.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
       const matchesGender = player.gender === filterGender;
-      return matchesSearch && matchesTeam && matchesGender;
+      return matchesSearch && matchesGender;
     });
-  }, [players, searchTerm, filterTeam, filterGender]);
+  }, [players, searchTerm, filterGender]);
+
+  const unassignedFilteredPlayers = useMemo(() => {
+    return filteredPlayers.filter(player => {
+      const tryout = tryouts.find(t => t.player_id === player.id);
+      const role = tryout?.team_role;
+      const hasRole = role && roles.includes(role);
+      if (hasRole) return false;
+      
+      const team = teams.find(t => t.id === player.team_id);
+      const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
+      const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
+      const matchesLeague = filterLeague === 'all' || team?.league === filterLeague;
+      
+      return matchesTeam && matchesAgeGroup && matchesLeague;
+    });
+  }, [filteredPlayers, tryouts, roles, filterTeam, filterAgeGroup, filterLeague, teams]);
 
   const playersByRole = useMemo(() => {
-    const result = { unassigned: [] };
+    const result = {};
     roles.forEach(role => { result[role] = []; });
 
     filteredPlayers.forEach(player => {
@@ -99,8 +120,6 @@ export default function PlayerRoleAssignment() {
       const role = tryout?.team_role;
       if (role && result[role]) {
         result[role].push({ ...player, tryout });
-      } else {
-        result.unassigned.push({ ...player, tryout });
       }
     });
 
@@ -117,153 +136,211 @@ export default function PlayerRoleAssignment() {
   };
 
   const roleColors = {
-    'Indispensable Player': 'bg-purple-100 border-purple-400',
-    'GA Starter': 'bg-emerald-100 border-emerald-400',
-    'GA Rotation': 'bg-emerald-50 border-emerald-300',
-    'Aspire Starter': 'bg-blue-100 border-blue-400',
-    'Aspire Rotation': 'bg-blue-50 border-blue-300',
-    'United Starter': 'bg-orange-100 border-orange-400',
-    'United Rotation': 'bg-orange-50 border-orange-300',
-    'Elite Starter': 'bg-purple-100 border-purple-400',
-    'Elite Rotation': 'bg-purple-50 border-purple-300',
-    'Premier Starter': 'bg-emerald-100 border-emerald-400',
-    'Premier Rotation': 'bg-emerald-50 border-emerald-300',
-    'Academy Starter': 'bg-blue-100 border-blue-400',
-    'Academy Rotation': 'bg-blue-50 border-blue-300',
-    'Development': 'bg-slate-100 border-slate-400'
+    'Indispensable Player': 'bg-purple-50 border-purple-300',
+    'GA Starter': 'bg-emerald-50 border-emerald-300',
+    'GA Rotation': 'bg-emerald-50/50 border-emerald-200',
+    'Aspire Starter': 'bg-blue-50 border-blue-300',
+    'Aspire Rotation': 'bg-blue-50/50 border-blue-200',
+    'United Starter': 'bg-orange-50 border-orange-300',
+    'United Rotation': 'bg-orange-50/50 border-orange-200',
+    'Elite Starter': 'bg-purple-50 border-purple-300',
+    'Elite Rotation': 'bg-purple-50/50 border-purple-200',
+    'Premier Starter': 'bg-emerald-50 border-emerald-300',
+    'Premier Rotation': 'bg-emerald-50/50 border-emerald-200',
+    'Academy Starter': 'bg-blue-50 border-blue-300',
+    'Academy Rotation': 'bg-blue-50/50 border-blue-200',
+    'Development': 'bg-slate-50 border-slate-300'
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-[1800px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Player Role Assignment</h1>
-          <p className="text-slate-600 mt-1">Drag and drop players to assign team roles</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Select value={filterGender} onValueChange={setFilterGender}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Female">Girls</SelectItem>
-              <SelectItem value="Male">Boys</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterTeam} onValueChange={setFilterTeam}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Teams" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Teams</SelectItem>
-              {teams.filter(t => t.gender === filterGender || !t.gender).map(team => (
-                <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Search players..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-48"
-            />
-          </div>
-        </div>
-      </div>
-
+    <div className="h-[calc(100vh-64px)] flex">
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Unassigned Column */}
-          <Droppable droppableId="unassigned">
-            {(provided, snapshot) => (
-              <Card className={`border-2 ${snapshot.isDraggingOver ? 'border-slate-400 bg-slate-50' : 'border-slate-200'}`}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <span>Unassigned</span>
-                    <Badge variant="outline">{playersByRole.unassigned.length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="min-h-[300px] space-y-2"
-                >
-                  {playersByRole.unassigned.map((player, index) => (
-                    <Draggable key={player.id} draggableId={player.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`p-2 rounded-lg border-2 bg-white cursor-grab active:cursor-grabbing ${
-                            snapshot.isDragging ? 'shadow-lg ring-2 ring-emerald-400' : ''
-                          } ${getPositionBorderColor(player.primary_position)}`}
-                        >
-                          <div className="font-medium text-sm">{player.full_name}</div>
-                          <div className="text-xs text-slate-500">{player.primary_position}</div>
-                          <div className="text-xs text-slate-400">{teams.find(t => t.id === player.team_id)?.name}</div>
+        {/* Main Content - Role Containers */}
+        <div className="flex-1 p-4 overflow-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900">Player Role Assignment</h1>
+              <p className="text-sm text-slate-600">Drag players from the sidebar to assign roles</p>
+            </div>
+            <Select value={filterGender} onValueChange={setFilterGender}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Female">Girls</SelectItem>
+                <SelectItem value="Male">Boys</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {roles.map(role => (
+              <Droppable key={role} droppableId={role}>
+                {(provided, snapshot) => (
+                  <Card className={`border-2 ${roleColors[role] || 'border-slate-200'} ${snapshot.isDraggingOver ? 'ring-2 ring-emerald-400' : ''}`}>
+                    <CardHeader className="p-3 pb-2">
+                      <CardTitle className="text-xs md:text-sm flex items-center justify-between">
+                        <span className="truncate">{role}</span>
+                        <Badge variant="outline" className="text-[10px]">{playersByRole[role]?.length || 0}</Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="p-2 min-h-[120px] space-y-1"
+                    >
+                      {(playersByRole[role] || []).map((player, index) => (
+                        <Draggable key={player.id} draggableId={player.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={snapshot.isDragging ? 'opacity-90' : ''}
+                            >
+                              <EditablePlayerCard
+                                player={player}
+                                tryout={player.tryout}
+                                team={teams.find(t => t.id === player.team_id)}
+                                teams={teams}
+                                clubSettings={clubSettings}
+                                compact
+                                className="cursor-grab active:cursor-grabbing"
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                      {(playersByRole[role]?.length || 0) === 0 && (
+                        <div className="text-center text-slate-400 text-xs py-6">
+                          Drop players here
                         </div>
                       )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </CardContent>
-              </Card>
-            )}
-          </Droppable>
+                    </CardContent>
+                  </Card>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </div>
 
-          {/* Role Columns */}
-          {roles.map(role => (
-            <Droppable key={role} droppableId={role}>
-              {(provided, snapshot) => (
-                <Card className={`border-2 ${roleColors[role] || 'border-slate-200'} ${snapshot.isDraggingOver ? 'ring-2 ring-emerald-400' : ''}`}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <span>{role}</span>
-                      <Badge variant="outline">{playersByRole[role]?.length || 0}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="min-h-[300px] space-y-2"
-                  >
-                    {(playersByRole[role] || []).map((player, index) => (
-                      <Draggable key={player.id} draggableId={player.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`p-2 rounded-lg border-2 bg-white cursor-grab active:cursor-grabbing ${
-                              snapshot.isDragging ? 'shadow-lg ring-2 ring-emerald-400' : ''
-                            } ${getPositionBorderColor(player.primary_position)}`}
-                          >
-                            <div className="font-medium text-sm">{player.full_name}</div>
-                            <div className="text-xs text-slate-500">{player.primary_position}</div>
-                            <div className="flex items-center gap-1 mt-1">
-                              {player.tryout?.recommendation && (
-                                <Badge className={`text-[9px] ${
-                                  player.tryout.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-800' :
-                                  player.tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' :
-                                  'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {player.tryout.recommendation}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
+        {/* Sidebar - Unassigned Players */}
+        <div className={`border-l bg-slate-50 flex flex-col transition-all ${sidebarCollapsed ? 'w-12' : 'w-72 md:w-80'}`}>
+          <div className="p-3 border-b bg-white flex items-center justify-between">
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-slate-600" />
+                <span className="font-semibold text-sm">Unassigned</span>
+                <Badge variant="outline" className="text-xs">{unassignedFilteredPlayers.length}</Badge>
+              </div>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+              {sidebarCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </Button>
+          </div>
+
+          {!sidebarCollapsed && (
+            <>
+              <div className="p-2 border-b bg-white space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                  <Input
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <Select value={filterTeam} onValueChange={setFilterTeam}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="Team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Teams</SelectItem>
+                      {teams.filter(t => t.gender === filterGender || !t.gender).map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="Age" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Ages</SelectItem>
+                      {uniqueAgeGroups.map(ag => (
+                        <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Select value={filterLeague} onValueChange={setFilterLeague}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue placeholder="League" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Leagues</SelectItem>
+                    {uniqueLeagues.map(l => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
                     ))}
-                    {provided.placeholder}
-                  </CardContent>
-                </Card>
-              )}
-            </Droppable>
-          ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Droppable droppableId="unassigned">
+                {(provided, snapshot) => (
+                  <ScrollArea 
+                    className={`flex-1 ${snapshot.isDraggingOver ? 'bg-slate-100' : ''}`}
+                  >
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="p-2 space-y-1 min-h-full"
+                    >
+                      {unassignedFilteredPlayers.map((player, index) => {
+                        const tryout = tryouts.find(t => t.player_id === player.id);
+                        return (
+                          <Draggable key={player.id} draggableId={player.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={snapshot.isDragging ? 'opacity-90' : ''}
+                              >
+                                <EditablePlayerCard
+                                  player={player}
+                                  tryout={tryout}
+                                  team={teams.find(t => t.id === player.team_id)}
+                                  teams={teams}
+                                  clubSettings={clubSettings}
+                                  compact
+                                  className="cursor-grab active:cursor-grabbing"
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                      {unassignedFilteredPlayers.length === 0 && (
+                        <div className="text-center text-slate-400 text-xs py-8">
+                          No unassigned players
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                )}
+              </Droppable>
+            </>
+          )}
         </div>
       </DragDropContext>
     </div>
