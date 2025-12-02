@@ -545,6 +545,11 @@ export default function Tryouts() {
                     <SelectItem value="all">All Clubs</SelectItem>
                     <SelectItem value="Girls Academy">Girls Academy</SelectItem>
                     <SelectItem value="Aspire">Aspire</SelectItem>
+                    <SelectItem value="NLC">NLC</SelectItem>
+                    <SelectItem value="DPL">DPL</SelectItem>
+                    <SelectItem value="MSPSP">MSPSP</SelectItem>
+                    <SelectItem value="Directors Academy">Directors Academy</SelectItem>
+                    <SelectItem value="MSDSL">MSDSL</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
