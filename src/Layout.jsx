@@ -73,24 +73,14 @@ export default function Layout({ children, currentPageName }) {
   }, [userRole, players, location.pathname, user, navigate]);
 
   const navigationItems = [
-  {
-    title: "Analytics",
-    url: createPageUrl("Analytics"),
-    icon: BarChart3,
-    roles: ["admin"]
-  },
-  {
-    title: "Dashboard",
-    url: createPageUrl("CoachDashboard"),
-    icon: LayoutDashboard,
-    roles: ["coach"]
-  },
+
   {
     title: "Club",
     icon: Shield,
     roles: ["admin"],
     submenu: [
     { title: "Overview", url: createPageUrl("ClubManagement") },
+     { title: "Analytics", url: createPageUrl("Analytics") },
      { title: "Coaches Management", url: createPageUrl("CoachManagement") },
     { title: "User Management", url: createPageUrl("UserManagement") },
     { title: "Data Management", url: createPageUrl("AdminDataManagement") },
