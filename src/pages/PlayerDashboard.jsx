@@ -72,6 +72,8 @@ export default function PlayerDashboard() {
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
+  const [newDocument, setNewDocument] = useState({ title: '', document_type: 'Other', notes: '', file: null });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -135,6 +137,18 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: injuries = [] } = useQuery({
+    queryKey: ['injuries', playerId],
+    queryFn: () => base44.entities.InjuryRecord.filter({ player_id: playerId }, '-injury_date'),
+    enabled: !!playerId
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents', playerId],
+    queryFn: () => base44.entities.PlayerDocument.filter({ player_id: playerId }, '-upload_date'),
+    enabled: !!playerId
+  });
+
   // Get parents assigned to this player
   const assignedParents = allUsers.filter(u => 
     u.role === 'parent' && (u.player_ids || []).includes(playerId)
@@ -193,6 +207,30 @@ export default function PlayerDashboard() {
       }
     },
     onSuccess: () => queryClient.invalidateQueries(['tryout', playerId])
+  });
+
+  const uploadDocumentMutation = useMutation({
+    mutationFn: async (data) => {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: data.file });
+      return base44.entities.PlayerDocument.create({
+        player_id: playerId,
+        title: data.title,
+        document_type: data.document_type,
+        file_url,
+        notes: data.notes,
+        upload_date: new Date().toISOString().split('T')[0]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['documents', playerId]);
+      setShowDocumentDialog(false);
+      setNewDocument({ title: '', document_type: 'Other', notes: '', file: null });
+    }
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (id) => base44.entities.PlayerDocument.delete(id),
+    onSuccess: () => queryClient.invalidateQueries(['documents', playerId])
   });
 
   const handleSaveAll = async () => {
@@ -901,6 +939,86 @@ export default function PlayerDashboard() {
         </div>
       )}
 
+      {/* Injury History */}
+      {(isAdminOrCoach || injuries.length > 0) && (
+        <Card className="border-none shadow-lg mt-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Injury History</CardTitle>
+              <Badge className={injuries.some(i => i.status === 'Active') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
+                {injuries.some(i => i.status === 'Active') ? 'Currently Injured' : 'Healthy'}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {injuries.length === 0 ? (
+              <p className="text-center text-slate-500 py-4 text-sm">No injury records</p>
+            ) : (
+              <div className="space-y-2">
+                {injuries.map(injury => (
+                  <div key={injury.id} className={`p-3 rounded-lg border-l-4 ${injury.status === 'Active' ? 'bg-red-50 border-l-red-500' : injury.status === 'Recovering' ? 'bg-yellow-50 border-l-yellow-500' : 'bg-green-50 border-l-green-500'}`}>
+                    <div className="flex items-start justify-between mb-1">
+                      <div>
+                        <div className="font-semibold text-sm text-slate-900">{injury.injury_type}</div>
+                        <div className="text-xs text-slate-600">
+                          {new Date(injury.injury_date).toLocaleDateString()}
+                          {injury.recovery_date && ` → ${new Date(injury.recovery_date).toLocaleDateString()}`}
+                        </div>
+                      </div>
+                      <Badge className={`text-[10px] ${injury.status === 'Active' ? 'bg-red-100 text-red-800' : injury.status === 'Recovering' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                        {injury.status}
+                      </Badge>
+                    </div>
+                    {injury.severity && <Badge className="text-[9px] bg-slate-100 text-slate-700 mr-2">{injury.severity}</Badge>}
+                    {injury.treatment_notes && <p className="text-xs text-slate-600 mt-1">{injury.treatment_notes}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documents */}
+      {isAdminOrCoach && (
+        <Card className="border-none shadow-lg mt-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Documents & Reports</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowDocumentDialog(true)}>
+                <Plus className="w-3 h-3 mr-1" />
+                Upload
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {documents.length === 0 ? (
+              <p className="text-center text-slate-500 py-4 text-sm">No documents uploaded</p>
+            ) : (
+              <div className="space-y-2">
+                {documents.map(doc => (
+                  <div key={doc.id} className="p-3 bg-slate-50 rounded-lg flex items-start justify-between">
+                    <div className="flex-1">
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-emerald-600 hover:underline">
+                        {doc.title}
+                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="text-[9px] bg-blue-100 text-blue-800">{doc.document_type}</Badge>
+                        {doc.upload_date && <span className="text-xs text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
+                      </div>
+                      {doc.notes && <p className="text-xs text-slate-600 mt-1">{doc.notes}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600">
+                      <span className="text-xs">Delete</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Development Notes */}
       {currentEvaluation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -930,6 +1048,45 @@ export default function PlayerDashboard() {
           </Card>
         </div>
       )}
+
+      <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Document Type</Label>
+              <Select value={newDocument.document_type} onValueChange={v => setNewDocument({...newDocument, document_type: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Medical Report">Medical Report</SelectItem>
+                  <SelectItem value="Scouting Note">Scouting Note</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Title</Label>
+              <Input value={newDocument.title} onChange={e => setNewDocument({...newDocument, title: e.target.value})} placeholder="e.g., Pre-season Medical" />
+            </div>
+            <div>
+              <Label>File</Label>
+              <Input type="file" onChange={e => setNewDocument({...newDocument, file: e.target.files[0]})} />
+            </div>
+            <div>
+              <Label>Notes (optional)</Label>
+              <Textarea value={newDocument.notes} onChange={e => setNewDocument({...newDocument, notes: e.target.value})} rows={2} />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowDocumentDialog(false)} className="flex-1">Cancel</Button>
+              <Button onClick={() => uploadDocumentMutation.mutate(newDocument)} disabled={!newDocument.title || !newDocument.file} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                Upload
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ExportDialog
         open={showExportDialog}
