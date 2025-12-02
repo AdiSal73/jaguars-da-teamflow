@@ -389,7 +389,7 @@ export default function CoachDashboard() {
                   <div
                     className="relative w-full"
                     style={{
-                      paddingBottom: 'min(100%, 600px)',
+                      paddingBottom: 'min(150%, 1100px)',
                       background: 'linear-gradient(180deg, #166534 0%, #15803d 50%, #166534 100%)'
                     }}
                   >
@@ -412,7 +412,7 @@ export default function CoachDashboard() {
                                 style={{
                                   left: `${position.x}%`,
                                   top: `${position.y}%`,
-                                  width: '120px'
+                                  width: 'min(200px, 30vw)'
                                 }}
                               >
                                 <div className="bg-white/90 p-2 rounded-lg shadow-lg">
