@@ -148,6 +148,7 @@ export default function FormationView() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(teamIdParam || 'all');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
+  const [selectedGender, setSelectedGender] = useState('all');
   const [formationPositions, setFormationPositions] = useState(formations['4-3-3'].positions);
   const [draggingPosition, setDraggingPosition] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -244,6 +245,10 @@ export default function FormationView() {
     if (selectedAgeGroup !== 'all') {
       const team = teams.find((t) => t.id === player.team_id);
       return team?.age_group === selectedAgeGroup;
+    }
+
+    if (selectedGender !== 'all') {
+      return player.gender === selectedGender;
     }
 
     return true;
@@ -489,14 +494,24 @@ export default function FormationView() {
         <div className="mb-4 md:mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
-            <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl('TeamTacticalView') + `?teamId=${selectedTeam}`)}>
-              View Tactical Analysis
-            </Button>
           </div>
           <p className="text-xs md:text-base text-slate-600">Drag players to rank them within each position</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-6">
+          <div>
+            <Label className="mb-2 block text-sm font-semibold">Gender</Label>
+            <Select value={selectedGender} onValueChange={(value) => {setSelectedGender(value);setSelectedTeam('all');setSelectedAgeGroup('all');}}>
+              <SelectTrigger className="h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Male">Boys</SelectItem>
+                <SelectItem value="Female">Girls</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label className="mb-2 block text-sm font-semibold">Formation</Label>
             <Select value={selectedFormation} onValueChange={setSelectedFormation}>
@@ -581,7 +596,7 @@ export default function FormationView() {
               ref={fieldRef}
               className="relative w-full"
               style={{
-                paddingBottom: 'min(140%, 700px)',
+                paddingBottom: 'min(140%, 1000px)',
                 background: 'linear-gradient(180deg, #166534 0%, #15803d 50%, #166534 100%)',
                 cursor: draggingPosition ? 'grabbing' : 'default'
               }}>
@@ -610,8 +625,8 @@ export default function FormationView() {
                       style={{
                         left: `${position.x}%`,
                         top: `${position.y}%`,
-                        width: 'min(140px, 25vw)',
-                        maxHeight: 'min(250px, 45vh)',
+                        width: 'min(180px, 28vw)',
+                        maxHeight: 'min(350px, 50vh)',
                         zIndex: draggingPosition?.id === position.id ? 1000 : 1
                       }}>
                       
@@ -755,7 +770,7 @@ export default function FormationView() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-h-[400px] overflow-y-auto">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                   {unassignedPlayers.map((player, index) => {
                   const playerTryout = tryouts.find(t => t.player_id === player.id);

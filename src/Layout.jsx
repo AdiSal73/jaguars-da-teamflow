@@ -79,12 +79,7 @@ export default function Layout({ children, currentPageName }) {
       icon: BarChart3, 
       roles: ["admin"] 
     },
-    { 
-      title: "Dashboard", 
-      url: createPageUrl("CoachDashboard"), 
-      icon: LayoutDashboard, 
-      roles: ["coach"] 
-    },
+
     {
       title: "Club",
       icon: Shield,
@@ -120,6 +115,17 @@ export default function Layout({ children, currentPageName }) {
       icon: UserCog, 
       roles: ["admin"] 
     },
+    {
+      title: "Coach's Tools",
+      icon: UserCog,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Dashboard", url: createPageUrl("CoachDashboard") },
+        { title: "My Bookings", url: createPageUrl("MyBookings") },
+        { title: "Availability", url: createPageUrl("Availability") },
+        { title: "Messages", url: createPageUrl("Messages") },
+      ]
+    },
     { 
       title: "Tryouts",
       icon: TrendingUp,
@@ -134,13 +140,10 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     {
-      title: "Bookings",
+      title: "All Bookings",
+      url: createPageUrl("BookingsTable"),
       icon: Calendar,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "All Bookings", url: createPageUrl("BookingsTable") },
-        { title: "My Availability", url: createPageUrl("Availability") },
-      ]
+      roles: ["admin"]
     },
     { 
       title: "Player Profile", 
@@ -158,13 +161,7 @@ export default function Layout({ children, currentPageName }) {
       title: "My Bookings",
       url: createPageUrl("MyBookings"),
       icon: Clock,
-      roles: ["user", "parent", "coach"]
-    },
-    {
-      title: "Messages",
-      url: createPageUrl("Messages"),
-      icon: MessageSquare,
-      roles: ["admin", "coach", "user", "parent"]
+      roles: ["user", "parent"]
     },
   ];
 

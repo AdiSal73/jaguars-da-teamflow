@@ -420,7 +420,7 @@ export default function Analytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div><div className="text-[10px] text-slate-600">Teams</div><div className="text-2xl font-bold text-slate-900">{stats.totalTeams}</div></div>
-              <Activity className="w-8 h-8 text-blue-500" />
+              <Users className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
