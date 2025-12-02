@@ -48,98 +48,125 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const getUserRole = () => {
-        if (!user) return null;
-        if (user.role === 'admin') return 'admin';
-        if (user.role === 'parent') return 'parent';
-        const isCoach = coaches.find(c => c.email === user.email);
-        if (isCoach) return 'coach';
-        return 'user';
-      };
+    if (!user) return null;
+    if (user.role === 'admin') return 'admin';
+    if (user.role === 'parent') return 'parent';
+    const isCoach = coaches.find(c => c.email === user.email);
+    if (isCoach) return 'coach';
+    return 'user';
+  };
 
-      const userRole = getUserRole();
+  const userRole = getUserRole();
 
   React.useEffect(() => {
-                if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
-                  let currentPlayer;
-                  if (userRole === 'parent' && (user.player_ids || []).length > 0) {
-                    currentPlayer = players.find(p => p.id === user.player_ids[0]);
-                  } else {
-                    currentPlayer = players.find(p => p.email === user.email);
-                  }
-                  if (currentPlayer) {
-                    navigate(`/player-dashboard?id=${currentPlayer.id}`);
-                  }
-                }
-              }, [userRole, players, location.pathname, user, navigate]);
+    if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
+      let currentPlayer;
+      if (userRole === 'parent' && (user.player_ids || []).length > 0) {
+        currentPlayer = players.find(p => p.id === user.player_ids[0]);
+      } else {
+        currentPlayer = players.find(p => p.email === user.email);
+      }
+      if (currentPlayer) {
+        navigate(`/player-dashboard?id=${currentPlayer.id}`);
+      }
+    }
+  }, [userRole, players, location.pathname, user, navigate]);
 
   const navigationItems = [
-            { 
-              title: "Analytics", 
-              url: createPageUrl("Analytics"), 
-              icon: BarChart3, 
-              roles: ["admin"] 
-            },
-            { 
-              title: "Dashboard", 
-              url: createPageUrl("CoachDashboard"), 
-              icon: LayoutDashboard, 
-              roles: ["coach"] 
-            },
-            {
-              title: "Club",
-              icon: Shield,
-              roles: ["admin"],
-              submenu: [
-                { title: "Overview", url: createPageUrl("ClubManagement") },
-                { title: "User Management", url: createPageUrl("UserManagement") },
-                { title: "Data Management", url: createPageUrl("AdminDataManagement") },
-                { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") },
-              ]
-            },
-            {
-              title: "Boys",
-              icon: Users,
-              roles: ["admin", "coach"],
-              submenu: [
-                { title: "Teams", url: createPageUrl("Teams") + "?gender=Boys" },
-                { title: "Players", url: createPageUrl("Players") + "?gender=Male" },
-              ]
-            },
-            {
-              title: "Girls",
-              icon: Users,
-              roles: ["admin", "coach"],
-              submenu: [
-                { title: "Teams", url: createPageUrl("Teams") + "?gender=Girls" },
-                { title: "Players", url: createPageUrl("Players") + "?gender=Female" },
-              ]
-            },
-            { 
-              title: "Coaches", 
-              url: createPageUrl("CoachManagement"), 
-              icon: UserCog, 
-              roles: ["admin"] 
-            },
-            { 
-              title: "Tryouts",
-              icon: TrendingUp,
-              roles: ["admin", "coach"],
-              submenu: [
-                { title: "Tryout Board", url: createPageUrl("Tryouts") },
-                { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
-                { title: "Depth Chart", url: createPageUrl("FormationView") },
-                { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
-                { title: "Assessments", url: createPageUrl("Assessments") },
-                { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
-              ]
-            },
-            { 
-              title: "Player Profile", 
-              url: createPageUrl("PlayerDashboard"), 
-              icon: Activity, 
-              roles: ["user", "parent"] 
-            },
-          ];
+    { 
+      title: "Analytics", 
+      url: createPageUrl("Analytics"), 
+      icon: BarChart3, 
+      roles: ["admin"] 
+    },
+    { 
+      title: "Dashboard", 
+      url: createPageUrl("CoachDashboard"), 
+      icon: LayoutDashboard, 
+      roles: ["coach"] 
+    },
+    {
+      title: "Club",
+      icon: Shield,
+      roles: ["admin"],
+      submenu: [
+        { title: "Overview", url: createPageUrl("ClubManagement") },
+        { title: "User Management", url: createPageUrl("UserManagement") },
+        { title: "Data Management", url: createPageUrl("AdminDataManagement") },
+        { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") },
+      ]
+    },
+    {
+      title: "Boys",
+      icon: Users,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Teams", url: createPageUrl("Teams") + "?gender=Boys" },
+        { title: "Players", url: createPageUrl("Players") + "?gender=Male" },
+      ]
+    },
+    {
+      title: "Girls",
+      icon: Users,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Teams", url: createPageUrl("Teams") + "?gender=Girls" },
+        { title: "Players", url: createPageUrl("Players") + "?gender=Female" },
+      ]
+    },
+    { 
+      title: "Coaches", 
+      url: createPageUrl("CoachManagement"), 
+      icon: UserCog, 
+      roles: ["admin"] 
+    },
+    { 
+      title: "Tryouts",
+      icon: TrendingUp,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Tryout Board", url: createPageUrl("Tryouts") },
+        { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
+        { title: "Depth Chart", url: createPageUrl("FormationView") },
+        { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
+        { title: "Assessments", url: createPageUrl("Assessments") },
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+      ]
+    },
+    {
+      title: "Bookings",
+      icon: Calendar,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "All Bookings", url: createPageUrl("BookingsTable") },
+        { title: "My Availability", url: createPageUrl("Availability") },
+      ]
+    },
+    { 
+      title: "Player Profile", 
+      url: createPageUrl("PlayerDashboard"), 
+      icon: Activity, 
+      roles: ["user", "parent"] 
+    },
+    {
+      title: "Book Session",
+      url: createPageUrl("BookCoach"),
+      icon: Calendar,
+      roles: ["user", "parent"]
+    },
+    {
+      title: "My Bookings",
+      url: createPageUrl("MyBookings"),
+      icon: Clock,
+      roles: ["user", "parent", "coach"]
+    },
+    {
+      title: "Messages",
+      url: createPageUrl("Messages"),
+      icon: MessageSquare,
+      roles: ["admin", "coach", "user", "parent"]
+    },
+  ];
 
   const filteredNavItems = navigationItems.filter(item => 
     userRole && item.roles.includes(userRole)
@@ -245,13 +272,13 @@ export default function Layout({ children, currentPageName }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem 
-                                            onClick={() => navigate(createPageUrl('UserManagement'))}
-                                            className="text-slate-600"
-                                          >
-                                            <Settings className="w-4 h-4 mr-2" />
-                                            Settings
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
+                    onClick={() => navigate(createPageUrl('UserManagement'))}
+                    className="text-slate-600"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={() => base44.auth.logout()}
                     className="text-red-600 focus:text-red-700 focus:bg-red-50"
