@@ -20,6 +20,7 @@ import BookCoach from './pages/BookCoach';
 import MyBookings from './pages/MyBookings';
 import BookingsTable from './pages/BookingsTable';
 import Messages from './pages/Messages';
+import TeamReports from './pages/TeamReports';
 import __Layout from './Layout.jsx';
 
 
@@ -46,6 +47,7 @@ export const PAGES = {
     "MyBookings": MyBookings,
     "BookingsTable": BookingsTable,
     "Messages": Messages,
+    "TeamReports": TeamReports,
 }
 
 export const pagesConfig = {
