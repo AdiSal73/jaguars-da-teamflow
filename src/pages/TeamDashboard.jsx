@@ -13,6 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell } from 'recharts';
 import TeamPerformanceAnalytics from '../components/team/TeamPerformanceAnalytics';
 import EnhancedPlayerComparisonModal from '../components/player/EnhancedPlayerComparisonModal';
+import TeamComparisonAnalytics from '../components/analytics/TeamComparisonAnalytics';
+import PerformanceHeatmap from '../components/analytics/PerformanceHeatmap';
+import HistoricalTrendAnalytics from '../components/analytics/HistoricalTrendAnalytics';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -493,12 +496,14 @@ export default function TeamDashboard() {
       </div>
 
       <Tabs defaultValue="roster" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 text-xs">
           <TabsTrigger value="roster">Roster</TabsTrigger>
           <TabsTrigger value="tryouts">Tryouts</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
+          <TabsTrigger value="announcements">News</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roster" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
@@ -843,6 +848,39 @@ export default function TeamDashboard() {
 
         <TabsContent value="performance" className="mt-4 md:mt-6">
           <TeamPerformanceAnalytics teamId={teamId} teamName={team?.name} />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4 md:mt-6">
+          <HistoricalTrendAnalytics 
+            teams={[team].filter(Boolean)}
+            assessments={assessments}
+            players={players}
+          />
+        </TabsContent>
+
+        <TabsContent value="heatmap" className="mt-4 md:mt-6">
+          <div className="space-y-6">
+            <PerformanceHeatmap 
+              players={players}
+              assessments={assessments}
+              evaluations={evaluations}
+              metric="overall"
+            />
+            <div className="grid md:grid-cols-2 gap-6">
+              <PerformanceHeatmap 
+                players={players}
+                assessments={assessments}
+                evaluations={evaluations}
+                metric="defending"
+              />
+              <PerformanceHeatmap 
+                players={players}
+                assessments={assessments}
+                evaluations={evaluations}
+                metric="attacking"
+              />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="evaluations" className="mt-4 md:mt-6 space-y-4">

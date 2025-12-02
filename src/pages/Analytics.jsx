@@ -12,10 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend
 } from 'recharts';
+import TeamComparisonAnalytics from '../components/analytics/TeamComparisonAnalytics';
+import PerformanceHeatmap from '../components/analytics/PerformanceHeatmap';
+import HistoricalTrendAnalytics from '../components/analytics/HistoricalTrendAnalytics';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
 
@@ -25,6 +29,7 @@ export default function Analytics() {
   const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedPosition, setSelectedPosition] = useState('all');
   const [expandedCard, setExpandedCard] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -373,6 +378,16 @@ export default function Analytics() {
         <p className="text-sm text-slate-600">Comprehensive insights across assessments, evaluations, and tryouts</p>
       </div>
 
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="comparison">Team Comparison</TabsTrigger>
+          <TabsTrigger value="heatmap">Heatmaps</TabsTrigger>
+          <TabsTrigger value="trends">Historical Trends</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+
       {/* Filters */}
       <Card className="border-none shadow-lg mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
         <CardContent className="p-4">
@@ -540,6 +555,50 @@ export default function Analytics() {
       <Dialog open={!!expandedCard} onOpenChange={() => setExpandedCard(null)}>
         {expandedCard && <ExpandedDialog type={expandedCard} onClose={() => setExpandedCard(null)} />}
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="comparison" className="mt-6">
+          <TeamComparisonAnalytics 
+            teams={filteredTeams}
+            assessments={filteredAssessments}
+            evaluations={filteredEvaluations}
+            players={filteredPlayers}
+          />
+        </TabsContent>
+
+        <TabsContent value="heatmap" className="mt-6">
+          <div className="space-y-6">
+            <PerformanceHeatmap 
+              players={filteredPlayers}
+              assessments={filteredAssessments}
+              evaluations={filteredEvaluations}
+              metric="overall"
+            />
+            <div className="grid md:grid-cols-2 gap-6">
+              <PerformanceHeatmap 
+                players={filteredPlayers}
+                assessments={filteredAssessments}
+                evaluations={filteredEvaluations}
+                metric="defending"
+              />
+              <PerformanceHeatmap 
+                players={filteredPlayers}
+                assessments={filteredAssessments}
+                evaluations={filteredEvaluations}
+                metric="attacking"
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="trends" className="mt-6">
+          <HistoricalTrendAnalytics 
+            teams={filteredTeams}
+            assessments={filteredAssessments}
+            players={filteredPlayers}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
