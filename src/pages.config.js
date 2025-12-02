@@ -15,6 +15,11 @@ import Analytics from './pages/Analytics';
 import AdminDataManagement from './pages/AdminDataManagement';
 import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
 import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
+import Availability from './pages/Availability';
+import BookCoach from './pages/BookCoach';
+import MyBookings from './pages/MyBookings';
+import BookingsTable from './pages/BookingsTable';
+import Messages from './pages/Messages';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +41,11 @@ export const PAGES = {
     "AdminDataManagement": AdminDataManagement,
     "PlayerRoleAssignment": PlayerRoleAssignment,
     "ClubSettingsAdmin": ClubSettingsAdmin,
+    "Availability": Availability,
+    "BookCoach": BookCoach,
+    "MyBookings": MyBookings,
+    "BookingsTable": BookingsTable,
+    "Messages": Messages,
 }
 
 export const pagesConfig = {
