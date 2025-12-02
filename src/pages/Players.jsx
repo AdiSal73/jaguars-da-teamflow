@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, User, Edit, Users, Trash2, Upload } from 'lucide-react';
+import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table } from 'lucide-react';
 import BulkImportPlayers from '../components/players/BulkImportPlayers';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,9 @@ export default function Players() {
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
+  const [filterLeague, setFilterLeague] = useState('all');
+  const [filterBranch, setFilterBranch] = useState('all');
+  const [viewMode, setViewMode] = useState('cards');
 
   // Check URL params for gender filter
   React.useEffect(() => {
@@ -186,6 +190,9 @@ export default function Players() {
     }
   };
 
+  const uniqueLeagues = useMemo(() => [...new Set(teams.map(t => t.league).filter(Boolean))], [teams]);
+  const uniqueBranches = useMemo(() => [...new Set([...teams.map(t => t.branch), ...players.map(p => p.branch)].filter(Boolean))], [teams, players]);
+
   const resetForm = () => {
     setPlayerForm({
       full_name: '',
@@ -266,7 +273,9 @@ export default function Players() {
       const team = teams.find(t => t.id === player.team_id);
       const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
       const matchesGender = filterGender === 'all' || team?.gender === filterGender || player.gender === filterGender;
-      return matchesSearch && matchesTeam && matchesAgeGroup && matchesGender;
+      const matchesLeague = filterLeague === 'all' || team?.league === filterLeague;
+      const matchesBranch = filterBranch === 'all' || player.branch === filterBranch || team?.branch === filterBranch;
+      return matchesSearch && matchesTeam && matchesAgeGroup && matchesGender && matchesLeague && matchesBranch;
     })
     .sort((a, b) => {
       // Sort by team first
@@ -317,11 +326,11 @@ export default function Players() {
             className="pl-10"
           />
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-6 gap-4">
           <div>
-            <Label className="mb-2 block">Filter by Team</Label>
+            <Label className="mb-2 block text-xs">Team</Label>
             <Select value={filterTeam} onValueChange={setFilterTeam}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All Teams" />
               </SelectTrigger>
               <SelectContent>
@@ -333,48 +342,79 @@ export default function Players() {
             </Select>
           </div>
           <div>
-              <Label className="mb-2 block">Filter by Age Group</Label>
-              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Age Groups" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Age Groups</SelectItem>
-                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
-                    const extractAge = (ag) => {
-                      const match = ag?.match(/U-?(\d+)/i);
-                      return match ? parseInt(match[1]) : 0;
-                    };
-                    return extractAge(b) - extractAge(a);
-                  }).map(ageGroup => (
-                    <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="mb-2 block">Filter by Gender</Label>
-              <Select value={filterGender} onValueChange={setFilterGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Female">Girls</SelectItem>
-                  <SelectItem value="Male">Boys</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Label className="mb-2 block text-xs">Age Group</Label>
+            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All Age Groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Age Groups</SelectItem>
+                {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                  const extractAge = (ag) => {
+                    const match = ag?.match(/U-?(\d+)/i);
+                    return match ? parseInt(match[1]) : 0;
+                  };
+                  return extractAge(b) - extractAge(a);
+                }).map(ageGroup => (
+                  <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <div>
+            <Label className="mb-2 block text-xs">Gender</Label>
+            <Select value={filterGender} onValueChange={setFilterGender}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Female">Girls</SelectItem>
+                <SelectItem value="Male">Boys</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <div>
+            <Label className="mb-2 block text-xs">League</Label>
+            <Select value={filterLeague} onValueChange={setFilterLeague}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All Leagues" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                {uniqueLeagues.map(league => (
+                  <SelectItem key={league} value={league}>{league}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Branch</Label>
+            <Select value={filterBranch} onValueChange={setFilterBranch}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All Branches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Branches</SelectItem>
+                {BRANCH_OPTIONS.map(branch => (
+                  <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')} className={viewMode === 'cards' ? 'bg-emerald-600' : ''}>
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className={viewMode === 'table' ? 'bg-emerald-600' : ''}>
+              <Table className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <Tabs value="cards" className="w-full">
-        <TabsList>
-          <TabsTrigger value="cards" onClick={() => {}}>Card View</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="cards">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {viewMode === 'cards' ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlayers.map(player => {
               const team = teams.find(t => t.id === player.team_id);
               const tryout = tryouts.find(t => t.player_id === player.id);
@@ -429,13 +469,132 @@ export default function Players() {
               );
             })}
           </div>
-          {filteredPlayers.length === 0 && !isLoading && (
-            <div className="text-center py-12">
-              <p className="text-slate-500">No players found</p>
+        {filteredPlayers.length === 0 && !isLoading && (
+          <div className="text-center py-12 col-span-full">
+            <p className="text-slate-500">No players found</p>
+          </div>
+        )}
+      </div>
+      ) : (
+        <Card className="border-none shadow-xl">
+          {selectedPlayers.length > 0 && (
+            <div className="p-4 bg-slate-100 border-b flex items-center justify-between">
+              <span className="text-sm font-medium">{selectedPlayers.length} players selected</span>
+              <div className="flex gap-2">
+                <Select value={bulkTeamId} onValueChange={setBulkTeamId}>
+                  <SelectTrigger className="w-48 h-8 text-xs">
+                    <SelectValue placeholder="Assign to team..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map(team => (
+                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" onClick={() => bulkUpdateTeamMutation.mutate(bulkTeamId)} disabled={!bulkTeamId} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Users className="w-4 h-4 mr-1" />Assign
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash2 className="w-4 h-4 mr-1" />Delete
+                </Button>
+              </div>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+                  <tr>
+                    <th className="px-4 py-3 w-12">
+                      <Checkbox 
+                        checked={selectedPlayers.length === filteredPlayers.length && filteredPlayers.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Parent</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Team</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Branch</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Jersey</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPlayers.map((player, idx) => (
+                    <tr key={player.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                      <td className="px-4 py-2">
+                        <Checkbox 
+                          checked={selectedPlayers.includes(player.id)}
+                          onCheckedChange={(checked) => handleSelectPlayer(player.id, checked)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={player.full_name || ''} onChange={(e) => handleFieldUpdate(player.id, 'full_name', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8 min-w-[140px]" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={player.parent_name || ''} onChange={(e) => handleFieldUpdate(player.id, 'parent_name', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8 min-w-[120px]" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={player.email || ''} onChange={(e) => handleFieldUpdate(player.id, 'email', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8 min-w-[160px]" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input value={player.phone || ''} onChange={(e) => handleFieldUpdate(player.id, 'phone', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8 min-w-[100px]" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={player.primary_position || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'primary_position', v)}>
+                          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Position" /></SelectTrigger>
+                          <SelectContent>
+                            {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                              <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={player.team_id || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'team_id', v)}>
+                          <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Team" /></SelectTrigger>
+                          <SelectContent>
+                            {teams.map(team => (
+                              <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={player.branch || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'branch', v)}>
+                          <SelectTrigger className="h-8 text-xs w-28"><SelectValue placeholder="Branch" /></SelectTrigger>
+                          <SelectContent>
+                            {BRANCH_OPTIONS.map(branch => (
+                              <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Input type="number" value={player.jersey_number || ''} onChange={(e) => handleFieldUpdate(player.id, 'jersey_number', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8 w-16" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <Select value={player.status || 'Active'} onValueChange={(v) => handleFieldUpdate(player.id, 'status', v)}>
+                          <SelectTrigger className="h-8 text-xs w-24"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Injured">Injured</SelectItem>
+                            <SelectItem value="Suspended">Suspended</SelectItem>
+                            <SelectItem value="Inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
