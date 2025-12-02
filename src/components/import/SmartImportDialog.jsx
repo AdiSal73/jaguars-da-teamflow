@@ -22,9 +22,10 @@ const FIELD_CONFIGS = {
       { key: 'gender', label: 'Gender', required: true },
       { key: 'grade', label: 'Grade', required: false },
       { key: 'team_name', label: 'Team Name', required: false },
+      { key: 'branch', label: 'Branch', required: false },
       { key: 'season', label: 'Season', required: false }
     ],
-    template: 'Parent Name,Email,Phone Number,Player Last Name,Player First Name,Date of Birth,Gender,Grade,Team Name,Season'
+    template: 'Parent Name,Email,Phone Number,Player Last Name,Player First Name,Date of Birth,Gender,Grade,Team Name,Branch,Season'
   },
   teams: {
     fields: [
@@ -32,11 +33,11 @@ const FIELD_CONFIGS = {
       { key: 'age_group', label: 'Age Group', required: true },
       { key: 'gender', label: 'Gender', required: true },
       { key: 'league', label: 'League', required: false },
+      { key: 'branch', label: 'Branch', required: false },
       { key: 'season', label: 'Season', required: false },
-      { key: 'coach', label: 'Coach', required: false },
-      { key: 'branch', label: 'Branch', required: false }
+      { key: 'coach', label: 'Coach', required: false }
     ],
-    template: 'Team Name,Age Group,Gender,League,Season,Coach,Branch'
+    template: 'Team Name,Age Group,Gender,League,Branch,Season,Coach'
   },
   coaches: {
     fields: [
@@ -286,6 +287,7 @@ export default function SmartImportDialog({
               grade: record.grade || undefined,
               parent_name: record.parent_name || undefined,
               team_id: record._teamMatch?.id || undefined,
+              branch: record.branch || undefined,
               status: 'Active'
             };
             
@@ -301,6 +303,7 @@ export default function SmartImportDialog({
               name: record._normalized.name,
               age_group: record.age_group,
               league: record.league || undefined,
+              branch: record.branch || undefined,
               gender: record.gender || 'Female',
               season: record.season || undefined
             };
