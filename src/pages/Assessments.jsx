@@ -24,6 +24,11 @@ export default function Assessments() {
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
+  const [selectedLeague, setSelectedLeague] = useState('all');
+  const [selectedCoach, setSelectedCoach] = useState('all');
+  const [birthdayFrom, setBirthdayFrom] = useState('');
+  const [birthdayTo, setBirthdayTo] = useState('');
   const [newAssessment, setNewAssessment] = useState({
     player_id: '',
     team_id: '',
@@ -71,6 +76,11 @@ export default function Assessments() {
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
     queryFn: () => base44.entities.Team.list()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
   });
 
   const calculateScores = (sprint, vertical, yirt, shuttle) => {
@@ -302,96 +312,98 @@ export default function Assessments() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-        <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Age Group</label>
-                <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
-                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue placeholder="All Age Groups" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Age Groups</SelectItem>
-                    {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].sort((a, b) => {
-                      const extractAge = (ag) => {
-                        const match = ag?.match(/U-?(\d+)/i);
-                        return match ? parseInt(match[1]) : 0;
-                      };
-                      return extractAge(b) - extractAge(a);
-                    }).map((ageGroup) =>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Age Group</label>
+              <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All Age Groups" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Age Groups</SelectItem>
+                  {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].sort((a, b) => {
+                    const extractAge = (ag) => {
+                      const match = ag?.match(/U-?(\d+)/i);
+                      return match ? parseInt(match[1]) : 0;
+                    };
+                    return extractAge(b) - extractAge(a);
+                  }).map((ageGroup) =>
                     <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">League</label>
-                <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue placeholder="All Leagues" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Leagues</SelectItem>
-                    <SelectItem value="Girls Academy">Girls Academy</SelectItem>
-                    <SelectItem value="Aspire">Aspire</SelectItem>
-                    <SelectItem value="NLC">NLC</SelectItem>
-                    <SelectItem value="DPL">DPL</SelectItem>
-                    <SelectItem value="MSPSP">MSPSP</SelectItem>
-                    <SelectItem value="Directors Academy">Directors Academy</SelectItem>
-                    <SelectItem value="MSDSL">MSDSL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Coach</label>
-                <Select value={selectedCoach} onValueChange={setSelectedCoach}>
-                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue placeholder="All Coaches" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map((coach) =>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">League</label>
+              <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All Leagues" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  <SelectItem value="Girls Academy">Girls Academy</SelectItem>
+                  <SelectItem value="Aspire">Aspire</SelectItem>
+                  <SelectItem value="NLC">NLC</SelectItem>
+                  <SelectItem value="DPL">DPL</SelectItem>
+                  <SelectItem value="MSPSP">MSPSP</SelectItem>
+                  <SelectItem value="Directors Academy">Directors Academy</SelectItem>
+                  <SelectItem value="MSDSL">MSDSL</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Coach</label>
+              <Select value={selectedCoach} onValueChange={setSelectedCoach}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All Coaches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches</SelectItem>
+                  {coaches.map((coach) =>
                     <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Birthday From</label>
-                <input
-                  type="date"
-                  value={birthdayFrom}
-                  onChange={(e) => setBirthdayFrom(e.target.value)}
-                  className="w-full h-10 md:h-12 px-3 md:px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-xs md:text-sm" />
-              </div>
-              <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Birthday To</label>
-                <input
-                  type="date"
-                  value={birthdayTo}
-                  onChange={(e) => setBirthdayTo(e.target.value)}
-                  className="w-full h-10 md:h-12 px-3 md:px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-xs md:text-sm" />
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Birthday From</label>
               <Input
-                placeholder="Search by player name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                type="date"
+                value={birthdayFrom}
+                onChange={(e) => setBirthdayFrom(e.target.value)}
+                className="h-10"
               />
             </div>
-            <Select value={teamFilter} onValueChange={setTeamFilter}>
-              <SelectTrigger><SelectValue placeholder="Filter by team" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teams</SelectItem>
-                {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-                        <Select value={teamFilter} onValueChange={setTeamFilter}>
-              <SelectTrigger><SelectValue placeholder="Filter by team" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teams</SelectItem>
-                {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Birthday To</label>
+              <Input
+                type="date"
+                value={birthdayTo}
+                onChange={(e) => setBirthdayTo(e.target.value)}
+                className="h-10"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Team</label>
+              <Select value={teamFilter} onValueChange={setTeamFilter}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search by player name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </CardContent>
       </Card>
