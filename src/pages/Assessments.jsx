@@ -319,6 +319,13 @@ export default function Assessments() {
                 {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
               </SelectContent>
             </Select>
+                        <Select value={teamFilter} onValueChange={setTeamFilter}>
+              <SelectTrigger><SelectValue placeholder="Filter by team" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
