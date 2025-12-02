@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table } from 'lucide-react';
+import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table as TableIcon } from 'lucide-react';
 import BulkImportPlayers from '../components/players/BulkImportPlayers';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
@@ -407,7 +407,7 @@ export default function Players() {
               <Grid className="w-4 h-4" />
             </Button>
             <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className={viewMode === 'table' ? 'bg-emerald-600' : ''}>
-              <Table className="w-4 h-4" />
+              <TableIcon className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -468,14 +468,13 @@ export default function Players() {
                 </div>
               );
             })}
-          </div>
-        {filteredPlayers.length === 0 && !isLoading && (
-          <div className="text-center py-12 col-span-full">
-            <p className="text-slate-500">No players found</p>
-          </div>
-        )}
-      </div>
-      ) : (
+            {filteredPlayers.length === 0 && !isLoading && (
+            <div className="text-center py-12 col-span-full">
+             <p className="text-slate-500">No players found</p>
+            </div>
+            )}
+            </div>
+            ) : (
         <Card className="border-none shadow-xl">
           {selectedPlayers.length > 0 && (
             <div className="p-4 bg-slate-100 border-b flex items-center justify-between">
