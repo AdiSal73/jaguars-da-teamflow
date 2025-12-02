@@ -134,7 +134,7 @@ export default function Layout({ children, currentPageName }) {
               ]
             },
             { 
-              title: "My Profile", 
+              title: "Player Profile", 
               url: createPageUrl("PlayerDashboard"), 
               icon: Activity, 
               roles: ["user", "parent"] 
