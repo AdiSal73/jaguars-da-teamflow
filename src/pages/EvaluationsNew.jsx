@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Search, X } from 'lucide-react';
+import { Plus, Trash2, Search, X, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { getPositionFields } from '../components/constants/positionEvaluationFields';
 
 const ratingLabels = {
   1: 'Basic',
@@ -25,6 +26,9 @@ const ratingLabels = {
 };
 
 export default function EvaluationsNew() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const preselectedPlayerId = urlParams.get('playerId');
+
   const [showDialog, setShowDialog] = useState(false);
   const [deleteEvalId, setDeleteEvalId] = useState(null);
   const [search, setSearch] = useState('');
@@ -54,7 +58,15 @@ export default function EvaluationsNew() {
     attacking_in_transition: 5,
     player_strengths: '',
     areas_of_growth: '',
-    training_focus: ''
+    training_focus: '',
+    position_role_1: 5,
+    position_role_2: 5,
+    position_role_3: 5,
+    position_role_4: 5,
+    position_role_1_label: '',
+    position_role_2_label: '',
+    position_role_3_label: '',
+    position_role_4_label: ''
   });
 
   const queryClient = useQueryClient();
@@ -73,6 +85,22 @@ export default function EvaluationsNew() {
     queryKey: ['teams'],
     queryFn: () => base44.entities.Team.list()
   });
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  // Auto-open dialog with preselected player
+  useEffect(() => {
+    if (preselectedPlayerId && players.length > 0) {
+      const player = players.find(p => p.id === preselectedPlayerId);
+      if (player) {
+        handlePlayerSelect(preselectedPlayerId);
+        setShowDialog(true);
+      }
+    }
+  }, [preselectedPlayerId, players]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Evaluation.create(data),
@@ -98,7 +126,7 @@ export default function EvaluationsNew() {
       birth_year: '',
       team_name: '',
       my_goals: '',
-      evaluator: '',
+      evaluator: user?.full_name || '',
       current_team_status: '',
       growth_mindset: 5,
       resilience: 5,
@@ -116,7 +144,15 @@ export default function EvaluationsNew() {
       attacking_in_transition: 5,
       player_strengths: '',
       areas_of_growth: '',
-      training_focus: ''
+      training_focus: '',
+      position_role_1: 5,
+      position_role_2: 5,
+      position_role_3: 5,
+      position_role_4: 5,
+      position_role_1_label: '',
+      position_role_2_label: '',
+      position_role_3_label: '',
+      position_role_4_label: ''
     });
   };
 
@@ -125,26 +161,51 @@ export default function EvaluationsNew() {
     if (player) {
       const team = teams.find(t => t.id === player.team_id);
       const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear().toString() : '';
+      const position = player.primary_position || '';
+      const positionFields = getPositionFields(position);
+      
       setFormData({
         ...formData,
         player_id: playerId,
         player_name: player.full_name,
         birth_year: birthYear,
         team_name: team?.name || '',
-        primary_position: player.primary_position || '',
+        primary_position: position,
         secondary_position: player.secondary_position || '',
-        preferred_foot: player.preferred_foot || 'Right'
+        preferred_foot: player.preferred_foot || 'Right',
+        evaluator: user?.full_name || formData.evaluator,
+        position_role_1_label: positionFields[0]?.label || '',
+        position_role_2_label: positionFields[1]?.label || '',
+        position_role_3_label: positionFields[2]?.label || '',
+        position_role_4_label: positionFields[3]?.label || ''
       });
     }
   };
 
-  const RatingSlider = ({ label, value, onChange }) => (
+  const handlePositionChange = (position) => {
+    const positionFields = getPositionFields(position);
+    setFormData({
+      ...formData,
+      primary_position: position,
+      position_role_1_label: positionFields[0]?.label || '',
+      position_role_2_label: positionFields[1]?.label || '',
+      position_role_3_label: positionFields[2]?.label || '',
+      position_role_4_label: positionFields[3]?.label || ''
+    });
+  };
+
+  const positionFields = getPositionFields(formData.primary_position);
+
+  const RatingSlider = ({ label, value, onChange, description }) => (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <Label className="text-sm font-semibold text-slate-700">{label}</Label>
+        <div className="flex-1">
+          <Label className="text-sm font-semibold text-slate-700">{label}</Label>
+          {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-emerald-600">{value}</span>
-          <span className="text-sm font-medium text-slate-600 min-w-[140px]">{ratingLabels[value]}</span>
+          <span className="text-sm font-medium text-slate-600 min-w-[100px]">{ratingLabels[value]}</span>
         </div>
       </div>
       <input
@@ -172,13 +233,13 @@ export default function EvaluationsNew() {
   );
 
   return (
-    <div className="p-8 max-w-[1800px] mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Player Evaluations</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Player Evaluations</h1>
           <p className="text-slate-600 mt-1">Comprehensive player assessment and development tracking</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6 text-base font-semibold shadow-lg">
+        <Button onClick={() => { resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6 text-base font-semibold shadow-lg">
           <Plus className="w-5 h-5 mr-2" />
           New Evaluation
         </Button>
@@ -199,122 +260,148 @@ export default function EvaluationsNew() {
       </Card>
 
       <div className="grid gap-6">
-        {filteredEvaluations.map(evaluation => (
-          <Card key={evaluation.id} className="border-none shadow-xl hover:shadow-2xl transition-all">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-2xl text-slate-900">{evaluation.player_name}</CardTitle>
-                  <div className="flex gap-4 mt-2 text-sm text-slate-600">
-                    <span>Birth Year: {evaluation.birth_year}</span>
-                    <span>•</span>
-                    <span>Team: {evaluation.team_name}</span>
-                    <span>•</span>
-                    <span>Position: {evaluation.primary_position}</span>
-                    <span>•</span>
-                    <span>Evaluator: {evaluation.evaluator}</span>
+        {filteredEvaluations.map(evaluation => {
+          const evalPositionFields = getPositionFields(evaluation.primary_position);
+          return (
+            <Card key={evaluation.id} className="border-none shadow-xl hover:shadow-2xl transition-all">
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-xl md:text-2xl text-slate-900">{evaluation.player_name}</CardTitle>
+                    <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm text-slate-600">
+                      <span>Birth Year: {evaluation.birth_year}</span>
+                      <span className="hidden md:inline">•</span>
+                      <span>Team: {evaluation.team_name}</span>
+                      <span className="hidden md:inline">•</span>
+                      <span>Position: {evaluation.primary_position}</span>
+                      <span className="hidden md:inline">•</span>
+                      <span>Evaluator: {evaluation.evaluator}</span>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteEvalId(evaluation.id)}
+                    className="hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteEvalId(evaluation.id)}
-                  className="hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-bold text-lg text-slate-900 border-b-2 border-emerald-500 pb-2">Mental & Physical</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Growth Mindset', value: evaluation.growth_mindset },
-                      { label: 'Resilience', value: evaluation.resilience },
-                      { label: 'Efficiency', value: evaluation.efficiency_in_execution },
-                      { label: 'Athleticism', value: evaluation.athleticism },
-                      { label: 'Team Focus', value: evaluation.team_focus }
-                    ].map(item => (
-                      <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-emerald-600">{item.value}</span>
-                          <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-emerald-500 pb-2">Mental & Physical</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Growth Mindset', value: evaluation.growth_mindset },
+                        { label: 'Resilience', value: evaluation.resilience },
+                        { label: 'Efficiency', value: evaluation.efficiency_in_execution },
+                        { label: 'Athleticism', value: evaluation.athleticism },
+                        { label: 'Team Focus', value: evaluation.team_focus }
+                      ].map(item => (
+                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-emerald-600">{item.value}</span>
+                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <h3 className="font-bold text-lg text-slate-900 border-b-2 border-blue-500 pb-2">Defending</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Organized', value: evaluation.defending_organized },
-                      { label: 'Final Third', value: evaluation.defending_final_third },
-                      { label: 'Transition', value: evaluation.defending_transition }
-                    ].map(item => (
-                      <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-blue-600">{item.value}</span>
-                          <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                   
-                  <h3 className="font-bold text-lg text-slate-900 border-b-2 border-orange-500 pb-2 mt-6">Attacking</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Organized', value: evaluation.attacking_organized },
-                      { label: 'Final Third', value: evaluation.attacking_final_third },
-                      { label: 'Transition', value: evaluation.attacking_in_transition }
-                    ].map(item => (
-                      <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-orange-600">{item.value}</span>
-                          <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-blue-500 pb-2">Defending</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Organized', value: evaluation.defending_organized },
+                        { label: 'Final Third', value: evaluation.defending_final_third },
+                        { label: 'Transition', value: evaluation.defending_transition }
+                      ].map(item => (
+                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-blue-600">{item.value}</span>
+                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    
+                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-orange-500 pb-2 mt-6">Attacking</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Organized', value: evaluation.attacking_organized },
+                        { label: 'Final Third', value: evaluation.attacking_final_third },
+                        { label: 'Transition', value: evaluation.attacking_in_transition }
+                      ].map(item => (
+                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-orange-600">{item.value}</span>
+                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Position-Specific Skills */}
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-indigo-500 pb-2">
+                      Position Skills ({evaluation.primary_position || 'N/A'})
+                    </h3>
+                    <div className="space-y-3">
+                      {evalPositionFields.map((field, idx) => {
+                        const value = evaluation[`position_role_${idx + 1}`];
+                        const label = evaluation[`position_role_${idx + 1}_label`] || field.label;
+                        if (!value) return null;
+                        return (
+                          <div key={idx} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                            <span className="text-sm font-medium text-slate-700 truncate pr-2">{label}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-indigo-600">{value}</span>
+                              <span className="text-xs text-slate-500">{ratingLabels[value]}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-purple-500 pb-2">Development Notes</h3>
+                    {evaluation.my_goals && (
+                      <div className="p-3 bg-purple-50 rounded-lg">
+                        <div className="text-xs font-semibold text-purple-700 mb-1">Goals</div>
+                        <div className="text-sm text-slate-700">{evaluation.my_goals}</div>
                       </div>
-                    ))}
+                    )}
+                    {evaluation.player_strengths && (
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <div className="text-xs font-semibold text-green-700 mb-1">Strengths</div>
+                        <div className="text-sm text-slate-700">{evaluation.player_strengths}</div>
+                      </div>
+                    )}
+                    {evaluation.areas_of_growth && (
+                      <div className="p-3 bg-orange-50 rounded-lg">
+                        <div className="text-xs font-semibold text-orange-700 mb-1">Areas of Growth</div>
+                        <div className="text-sm text-slate-700">{evaluation.areas_of_growth}</div>
+                      </div>
+                    )}
+                    {evaluation.training_focus && (
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <div className="text-xs font-semibold text-blue-700 mb-1">Training Focus</div>
+                        <div className="text-sm text-slate-700">{evaluation.training_focus}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-bold text-lg text-slate-900 border-b-2 border-purple-500 pb-2">Development Notes</h3>
-                  {evaluation.my_goals && (
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <div className="text-xs font-semibold text-purple-700 mb-1">Goals</div>
-                      <div className="text-sm text-slate-700">{evaluation.my_goals}</div>
-                    </div>
-                  )}
-                  {evaluation.player_strengths && (
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <div className="text-xs font-semibold text-green-700 mb-1">Strengths</div>
-                      <div className="text-sm text-slate-700">{evaluation.player_strengths}</div>
-                    </div>
-                  )}
-                  {evaluation.areas_of_growth && (
-                    <div className="p-3 bg-orange-50 rounded-lg">
-                      <div className="text-xs font-semibold text-orange-700 mb-1">Areas of Growth</div>
-                      <div className="text-sm text-slate-700">{evaluation.areas_of_growth}</div>
-                    </div>
-                  )}
-                  {evaluation.training_focus && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <div className="text-xs font-semibold text-blue-700 mb-1">Training Focus</div>
-                      <div className="text-sm text-slate-700">{evaluation.training_focus}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredEvaluations.length === 0 && (
@@ -336,7 +423,7 @@ export default function EvaluationsNew() {
               <CardHeader className="border-b bg-gradient-to-r from-emerald-100 to-blue-100">
                 <CardTitle className="text-lg">Player Information</CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-4 md:p-6 space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label className="font-semibold">Select Player *</Label>
@@ -370,25 +457,11 @@ export default function EvaluationsNew() {
                   </div>
                   <div>
                     <Label className="font-semibold">Primary Position</Label>
-                    <Select value={formData.primary_position} onValueChange={(val) => setFormData({...formData, primary_position: val})}>
+                    <Select value={formData.primary_position} onValueChange={handlePositionChange}>
                       <SelectTrigger className="border-2 h-12">
                         <SelectValue placeholder="Select position" />
                       </SelectTrigger>
                       <SelectContent>
-                        {POSITIONS.map(pos => (
-                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="font-semibold">Secondary Position (Optional)</Label>
-                    <Select value={formData.secondary_position} onValueChange={(val) => setFormData({...formData, secondary_position: val})}>
-                      <SelectTrigger className="border-2 h-12">
-                        <SelectValue placeholder="Select position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={null}>None</SelectItem>
                         {POSITIONS.map(pos => (
                           <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                         ))}
@@ -435,7 +508,7 @@ export default function EvaluationsNew() {
               <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-purple-100">
                 <CardTitle className="text-lg">Mental & Physical Attributes</CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
+              <CardContent className="p-4 md:p-6 space-y-6">
                 <RatingSlider label="Growth Mindset" value={formData.growth_mindset} onChange={(val) => setFormData({...formData, growth_mindset: val})} />
                 <RatingSlider label="Resilience" value={formData.resilience} onChange={(val) => setFormData({...formData, resilience: val})} />
                 <RatingSlider label="Efficiency in Execution" value={formData.efficiency_in_execution} onChange={(val) => setFormData({...formData, efficiency_in_execution: val})} />
@@ -449,7 +522,7 @@ export default function EvaluationsNew() {
                 <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-cyan-100">
                   <CardTitle className="text-lg">Defending Skills</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-4 md:p-6 space-y-6">
                   <RatingSlider label="Defending Organized" value={formData.defending_organized} onChange={(val) => setFormData({...formData, defending_organized: val})} />
                   <RatingSlider label="Defending Final Third" value={formData.defending_final_third} onChange={(val) => setFormData({...formData, defending_final_third: val})} />
                   <RatingSlider label="Defending Transition" value={formData.defending_transition} onChange={(val) => setFormData({...formData, defending_transition: val})} />
@@ -460,7 +533,7 @@ export default function EvaluationsNew() {
                 <CardHeader className="border-b bg-gradient-to-r from-orange-100 to-red-100">
                   <CardTitle className="text-lg">Attacking Skills</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-4 md:p-6 space-y-6">
                   <RatingSlider label="Attacking Organized" value={formData.attacking_organized} onChange={(val) => setFormData({...formData, attacking_organized: val})} />
                   <RatingSlider label="Attacking Final Third" value={formData.attacking_final_third} onChange={(val) => setFormData({...formData, attacking_final_third: val})} />
                   <RatingSlider label="Attacking in Transition" value={formData.attacking_in_transition} onChange={(val) => setFormData({...formData, attacking_in_transition: val})} />
@@ -468,11 +541,34 @@ export default function EvaluationsNew() {
               </Card>
             </div>
 
+            {/* Position-Specific Evaluation Fields */}
+            {formData.primary_position && (
+              <Card className="border-2 border-indigo-200">
+                <CardHeader className="border-b bg-gradient-to-r from-indigo-100 to-purple-100">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Position-Specific Skills ({formData.primary_position})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  {positionFields.map((field, idx) => (
+                    <RatingSlider
+                      key={field.key}
+                      label={field.label}
+                      description={field.description}
+                      value={formData[`position_role_${idx + 1}`]}
+                      onChange={(val) => setFormData({...formData, [`position_role_${idx + 1}`]: val})}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="border-2 border-purple-200">
               <CardHeader className="border-b bg-gradient-to-r from-purple-100 to-pink-100">
                 <CardTitle className="text-lg">Development Notes</CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-4 md:p-6 space-y-4">
                 <div>
                   <Label className="font-semibold">Player's Strengths</Label>
                   <Textarea

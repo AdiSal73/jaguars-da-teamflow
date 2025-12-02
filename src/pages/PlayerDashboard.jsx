@@ -827,7 +827,7 @@ export default function PlayerDashboard() {
                     </button>
                   </>
                 )}
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}`)}>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}?playerId=${playerId}`)}>
                   <Plus className="w-3 h-3 mr-1" />New
                 </Button>
               </div>
@@ -868,7 +868,7 @@ export default function PlayerDashboard() {
             ) : (
               <div className="text-center py-4">
                 <p className="text-slate-500 text-sm mb-2">No evaluations yet</p>
-                <Button size="sm" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}`)} className="bg-emerald-600 hover:bg-emerald-700">
+                <Button size="sm" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}?playerId=${playerId}`)} className="bg-emerald-600 hover:bg-emerald-700">
                   <Plus className="w-4 h-4 mr-1" />Create Evaluation
                 </Button>
               </div>
