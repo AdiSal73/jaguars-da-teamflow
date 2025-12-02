@@ -91,6 +91,7 @@ export default function Layout({ children, currentPageName }) {
     roles: ["admin"],
     submenu: [
     { title: "Overview", url: createPageUrl("ClubManagement") },
+     { title: "Coaches Management", url: createPageUrl("CoachManagement") },
     { title: "User Management", url: createPageUrl("UserManagement") },
     { title: "Data Management", url: createPageUrl("AdminDataManagement") },
     { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") }]
@@ -134,10 +135,11 @@ export default function Layout({ children, currentPageName }) {
 
   },
   {
-    title: "Bookings",
+    title: "Coaching Tools",
     icon: Calendar,
     roles: ["admin", "coach"],
     submenu: [
+    { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },  
     { title: "All Bookings", url: createPageUrl("BookingsTable") },
     { title: "My Availability", url: createPageUrl("Availability") }]
 
