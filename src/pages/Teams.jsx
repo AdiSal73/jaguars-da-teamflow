@@ -173,8 +173,11 @@ export default function Teams() {
     }
   };
 
+  // Filter out coaches from teams - only show actual teams
+  const actualTeams = teams.filter(team => team.name && team.age_group);
+
   const filteredTeams = useMemo(() => {
-    let result = teams.filter(team => {
+    let result = actualTeams.filter(team => {
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
       if (filterLeague !== 'all' && team.league !== filterLeague) return false;
       if (filterBranch !== 'all' && team.branch !== filterBranch) return false;
@@ -205,7 +208,7 @@ export default function Teams() {
     });
 
     return result;
-  }, [teams, filterAgeGroup, filterLeague, filterBranch, filterGender, filterCoach, coaches, sortField, sortDirection, players]);
+  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterGender, filterCoach, coaches, sortField, sortDirection, players]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))];

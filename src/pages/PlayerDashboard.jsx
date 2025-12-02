@@ -75,6 +75,8 @@ export default function PlayerDashboard() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   const [newDocument, setNewDocument] = useState({ title: '', document_type: 'Other', notes: '', file: null });
+  const [showInjuryDialog, setShowInjuryDialog] = useState(false);
+  const [newInjury, setNewInjury] = useState({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -232,6 +234,19 @@ export default function PlayerDashboard() {
   const deleteDocumentMutation = useMutation({
     mutationFn: (id) => base44.entities.PlayerDocument.delete(id),
     onSuccess: () => queryClient.invalidateQueries(['documents', playerId])
+  });
+
+  const createInjuryMutation = useMutation({
+    mutationFn: (data) => base44.entities.InjuryRecord.create({
+      player_id: playerId,
+      ...data,
+      status: 'Active'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['injuries', playerId]);
+      setShowInjuryDialog(false);
+      setNewInjury({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
+    }
   });
 
   const handleSaveAll = async () => {
@@ -946,9 +961,17 @@ export default function PlayerDashboard() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Injury History</CardTitle>
-              <Badge className={injuries.some(i => i.status === 'Active') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
-                {injuries.some(i => i.status === 'Active') ? 'Currently Injured' : 'Healthy'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className={injuries.some(i => i.status === 'Active') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
+                  {injuries.some(i => i.status === 'Active') ? 'Currently Injured' : 'Healthy'}
+                </Badge>
+                {isAdminOrCoach && (
+                  <Button variant="outline" size="sm" onClick={() => setShowInjuryDialog(true)}>
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Injury
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -1083,6 +1106,38 @@ export default function PlayerDashboard() {
               <Button variant="outline" onClick={() => setShowDocumentDialog(false)} className="flex-1">Cancel</Button>
               <Button onClick={() => uploadDocumentMutation.mutate(newDocument)} disabled={!newDocument.title || !newDocument.file} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                 Upload
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showInjuryDialog} onOpenChange={setShowInjuryDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Injury Record</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Date of Injury *</Label>
+              <Input type="date" value={newInjury.injury_date} onChange={e => setNewInjury({...newInjury, injury_date: e.target.value})} />
+            </div>
+            <div>
+              <Label>Injury Description *</Label>
+              <Input value={newInjury.injury_type} onChange={e => setNewInjury({...newInjury, injury_type: e.target.value})} placeholder="e.g., Ankle sprain" />
+            </div>
+            <div>
+              <Label>Projected Return to Play Date</Label>
+              <Input type="date" value={newInjury.recovery_date} onChange={e => setNewInjury({...newInjury, recovery_date: e.target.value})} />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, treatment_notes: e.target.value})} rows={3} placeholder="Treatment notes, recovery plan..." />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowInjuryDialog(false)} className="flex-1">Cancel</Button>
+              <Button onClick={() => createInjuryMutation.mutate(newInjury)} disabled={!newInjury.injury_date || !newInjury.injury_type} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                Add Injury
               </Button>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload } from 'lucide-react';
+import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown } from 'lucide-react';
 import BulkImportAssessments from '../components/assessments/BulkImportAssessments';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,10 +26,9 @@ export default function Assessments() {
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedLeague, setSelectedLeague] = useState('all');
-  const [selectedCoach, setSelectedCoach] = useState('all');
-  const [birthdayFrom, setBirthdayFrom] = useState('');
-  const [birthdayTo, setBirthdayTo] = useState('');
-  const [sortBy, setSortBy] = useState('Overall');
+  const [selectedGender, setSelectedGender] = useState('all');
+  const [sortBy, setSortBy] = useState('overall_score');
+  const [sortDirection, setSortDirection] = useState('desc');
   const [newAssessment, setNewAssessment] = useState({
     player_id: '',
     team_id: '',
@@ -206,12 +205,29 @@ export default function Assessments() {
     }
   });
 
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDirection('desc');
+    }
+  };
+
   const filteredAssessments = assessments.filter(assessment => {
     const player = players.find(p => p.id === assessment.player_id);
+    const team = teams.find(t => t.id === assessment.team_id);
     const playerName = (player?.full_name || assessment.player_name || '').toLowerCase();
     const matchesSearch = playerName.includes(searchTerm.toLowerCase());
     const matchesTeam = teamFilter === 'all' || assessment.team_id === teamFilter;
-    return matchesSearch && matchesTeam;
+    const matchesAgeGroup = selectedAgeGroup === 'all' || team?.age_group === selectedAgeGroup;
+    const matchesLeague = selectedLeague === 'all' || team?.league === selectedLeague;
+    const matchesGender = selectedGender === 'all' || player?.gender === selectedGender || team?.gender === selectedGender;
+    return matchesSearch && matchesTeam && matchesAgeGroup && matchesLeague && matchesGender;
+  }).sort((a, b) => {
+    const aVal = a[sortBy] || 0;
+    const bVal = b[sortBy] || 0;
+    return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
   });
 
   const handleFieldUpdate = (assessmentId, field, value) => {
@@ -313,7 +329,20 @@ export default function Assessments() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Gender</label>
+              <Select value={selectedGender} onValueChange={setSelectedGender}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Male">Boys</SelectItem>
+                  <SelectItem value="Female">Girls</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <label className="text-xs font-semibold text-slate-700 mb-2 block">Age Group</label>
               <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
@@ -342,26 +371,8 @@ export default function Assessments() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Leagues</SelectItem>
-                  <SelectItem value="Girls Academy">Girls Academy</SelectItem>
-                  <SelectItem value="Aspire">Aspire</SelectItem>
-                  <SelectItem value="NLC">NLC</SelectItem>
-                  <SelectItem value="DPL">DPL</SelectItem>
-                  <SelectItem value="MSPSP">MSPSP</SelectItem>
-                  <SelectItem value="Directors Academy">Directors Academy</SelectItem>
-                  <SelectItem value="MSDSL">MSDSL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 mb-2 block">Coach</label>
-              <Select value={selectedCoach} onValueChange={setSelectedCoach}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All Coaches" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Coaches</SelectItem>
-                  {coaches.map((coach) => (
-                    <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
+                    <SelectItem key={league} value={league}>{league}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -381,35 +392,17 @@ export default function Assessments() {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 mb-2 block">Birthday From</label>
-              <Input
-                type="date"
-                value={birthdayFrom}
-                onChange={(e) => setBirthdayFrom(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 mb-2 block">Birthday To</label>
-              <Input
-                type="date"
-                value={birthdayTo}
-                onChange={(e) => setBirthdayTo(e.target.value)}
-                className="h-10"
-              />
-            </div>
-            <div>
               <label className="text-xs font-semibold text-slate-700 mb-2 block">Sort By</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={(v) => { setSortBy(v); setSortDirection('desc'); }}>
                 <SelectTrigger className="h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Speed">Speed</SelectItem>
-                  <SelectItem value="Power">Power</SelectItem>
-                  <SelectItem value="Endurance">Endurance</SelectItem>
-                  <SelectItem value="Agility">Agility</SelectItem>
-                  <SelectItem value="Overall">Overall</SelectItem>
+                  <SelectItem value="speed_score">Speed</SelectItem>
+                  <SelectItem value="power_score">Power</SelectItem>
+                  <SelectItem value="endurance_score">Endurance</SelectItem>
+                  <SelectItem value="agility_score">Agility</SelectItem>
+                  <SelectItem value="overall_score">Overall</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -546,26 +539,48 @@ export default function Assessments() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
+                    <TableRow className="bg-gradient-to-r from-slate-900 to-slate-800">
+                      <TableHead className="w-12 text-white">
                         <Checkbox
                           checked={selectedAssessments.length === filteredAssessments.length && filteredAssessments.length > 0}
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Sprint</TableHead>
-                      <TableHead>Vertical</TableHead>
-                      <TableHead>YIRT</TableHead>
-                      <TableHead>Shuttle</TableHead>
-                      <TableHead>Speed</TableHead>
-                      <TableHead>Power</TableHead>
-                      <TableHead>Endurance</TableHead>
-                      <TableHead>Agility</TableHead>
-                      <TableHead>Overall</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('player_name')}>
+                        <div className="flex items-center">Name {sortBy === 'player_name' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white">Team</TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('assessment_date')}>
+                        <div className="flex items-center">Date {sortBy === 'assessment_date' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('sprint')}>
+                        <div className="flex items-center">Sprint {sortBy === 'sprint' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('vertical')}>
+                        <div className="flex items-center">Vertical {sortBy === 'vertical' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('yirt')}>
+                        <div className="flex items-center">YIRT {sortBy === 'yirt' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('shuttle')}>
+                        <div className="flex items-center">Shuttle {sortBy === 'shuttle' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('speed_score')}>
+                        <div className="flex items-center">Speed {sortBy === 'speed_score' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('power_score')}>
+                        <div className="flex items-center">Power {sortBy === 'power_score' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('endurance_score')}>
+                        <div className="flex items-center">Endurance {sortBy === 'endurance_score' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('agility_score')}>
+                        <div className="flex items-center">Agility {sortBy === 'agility_score' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white cursor-pointer hover:bg-slate-700" onClick={() => handleSort('overall_score')}>
+                        <div className="flex items-center">Overall {sortBy === 'overall_score' ? (sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />) : <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />}</div>
+                      </TableHead>
+                      <TableHead className="text-white">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
