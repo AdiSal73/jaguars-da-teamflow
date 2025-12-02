@@ -116,12 +116,6 @@ export default function Layout({ children, currentPageName }) {
 
   },
   {
-    title: "Coaches",
-    url: createPageUrl("CoachManagement"),
-    icon: UserCog,
-    roles: ["admin"]
-  },
-  {
     title: "Tryouts",
     icon: TrendingUp,
     roles: ["admin", "coach"],
