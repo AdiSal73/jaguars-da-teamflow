@@ -20,7 +20,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
+import TeamEvaluationForm from '../components/team/TeamEvaluationForm';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -32,6 +34,14 @@ export default function TeamDashboard() {
   const [selectedPlayersForCompare, setSelectedPlayersForCompare] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showTeamEvalDialog, setShowTeamEvalDialog] = useState(false);
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [newPlayerForm, setNewPlayerForm] = useState({
+    full_name: '',
+    gender: team?.gender || 'Female',
+    primary_position: 'Center Midfielder',
+    team_id: teamId
+  });
   const [editTeamForm, setEditTeamForm] = useState({
     name: '',
     age_group: '',
@@ -108,6 +118,19 @@ export default function TeamDashboard() {
     enabled: players.length > 0
   });
 
+  const { data: teamEvaluations = [] } = useQuery({
+    queryKey: ['teamEvals', teamId],
+    queryFn: async () => {
+      const all = await base44.entities.TeamEvaluation.list('-created_date');
+      return all.filter(e => e.team_id === teamId);
+    }
+  });
+
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['allPlayers'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
   React.useEffect(() => {
     if (team) {
       setEditTeamForm({
@@ -125,6 +148,21 @@ export default function TeamDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries(['team', teamId]);
       setShowEditDialog(false);
+    }
+  });
+
+  const createPlayerMutation = useMutation({
+    mutationFn: (data) => base44.entities.Player.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teamPlayers', teamId]);
+      queryClient.invalidateQueries(['players']);
+      setShowAddPlayerDialog(false);
+      setNewPlayerForm({
+        full_name: '',
+        gender: team?.gender || 'Female',
+        primary_position: 'Center Midfielder',
+        team_id: teamId
+      });
     }
   });
 
@@ -415,6 +453,14 @@ export default function TeamDashboard() {
                 <Edit2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 <span className="hidden md:inline">Edit Team</span>
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowAddPlayerDialog(true)}>
+                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Add Player</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowTeamEvalDialog(true)} className="bg-purple-50">
+                <Award className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Team Evaluation</span>
+              </Button>
             </div>
             <p className="text-sm md:text-base text-slate-600">{team?.age_group} • {team?.league}</p>
           </div>
@@ -551,11 +597,11 @@ export default function TeamDashboard() {
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
-                                                            {birthYear && <Badge variant="outline" className="text-[9px]">{birthYear}</Badge>}
-                                                            <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                                                              {player.status}
-                                                            </Badge>
-                                                          </div>
+                           {birthYear && <Badge variant="outline" className="text-[9px]">{birthYear}</Badge>}
+                           {player.status === 'Injured' && (
+                             <Badge className="bg-red-100 text-red-800 text-[10px]">Injured</Badge>
+                           )}
+                          </div>
                                                           <div className="flex flex-wrap gap-1 mt-1">
                                                             {tryout?.team_role && <Badge className="text-[9px] bg-purple-100 text-purple-800">{tryout.team_role}</Badge>}
                                                             {tryout?.recommendation && (
@@ -1156,6 +1202,72 @@ export default function TeamDashboard() {
         ]}
         onExport={handleTeamExport}
       />
+
+      <Dialog open={showTeamEvalDialog} onOpenChange={setShowTeamEvalDialog}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Team Evaluation - {team?.name}</DialogTitle>
+          </DialogHeader>
+          <TeamEvaluationForm
+            teamId={teamId}
+            teamName={team?.name}
+            onClose={() => setShowTeamEvalDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Player to {team?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Full Name *</Label>
+              <Input
+                value={newPlayerForm.full_name}
+                onChange={(e) => setNewPlayerForm({...newPlayerForm, full_name: e.target.value})}
+                placeholder="Player name"
+              />
+            </div>
+            <div>
+              <Label>Gender *</Label>
+              <Select value={newPlayerForm.gender} onValueChange={(v) => setNewPlayerForm({...newPlayerForm, gender: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Primary Position</Label>
+              <Select value={newPlayerForm.primary_position} onValueChange={(v) => setNewPlayerForm({...newPlayerForm, primary_position: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'].map(pos => (
+                    <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowAddPlayerDialog(false)} className="flex-1">Cancel</Button>
+              <Button 
+                onClick={() => createPlayerMutation.mutate(newPlayerForm)} 
+                disabled={!newPlayerForm.full_name}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                Add Player
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

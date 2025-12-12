@@ -350,7 +350,23 @@ export default function FormationView() {
     const posPlayers = players.filter((player) => player.primary_position === positionId);
     const withTryout = posPlayers.map((p) => {
       const tryout = tryouts.find((t) => t.player_id === p.id);
-      return { ...p, tryout };
+      const playerTeam = teams.find(t => t.id === p.team_id);
+      const currentTeam = teams.find(t => t.id === selectedTeam);
+      
+      // Check if player is age ineligible
+      let isAgeIneligible = false;
+      if (p.date_of_birth && currentTeam?.age_group) {
+        const playerBirthYear = new Date(p.date_of_birth).getFullYear();
+        const teamAgeMatch = currentTeam.age_group.match(/U-?(\d+)/i);
+        if (teamAgeMatch) {
+          const teamAge = parseInt(teamAgeMatch[1]);
+          const currentYear = new Date().getFullYear();
+          const teamBirthYear = currentYear - teamAge;
+          isAgeIneligible = playerBirthYear < teamBirthYear;
+        }
+      }
+      
+      return { ...p, tryout, isAgeIneligible };
     });
     return withTryout.sort((a, b) => {
       const rankA = a.tryout?.team_ranking || 9999;
@@ -414,17 +430,15 @@ export default function FormationView() {
 
   const formation = { name: formations[selectedFormation].name, positions: formationPositions };
 
-  // Filtered and sorted unassigned players
+  // Filtered and sorted unassigned players - independent of field filters
   const unassignedPlayers = useMemo(() => {
-    let filtered = players.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position));
+    let filtered = allPlayers.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position));
     
-    // Search filter
     if (unassignedSearch) {
       const search = unassignedSearch.toLowerCase();
       filtered = filtered.filter(p => p.full_name?.toLowerCase().includes(search));
     }
     
-    // League filter
     if (unassignedFilterLeague !== 'all') {
       filtered = filtered.filter(p => {
         const playerTeam = teams.find(t => t.id === p.team_id);
@@ -432,12 +446,10 @@ export default function FormationView() {
       });
     }
     
-    // Trapped filter
     if (showTrappedOnly) {
       filtered = filtered.filter(p => isTrappedPlayer(p.date_of_birth));
     }
     
-    // Sorting
     return filtered.sort((a, b) => {
       if (unassignedSortBy === 'name') {
         const lastNameA = a.full_name?.split(' ').pop() || '';
@@ -454,7 +466,7 @@ export default function FormationView() {
       }
       return 0;
     });
-  }, [players, teams, unassignedSearch, unassignedSortBy, unassignedFilterLeague]);
+  }, [allPlayers, teams, unassignedSearch, unassignedSortBy, unassignedFilterLeague, showTrappedOnly]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
 
@@ -662,53 +674,58 @@ export default function FormationView() {
                                   className={`transition-all ${playerSnapshot.isDragging ? 'rotate-2 scale-105 shadow-2xl' : ''}`}>
                                   
                                           <PlayerHoverTooltip
-                                                                                            player={player}
-                                                                                            tryout={player.tryout}
-                                                                                            evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
-                                                                                            assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
-                                                                                          >
-                                                                                          <div className={`bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border-2 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative ${getPositionBorderColor(player.primary_position)}`}>
-                                                                                            <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
-                                                                                                                                                <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
-                                                                                                                                                  #{player.tryout?.team_ranking || index + 1}
-                                                                                                                                                </div>
-                                                                                                                                                <div className="flex-1 min-w-0">
-                                                                                                                                                  <div className="text-[8px] md:text-[10px] font-bold text-slate-900 truncate leading-tight">
-                                                                                                                                                    {player.full_name}
-                                                                                                                                                  </div>
-                                                                                                                                                  {player.date_of_birth && (
-                                                                                                                                                    <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
-                                                                                                                                                  )}
-                                                                                                                                                </div>
+                                           player={player}
+                                           tryout={player.tryout}
+                                           evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
+                                           assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
+                                          >
+                                          <div 
+                                           onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                                           className={`bg-white rounded-md px-1 md:px-1.5 py-1 md:py-1.5 border-2 cursor-grab active:cursor-grabbing hover:border-emerald-400 hover:shadow-md group relative ${getPositionBorderColor(player.primary_position)}`}>
+                                           <div className="flex items-center gap-0.5 md:gap-1 mb-0.5">
+                                                                                               <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[8px] md:text-[10px] flex-shrink-0">
+                                                                                                 #{player.tryout?.team_ranking || index + 1}
+                                                                                               </div>
+                                                                                               <div className="flex-1 min-w-0">
+                                                                                                 <div className="text-[8px] md:text-[10px] font-bold text-slate-900 truncate leading-tight">
+                                                                                                   {player.full_name}
+                                                                                                 </div>
+                                                                                                 {player.date_of_birth && (
+                                                                                                   <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
+                                                                                                 )}
+                                                                                               </div>
                                                                                                                                                 <button
                                                                                                                                           onClick={(e) => handleEditClick(player, e)}
                                                                                                                                           className="w-3 h-3 hover:bg-slate-200 rounded flex items-center justify-center opacity-50 hover:opacity-100">
                                                                                                                                                   <Edit2 className="w-2 h-2" />
                                                                                                                                                 </button>
                                                                                                                                               </div>
-                                                                                            {player.tryout && (
-                                                                                    <div className="flex flex-wrap gap-0.5 justify-center">
-                                                                                                {player.tryout.team_role && (
-                                                                                      <Button 
-                                                                                        size="sm" 
-                                                                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${teamRoleColors[player.tryout.team_role] || 'bg-blue-500 hover:bg-blue-600'}`}
-                                                                                      >
-                                                                                        {player.tryout.team_role}
-                                                                                      </Button>
-                                                                                      )}
-                                                                                                {player.tryout.recommendation && (
-                                                                                      <Button
-                                                                                        size="sm"
-                                                                                        className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${
-                                                                                        player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                                                                        player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                                                                        'bg-blue-500 hover:bg-blue-600'}`
-                                                                                        }>
-                                                                                                    {player.tryout.recommendation}
-                                                                                                  </Button>
-                                                                                      )}
-                                                                                              </div>
-                                                                                    )}
+                                                                                            <div className="flex flex-wrap gap-0.5 justify-center">
+                                                                                              {player.isAgeIneligible && (
+                                                                                                <Badge className="bg-red-500 text-white text-[7px] md:text-[8px] px-1">
+                                                                                                  Age Ineligible
+                                                                                                </Badge>
+                                                                                              )}
+                                                                                              {player.tryout?.team_role && (
+                                                                                                <Button 
+                                                                                                  size="sm" 
+                                                                                                  className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${teamRoleColors[player.tryout.team_role] || 'bg-blue-500 hover:bg-blue-600'}`}
+                                                                                                >
+                                                                                                  {player.tryout.team_role}
+                                                                                                </Button>
+                                                                                              )}
+                                                                                              {player.tryout?.recommendation && (
+                                                                                                <Button
+                                                                                                  size="sm"
+                                                                                                  className={`h-3 md:h-4 px-1 text-[7px] md:text-[8px] rounded-full pointer-events-none ${
+                                                                                                  player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                                                                                  player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                                                                                  'bg-blue-500 hover:bg-blue-600'}`
+                                                                                                  }>
+                                                                                                  {player.tryout.recommendation}
+                                                                                                </Button>
+                                                                                              )}
+                                                                                            </div>
                                                                                           </div>
                                                                                           </PlayerHoverTooltip>
                                         </div>
@@ -800,14 +817,16 @@ export default function FormationView() {
                           {...dragProvided.draggableProps}
                           {...dragProvided.dragHandleProps}
                           className={`transition-all ${dragSnapshot.isDragging ? 'scale-110' : ''}`}>
-                          <EditablePlayerCard
-                            player={player}
-                            tryout={playerTryout}
-                            team={playerTeam}
-                            teams={teams}
-                            clubSettings={clubSettings}
-                            className="cursor-grab active:cursor-grabbing"
-                          />
+                          <div className="space-y-1">
+                            <EditablePlayerCard
+                              player={player}
+                              tryout={playerTryout}
+                              team={playerTeam}
+                              teams={teams}
+                              clubSettings={clubSettings}
+                              className="cursor-grab active:cursor-grabbing"
+                            />
+                          </div>
                         </div>
                       )}
                     </Draggable>

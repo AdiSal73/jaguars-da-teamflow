@@ -69,6 +69,7 @@ export default function PlayerDashboard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [playerForm, setPlayerForm] = useState({});
+  const [allTeams, setAllTeams] = useState([]);
   const [tryoutForm, setTryoutForm] = useState({});
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
@@ -101,7 +102,11 @@ export default function PlayerDashboard() {
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => base44.entities.Team.list()
+    queryFn: async () => {
+      const allTeams = await base44.entities.Team.list();
+      setAllTeams(allTeams);
+      return allTeams;
+    }
   });
 
   const { data: tryout } = useQuery({
@@ -172,7 +177,8 @@ export default function PlayerDashboard() {
         primary_position: player.primary_position || '',
         secondary_position: player.secondary_position || '',
         parent_name: player.parent_name || '',
-        status: player.status || 'Active'
+        status: player.status || 'Active',
+        team_id: player.team_id || ''
       });
     }
   }, [player]);
