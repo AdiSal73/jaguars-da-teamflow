@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 import PlayerGoalsManager from '../components/player/PlayerGoalsManager';
+import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -1063,6 +1064,13 @@ export default function PlayerDashboard() {
             player={player} 
             onUpdate={(data) => updatePlayerMutation.mutate(data)}
           />
+        </div>
+      )}
+
+      {/* Position Knowledge Bank */}
+      {player.primary_position && (
+        <div className="mt-4">
+          <PositionKnowledgeBank position={player.primary_position} />
         </div>
       )}
 
