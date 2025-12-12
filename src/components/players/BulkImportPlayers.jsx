@@ -13,7 +13,7 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
   const [errors, setErrors] = useState([]);
 
   const downloadTemplate = () => {
-    const csv = 'Name,Parent Name,Email,Phone,Date of Birth,Grade,Position,Team,Jersey Number,League\nJane Smith,Parent Smith,jane@email.com,555-0001,2010-05-15,10th,Forward,U-15 Elite,10,Girls Academy';
+    const csv = 'Name,Parent Name,Email,Phone,Date of Birth,Grade,Gender,Position,Team,Jersey,League,Season\nJane Smith,Parent Smith,jane@email.com,555-0001,2010-05-15,10th,Female,Forward,U-15 Elite,10,Girls Academy,2024-2025';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -59,18 +59,20 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
         const phone = row.Phone || row.phone;
         const dob = row['Date of Birth'] || row['date of birth'] || row.date_of_birth;
         const grade = row.Grade || row.grade;
+        const gender = row.Gender || row.gender;
         const position = row.Position || row.position;
         const teamName = row.Team || row.team;
-        const jerseyNumber = row['Jersey Number'] || row['jersey number'] || row.jersey_number;
+        const jerseyNumber = row.Jersey || row.jersey || row['Jersey Number'] || row['jersey number'] || row.jersey_number;
         const league = row.League || row.league;
+        const season = row.Season || row.season;
 
         if (!name) {
           importErrors.push(`Line ${row._lineNumber}: Missing player name`);
           return;
         }
 
-        if (!position) {
-          importErrors.push(`Line ${row._lineNumber}: Missing position`);
+        if (!gender) {
+          importErrors.push(`Line ${row._lineNumber}: Missing gender`);
           return;
         }
 
@@ -102,11 +104,13 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           phone: phone || '',
           date_of_birth: dob || '',
           grade: grade || '',
-          position: position,
+          gender: gender,
+          primary_position: position || '',
           team_id: teamId,
           jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
           status: 'Active',
-          _teamName: teamName
+          _teamName: teamName,
+          _season: season
         });
       });
 
@@ -156,7 +160,9 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Upload a CSV file with columns: Name, Parent Name, Email, Phone, Date of Birth, Grade, Position, Team, Jersey Number, League
+              Upload a CSV file with columns: Name, Parent Name, Email, Phone, Date of Birth, Grade, Gender, Position, Team, Jersey, League, Season
+              <br />
+              <span className="text-xs text-slate-500 mt-1 block">Note: Position and Jersey are optional</span>
             </AlertDescription>
           </Alert>
 
