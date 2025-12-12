@@ -25,6 +25,7 @@ export default function EditablePlayerCard({
   className = ''
 }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editForm, setEditForm] = useState({});
 
@@ -94,7 +95,10 @@ export default function EditablePlayerCard({
 
   return (
     <>
-      <div className={`p-2 rounded-lg border-2 bg-white ${getPositionBorderColor(player.primary_position)} ${className}`}>
+      <div 
+        className={`p-2 rounded-lg border-2 bg-white cursor-pointer hover:shadow-md transition-all ${getPositionBorderColor(player.primary_position)} ${className}`}
+        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+      >
         <div className="flex items-start justify-between gap-1">
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm truncate">{player.full_name}</div>
@@ -110,7 +114,7 @@ export default function EditablePlayerCard({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-6 w-6 flex-shrink-0"
+              className="h-6 w-6 flex-shrink-0 z-10"
               onClick={handleOpenEdit}
             >
               <Edit2 className="w-3 h-3" />
@@ -129,6 +133,9 @@ export default function EditablePlayerCard({
             }`}>
               {tryout.recommendation}
             </Badge>
+          )}
+          {isTrappedPlayer(player.date_of_birth) && (
+            <Badge className="bg-red-500 text-white text-[9px] px-1 font-bold">TRAPPED</Badge>
           )}
         </div>
       </div>
