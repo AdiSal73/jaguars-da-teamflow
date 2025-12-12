@@ -22,11 +22,13 @@ export default function Tryouts() {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedCoach, setSelectedCoach] = useState('all');
+  const [selectedGender, setSelectedGender] = useState('all');
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
   const [sortBy, setSortBy] = useState('team');
   const [viewMode, setViewMode] = useState('columns');
-  
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [showTrappedOnly, setShowTrappedOnly] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -65,17 +67,9 @@ export default function Tryouts() {
     }
   });
 
-  const calculateTrapped = (dateOfBirth) => {
-    if (!dateOfBirth) return 'Unknown';
-    const date = new Date(dateOfBirth);
-    const month = date.getMonth() + 1;
-    return month >= 9 && month <= 12 ? 'Yes' : 'No';
-  };
-
   const getPlayerTryoutData = (player) => {
     const tryout = tryouts.find((t) => t.player_id === player.id);
-    const trapped = calculateTrapped(player.date_of_birth);
-    return { ...player, tryout, trapped };
+    return { ...player, tryout };
   };
 
   const sortTeamsByAge = (teamList) => {
@@ -103,9 +97,14 @@ export default function Tryouts() {
     return teamList.filter((t) => t.age_group === selectedAgeGroup);
   };
 
-  const gaTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy')))));
-  const aspireTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire')))));
-  const otherTeams = sortTeamsByAge(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire')))));
+  const filterByGender = (teamList) => {
+    if (selectedGender === 'all') return teamList;
+    return teamList.filter((t) => t.gender === selectedGender);
+  };
+
+  const gaTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy'))))));
+  const aspireTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire'))))));
+  const otherTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire'))))));
 
   const getTeamPlayers = (team) => {
     let teamPlayers = players.filter((p) => p.team_id === team.id);
@@ -115,6 +114,10 @@ export default function Tryouts() {
     }
     if (birthdayTo) {
       teamPlayers = teamPlayers.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
+    }
+    
+    if (showTrappedOnly) {
+      teamPlayers = teamPlayers.filter((p) => isTrappedPlayer(p.date_of_birth));
     }
 
     const playersWithTryout = teamPlayers.map((p) => getPlayerTryoutData(p));
@@ -202,28 +205,33 @@ export default function Tryouts() {
 
   const getAllPlayersWithTryout = () => {
     const allPlayersData = players.map((p) => getPlayerTryoutData(p));
-
     let filtered = allPlayersData;
 
-    if (selectedAgeGroup !== 'all') {
-      filtered = filtered.filter((p) => {
-        const team = teams.find((t) => t.id === p.team_id);
-        return team?.age_group === selectedAgeGroup;
-      });
+    if (!showAllPlayers) {
+      if (selectedAgeGroup !== 'all') {
+        filtered = filtered.filter((p) => {
+          const team = teams.find((t) => t.id === p.team_id);
+          return team?.age_group === selectedAgeGroup;
+        });
+      }
+
+      if (selectedLeague !== 'all') {
+        filtered = filtered.filter((p) => {
+          const team = teams.find((t) => t.id === p.team_id);
+          return team?.league === selectedLeague;
+        });
+      }
+
+      if (selectedCoach !== 'all') {
+        filtered = filtered.filter((p) => {
+          const team = teams.find((t) => t.id === p.team_id);
+          return team?.coach_ids?.includes(selectedCoach);
+        });
+      }
     }
 
-    if (selectedLeague !== 'all') {
-      filtered = filtered.filter((p) => {
-        const team = teams.find((t) => t.id === p.team_id);
-        return team?.league === selectedLeague;
-      });
-    }
-
-    if (selectedCoach !== 'all') {
-      filtered = filtered.filter((p) => {
-        const team = teams.find((t) => t.id === p.team_id);
-        return team?.coach_ids?.includes(selectedCoach);
-      });
+    if (selectedGender !== 'all') {
+      filtered = filtered.filter((p) => p.gender === selectedGender);
     }
 
     if (birthdayFrom) {
@@ -232,6 +240,10 @@ export default function Tryouts() {
 
     if (birthdayTo) {
       filtered = filtered.filter((p) => !p.date_of_birth || new Date(p.date_of_birth) <= new Date(birthdayTo));
+    }
+    
+    if (showTrappedOnly) {
+      filtered = filtered.filter((p) => isTrappedPlayer(p.date_of_birth));
     }
 
     return filtered.sort((a, b) => {
@@ -360,11 +372,20 @@ export default function Tryouts() {
     <div className="flex-1 min-w-[280px] md:min-w-[420px]">
       <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
         <CardHeader className="bg-slate-300 p-4 md:p-6 flex flex-col space-y-1.5 border-b shadow-lg">
-          {logoUrl && (
-            <div className="flex justify-center mb-3 md:mb-4">
+          <div className="flex justify-center mb-3 md:mb-4 h-24 md:h-32">
+            {logoUrl ? (
               <img src={logoUrl} alt={title} className="w-20 h-20 md:w-32 md:h-32 object-contain" />
-            </div>
-          )}
+            ) : (
+              <div className="w-20 h-20 md:w-32 md:h-32 flex items-center justify-center">
+                <svg viewBox="0 0 120 120" className="w-full h-full">
+                  <circle cx="60" cy="60" r="50" fill="#10b981" opacity="0.2"/>
+                  <circle cx="60" cy="60" r="38" fill="none" stroke="#10b981" strokeWidth="4"/>
+                  <path d="M60 22 L60 98 M22 60 L98 60" stroke="#10b981" strokeWidth="3"/>
+                  <circle cx="60" cy="60" r="8" fill="#10b981"/>
+                </svg>
+              </div>
+            )}
+          </div>
           <CardTitle className="text-white text-center text-lg md:text-2xl font-bold tracking-wide">{title}</CardTitle>
         </CardHeader>
         <CardContent className="p-3 md:p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
@@ -415,77 +436,81 @@ export default function Tryouts() {
                             <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                               {(provided, snapshot) => (
                                 <PlayerHoverTooltip 
-                                                                        player={player}
-                                                                        tryout={player.tryout}
-                                                                        evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
-                                                                        assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
-                                                                      >
-                                                                      <div
-                                                                       ref={provided.innerRef}
-                                                                       {...provided.draggableProps}
-                                                                       {...provided.dragHandleProps}
-                                                                       style={{
-                                                                         ...provided.draggableProps.style,
-                                                                       }}
-                                                                       className={`${
-                                                                                                                player.trapped === 'Yes' 
-                                                                                                                  ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                                                                                                  : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
-                                                                                                              } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                                                                                                snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                                                                                              }`}
-                                                                       onClick={() => !snapshot.isDragging && navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                                                                      >
-                                                                        <div className="flex items-center justify-between gap-2">
-                                                                          <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                                                                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
-                                                                              #{player.tryout?.team_ranking || '?'}
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                              <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                                                              <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
-                                                                                {player.primary_position}
-                                                                                {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
-                                                                              </div>
-                                                                            </div>
-                                                                          </div>
-                                                                          <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                                                            {player.trapped === 'Yes' && (
-                                                                              <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5">
-                                                                                <AlertCircle className="w-2 h-2 md:w-3 md:h-3 mr-0.5" />
-                                                                                Trapped
-                                                                              </Badge>
-                                                                            )}
-                                                                            {player.tryout?.team_role && (
-                                                                              <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                                                                player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
-                                                                                player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                                                                player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
-                                                                                player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
-                                                                                player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
-                                                                                player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
-                                                                                player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
-                                                                                'bg-blue-500 hover:bg-blue-600'
-                                                                              }`}>
-                                                                                {player.tryout.team_role}
-                                                                              </Button>
-                                                                            )}
-                                                                            {player.tryout?.recommendation && (
-                                                                              <Button 
-                                                                                size="sm"
-                                                                                className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                                                                  player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                                                                  player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                                                                  'bg-blue-500 hover:bg-blue-600'
-                                                                                }`}
-                                                                              >
-                                                                                {player.tryout.recommendation}
-                                                                              </Button>
-                                                                            )}
-                                                                          </div>
-                                                                        </div>
-                                                                      </div>
-                                                                      </PlayerHoverTooltip>
+                                  player={player}
+                                  tryout={player.tryout}
+                                  evaluation={evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]}
+                                  assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
+                                >
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                    }}
+                                    className={`${
+                                      isTrappedPlayer(player.date_of_birth)
+                                        ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                        : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
+                                    } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
+                                      snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
+                                    }`}
+                                    onClick={(e) => {
+                                      if (!snapshot.isDragging) {
+                                        e.stopPropagation();
+                                        navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
+                                          #{player.tryout?.team_ranking || '?'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
+                                          <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
+                                            {player.primary_position}
+                                            {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                        {isTrappedPlayer(player.date_of_birth) && (
+                                          <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5 font-bold">
+                                            TRAPPED
+                                          </Badge>
+                                        )}
+                                        {player.tryout?.team_role && (
+                                          <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                            player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
+                                            player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                            player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
+                                            player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
+                                            player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
+                                            player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
+                                            player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
+                                            'bg-blue-500 hover:bg-blue-600'
+                                          }`}>
+                                            {player.tryout.team_role}
+                                          </Button>
+                                        )}
+                                        {player.tryout?.recommendation && (
+                                          <Button 
+                                            size="sm"
+                                            className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                              player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                              player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                              'bg-blue-500 hover:bg-blue-600'
+                                            }`}
+                                          >
+                                            {player.tryout.recommendation}
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </PlayerHoverTooltip>
                               )}
                             </Draggable>
                           ))
@@ -515,7 +540,32 @@ export default function Tryouts() {
 
         <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Scope</label>
+                <Select value={showAllPlayers ? 'all' : 'filtered'} onValueChange={(val) => setShowAllPlayers(val === 'all')}>
+                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="filtered">Filtered</SelectItem>
+                    <SelectItem value="all">All Players</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Gender</label>
+                <Select value={selectedGender} onValueChange={setSelectedGender}>
+                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Male">Boys</SelectItem>
+                    <SelectItem value="Female">Girls</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Age Group</label>
                 <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
@@ -585,19 +635,14 @@ export default function Tryouts() {
                   className="w-full h-10 md:h-12 px-3 md:px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-xs md:text-sm" />
               </div>
               <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Sort By</label>
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Trapped</label>
+                <Select value={showTrappedOnly ? 'trapped' : 'all'} onValueChange={(val) => setShowTrappedOnly(val === 'trapped')}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="team">Team</SelectItem>
-                    <SelectItem value="age_group">Age Group</SelectItem>
-                    <SelectItem value="league">Club</SelectItem>
-                    <SelectItem value="team_role">Team Role</SelectItem>
-                    <SelectItem value="recommendation">Recommendation</SelectItem>
-                    <SelectItem value="next_season_status">Next Season Status</SelectItem>
-                    <SelectItem value="registration_status">Registration Status</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="trapped">Trapped Only</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -636,7 +681,11 @@ export default function Tryouts() {
               {getAllPlayersWithTryout().map((player) => {
                 const team = teams.find((t) => t.id === player.team_id);
                 return (
-                  <Card key={player.id} className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all">
+                  <Card 
+                    key={player.id} 
+                    className="border-2 border-slate-200 shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                    onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                  >
                     <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 pb-4">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-md">
@@ -646,10 +695,9 @@ export default function Tryouts() {
                           <CardTitle className="text-base md:text-lg truncate">{player.full_name}</CardTitle>
                           <div className="text-xs text-slate-600 mt-1 truncate">{team?.name} • {team?.age_group}</div>
                         </div>
-                        {player.trapped === 'Yes' &&
-                        <Badge className="bg-red-500 text-white text-[10px] px-1.5">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Trapped
+                        {isTrappedPlayer(player.date_of_birth) &&
+                        <Badge className="bg-red-500 text-white text-[10px] px-1.5 font-bold">
+                            TRAPPED
                           </Badge>
                         }
                       </div>
@@ -685,7 +733,7 @@ export default function Tryouts() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-3">
+                    <CardContent className="pt-4 space-y-3" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <Label className="text-xs text-slate-600">Primary Position</Label>
                         <Select
