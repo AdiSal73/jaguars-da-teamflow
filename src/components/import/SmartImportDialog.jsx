@@ -262,8 +262,8 @@ export default function SmartImportDialog({
     const total = recordsToProcess.length;
     
     // Batch processing to avoid rate limits
-    const BATCH_SIZE = 5;
-    const DELAY_MS = 500;
+    const BATCH_SIZE = 3;
+    const DELAY_MS = 2000;
     
     for (let i = 0; i < recordsToProcess.length; i += BATCH_SIZE) {
       const batch = recordsToProcess.slice(i, i + BATCH_SIZE);
