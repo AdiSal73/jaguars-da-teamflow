@@ -61,9 +61,13 @@ export default function EvaluationsNew() {
     defending_organized: 5,
     defending_final_third: 5,
     defending_transition: 5,
+    pressing: 5,
+    defending_set_pieces: 5,
     attacking_organized: 5,
     attacking_final_third: 5,
     attacking_in_transition: 5,
+    building_out: 5,
+    attacking_set_pieces: 5,
     player_strengths: '',
     areas_of_growth: '',
     training_focus: '',
@@ -608,6 +612,8 @@ export default function EvaluationsNew() {
                   <RatingSlider label="Defending Organized" value={formData.defending_organized} onChange={(val) => setFormData({...formData, defending_organized: val})} />
                   <RatingSlider label="Defending Final Third" value={formData.defending_final_third} onChange={(val) => setFormData({...formData, defending_final_third: val})} />
                   <RatingSlider label="Defending Transition" value={formData.defending_transition} onChange={(val) => setFormData({...formData, defending_transition: val})} />
+                  <RatingSlider label="Pressing" value={formData.pressing} onChange={(val) => setFormData({...formData, pressing: val})} />
+                  <RatingSlider label="Defending Set-Pieces" value={formData.defending_set_pieces} onChange={(val) => setFormData({...formData, defending_set_pieces: val})} />
                 </CardContent>
               </Card>
 
@@ -619,6 +625,8 @@ export default function EvaluationsNew() {
                   <RatingSlider label="Attacking Organized" value={formData.attacking_organized} onChange={(val) => setFormData({...formData, attacking_organized: val})} />
                   <RatingSlider label="Attacking Final Third" value={formData.attacking_final_third} onChange={(val) => setFormData({...formData, attacking_final_third: val})} />
                   <RatingSlider label="Attacking in Transition" value={formData.attacking_in_transition} onChange={(val) => setFormData({...formData, attacking_in_transition: val})} />
+                  <RatingSlider label="Building Out" value={formData.building_out} onChange={(val) => setFormData({...formData, building_out: val})} />
+                  <RatingSlider label="Attacking Set-Pieces" value={formData.attacking_set_pieces} onChange={(val) => setFormData({...formData, attacking_set_pieces: val})} />
                 </CardContent>
               </Card>
             </div>

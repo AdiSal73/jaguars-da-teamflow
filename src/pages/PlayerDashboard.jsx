@@ -473,9 +473,11 @@ export default function PlayerDashboard() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h1 className="text-xl md:text-2xl font-bold text-slate-900">{player.full_name}</h1>
-          <Badge className={player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}>
-            {player.status}
-          </Badge>
+          {player.status === 'Injured' && (
+            <Badge className="bg-red-100 text-red-800">
+              Injured
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={!previousPlayer} onClick={() => navigate(`?id=${previousPlayer?.id}`)}>
@@ -552,12 +554,10 @@ export default function PlayerDashboard() {
                     <SelectContent>
                       <SelectItem value="Active">Active</SelectItem>
                       <SelectItem value="Injured">Injured</SelectItem>
-                      <SelectItem value="Suspended">Suspended</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Badge className={`text-[10px] ${player.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>{player.status}</Badge>
+                  player.status === 'Injured' ? <Badge className="bg-red-100 text-red-800 text-[10px]">Injured</Badge> : <span className="text-xs">-</span>
                 )}
               </div>
               <div>
