@@ -38,7 +38,7 @@ export default function TeamDashboard() {
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState({
     full_name: '',
-    gender: team?.gender || 'Female',
+    gender: 'Female',
     primary_position: 'Center Midfielder',
     team_id: teamId
   });
@@ -140,8 +140,13 @@ export default function TeamDashboard() {
         season: team.season || '',
         head_coach_id: team.head_coach_id || ''
       });
+      setNewPlayerForm(prev => ({
+        ...prev,
+        gender: team.gender || 'Female',
+        team_id: teamId
+      }));
     }
-  }, [team]);
+  }, [team, teamId]);
 
   const updateTeamMutation = useMutation({
     mutationFn: (updatedData) => base44.entities.Team.update(teamId, updatedData),
