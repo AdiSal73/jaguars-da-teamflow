@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
+import PlayerGoalsManager from '../components/player/PlayerGoalsManager';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -1053,6 +1054,16 @@ export default function PlayerDashboard() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Player Goals */}
+      {isAdminOrCoach && (
+        <div className="mt-4">
+          <PlayerGoalsManager 
+            player={player} 
+            onUpdate={(data) => updatePlayerMutation.mutate(data)}
+          />
+        </div>
       )}
 
       {/* Development Notes */}

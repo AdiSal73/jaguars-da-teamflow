@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
-export default function BulkImportPlayers({ teams, onImportComplete }) {
+export default function BulkImportPlayers({ teams, coaches, onImportComplete }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -13,12 +13,12 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
   const [errors, setErrors] = useState([]);
 
   const downloadTemplate = () => {
-    const csv = 'Name,Parent Name,Email,Phone,Date of Birth,Grade,Gender,Position,Team,Jersey,League,Season\nJane Smith,Parent Smith,jane@email.com,555-0001,2010-05-15,10th,Female,Forward,U-15 Elite,10,Girls Academy,2024-2025';
+    const csv = 'Name,Parent Name,Email,Phone,Date of Birth,Grade,Gender,Position,Team,Jersey,League,Season,Branch,Coach\nJane Smith,Parent Smith,jane@email.com,555-0001,2010-05-15,10th,Female,Forward,U-15 Elite,10,Girls Academy,2024-2025,Novi,John Doe';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'player_template.csv';
+    a.download = 'player_import_template.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -28,10 +28,27 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
     const headers = lines[0].split(',').map(h => h.trim());
     
     return lines.slice(1).map((line, idx) => {
-      const values = line.split(',').map(v => v.trim());
+      // Handle quoted values properly
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
       const row = {};
       headers.forEach((header, i) => {
-        row[header] = values[i];
+        row[header] = values[i] || '';
       });
       row._lineNumber = idx + 2;
       return row;
@@ -65,6 +82,8 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
         const jerseyNumber = row.Jersey || row.jersey || row['Jersey Number'] || row['jersey number'] || row.jersey_number;
         const league = row.League || row.league;
         const season = row.Season || row.season;
+        const branch = row.Branch || row.branch;
+        const coachName = row.Coach || row.coach;
 
         if (!name) {
           importErrors.push(`Line ${row._lineNumber}: Missing player name`);
@@ -85,10 +104,24 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
               const ageMatch = teamName.match(/U-?(\d+)/i);
               const ageGroup = ageMatch ? `U-${ageMatch[1]}` : 'Senior';
               
+              // Find matching coach by name
+              let matchedCoachId = null;
+              if (coachName) {
+                const coach = coaches.find(c => 
+                  c.full_name?.toLowerCase() === coachName.toLowerCase() ||
+                  c.email?.toLowerCase() === coachName.toLowerCase()
+                );
+                if (coach) matchedCoachId = coach.id;
+              }
+              
               teamsToCreate.set(teamName, {
                 name: teamName,
                 age_group: ageGroup,
-                league: league || ''
+                league: league || '',
+                gender: gender || 'Female',
+                season: season || '',
+                branch: branch || '',
+                coach_ids: matchedCoachId ? [matchedCoachId] : []
               });
             }
             teamId = `pending_${teamName}`;
@@ -134,31 +167,38 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           : player.team_id
       }));
 
-      // Batch create players to avoid rate limiting
-      const batchSize = 10;
+      // Batch create players with improved error handling
+      const batchSize = 5;
       let created = 0;
       let duplicates = [];
       
       for (let i = 0; i < finalPlayersToCreate.length; i += batchSize) {
         const batch = finalPlayersToCreate.slice(i, i + batchSize);
         
-        for (const player of batch) {
-          try {
-            await onImportComplete.createPlayers([player]);
+        // Process each player in the batch
+        const results = await Promise.allSettled(
+          batch.map(player => onImportComplete.createPlayers([player]))
+        );
+        
+        results.forEach((result, idx) => {
+          const player = batch[idx];
+          if (result.status === 'fulfilled') {
             created++;
-            setProgress(50 + Math.floor((created / finalPlayersToCreate.length) * 50));
-          } catch (error) {
-            if (error.message?.includes('duplicate') || error.message?.includes('already exists')) {
+          } else {
+            const errorMsg = result.reason?.message || String(result.reason);
+            if (errorMsg.includes('duplicate') || errorMsg.includes('already exists')) {
               duplicates.push(player.full_name);
             } else {
-              importErrors.push(`Failed to create ${player.full_name}: ${error.message}`);
+              importErrors.push(`${player.full_name}: ${errorMsg}`);
             }
           }
-        }
+        });
+        
+        setProgress(50 + Math.floor((created / finalPlayersToCreate.length) * 50));
         
         // Delay between batches
         if (i + batchSize < finalPlayersToCreate.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
@@ -187,9 +227,9 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Upload a CSV file with columns: Name, Parent Name, Email, Phone, Date of Birth, Grade, Gender, Position, Team, Jersey, League, Season
+              Upload a CSV file with columns: Name, Parent Name, Email, Phone, Date of Birth, Grade, Gender, Position, Team, Jersey, League, Season, Branch, Coach
               <br />
-              <span className="text-xs text-slate-500 mt-1 block">Note: Position and Jersey are optional</span>
+              <span className="text-xs text-slate-500 mt-1 block">Teams and coaches will be auto-matched or created. Optional: Position, Jersey, Branch, Coach</span>
             </AlertDescription>
           </Alert>
 
