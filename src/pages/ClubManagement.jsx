@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import BulkImportDialog from '../components/import/BulkImportDialog';
 import AutoSyncDialog from '../components/club/AutoSyncDialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
@@ -24,7 +23,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function ClubManagement() {
-  const [showImportDialog, setShowImportDialog] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [showDuplicatesDialog, setShowDuplicatesDialog] = useState(false);
   const [duplicateReport, setDuplicateReport] = useState(null);
@@ -258,10 +256,6 @@ export default function ClubManagement() {
             <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
             Auto-Sync
           </Button>
-          <Button onClick={() => setShowImportDialog(true)} className="bg-emerald-600 hover:bg-emerald-700" size="sm">
-            <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-            Import
-          </Button>
         </div>
       </div>
 
@@ -491,14 +485,6 @@ export default function ClubManagement() {
           </Link>
         ))}
       </div>
-
-      <BulkImportDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        onSuccess={() => {
-          queryClient.invalidateQueries();
-        }}
-      />
 
       <AutoSyncDialog
         open={showSyncDialog}
