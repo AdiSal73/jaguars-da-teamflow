@@ -103,12 +103,10 @@ export default function EditablePlayerCard({
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm truncate">{player.full_name}</div>
             <div className="text-xs text-slate-500 truncate">{player.primary_position}</div>
-            {!compact && (
-              <div className="text-xs text-slate-400">
-                {birthYear && <span>{birthYear}</span>}
-                {team && <span> • {team.name}</span>}
-              </div>
-            )}
+            <div className="text-xs text-slate-400">
+              {birthYear && <span>{birthYear}</span>}
+              {team && <span> • {team.name}</span>}
+            </div>
           </div>
           {showEditButton && (
             <Button 
