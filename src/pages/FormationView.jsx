@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 import { getPositionBorderColor } from '../components/player/positionColors';
+import { isTrappedPlayer } from '../components/utils/trappedPlayer';
 import EditablePlayerCard from '../components/player/EditablePlayerCard';
 
 const positionMapping = {
@@ -158,6 +159,8 @@ export default function FormationView() {
   const [unassignedSearch, setUnassignedSearch] = useState('');
   const [unassignedSortBy, setUnassignedSortBy] = useState('name');
   const [unassignedFilterLeague, setUnassignedFilterLeague] = useState('all');
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [showTrappedOnly, setShowTrappedOnly] = useState(false);
   
 
   const { data: teams = [] } = useQuery({
@@ -427,6 +430,11 @@ export default function FormationView() {
         const playerTeam = teams.find(t => t.id === p.team_id);
         return playerTeam?.league === unassignedFilterLeague;
       });
+    }
+    
+    // Trapped filter
+    if (showTrappedOnly) {
+      filtered = filtered.filter(p => isTrappedPlayer(p.date_of_birth));
     }
     
     // Sorting
@@ -767,9 +775,18 @@ export default function FormationView() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
-              </CardHeader>
+                    <Select value={showTrappedOnly ? 'trapped' : 'all'} onValueChange={(val) => setShowTrappedOnly(val === 'trapped')}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="trapped">Trapped Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    </div>
+                    </div>
+                    </CardHeader>
               <CardContent className="max-h-[400px] overflow-y-auto">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                   {unassignedPlayers.map((player, index) => {

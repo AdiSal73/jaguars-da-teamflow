@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 import { getPositionBorderColor } from '../components/player/positionColors';
+import { isTrappedPlayer } from '../components/utils/trappedPlayer';
 
 export default function Tryouts() {
   const navigate = useNavigate();

@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
+import { isTrappedPlayer } from '../components/utils/trappedPlayer';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,8 @@ export default function Players() {
   const [filterLeague, setFilterLeague] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
   const [viewMode, setViewMode] = useState('cards');
+  const [showAllPlayers, setShowAllPlayers] = useState(false);
+  const [showTrappedOnly, setShowTrappedOnly] = useState(false);
 
   // Check URL params for gender filter
   React.useEffect(() => {
@@ -269,13 +272,25 @@ export default function Players() {
     .filter(player => {
       const matchesSearch = player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         player.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
-      const team = teams.find(t => t.id === player.team_id);
-      const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
-      const matchesGender = filterGender === 'all' || team?.gender === filterGender || player.gender === filterGender;
-      const matchesLeague = filterLeague === 'all' || team?.league === filterLeague;
-      const matchesBranch = filterBranch === 'all' || player.branch === filterBranch || team?.branch === filterBranch;
-      return matchesSearch && matchesTeam && matchesAgeGroup && matchesGender && matchesLeague && matchesBranch;
+      
+      if (!showAllPlayers) {
+        const matchesTeam = filterTeam === 'all' || player.team_id === filterTeam;
+        const team = teams.find(t => t.id === player.team_id);
+        const matchesAgeGroup = filterAgeGroup === 'all' || team?.age_group === filterAgeGroup;
+        const matchesGender = filterGender === 'all' || team?.gender === filterGender || player.gender === filterGender;
+        const matchesLeague = filterLeague === 'all' || team?.league === filterLeague;
+        const matchesBranch = filterBranch === 'all' || player.branch === filterBranch || team?.branch === filterBranch;
+        
+        if (!(matchesSearch && matchesTeam && matchesAgeGroup && matchesGender && matchesLeague && matchesBranch)) {
+          return false;
+        }
+      } else {
+        const matchesGender = filterGender === 'all' || player.gender === filterGender;
+        if (!(matchesSearch && matchesGender)) return false;
+      }
+
+      const trappedMatch = !showTrappedOnly || isTrappedPlayer(player.date_of_birth);
+      return trappedMatch;
     })
     .sort((a, b) => {
       // Sort by team first
@@ -326,7 +341,19 @@ export default function Players() {
             className="pl-10"
           />
         </div>
-        <div className="grid md:grid-cols-6 gap-4">
+        <div className="grid md:grid-cols-7 gap-4">
+          <div>
+            <Label className="mb-2 block text-xs">Scope</Label>
+            <Select value={showAllPlayers ? 'all' : 'filtered'} onValueChange={(val) => setShowAllPlayers(val === 'all')}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="filtered">Filtered</SelectItem>
+                <SelectItem value="all">All Players</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label className="mb-2 block text-xs">Team</Label>
             <Select value={filterTeam} onValueChange={setFilterTeam}>
@@ -402,6 +429,18 @@ export default function Players() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="mb-2 block text-xs">Trapped</Label>
+            <Select value={showTrappedOnly ? 'trapped' : 'all'} onValueChange={(val) => setShowTrappedOnly(val === 'trapped')}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="trapped">Trapped Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-end gap-2">
             <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')} className={viewMode === 'cards' ? 'bg-emerald-600' : ''}>
               <Grid className="w-4 h-4" />
@@ -450,6 +489,9 @@ export default function Players() {
                                }`}>
                                  {tryout.recommendation}
                                </Badge>
+                             )}
+                             {isTrappedPlayer(player.date_of_birth) && (
+                               <Badge className="bg-red-500 text-white text-[10px] font-bold">TRAPPED</Badge>
                              )}
                            </div>
                           </div>
