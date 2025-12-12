@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import SmartImportDialog from '../components/import/SmartImportDialog';
 import CleanSyncDataDialog from '../components/club/CleanSyncDataDialog';
+import DeleteAllDialog from '../components/admin/DeleteAllDialog';
 
 export default function AdminDataManagement() {
   const queryClient = useQueryClient();
@@ -25,7 +26,6 @@ export default function AdminDataManagement() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importEntityType, setImportEntityType] = useState('');
   const [deleteAllType, setDeleteAllType] = useState(null);
-  const [deletingAll, setDeletingAll] = useState(false);
   const [showCleanDialog, setShowCleanDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
@@ -186,39 +186,20 @@ export default function AdminDataManagement() {
     updateUserMutation.mutate({ id: editingParent.id, data: { player_ids: selectedPlayerIds } });
   };
 
-  const handleDeleteAll = async () => {
-    setDeletingAll(true);
-    try {
-      const BATCH_SIZE = 10;
-      const DELAY_MS = 300;
-
-      if (deleteAllType === 'players') {
-        for (let i = 0; i < players.length; i += BATCH_SIZE) {
-          const batch = players.slice(i, i + BATCH_SIZE);
-          await Promise.all(batch.map(p => base44.entities.Player.delete(p.id)));
-          if (i + BATCH_SIZE < players.length) await new Promise(r => setTimeout(r, DELAY_MS));
-        }
-        queryClient.invalidateQueries(['players']);
-      } else if (deleteAllType === 'teams') {
-        for (let i = 0; i < teams.length; i += BATCH_SIZE) {
-          const batch = teams.slice(i, i + BATCH_SIZE);
-          await Promise.all(batch.map(t => base44.entities.Team.delete(t.id)));
-          if (i + BATCH_SIZE < teams.length) await new Promise(r => setTimeout(r, DELAY_MS));
-        }
-        queryClient.invalidateQueries(['teams']);
-      } else if (deleteAllType === 'coaches') {
-        for (let i = 0; i < coaches.length; i += BATCH_SIZE) {
-          const batch = coaches.slice(i, i + BATCH_SIZE);
-          await Promise.all(batch.map(c => base44.entities.Coach.delete(c.id)));
-          if (i + BATCH_SIZE < coaches.length) await new Promise(r => setTimeout(r, DELAY_MS));
-        }
-        queryClient.invalidateQueries(['coaches']);
-      }
-      toast.success(`All ${deleteAllType} deleted successfully`);
-    } catch (error) {
-      toast.error(`Failed to delete: ${error.message}`);
+  const handleDeleteEntity = async (entityId) => {
+    if (deleteAllType === 'players') {
+      await base44.entities.Player.delete(entityId);
+    } else if (deleteAllType === 'teams') {
+      await base44.entities.Team.delete(entityId);
+    } else if (deleteAllType === 'coaches') {
+      await base44.entities.Coach.delete(entityId);
     }
-    setDeletingAll(false);
+  };
+
+  const handleDeleteAllComplete = () => {
+    queryClient.invalidateQueries(['players']);
+    queryClient.invalidateQueries(['teams']);
+    queryClient.invalidateQueries(['coaches']);
     setDeleteAllType(null);
   };
 
@@ -505,25 +486,13 @@ export default function AdminDataManagement() {
         onImport={handleImportCallback}
       />
 
-      <AlertDialog open={!!deleteAllType} onOpenChange={() => setDeleteAllType(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              Delete All {deleteAllType}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete ALL {deleteAllType === 'players' ? players.length : deleteAllType === 'teams' ? teams.length : coaches.length} {deleteAllType}. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingAll}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteAll} disabled={deletingAll} className="bg-red-600 hover:bg-red-700">
-              {deletingAll ? 'Deleting...' : 'Delete All'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteAllDialog
+        open={!!deleteAllType}
+        onClose={() => handleDeleteAllComplete()}
+        entityType={deleteAllType}
+        entities={deleteAllType === 'players' ? players : deleteAllType === 'teams' ? teams : coaches}
+        onDelete={handleDeleteEntity}
+      />
 
       <CleanSyncDataDialog
         open={showCleanDialog}

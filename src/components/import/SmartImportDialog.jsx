@@ -10,6 +10,89 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CheckCircle, XCircle, AlertTriangle, Upload, Loader2, Download, Info } from 'lucide-react';
 
+// Parse team name according to specific rules
+const parseTeamName = (teamNameCSV) => {
+  if (!teamNameCSV) return null;
+  
+  const cleaned = teamNameCSV.trim();
+  let name = '';
+  let league = '';
+  let season = '';
+  
+  // Extract season if present (e.g., "25/26")
+  const seasonMatch = cleaned.match(/\((\d{2}\/\d{2})\)/);
+  if (seasonMatch) {
+    season = seasonMatch[1];
+  }
+  
+  // Remove season from string for further parsing
+  const withoutSeason = cleaned.replace(/\s*\(\d{2}\/\d{2}\)\s*/, '').trim();
+  
+  // Extract birth year
+  const birthYearMatch = withoutSeason.match(/\b(20\d{2}|19\d{2})\b/);
+  const birthYear = birthYearMatch ? birthYearMatch[1] : '';
+  
+  // Determine league and build name
+  if (withoutSeason.includes('DPL')) {
+    league = 'DPL';
+  } else if (withoutSeason.includes('NLC')) {
+    league = 'NLC';
+  } else if (withoutSeason.match(/\bunited\b/i) && !withoutSeason.match(/GA|Aspire|Pre GA/i)) {
+    league = 'MSPSP';
+  } else if (withoutSeason.match(/Pre GA/i)) {
+    league = 'Directors Academy';
+  } else if (withoutSeason.match(/GA Aspire/i)) {
+    league = 'Aspire';
+  } else if (withoutSeason.match(/\bGA\b/)) {
+    league = 'Girls Academy';
+  } else if (birthYear >= '2014' && birthYear <= '2015') {
+    league = 'Directors Academy';
+  } else if (birthYear >= '2016') {
+    league = 'MSDSL';
+  }
+  
+  // Build team name
+  if (withoutSeason.match(/GA Aspire/i)) {
+    // GA Aspire 2009 Girls → 2009 Girls Academy Aspire
+    const parts = withoutSeason.replace(/GA Aspire/i, '').trim().split(/\s+/);
+    name = `${birthYear} ${parts.filter(p => p && !p.match(/\d{4}|GA|Aspire/i)).join(' ')} Academy Aspire`;
+  } else if (withoutSeason.match(/Pre GA/i)) {
+    // Pre GA 2014 Girls 1 → 2014 Pre GA 1
+    const parts = withoutSeason.replace(/Pre GA/i, '').trim().split(/\s+/);
+    const number = parts.find(p => p.match(/^\d$/));
+    const gender = parts.find(p => p.match(/boys|girls/i));
+    name = `${birthYear} Pre GA ${number || ''}`.trim();
+    if (gender) name += ` ${gender}`;
+  } else if (withoutSeason.match(/\bGA\b/)) {
+    // GA 2007 Girls → 2007 Girls Academy
+    const parts = withoutSeason.replace(/\bGA\b/i, '').trim().split(/\s+/);
+    name = `${birthYear} ${parts.filter(p => p && !p.match(/\d{4}|GA/i)).join(' ')} Academy`;
+  } else {
+    // Default: just clean up the name
+    name = withoutSeason;
+  }
+  
+  // Extract gender
+  const genderMatch = name.match(/\b(boys|girls|male|female)\b/i);
+  const gender = genderMatch ? (genderMatch[1].toLowerCase().includes('boy') || genderMatch[1].toLowerCase() === 'male' ? 'Male' : 'Female') : 'Female';
+  
+  // Extract age group (birth year or U-XX)
+  let ageGroup = birthYear || '';
+  const uMatch = name.match(/U-?(\d+)/i);
+  if (uMatch) {
+    ageGroup = `U-${uMatch[1]}`;
+  }
+  
+  return {
+    name: name.trim(),
+    league: league || undefined,
+    season: season || undefined,
+    age_group: ageGroup || undefined,
+    gender: gender,
+    branch: undefined
+  };
+};
+
 const FIELD_CONFIGS = {
   players: {
     fields: [
@@ -278,6 +361,20 @@ export default function SmartImportDialog({
           }
           
           if (entityType === 'players') {
+            // Create team if needed
+            let teamId = record._teamMatch?.id;
+            if (!teamId && record.team_name) {
+              const teamInfo = parseTeamName(record.team_name);
+              if (teamInfo) {
+                try {
+                  const newTeam = await onImport('team', teamInfo);
+                  teamId = newTeam?.id;
+                } catch (e) {
+                  // Team might already exist, try to find it
+                }
+              }
+            }
+            
             const playerData = {
               full_name: record._normalized.full_name,
               email: record._normalized.email || undefined,
@@ -286,7 +383,7 @@ export default function SmartImportDialog({
               gender: record.gender || 'Female',
               grade: record.grade || undefined,
               parent_name: record.parent_name || undefined,
-              team_id: record._teamMatch?.id || undefined,
+              team_id: teamId || undefined,
               branch: record.branch || undefined,
               status: 'Active'
             };

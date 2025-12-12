@@ -142,8 +142,8 @@ export default function CleanSyncDataDialog({
     const total = allToDelete.length + scanData.suggestedMatches.length;
     let processed = 0;
     
-    const BATCH_SIZE = 5;
-    const DELAY_MS = 300;
+    const BATCH_SIZE = 3;
+    const DELAY_MS = 2000;
     
     // Delete empty and duplicate records
     for (let i = 0; i < allToDelete.length; i += BATCH_SIZE) {
