@@ -134,13 +134,40 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           : player.team_id
       }));
 
-      await onImportComplete.createPlayers(finalPlayersToCreate);
+      // Batch create players to avoid rate limiting
+      const batchSize = 10;
+      let created = 0;
+      let duplicates = [];
+      
+      for (let i = 0; i < finalPlayersToCreate.length; i += batchSize) {
+        const batch = finalPlayersToCreate.slice(i, i + batchSize);
+        
+        for (const player of batch) {
+          try {
+            await onImportComplete.createPlayers([player]);
+            created++;
+            setProgress(50 + Math.floor((created / finalPlayersToCreate.length) * 50));
+          } catch (error) {
+            if (error.message?.includes('duplicate') || error.message?.includes('already exists')) {
+              duplicates.push(player.full_name);
+            } else {
+              importErrors.push(`Failed to create ${player.full_name}: ${error.message}`);
+            }
+          }
+        }
+        
+        // Delay between batches
+        if (i + batchSize < finalPlayersToCreate.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
 
       setResults({
         total: rows.length,
-        players: finalPlayersToCreate.length,
+        players: created,
         teams: createdTeams.size,
-        failed: importErrors.length
+        failed: importErrors.length,
+        duplicates: duplicates.length
       });
       setProgress(100);
     } catch (error) {
@@ -205,12 +232,21 @@ export default function BulkImportPlayers({ teams, onImportComplete }) {
           )}
 
           {results && (
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                Import complete: {results.players} players imported, {results.teams} teams created, {results.failed} failed out of {results.total} total
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-2">
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription>
+                  <div className="font-semibold mb-1">Import Complete</div>
+                  <div className="text-sm space-y-1">
+                    <div>✓ {results.players} players created</div>
+                    <div>✓ {results.teams} teams created</div>
+                    {results.duplicates > 0 && <div>⚠ {results.duplicates} duplicates skipped</div>}
+                    {results.failed > 0 && <div>✗ {results.failed} failed</div>}
+                    <div className="font-medium mt-1">Total processed: {results.total}</div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </div>
           )}
 
           {errors.length > 0 && (

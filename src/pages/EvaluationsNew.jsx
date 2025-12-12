@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Search, X, Settings } from 'lucide-react';
+import { Plus, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { getPositionFields } from '../components/constants/positionEvaluationFields';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 const ratingLabels = {
   1: 'Basic',
@@ -26,12 +29,17 @@ const ratingLabels = {
 };
 
 export default function EvaluationsNew() {
+  const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const preselectedPlayerId = urlParams.get('playerId');
 
   const [showDialog, setShowDialog] = useState(false);
   const [deleteEvalId, setDeleteEvalId] = useState(null);
   const [search, setSearch] = useState('');
+  const [filterTeam, setFilterTeam] = useState('all');
+  const [filterPosition, setFilterPosition] = useState('all');
+  const [expandedCards, setExpandedCards] = useState(new Set());
+  
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
   const [formData, setFormData] = useState({
@@ -91,7 +99,6 @@ export default function EvaluationsNew() {
     queryFn: () => base44.auth.me()
   });
 
-  // Auto-open dialog with preselected player
   useEffect(() => {
     if (preselectedPlayerId && players.length > 0) {
       const player = players.find(p => p.id === preselectedPlayerId);
@@ -227,14 +234,29 @@ export default function EvaluationsNew() {
     </div>
   );
 
-  const filteredEvaluations = evaluations.filter(e => 
-    e.player_name?.toLowerCase().includes(search.toLowerCase()) ||
-    e.team_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredEvaluations = evaluations.filter(e => {
+    const matchesSearch = e.player_name?.toLowerCase().includes(search.toLowerCase()) ||
+      e.team_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesTeam = filterTeam === 'all' || e.team_name === filterTeam;
+    const matchesPosition = filterPosition === 'all' || e.primary_position === filterPosition;
+    return matchesSearch && matchesTeam && matchesPosition;
+  });
+
+  const toggleCard = (id) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedCards(newExpanded);
+  };
+
+  const uniqueTeams = [...new Set(evaluations.map(e => e.team_name).filter(Boolean))];
 
   return (
     <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Player Evaluations</h1>
           <p className="text-slate-600 mt-1">Comprehensive player assessment and development tracking</p>
@@ -247,158 +269,218 @@ export default function EvaluationsNew() {
 
       <Card className="border-none shadow-lg mb-6">
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <Input
-              placeholder="Search by player name or team..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 border-2 h-12"
-            />
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Input
+                placeholder="Search by player name or team..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 border-2 h-12"
+              />
+            </div>
+            <div>
+              <Select value={filterTeam} onValueChange={setFilterTeam}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {uniqueTeams.map(team => (
+                    <SelectItem key={team} value={team}>{team}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={filterPosition} onValueChange={setFilterPosition}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="All Positions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Positions</SelectItem>
+                  {POSITIONS.map(pos => (
+                    <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredEvaluations.map(evaluation => {
           const evalPositionFields = getPositionFields(evaluation.primary_position);
+          const isExpanded = expandedCards.has(evaluation.id);
+          const player = players.find(p => p.id === evaluation.player_id);
+          
           return (
-            <Card key={evaluation.id} className="border-none shadow-xl hover:shadow-2xl transition-all">
-              <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
+            <Card 
+              key={evaluation.id} 
+              className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+              onClick={() => !isExpanded && navigate(`${createPageUrl('PlayerDashboard')}?id=${evaluation.player_id}`)}
+            >
+              <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b pb-3">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl md:text-2xl text-slate-900">{evaluation.player_name}</CardTitle>
-                    <div className="flex flex-wrap gap-2 md:gap-4 mt-2 text-sm text-slate-600">
-                      <span>Birth Year: {evaluation.birth_year}</span>
-                      <span className="hidden md:inline">•</span>
-                      <span>Team: {evaluation.team_name}</span>
-                      <span className="hidden md:inline">•</span>
-                      <span>Position: {evaluation.primary_position}</span>
-                      <span className="hidden md:inline">•</span>
-                      <span>Evaluator: {evaluation.evaluator}</span>
+                  <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                    <CardTitle className="text-lg text-slate-900 mb-1">{evaluation.player_name}</CardTitle>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                      <Badge className="bg-slate-100 text-slate-700">{evaluation.birth_year}</Badge>
+                      <Badge className="bg-blue-100 text-blue-700">{evaluation.team_name}</Badge>
+                      <Badge className="bg-purple-100 text-purple-700">{evaluation.primary_position}</Badge>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeleteEvalId(evaluation.id)}
-                    className="hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleCard(evaluation.id)}
+                      className="h-8 w-8 hover:bg-slate-200"
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteEvalId(evaluation.id)}
+                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-emerald-500 pb-2">Mental & Physical</h3>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Growth Mindset', value: evaluation.growth_mindset },
-                        { label: 'Resilience', value: evaluation.resilience },
-                        { label: 'Efficiency', value: evaluation.efficiency_in_execution },
-                        { label: 'Athleticism', value: evaluation.athleticism },
-                        { label: 'Team Focus', value: evaluation.team_focus }
-                      ].map(item => (
-                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-emerald-600">{item.value}</span>
-                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
-                          </div>
-                        </div>
-                      ))}
+              
+              {!isExpanded && (
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between p-2 bg-emerald-50 rounded">
+                      <span className="text-slate-600">Growth Mindset</span>
+                      <span className="font-bold text-emerald-700">{evaluation.growth_mindset}</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-blue-50 rounded">
+                      <span className="text-slate-600">Athleticism</span>
+                      <span className="font-bold text-blue-700">{evaluation.athleticism}</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-orange-50 rounded">
+                      <span className="text-slate-600">Attacking</span>
+                      <span className="font-bold text-orange-700">{Math.round(((evaluation.attacking_organized || 0) + (evaluation.attacking_final_third || 0) + (evaluation.attacking_in_transition || 0)) / 3)}</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-red-50 rounded">
+                      <span className="text-slate-600">Defending</span>
+                      <span className="font-bold text-red-700">{Math.round(((evaluation.defending_organized || 0) + (evaluation.defending_final_third || 0) + (evaluation.defending_transition || 0)) / 3)}</span>
                     </div>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-blue-500 pb-2">Defending</h3>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Organized', value: evaluation.defending_organized },
-                        { label: 'Final Third', value: evaluation.defending_final_third },
-                        { label: 'Transition', value: evaluation.defending_transition }
-                      ].map(item => (
-                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-blue-600">{item.value}</span>
-                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-orange-500 pb-2 mt-6">Attacking</h3>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Organized', value: evaluation.attacking_organized },
-                        { label: 'Final Third', value: evaluation.attacking_final_third },
-                        { label: 'Transition', value: evaluation.attacking_in_transition }
-                      ].map(item => (
-                        <div key={item.label} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-orange-600">{item.value}</span>
-                            <span className="text-xs text-slate-500">{ratingLabels[item.value]}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="mt-3 text-xs text-slate-500">
+                    Evaluated by {evaluation.evaluator} • {new Date(evaluation.created_date).toLocaleDateString()}
                   </div>
+                </CardContent>
+              )}
 
-                  {/* Position-Specific Skills */}
+              {isExpanded && (
+                <CardContent className="p-4" onClick={(e) => e.stopPropagation()}>
                   <div className="space-y-4">
-                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-indigo-500 pb-2">
-                      Position Skills ({evaluation.primary_position || 'N/A'})
-                    </h3>
-                    <div className="space-y-3">
-                      {evalPositionFields.map((field, idx) => {
-                        const value = evaluation[`position_role_${idx + 1}`];
-                        const label = evaluation[`position_role_${idx + 1}_label`] || field.label;
-                        if (!value) return null;
-                        return (
-                          <div key={idx} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                            <span className="text-sm font-medium text-slate-700 truncate pr-2">{label}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-indigo-600">{value}</span>
-                              <span className="text-xs text-slate-500">{ratingLabels[value]}</span>
+                    <div>
+                      <h4 className="font-semibold text-sm text-slate-700 mb-2">Mental & Physical</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: 'Growth Mindset', value: evaluation.growth_mindset, color: 'emerald' },
+                          { label: 'Resilience', value: evaluation.resilience, color: 'blue' },
+                          { label: 'Efficiency', value: evaluation.efficiency_in_execution, color: 'purple' },
+                          { label: 'Athleticism', value: evaluation.athleticism, color: 'orange' },
+                          { label: 'Team Focus', value: evaluation.team_focus, color: 'pink' }
+                        ].map(item => (
+                          <div key={item.label} className={`flex justify-between items-center p-2 bg-${item.color}-50 rounded text-xs`}>
+                            <span className="text-slate-700">{item.label}</span>
+                            <span className={`font-bold text-${item.color}-700`}>{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold text-sm text-slate-700 mb-2">Defending</h4>
+                        <div className="space-y-2">
+                          {[
+                            { label: 'Organized', value: evaluation.defending_organized },
+                            { label: 'Final Third', value: evaluation.defending_final_third },
+                            { label: 'Transition', value: evaluation.defending_transition }
+                          ].map(item => (
+                            <div key={item.label} className="flex justify-between items-center p-2 bg-red-50 rounded text-xs">
+                              <span className="text-slate-700">{item.label}</span>
+                              <span className="font-bold text-red-700">{item.value}</span>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-sm text-slate-700 mb-2">Attacking</h4>
+                        <div className="space-y-2">
+                          {[
+                            { label: 'Organized', value: evaluation.attacking_organized },
+                            { label: 'Final Third', value: evaluation.attacking_final_third },
+                            { label: 'Transition', value: evaluation.attacking_in_transition }
+                          ].map(item => (
+                            <div key={item.label} className="flex justify-between items-center p-2 bg-orange-50 rounded text-xs">
+                              <span className="text-slate-700">{item.label}</span>
+                              <span className="font-bold text-orange-700">{item.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {evalPositionFields.some((_, idx) => evaluation[`position_role_${idx + 1}`]) && (
+                      <div>
+                        <h4 className="font-semibold text-sm text-slate-700 mb-2">Position Skills</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {evalPositionFields.map((field, idx) => {
+                            const value = evaluation[`position_role_${idx + 1}`];
+                            const label = evaluation[`position_role_${idx + 1}_label`] || field.label;
+                            if (!value) return null;
+                            return (
+                              <div key={idx} className="flex justify-between items-center p-2 bg-indigo-50 rounded text-xs">
+                                <span className="text-slate-700 truncate pr-2">{label}</span>
+                                <span className="font-bold text-indigo-700">{value}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {(evaluation.player_strengths || evaluation.areas_of_growth || evaluation.training_focus) && (
+                      <div className="space-y-2">
+                        {evaluation.player_strengths && (
+                          <div className="p-2 bg-green-50 rounded">
+                            <div className="text-xs font-semibold text-green-700 mb-1">Strengths</div>
+                            <div className="text-xs text-slate-700">{evaluation.player_strengths}</div>
                           </div>
-                        );
-                      })}
+                        )}
+                        {evaluation.areas_of_growth && (
+                          <div className="p-2 bg-orange-50 rounded">
+                            <div className="text-xs font-semibold text-orange-700 mb-1">Areas of Growth</div>
+                            <div className="text-xs text-slate-700">{evaluation.areas_of_growth}</div>
+                          </div>
+                        )}
+                        {evaluation.training_focus && (
+                          <div className="p-2 bg-blue-50 rounded">
+                            <div className="text-xs font-semibold text-blue-700 mb-1">Training Focus</div>
+                            <div className="text-xs text-slate-700">{evaluation.training_focus}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="text-xs text-slate-500 border-t pt-2">
+                      Evaluated by {evaluation.evaluator} • {new Date(evaluation.created_date).toLocaleDateString()}
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg text-slate-900 border-b-2 border-purple-500 pb-2">Development Notes</h3>
-                    {evaluation.my_goals && (
-                      <div className="p-3 bg-purple-50 rounded-lg">
-                        <div className="text-xs font-semibold text-purple-700 mb-1">Goals</div>
-                        <div className="text-sm text-slate-700">{evaluation.my_goals}</div>
-                      </div>
-                    )}
-                    {evaluation.player_strengths && (
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <div className="text-xs font-semibold text-green-700 mb-1">Strengths</div>
-                        <div className="text-sm text-slate-700">{evaluation.player_strengths}</div>
-                      </div>
-                    )}
-                    {evaluation.areas_of_growth && (
-                      <div className="p-3 bg-orange-50 rounded-lg">
-                        <div className="text-xs font-semibold text-orange-700 mb-1">Areas of Growth</div>
-                        <div className="text-sm text-slate-700">{evaluation.areas_of_growth}</div>
-                      </div>
-                    )}
-                    {evaluation.training_focus && (
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <div className="text-xs font-semibold text-blue-700 mb-1">Training Focus</div>
-                        <div className="text-sm text-slate-700">{evaluation.training_focus}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
           );
         })}
@@ -541,14 +623,10 @@ export default function EvaluationsNew() {
               </Card>
             </div>
 
-            {/* Position-Specific Evaluation Fields */}
             {formData.primary_position && (
               <Card className="border-2 border-indigo-200">
                 <CardHeader className="border-b bg-gradient-to-r from-indigo-100 to-purple-100">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Position-Specific Skills ({formData.primary_position})
-                  </CardTitle>
+                  <CardTitle className="text-lg">Position-Specific Skills ({formData.primary_position})</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 md:p-6 space-y-6">
                   {positionFields.map((field, idx) => (

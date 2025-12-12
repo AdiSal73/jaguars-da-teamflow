@@ -110,7 +110,7 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
-        { title: "Team Assignment", url: createPageUrl("TeamTryout") },
+        { title: "Team Assignments", url: createPageUrl("TeamTryout") },
         { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
         { title: "Depth Chart", url: createPageUrl("FormationView") },
         { title: "Player Comparison", url: createPageUrl("PlayerComparison") },

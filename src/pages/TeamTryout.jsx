@@ -9,12 +9,25 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Search, Users } from 'lucide-react';
 import { getPositionBorderColor } from '../components/player/positionColors';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 const isTrappedPlayer = (dateOfBirth) => {
   if (!dateOfBirth) return false;
   const dob = new Date(dateOfBirth);
   const month = dob.getMonth();
   return month >= 7; // August (7) to December (11)
+};
+
+const getTeamPriority = (teamName) => {
+  const name = teamName?.toLowerCase() || '';
+  if (name.includes('ga')) return 1;
+  if (name.includes('aspire')) return 2;
+  if (name.includes('pre ga1')) return 3;
+  if (name.includes('pre ga2')) return 4;
+  if (name.includes('green')) return 5;
+  if (name.includes('white')) return 6;
+  return 7;
 };
 
 export default function TeamTryout() {
@@ -62,13 +75,20 @@ export default function TeamTryout() {
 
   // Filter teams
   const filteredTeams = useMemo(() => {
-    return teams.filter(team => {
-      const ageGroupMatch = filterAgeGroup === 'all' || team.age_group === filterAgeGroup;
-      const coachMatch = filterCoach === 'all' || (team.coach_ids || []).includes(filterCoach);
-      const leagueMatch = filterLeague === 'all' || team.league === filterLeague;
-      const genderMatch = filterGender === 'all' || team.gender === filterGender;
-      return ageGroupMatch && coachMatch && leagueMatch && genderMatch;
-    });
+    return teams
+      .filter(team => {
+        const ageGroupMatch = filterAgeGroup === 'all' || team.age_group === filterAgeGroup;
+        const coachMatch = filterCoach === 'all' || (team.coach_ids || []).includes(filterCoach);
+        const leagueMatch = filterLeague === 'all' || team.league === filterLeague;
+        const genderMatch = filterGender === 'all' || team.gender === filterGender;
+        return ageGroupMatch && coachMatch && leagueMatch && genderMatch;
+      })
+      .sort((a, b) => {
+        const priorityA = getTeamPriority(a.name);
+        const priorityB = getTeamPriority(b.name);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return a.name.localeCompare(b.name);
+      });
   }, [teams, filterAgeGroup, filterCoach, filterLeague, filterGender]);
 
   // Filter players
@@ -121,9 +141,12 @@ export default function TeamTryout() {
   const PlayerCard = ({ player }) => {
     const team = teams.find(t => t.id === player.team_id);
     const isTrapped = isTrappedPlayer(player.date_of_birth);
+    const navigate = useNavigate();
 
     return (
-      <div className={`bg-white rounded-lg p-3 shadow-sm border-2 hover:shadow-md transition-all ${getPositionBorderColor(player.primary_position)}`}>
+      <div 
+        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+        className={`bg-white rounded-lg p-3 shadow-sm border-2 hover:shadow-md transition-all cursor-pointer ${getPositionBorderColor(player.primary_position)}`}>
         <div className="flex items-start gap-2">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
             {player.jersey_number || player.full_name?.charAt(0)}
@@ -279,7 +302,7 @@ export default function TeamTryout() {
         </Card>
 
         <div className="grid lg:grid-cols-[1fr_300px] gap-4">
-          <div className="space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+          <div className="grid md:grid-cols-2 gap-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
             {filteredTeams.map(team => {
               const teamPlayers = getPlayersForTeam(team.id);
               return (
