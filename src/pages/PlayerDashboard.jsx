@@ -69,7 +69,6 @@ export default function PlayerDashboard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [playerForm, setPlayerForm] = useState({});
-  const [allTeams, setAllTeams] = useState([]);
   const [tryoutForm, setTryoutForm] = useState({});
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
@@ -102,11 +101,7 @@ export default function PlayerDashboard() {
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
-    queryFn: async () => {
-      const allTeams = await base44.entities.Team.list();
-      setAllTeams(allTeams);
-      return allTeams;
-    }
+    queryFn: () => base44.entities.Team.list()
   });
 
   const { data: tryout } = useQuery({
@@ -549,8 +544,19 @@ export default function PlayerDashboard() {
                 )}
               </div>
               <div>
-                <Label className="text-[10px] text-slate-500">Team</Label>
-                <p className="text-sm font-medium">{team?.name || 'N/A'}</p>
+               <Label className="text-[10px] text-slate-500">Team</Label>
+               {isEditing ? (
+                 <Select value={playerForm.team_id || ''} onValueChange={v => setPlayerForm({...playerForm, team_id: v})}>
+                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select team" /></SelectTrigger>
+                   <SelectContent>
+                     {allTeams.map(t => (
+                       <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               ) : (
+                 <p className="text-sm font-medium">{team?.name || 'N/A'}</p>
+               )}
               </div>
               <div>
                 <Label className="text-[10px] text-slate-500">Status</Label>
