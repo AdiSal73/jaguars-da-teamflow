@@ -81,11 +81,6 @@ export default function FitnessResources() {
                 Join Strava Group
               </a>
             </Button>
-            <Button variant="outline" asChild>
-              <a href="https://adisal.com/michigan-jaguars-ga-physical-testing/" target="_blank" rel="noopener noreferrer">
-                View Test Results
-              </a>
-            </Button>
           </div>
         </CardContent>
       </Card>
