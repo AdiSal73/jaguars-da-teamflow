@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table as TableIcon } from 'lucide-react';
+import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table as TableIcon, Share2 } from 'lucide-react';
+import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import BulkImportPlayers from '../components/players/BulkImportPlayers';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,8 @@ export default function Players() {
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [sharingPlayer, setSharingPlayer] = useState(null);
   const [playerForm, setPlayerForm] = useState({
     full_name: '',
     parent_name: '',
@@ -250,6 +253,21 @@ export default function Players() {
 
   const handleFieldUpdate = (playerId, field, value) => {
     updatePlayerMutation.mutate({ id: playerId, data: { [field]: value } });
+  };
+
+  const handleShare = (e, player) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSharingPlayer(player);
+    setShowShareDialog(true);
+  };
+
+  const handleInvitePlayer = async (email, player) => {
+    await base44.integrations.Core.SendEmail({
+      to: email,
+      subject: `Invitation to Soccer Club Management System`,
+      body: `You've been invited to access ${player.full_name}'s player profile.\n\nClick here to access: ${window.location.origin}/player-dashboard?id=${player.id}\n\nPlease contact your coach if you need help accessing the system.`
+    });
   };
 
   const handleSelectAll = (checked) => {
@@ -499,14 +517,24 @@ export default function Players() {
                       </CardContent>
                     </Card>
                   </Link>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-white shadow-md hover:bg-slate-100"
-                    onClick={(e) => handleEditClick(e, player)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="bg-white shadow-md hover:bg-slate-100"
+                      onClick={(e) => handleShare(e, player)}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="bg-white shadow-md hover:bg-slate-100"
+                      onClick={(e) => handleEditClick(e, player)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -561,6 +589,7 @@ export default function Players() {
                     <th className="px-4 py-3 text-left text-xs font-bold">Branch</th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Jersey</th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -627,6 +656,16 @@ export default function Players() {
                             <SelectItem value="Inactive">Inactive</SelectItem>
                           </SelectContent>
                         </Select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 hover:bg-emerald-50"
+                          onClick={(e) => { e.stopPropagation(); handleShare(e, player); }}
+                        >
+                          <Share2 className="w-3 h-3" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -837,6 +876,13 @@ export default function Players() {
           />
         </DialogContent>
       </Dialog>
+
+      <SharePlayerDialog
+        open={showShareDialog}
+        onClose={() => { setShowShareDialog(false); setSharingPlayer(null); }}
+        player={sharingPlayer}
+        onInvite={handleInvitePlayer}
+      />
     </div>
   );
 }

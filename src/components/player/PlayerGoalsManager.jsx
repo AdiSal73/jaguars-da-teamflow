@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
-export default function PlayerGoalsManager({ player, onUpdate }) {
+export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback }) {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedGoals, setSelectedGoals] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(player.primary_position || '');
@@ -125,9 +125,16 @@ export default function PlayerGoalsManager({ player, onUpdate }) {
                         )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteGoal(goal.id)}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      {onProvideFeedback && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600" onClick={() => onProvideFeedback(goal)}>
+                          <TrendingUp className="w-3 h-3" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteGoal(goal.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="space-y-1">

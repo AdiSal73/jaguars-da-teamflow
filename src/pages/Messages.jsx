@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, Plus, Search, User, Clock, Mail } from 'lucide-react';
+import { MessageSquare, Send, Plus, Search, User, Clock, Mail, Megaphone, Users } from 'lucide-react';
+import TeamAnnouncementDialog from '../components/messaging/TeamAnnouncementDialog';
 
 export default function Messages() {
   const queryClient = useQueryClient();
@@ -17,6 +18,7 @@ export default function Messages() {
   const [selectedThread, setSelectedThread] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newMessageForm, setNewMessageForm] = useState({
     recipient_id: '',
@@ -44,11 +46,66 @@ export default function Messages() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list()
+  });
+
+  const isAdminOrCoach = user?.role === 'admin' || coaches.some(c => c.email === user?.email);
+
   const sendMessageMutation = useMutation({
     mutationFn: (data) => base44.entities.Message.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['messages']);
       setNewMessage('');
+    }
+  });
+
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (announcementData) => {
+      // Create announcement
+      const announcement = await base44.entities.Announcement.create(announcementData);
+      
+      // Send notifications to all targets
+      const notifications = [];
+      const targetEmails = new Set();
+      
+      if (announcementData.target_type === 'all') {
+        users.forEach(u => targetEmails.add(u.email));
+      } else if (announcementData.target_type === 'team' && announcementData.target_team_ids) {
+        players.filter(p => announcementData.target_team_ids.includes(p.team_id))
+          .forEach(p => { if (p.email) targetEmails.add(p.email); });
+      } else if (announcementData.target_type === 'players' && announcementData.target_player_ids) {
+        players.filter(p => announcementData.target_player_ids.includes(p.id))
+          .forEach(p => { if (p.email) targetEmails.add(p.email); });
+      } else if (announcementData.target_type === 'coaches') {
+        coaches.forEach(c => { if (c.email) targetEmails.add(c.email); });
+      } else if (announcementData.target_type === 'parents') {
+        users.filter(u => u.role === 'parent').forEach(u => targetEmails.add(u.email));
+      }
+      
+      // Create notifications
+      for (const email of targetEmails) {
+        notifications.push(base44.entities.Notification.create({
+          user_email: email,
+          type: 'announcement',
+          title: announcementData.title,
+          message: announcementData.content,
+          priority: announcementData.priority === 'urgent' ? 'high' : 'medium'
+        }));
+      }
+      
+      await Promise.all(notifications);
+      return announcement;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['announcements']);
+      queryClient.invalidateQueries(['notifications']);
     }
   });
 
@@ -180,10 +237,18 @@ export default function Messages() {
           </h1>
           <p className="text-slate-600 mt-1">Communicate with coaches and parents</p>
         </div>
-        <Button onClick={() => setShowNewMessageDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" />
-          New Message
-        </Button>
+        <div className="flex gap-2">
+          {isAdminOrCoach && (
+            <Button onClick={() => setShowAnnouncementDialog(true)} variant="outline">
+              <Megaphone className="w-4 h-4 mr-2" />
+              Announcement
+            </Button>
+          )}
+          <Button onClick={() => setShowNewMessageDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-4 h-4 mr-2" />
+            New Message
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 h-[calc(100vh-220px)]">
@@ -361,6 +426,15 @@ export default function Messages() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <TeamAnnouncementDialog
+        open={showAnnouncementDialog}
+        onClose={() => setShowAnnouncementDialog(false)}
+        teams={teams}
+        players={players}
+        currentUser={user}
+        onSend={(data) => createAnnouncementMutation.mutate(data)}
+      />
     </div>
   );
 }

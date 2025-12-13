@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Upload, Download, Users, Shield, UserCog, UserPlus, Trash2, AlertTriangle } from 'lucide-react';
+import { Upload, Download, Users, Shield, UserCog, UserPlus, Trash2, AlertTriangle, Calendar } from 'lucide-react';
+import CreateNextSeasonTeamsDialog from '../components/teams/CreateNextSeasonTeamsDialog';
+import DeleteAllDialog from '../components/admin/DeleteAllDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +29,7 @@ export default function AdminDataManagement() {
   const [importEntityType, setImportEntityType] = useState('');
   const [deleteAllType, setDeleteAllType] = useState(null);
   const [showCleanDialog, setShowCleanDialog] = useState(false);
+  const [showNextSeasonDialog, setShowNextSeasonDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -229,10 +232,16 @@ export default function AdminDataManagement() {
           </h1>
           <p className="text-slate-600 mt-1">Import/Export data and manage assignments</p>
         </div>
-        <Button onClick={() => setShowCleanDialog(true)} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
-          <AlertTriangle className="w-4 h-4 mr-2" />
-          Clean & Sync Data
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowNextSeasonDialog(true)} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+            <Calendar className="w-4 h-4 mr-2" />
+            Create 26/27 Teams
+          </Button>
+          <Button onClick={() => setShowCleanDialog(true)} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Clean & Sync Data
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="import-export" className="w-full">
@@ -501,6 +510,12 @@ export default function AdminDataManagement() {
         teams={teams}
         coaches={coaches}
         onCleanData={handleCleanData}
+      />
+
+      <CreateNextSeasonTeamsDialog
+        open={showNextSeasonDialog}
+        onClose={() => { setShowNextSeasonDialog(false); queryClient.invalidateQueries(['teams']); }}
+        onCreate={async (teamData) => await base44.entities.Team.create(teamData)}
       />
     </div>
   );

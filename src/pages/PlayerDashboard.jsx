@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, MessageSquare } from 'lucide-react';
+import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
+import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
@@ -79,6 +81,9 @@ export default function PlayerDashboard() {
   const [newDocument, setNewDocument] = useState({ title: '', document_type: 'Other', notes: '', file: null });
   const [showInjuryDialog, setShowInjuryDialog] = useState(false);
   const [newInjury, setNewInjury] = useState({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackGoal, setFeedbackGoal] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -251,6 +256,37 @@ export default function PlayerDashboard() {
       setNewInjury({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
     }
   });
+
+  const handleInvitePlayer = async (email, player) => {
+    await base44.integrations.Core.SendEmail({
+      to: email,
+      subject: `Invitation to Soccer Club Management System`,
+      body: `You've been invited to access ${player.full_name}'s player profile.\n\nClick here to access: ${window.location.origin}/player-dashboard?id=${player.id}\n\nPlease contact your coach if you need help accessing the system.`
+    });
+  };
+
+  const handleSendGoalFeedback = async (player, goal, feedback) => {
+    const playerEmail = player.email;
+    const parentEmails = assignedParents.map(p => p.email).filter(Boolean);
+
+    const recipients = [playerEmail, ...parentEmails].filter(Boolean);
+
+    for (const email of recipients) {
+      await base44.integrations.Core.SendEmail({
+        to: email,
+        subject: `Coach Feedback on Goal: ${goal.description}`,
+        body: `${currentUser?.full_name} has provided feedback on ${player.full_name}'s goal:\n\nGoal: ${goal.description}\nProgress: ${goal.current_value}/${goal.target_value}\n\nFeedback:\n${feedback}\n\nKeep up the great work!`
+      });
+
+      await base44.entities.Notification.create({
+        user_email: email,
+        type: 'goal',
+        title: 'Coach Feedback on Your Goal',
+        message: feedback,
+        link: `/player-dashboard?id=${playerId}`
+      });
+    }
+  };
 
   const handleSaveAll = async () => {
     const playerData = {
@@ -489,6 +525,12 @@ export default function PlayerDashboard() {
           <Button variant="outline" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
+          {isAdminOrCoach && (
+            <Button variant="outline" size="sm" onClick={() => setShowShareDialog(true)}>
+              <Share2 className="w-4 h-4 mr-1" />
+              Share
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
             <FileDown className="w-4 h-4 mr-1" />
             Export
@@ -1063,6 +1105,7 @@ export default function PlayerDashboard() {
           <PlayerGoalsManager 
             player={player} 
             onUpdate={(data) => updatePlayerMutation.mutate(data)}
+            onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
           />
         </div>
       )}
@@ -1182,6 +1225,21 @@ export default function PlayerDashboard() {
         options={exportOptions}
         onExport={handleExport}
       />
-    </div>
-  );
-}
+
+      <SharePlayerDialog
+        open={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        player={player}
+        onInvite={handleInvitePlayer}
+      />
+
+      <GoalFeedbackDialog
+        open={showFeedbackDialog}
+        onClose={() => { setShowFeedbackDialog(false); setFeedbackGoal(null); }}
+        goal={feedbackGoal}
+        player={player}
+        onSendFeedback={handleSendGoalFeedback}
+      />
+      </div>
+      );
+      }

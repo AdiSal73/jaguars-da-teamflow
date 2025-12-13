@@ -338,15 +338,17 @@ export default function SmartImportDialog({
       created: [],
       updated: [],
       skipped: [],
-      errors: []
+      errors: [],
+      retries: []
     };
     
     const recordsToProcess = previewData.records;
     const total = recordsToProcess.length;
+    const failedRecords = [];
     
     // Batch processing to avoid rate limits
-    const BATCH_SIZE = 3;
-    const DELAY_MS = 2000;
+    const BATCH_SIZE = 2;
+    const DELAY_MS = 3000;
     
     for (let i = 0; i < recordsToProcess.length; i += BATCH_SIZE) {
       const batch = recordsToProcess.slice(i, i + BATCH_SIZE);
@@ -437,13 +439,63 @@ export default function SmartImportDialog({
             }
           }
         } catch (error) {
-          results.errors.push({ record, error: error.message });
+          failedRecords.push({ record, error: error.message });
         }
       }));
       
       setProgress(Math.round(((i + batch.length) / total) * 100));
       
       if (i + BATCH_SIZE < recordsToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      }
+    }
+    
+    // Retry failed records
+    if (failedRecords.length > 0) {
+      setProgress(0);
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Extra delay before retry
+      
+      for (let i = 0; i < failedRecords.length; i++) {
+        const { record } = failedRecords[i];
+        try {
+          const action = record._isDuplicate ? (duplicateActions[record._idx] || 'skip') : 'create';
+          if (action !== 'skip') {
+            if (entityType === 'players') {
+              let teamId = record._teamMatch?.id;
+              if (!teamId && record.team_name) {
+                const teamInfo = parseTeamName(record.team_name);
+                if (teamInfo) {
+                  try {
+                    const newTeam = await onImport('team', teamInfo);
+                    teamId = newTeam?.id;
+                  } catch (e) {}
+                }
+              }
+              const playerData = {
+                full_name: record._normalized.full_name,
+                email: record._normalized.email || undefined,
+                phone: record._normalized.phone || undefined,
+                date_of_birth: record.date_of_birth || undefined,
+                gender: record.gender || 'Female',
+                grade: record.grade || undefined,
+                parent_name: record.parent_name || undefined,
+                team_id: teamId || undefined,
+                branch: record.branch || undefined,
+                status: 'Active'
+              };
+              if (action === 'replace' && record._duplicateOf) {
+                await onImport('player_update', { id: record._duplicateOf.id, data: playerData });
+                results.updated.push(record);
+              } else {
+                await onImport('player', playerData);
+                results.created.push(record);
+              }
+            }
+            results.retries.push(record);
+          }
+        } catch (error) {
+          results.errors.push({ record, error: error.message });
+        }
         await new Promise(resolve => setTimeout(resolve, DELAY_MS));
       }
     }
