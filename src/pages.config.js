@@ -22,6 +22,7 @@ import BookingsTable from './pages/BookingsTable';
 import Messages from './pages/Messages';
 import TeamReports from './pages/TeamReports';
 import TeamTryout from './pages/TeamTryout';
+import FAQ from './pages/FAQ';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "Messages": Messages,
     "TeamReports": TeamReports,
     "TeamTryout": TeamTryout,
+    "FAQ": FAQ,
 }
 
 export const pagesConfig = {

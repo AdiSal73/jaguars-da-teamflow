@@ -97,13 +97,27 @@ export default function BulkImportPlayers({ teams, coaches, onImportComplete }) 
 
         let teamId = null;
         if (teamName) {
-          let team = teams.find(t => t.name.toLowerCase().trim() === teamName.toLowerCase().trim());
+          const ageMatch = teamName.match(/U-?(\d+)/i);
+          const parsedAgeGroup = ageMatch ? `U-${ageMatch[1]}` : 'Senior';
+          
+          // Try to find existing team by matching name, age group, and gender
+          let team = teams.find(t => 
+            t.name.toLowerCase().trim() === teamName.toLowerCase().trim() &&
+            t.gender === gender
+          );
+          
+          // If no exact match, try to find by similar characteristics
+          if (!team) {
+            team = teams.find(t => 
+              t.age_group === parsedAgeGroup &&
+              t.gender === gender &&
+              t.league === league &&
+              t.name.toLowerCase().includes(teamName.toLowerCase().split(' ')[0])
+            );
+          }
           
           if (!team) {
             if (!teamsToCreate.has(teamName)) {
-              const ageMatch = teamName.match(/U-?(\d+)/i);
-              const ageGroup = ageMatch ? `U-${ageMatch[1]}` : 'Senior';
-              
               // Find matching coach by name
               let matchedCoachId = null;
               if (coachName) {
@@ -116,7 +130,7 @@ export default function BulkImportPlayers({ teams, coaches, onImportComplete }) 
               
               teamsToCreate.set(teamName, {
                 name: teamName,
-                age_group: ageGroup,
+                age_group: parsedAgeGroup,
                 league: league || '',
                 gender: gender || 'Female',
                 season: season || '',

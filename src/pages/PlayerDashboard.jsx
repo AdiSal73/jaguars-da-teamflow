@@ -294,15 +294,22 @@ export default function PlayerDashboard() {
     setIsEditing(false);
   };
 
-  // Navigation
-  const sortedPlayers = [...allPlayers].sort((a, b) => {
-    const lastNameA = a.full_name?.split(' ').pop() || '';
-    const lastNameB = b.full_name?.split(' ').pop() || '';
-    return lastNameA.localeCompare(lastNameB);
-  });
-  const currentPlayerIndex = sortedPlayers.findIndex(p => p.id === playerId);
-  const previousPlayer = currentPlayerIndex > 0 ? sortedPlayers[currentPlayerIndex - 1] : null;
-  const nextPlayer = currentPlayerIndex < sortedPlayers.length - 1 ? sortedPlayers[currentPlayerIndex + 1] : null;
+  // Navigation - filtered by team
+  const teamPlayers = player?.team_id 
+    ? [...allPlayers].filter(p => p.team_id === player.team_id).sort((a, b) => {
+        const lastNameA = a.full_name?.split(' ').pop() || '';
+        const lastNameB = b.full_name?.split(' ').pop() || '';
+        return lastNameA.localeCompare(lastNameB);
+      })
+    : [...allPlayers].sort((a, b) => {
+        const lastNameA = a.full_name?.split(' ').pop() || '';
+        const lastNameB = b.full_name?.split(' ').pop() || '';
+        return lastNameA.localeCompare(lastNameB);
+      });
+  
+  const currentPlayerIndex = teamPlayers.findIndex(p => p.id === playerId);
+  const previousPlayer = currentPlayerIndex > 0 ? teamPlayers[currentPlayerIndex - 1] : null;
+  const nextPlayer = currentPlayerIndex < teamPlayers.length - 1 ? teamPlayers[currentPlayerIndex + 1] : null;
 
   // Get unique team names for combobox
   const existingTeamNames = [...new Set(allTeams.map(t => t.name).filter(Boolean))];

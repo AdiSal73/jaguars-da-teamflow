@@ -13,7 +13,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
   const [errors, setErrors] = useState([]);
 
   const downloadTemplate = () => {
-    const csv = 'Name,Team,Date,Sprint,Vertical,YIRT,Shuttle\nJohn Doe,Team A,2025-01-15,3.5,15,45,4.8';
+    const csv = 'Name,Team,Date,Sprint,Vertical,YIRT,Shuttle\nJohn Doe,Team A,2025-01-15,3.5,15,45,4.8\nJane Smith,Team B,2025-01-16,3.2,18,50,';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -38,7 +38,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
     });
   };
 
-  const calculateScores = (sprint, vertical, yirt, shuttle) => {
+  const calculateScores = (sprint, vertical, yirt, shuttle = null) => {
     const speed = sprint > 0 ? 5 * (20 - 10 * (3.5 * (sprint - 2.8) / sprint)) : 0;
     
     let power = 0;
@@ -57,14 +57,14 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
     }
     
     const endurance = yirt > 0 ? 5 * (20 - 10 * (55 - yirt) / 32) : 0;
-    const agility = shuttle > 0 ? 5 * (20 - 10 * (5.2 * (shuttle - 4.6) / shuttle)) : 0;
+    const agility = shuttle && shuttle > 0 ? 5 * (20 - 10 * (5.2 * (shuttle - 4.6) / shuttle)) : 0;
     const overall = ((6 * speed) + (3 * power) + (6 * endurance)) / 15;
     
     return {
       speed_score: Math.max(0, Math.min(100, Math.round(speed))),
       power_score: Math.max(0, Math.min(100, Math.round(power))),
       endurance_score: Math.max(0, Math.min(100, Math.round(endurance))),
-      agility_score: Math.max(0, Math.min(100, Math.round(agility))),
+      agility_score: shuttle ? Math.max(0, Math.min(100, Math.round(agility))) : 0,
       overall_score: Math.max(0, Math.min(100, Math.round(overall)))
     };
   };
@@ -104,8 +104,8 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           importErrors.push(`Line ${row._lineNumber}: Missing date`);
           return;
         }
-        if (isNaN(sprint) || isNaN(vertical) || isNaN(yirt) || isNaN(shuttle)) {
-          importErrors.push(`Line ${row._lineNumber}: Invalid numeric values`);
+        if (isNaN(sprint) || isNaN(vertical) || isNaN(yirt)) {
+          importErrors.push(`Line ${row._lineNumber}: Invalid numeric values for required fields (Sprint, Vertical, YIRT)`);
           return;
         }
 
@@ -132,9 +132,9 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           return;
         }
 
-        const scores = calculateScores(sprint, vertical, yirt, shuttle);
+        const scores = calculateScores(sprint, vertical, yirt, !isNaN(shuttle) ? shuttle : null);
         
-        assessmentsToCreate.push({
+        const assessmentData = {
           player_id: player.id,
           player_name: player.full_name,
           team_id: team?.id || '',
@@ -142,9 +142,14 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           sprint,
           vertical,
           yirt,
-          shuttle,
           ...scores
-        });
+        };
+        
+        if (!isNaN(shuttle)) {
+          assessmentData.shuttle = shuttle;
+        }
+        
+        assessmentsToCreate.push(assessmentData);
       });
 
       setErrors(importErrors);
@@ -179,7 +184,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Upload a CSV file with columns: Name, Team, Date, Sprint, Vertical, YIRT, Shuttle
+              Upload a CSV file with columns: Name, Team, Date, Sprint, Vertical, YIRT, Shuttle (Shuttle is optional)
             </AlertDescription>
           </Alert>
 

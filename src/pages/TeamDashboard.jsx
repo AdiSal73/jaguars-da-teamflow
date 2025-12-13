@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare, FileDown, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Calendar, BarChart3, Award, Megaphone, Edit2, Save, TrendingUp, Target, CheckCircle, XCircle, Clock, ArrowUp, ArrowDown, Minus, GitCompare, FileDown, Plus, Mail } from 'lucide-react';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 import TeamEvaluationForm from '../components/team/TeamEvaluationForm';
+import BulkInviteDialog from '../components/team/BulkInviteDialog';
+import TeamComparisonsTab from '../components/team/TeamComparisonsTab';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ export default function TeamDashboard() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showTeamEvalDialog, setShowTeamEvalDialog] = useState(false);
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [showBulkInviteDialog, setShowBulkInviteDialog] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState({
     full_name: '',
     gender: 'Female',
@@ -130,6 +133,26 @@ export default function TeamDashboard() {
   const { data: allPlayers = [] } = useQuery({
     queryKey: ['allPlayers'],
     queryFn: () => base44.entities.Player.list()
+  });
+
+  const { data: allTeams = [] } = useQuery({
+    queryKey: ['allTeams'],
+    queryFn: () => base44.entities.Team.list()
+  });
+
+  const { data: allAssessments = [] } = useQuery({
+    queryKey: ['allAssessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list()
+  });
+
+  const { data: allEvaluations = [] } = useQuery({
+    queryKey: ['allEvaluations'],
+    queryFn: () => base44.entities.Evaluation.list()
+  });
+
+  const { data: allTryouts = [] } = useQuery({
+    queryKey: ['allTryouts'],
+    queryFn: () => base44.entities.PlayerTryout.list()
   });
 
   React.useEffect(() => {
@@ -467,6 +490,10 @@ export default function TeamDashboard() {
                 <Award className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 <span className="hidden md:inline">Team Evaluation</span>
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowBulkInviteDialog(true)} className="bg-blue-50">
+                <Mail className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Invite All</span>
+              </Button>
             </div>
             <p className="text-sm md:text-base text-slate-600">{team?.age_group} • {team?.league}</p>
           </div>
@@ -548,13 +575,14 @@ export default function TeamDashboard() {
       </div>
 
       <Tabs defaultValue="roster" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 text-xs">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 text-xs">
           <TabsTrigger value="roster">Roster</TabsTrigger>
           <TabsTrigger value="tryouts">Tryouts</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="evaluations">Evaluations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="heatmap">Heatmap</TabsTrigger>
+          <TabsTrigger value="comparisons">Comparisons</TabsTrigger>
           <TabsTrigger value="announcements">News</TabsTrigger>
         </TabsList>
 
@@ -1085,6 +1113,16 @@ export default function TeamDashboard() {
           )}
         </TabsContent>
 
+        <TabsContent value="comparisons" className="mt-4 md:mt-6">
+          <TeamComparisonsTab
+            allTeams={allTeams}
+            allPlayers={allPlayers}
+            allAssessments={allAssessments}
+            allEvaluations={allEvaluations}
+            allTryouts={allTryouts}
+          />
+        </TabsContent>
+
         <TabsContent value="announcements" className="mt-4 md:mt-6">
           <Card className="border-none shadow-lg">
             <CardHeader>
@@ -1223,6 +1261,13 @@ export default function TeamDashboard() {
           />
         </DialogContent>
       </Dialog>
+
+      <BulkInviteDialog
+        open={showBulkInviteDialog}
+        onClose={() => setShowBulkInviteDialog(false)}
+        team={team}
+        players={players}
+      />
 
       <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
         <DialogContent className="max-w-md">
