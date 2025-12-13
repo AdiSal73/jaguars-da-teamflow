@@ -1217,6 +1217,8 @@ export default function TeamDashboard() {
             teamId={teamId}
             teamName={team?.name}
             onClose={() => setShowTeamEvalDialog(false)}
+            allEvaluations={teamEvaluations}
+            playerEvaluations={evaluations}
           />
         </DialogContent>
       </Dialog>

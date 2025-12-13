@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
