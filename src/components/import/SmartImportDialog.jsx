@@ -346,6 +346,35 @@ export default function SmartImportDialog({
     const total = recordsToProcess.length;
     const failedRecords = [];
     
+    // Create a map to track created teams by name to avoid duplicates
+    const createdTeamsMap = new Map();
+    
+    // First pass: identify unique teams that need to be created
+    if (entityType === 'players') {
+      const uniqueTeamNames = new Set();
+      recordsToProcess.forEach(record => {
+        if (record.team_name && !record._teamMatch) {
+          uniqueTeamNames.add(record.team_name);
+        }
+      });
+      
+      // Create all unique teams first
+      for (const teamName of uniqueTeamNames) {
+        const teamInfo = parseTeamName(teamName);
+        if (teamInfo) {
+          try {
+            const newTeam = await onImport('team', teamInfo);
+            if (newTeam?.id) {
+              createdTeamsMap.set(teamName, newTeam);
+            }
+          } catch (e) {
+            // Team might already exist
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
     // Batch processing to avoid rate limits
     const BATCH_SIZE = 2;
     const DELAY_MS = 3000;
@@ -363,18 +392,11 @@ export default function SmartImportDialog({
           }
           
           if (entityType === 'players') {
-            // Create team if needed
+            // Get team ID from existing match or created teams map
             let teamId = record._teamMatch?.id;
             if (!teamId && record.team_name) {
-              const teamInfo = parseTeamName(record.team_name);
-              if (teamInfo) {
-                try {
-                  const newTeam = await onImport('team', teamInfo);
-                  teamId = newTeam?.id;
-                } catch (e) {
-                  // Team might already exist, try to find it
-                }
-              }
+              const createdTeam = createdTeamsMap.get(record.team_name);
+              teamId = createdTeam?.id;
             }
             
             const playerData = {
@@ -463,13 +485,8 @@ export default function SmartImportDialog({
             if (entityType === 'players') {
               let teamId = record._teamMatch?.id;
               if (!teamId && record.team_name) {
-                const teamInfo = parseTeamName(record.team_name);
-                if (teamInfo) {
-                  try {
-                    const newTeam = await onImport('team', teamInfo);
-                    teamId = newTeam?.id;
-                  } catch (e) {}
-                }
+                const createdTeam = createdTeamsMap.get(record.team_name);
+                teamId = createdTeam?.id;
               }
               const playerData = {
                 full_name: record._normalized.full_name,
