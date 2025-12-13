@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Upload, Download, Users, Shield, UserCog, UserPlus, Trash2, AlertTriangle, Calendar } from 'lucide-react';
-import CreateNextSeasonTeamsDialog from '../components/teams/CreateNextSeasonTeamsDialog';
-import DeleteAllDialog from '../components/admin/DeleteAllDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +17,7 @@ import { toast } from 'sonner';
 import SmartImportDialog from '../components/import/SmartImportDialog';
 import CleanSyncDataDialog from '../components/club/CleanSyncDataDialog';
 import DeleteAllDialog from '../components/admin/DeleteAllDialog';
+import CreateNextSeasonTeamsDialog from '../components/teams/CreateNextSeasonTeamsDialog';
 
 export default function AdminDataManagement() {
   const queryClient = useQueryClient();
