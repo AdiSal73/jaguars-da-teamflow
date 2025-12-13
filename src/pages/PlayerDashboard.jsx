@@ -180,7 +180,8 @@ export default function PlayerDashboard() {
         secondary_position: player.secondary_position || '',
         parent_name: player.parent_name || '',
         status: player.status || 'Active',
-        team_id: player.team_id || ''
+        team_id: player.team_id || '',
+        profile_password: player.profile_password || ''
       });
     }
   }, [player]);
@@ -625,7 +626,17 @@ export default function PlayerDashboard() {
                   <p className="text-sm font-medium">{player.parent_name || 'N/A'}</p>
                 )}
               </div>
-            </div>
+              {isAdminOrCoach && (
+                <div className="col-span-2">
+                  <Label className="text-[10px] text-slate-500">Share Password</Label>
+                  {isEditing ? (
+                    <Input value={playerForm.profile_password || ''} onChange={e => setPlayerForm({...playerForm, profile_password: e.target.value})} className="h-8 text-xs" placeholder="Set password for sharing" />
+                  ) : (
+                    <p className="text-sm font-medium">{player.profile_password ? '••••••••' : 'Not set'}</p>
+                  )}
+                </div>
+              )}
+              </div>
             <div className="border-t pt-2 space-y-2">
               <div className="flex items-center gap-2">
                 <Mail className="w-3 h-3 text-slate-400" />
@@ -1108,6 +1119,94 @@ export default function PlayerDashboard() {
         <div className="mt-4">
           <PositionKnowledgeBank position={player.primary_position} />
         </div>
+      )}
+
+      {/* Injury History */}
+      {(isAdminOrCoach || injuries.length > 0) && (
+        <Card className="border-none shadow-lg mt-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Injury History</CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge className={injuries.some(i => i.status === 'Active') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
+                  {injuries.some(i => i.status === 'Active') ? 'Currently Injured' : 'Healthy'}
+                </Badge>
+                {isAdminOrCoach && (
+                  <Button variant="outline" size="sm" onClick={() => setShowInjuryDialog(true)}>
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Injury
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {injuries.length === 0 ? (
+              <p className="text-center text-slate-500 py-4 text-sm">No injury records</p>
+            ) : (
+              <div className="space-y-2">
+                {injuries.map(injury => (
+                  <div key={injury.id} className={`p-3 rounded-lg border-l-4 ${injury.status === 'Active' ? 'bg-red-50 border-l-red-500' : injury.status === 'Recovering' ? 'bg-yellow-50 border-l-yellow-500' : 'bg-green-50 border-l-green-500'}`}>
+                    <div className="flex items-start justify-between mb-1">
+                      <div>
+                        <div className="font-semibold text-sm text-slate-900">{injury.injury_type}</div>
+                        <div className="text-xs text-slate-600">
+                          {new Date(injury.injury_date).toLocaleDateString()}
+                          {injury.recovery_date && ` → ${new Date(injury.recovery_date).toLocaleDateString()}`}
+                        </div>
+                      </div>
+                      <Badge className={`text-[10px] ${injury.status === 'Active' ? 'bg-red-100 text-red-800' : injury.status === 'Recovering' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                        {injury.status}
+                      </Badge>
+                    </div>
+                    {injury.severity && <Badge className="text-[9px] bg-slate-100 text-slate-700 mr-2">{injury.severity}</Badge>}
+                    {injury.treatment_notes && <p className="text-xs text-slate-600 mt-1">{injury.treatment_notes}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documents */}
+      {isAdminOrCoach && (
+        <Card className="border-none shadow-lg mt-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Documents & Reports</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowDocumentDialog(true)}>
+                <Plus className="w-3 h-3 mr-1" />
+                Upload
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {documents.length === 0 ? (
+              <p className="text-center text-slate-500 py-4 text-sm">No documents uploaded</p>
+            ) : (
+              <div className="space-y-2">
+                {documents.map(doc => (
+                  <div key={doc.id} className="p-3 bg-slate-50 rounded-lg flex items-start justify-between">
+                    <div className="flex-1">
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-emerald-600 hover:underline">
+                        {doc.title}
+                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="text-[9px] bg-blue-100 text-blue-800">{doc.document_type}</Badge>
+                        {doc.upload_date && <span className="text-xs text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
+                      </div>
+                      {doc.notes && <p className="text-xs text-slate-600 mt-1">{doc.notes}</p>}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600">
+                      <span className="text-xs">Delete</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Development Notes */}

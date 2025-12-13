@@ -36,8 +36,24 @@ const RatingSlider = ({ label, value, onChange, description }) => (
   </div>
 );
 
-export default function TeamEvaluationForm({ teamId, teamName, existingEvaluation, onClose }) {
+export default function TeamEvaluationForm({ teamId, teamName, existingEvaluation, onClose, allEvaluations = [], playerEvaluations = [] }) {
   const queryClient = useQueryClient();
+  
+  // Calculate previous evaluation average
+  const previousEvals = allEvaluations.filter(e => e.team_id === teamId && (!existingEvaluation || e.id !== existingEvaluation.id));
+  const previousAvg = previousEvals.length > 0 ? {
+    mental: Math.round(previousEvals.reduce((sum, e) => sum + ((e.growth_mindset + e.resilience + e.team_focus) / 3), 0) / previousEvals.length),
+    defending: Math.round(previousEvals.reduce((sum, e) => sum + ((e.defending_organized + e.defending_final_third + e.defending_transition) / 3), 0) / previousEvals.length),
+    attacking: Math.round(previousEvals.reduce((sum, e) => sum + ((e.attacking_organized + e.attacking_final_third + e.attacking_in_transition) / 3), 0) / previousEvals.length)
+  } : null;
+  
+  // Calculate player evaluation average
+  const playersAvg = playerEvaluations.length > 0 ? {
+    mental: Math.round(playerEvaluations.reduce((sum, e) => sum + ((e.growth_mindset + e.resilience + e.team_focus) / 3), 0) / playerEvaluations.length),
+    defending: Math.round(playerEvaluations.reduce((sum, e) => sum + ((e.defending_organized + e.defending_final_third + e.defending_transition) / 3), 0) / playerEvaluations.length),
+    attacking: Math.round(playerEvaluations.reduce((sum, e) => sum + ((e.attacking_organized + e.attacking_final_third + e.attacking_in_transition) / 3), 0) / playerEvaluations.length)
+  } : null;
+  
   const [formData, setFormData] = useState(existingEvaluation || {
     team_id: teamId,
     team_name: teamName,
@@ -76,6 +92,40 @@ export default function TeamEvaluationForm({ teamId, teamName, existingEvaluatio
 
   return (
     <div className="space-y-6">
+      {(previousAvg || playersAvg) && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📊 Comparison Data
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {previousAvg && (
+                <div className="p-3 bg-white rounded-lg border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 mb-2">Previous Team Evaluations ({previousEvals.length})</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold">{previousAvg.mental}/10</span></div>
+                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold">{previousAvg.defending}/10</span></div>
+                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold">{previousAvg.attacking}/10</span></div>
+                  </div>
+                </div>
+              )}
+              {playersAvg && (
+                <div className="p-3 bg-white rounded-lg border border-emerald-200">
+                  <p className="text-xs font-semibold text-emerald-700 mb-2">Player Evaluations Average ({playerEvaluations.length})</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold">{playersAvg.mental}/10</span></div>
+                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold">{playersAvg.defending}/10</span></div>
+                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold">{playersAvg.attacking}/10</span></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card className="border-2 border-emerald-200">
         <CardHeader className="bg-gradient-to-r from-emerald-100 to-blue-100">
           <CardTitle className="text-lg">Team Information</CardTitle>

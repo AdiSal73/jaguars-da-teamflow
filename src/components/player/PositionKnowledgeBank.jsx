@@ -39,20 +39,20 @@ export default function PositionKnowledgeBank({ position }) {
         </CardTitle>
         <p className="text-xs text-slate-600 mt-1">Position-specific tactical responsibilities and key skills</p>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="grid md:grid-cols-2 gap-3">
+      <CardContent className="p-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(knowledge.categories).map(([key, category]) => (
             <div key={key} className={`rounded-xl overflow-hidden shadow-md border-2 ${key.includes('attacking') ? 'border-emerald-200' : 'border-red-200'}`}>
-              <div className={`bg-gradient-to-r ${categoryColors[key]} p-3 text-white`}>
+              <div className={`bg-gradient-to-r ${categoryColors[key]} p-4 text-white`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{categoryIcons[key]}</span>
-                  <h3 className="font-bold text-sm">{category.title}</h3>
+                  <span className="text-2xl">{categoryIcons[key]}</span>
+                  <h3 className="font-bold text-base">{category.title}</h3>
                 </div>
               </div>
-              <div className="bg-white p-3">
-                <ul className="space-y-1.5">
+              <div className="bg-white p-4">
+                <ul className="space-y-2">
                   {category.points.map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs">
+                    <li key={idx} className="flex items-start gap-2 text-sm">
                       <span className="text-emerald-600 font-bold mt-0.5">•</span>
                       <span className="text-slate-700 leading-relaxed">{point}</span>
                     </li>
@@ -63,9 +63,9 @@ export default function PositionKnowledgeBank({ position }) {
           ))}
         </div>
 
-        <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-          <p className="text-xs text-slate-700 font-medium mb-1">💡 Training Focus Areas</p>
-          <p className="text-xs text-slate-600">
+        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-slate-700 font-medium mb-1">💡 Training Focus Areas</p>
+          <p className="text-sm text-slate-600">
             These skills represent the core competencies for the {knowledge.name} position. 
             Focus training sessions on improving weaknesses and maintaining strengths across all six tactical phases.
           </p>
