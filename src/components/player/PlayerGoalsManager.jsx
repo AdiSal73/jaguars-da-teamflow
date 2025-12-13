@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, Target, TrendingUp } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Target, TrendingUp, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,15 +9,52 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
-export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback }) {
+export default function PlayerGoalsManager({ player, currentAssessment, onUpdate, onProvideFeedback }) {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedGoals, setSelectedGoals] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState(player.primary_position || '');
+  const [editingGoal, setEditingGoal] = useState(null);
 
   const goals = player.goals || [];
   const positionKnowledge = POSITION_KNOWLEDGE[selectedPosition];
+
+  // Auto-suggest endurance goal if assessment shows low endurance
+  React.useEffect(() => {
+    if (currentAssessment && currentAssessment.endurance_score < 30) {
+      const hasEnduranceGoal = goals.some(g => 
+        g.description?.toLowerCase().includes('endurance') || 
+        g.category?.toLowerCase().includes('endurance')
+      );
+      
+      if (!hasEnduranceGoal && goals.length < 5) {
+        const today = new Date();
+        const suggestedCompletion = new Date(today);
+        suggestedCompletion.setMonth(suggestedCompletion.getMonth() + 2);
+        
+        const enduranceGoal = {
+          id: `goal_${Date.now()}_endurance`,
+          description: 'Improve cardiovascular endurance to maintain performance for full 90 minutes',
+          plan_of_action: 'Follow 90Min fitness program workouts 2-3x per week. Focus on YIRT improvement and interval training.',
+          suggested_start_date: today.toISOString().split('T')[0],
+          start_date: '',
+          suggested_completion_date: suggestedCompletion.toISOString().split('T')[0],
+          completion_date: '',
+          progress: 0,
+          notes: `Current endurance score: ${currentAssessment.endurance_score}. Target: 60+`,
+          category: 'fitness',
+          position: player.primary_position,
+          completed: false,
+          created_date: new Date().toISOString()
+        };
+        
+        onUpdate({ goals: [...goals, enduranceGoal] });
+      }
+    }
+  }, [currentAssessment]);
 
   const handleOpenDialog = () => {
     setSelectedGoals([]);
@@ -37,22 +74,33 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
   };
 
   const handleSaveGoals = () => {
+    const today = new Date();
+    const suggestedCompletion = new Date(today);
+    suggestedCompletion.setMonth(suggestedCompletion.getMonth() + 3);
+
     const newGoals = selectedGoals.map(goalKey => {
       const [category, point] = goalKey.split('|||');
       return {
         id: `goal_${Date.now()}_${Math.random()}`,
         description: point,
+        plan_of_action: '',
+        suggested_start_date: today.toISOString().split('T')[0],
+        start_date: '',
+        suggested_completion_date: suggestedCompletion.toISOString().split('T')[0],
+        completion_date: '',
+        progress: 0,
+        notes: '',
         category: category,
         position: selectedPosition,
-        target_value: 10,
-        current_value: 0,
-        metric_type: 'rating',
         completed: false,
         created_date: new Date().toISOString()
       };
     });
 
-    onUpdate({ goals: [...goals, ...newGoals] });
+    // Auto-add endurance goal if needed
+    const currentGoals = [...goals, ...newGoals];
+    
+    onUpdate({ goals: currentGoals });
     setShowDialog(false);
   };
 
@@ -64,8 +112,18 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
   const handleUpdateProgress = (goalId, newValue) => {
     const updatedGoals = goals.map(g => {
       if (g.id === goalId) {
-        const completed = newValue >= g.target_value;
-        return { ...g, current_value: newValue, completed };
+        const completed = newValue >= 100;
+        return { ...g, progress: newValue, completed };
+      }
+      return g;
+    });
+    onUpdate({ goals: updatedGoals });
+  };
+
+  const handleUpdateGoalField = (goalId, field, value) => {
+    const updatedGoals = goals.map(g => {
+      if (g.id === goalId) {
+        return { ...g, [field]: value };
       }
       return g;
     });
@@ -105,7 +163,7 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
         ) : (
           <div className="space-y-3">
             {goals.map(goal => {
-              const progress = Math.min((goal.current_value / goal.target_value) * 100, 100);
+              const progress = goal.progress || 0;
               const categoryColor = categoryColors[goal.category] || 'from-slate-500 to-slate-600';
               
               return (
@@ -124,8 +182,17 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
                           <Badge variant="outline" className="text-[10px]">{goal.position}</Badge>
                         )}
                       </div>
+                      {goal.start_date && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          Started: {new Date(goal.start_date).toLocaleDateString()}
+                          {goal.suggested_completion_date && ` • Target: ${new Date(goal.suggested_completion_date).toLocaleDateString()}`}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-slate-200" onClick={() => setEditingGoal(goal)}>
+                        <Edit className="w-3 h-3" />
+                      </Button>
                       {onProvideFeedback && (
                         <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600" onClick={() => onProvideFeedback(goal)}>
                           <TrendingUp className="w-3 h-3" />
@@ -137,31 +204,23 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
                     </div>
                   </div>
                   
+                  {goal.plan_of_action && (
+                    <div className="mb-2 p-2 bg-blue-50 rounded text-xs text-slate-700">
+                      <span className="font-semibold">Plan:</span> {goal.plan_of_action}
+                    </div>
+                  )}
+                  
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-600">Progress (1-10 rating)</span>
-                      <span className="font-semibold">{goal.current_value} / {goal.target_value}</span>
+                      <span className="text-slate-600">Progress</span>
+                      <span className="font-semibold">{progress}%</span>
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
                   
-                  {!goal.completed && (
-                    <div className="mt-2">
-                      <Select 
-                        value={String(goal.current_value)} 
-                        onValueChange={(val) => handleUpdateProgress(goal.id, parseFloat(val))}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Update progress" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                            <SelectItem key={num} value={String(num)}>
-                              {num} - {num === 1 ? 'Basic' : num === 2 ? 'Novice' : num === 3 ? 'Beginner' : num === 4 ? 'Adv Beginner' : num === 5 ? 'Intermediate' : num === 6 ? 'Competent' : num === 7 ? 'Advanced' : num === 8 ? 'Accomplished' : num === 9 ? 'Proficient' : 'Expert'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {goal.notes && (
+                    <div className="mt-2 p-2 bg-slate-100 rounded text-xs text-slate-600">
+                      {goal.notes}
                     </div>
                   )}
                 </div>
@@ -170,6 +229,112 @@ export default function PlayerGoalsManager({ player, onUpdate, onProvideFeedback
           </div>
         )}
       </CardContent>
+
+      <Dialog open={editingGoal !== null} onOpenChange={() => setEditingGoal(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Goal Details</DialogTitle>
+          </DialogHeader>
+          {editingGoal && (
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Description</Label>
+                <Input 
+                  value={editingGoal.description} 
+                  onChange={(e) => setEditingGoal({...editingGoal, description: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Plan of Action</Label>
+                <Textarea 
+                  value={editingGoal.plan_of_action || ''} 
+                  onChange={(e) => setEditingGoal({...editingGoal, plan_of_action: e.target.value})}
+                  rows={3}
+                  placeholder="What specific actions will you take to achieve this goal?"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Suggested Start Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.suggested_start_date || ''} 
+                    onChange={(e) => setEditingGoal({...editingGoal, suggested_start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Actual Start Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.start_date || ''} 
+                    onChange={(e) => setEditingGoal({...editingGoal, start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Suggested Completion Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.suggested_completion_date || ''} 
+                    onChange={(e) => setEditingGoal({...editingGoal, suggested_completion_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Actual Completion Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.completion_date || ''} 
+                    onChange={(e) => setEditingGoal({...editingGoal, completion_date: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Progress (%)</Label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={editingGoal.progress || 0}
+                    onChange={(e) => setEditingGoal({...editingGoal, progress: parseInt(e.target.value)})}
+                    className="flex-1"
+                  />
+                  <span className="text-lg font-bold text-emerald-600 w-12">{editingGoal.progress || 0}%</span>
+                </div>
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea 
+                  value={editingGoal.notes || ''} 
+                  onChange={(e) => setEditingGoal({...editingGoal, notes: e.target.value})}
+                  rows={3}
+                  placeholder="Additional notes or reflections"
+                />
+              </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setEditingGoal(null)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleUpdateGoalField(editingGoal.id, 'description', editingGoal.description);
+                    handleUpdateGoalField(editingGoal.id, 'plan_of_action', editingGoal.plan_of_action);
+                    handleUpdateGoalField(editingGoal.id, 'suggested_start_date', editingGoal.suggested_start_date);
+                    handleUpdateGoalField(editingGoal.id, 'start_date', editingGoal.start_date);
+                    handleUpdateGoalField(editingGoal.id, 'suggested_completion_date', editingGoal.suggested_completion_date);
+                    handleUpdateGoalField(editingGoal.id, 'completion_date', editingGoal.completion_date);
+                    handleUpdateGoalField(editingGoal.id, 'progress', editingGoal.progress);
+                    handleUpdateGoalField(editingGoal.id, 'notes', editingGoal.notes);
+                    setEditingGoal(null);
+                  }}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh]">

@@ -1028,7 +1028,8 @@ export default function PlayerDashboard() {
       {isAdminOrCoach && (
         <div className="mt-4">
           <PlayerGoalsManager 
-            player={player} 
+            player={player}
+            currentAssessment={currentAssessment}
             onUpdate={(data) => updatePlayerMutation.mutate(data)}
             onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
           />

@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown } from 'lucide-react';
+import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import BulkImportAssessments from '../components/assessments/BulkImportAssessments';
+import CleanAssessmentsDialog from '../components/assessments/CleanAssessmentsDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +25,7 @@ export default function Assessments() {
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
+  const [showCleanDialog, setShowCleanDialog] = useState(false);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
@@ -191,8 +193,16 @@ export default function Assessments() {
 
   const bulkCreateMutation = useMutation({
     mutationFn: async ({ assessments, unassigned }) => {
+      // Check for duplicates before creating
       for (const assessment of assessments) {
-        await base44.entities.PhysicalAssessment.create(assessment);
+        const existing = await base44.entities.PhysicalAssessment.filter({
+          player_id: assessment.player_id,
+          assessment_date: assessment.assessment_date
+        });
+        
+        if (existing.length === 0) {
+          await base44.entities.PhysicalAssessment.create(assessment);
+        }
       }
       for (const record of unassigned) {
         await base44.entities.UnassignedPhysicalAssessment.create(record);
@@ -313,6 +323,10 @@ export default function Assessments() {
           <p className="text-slate-600 mt-1">Monitor athletic performance and fitness levels</p>
         </div>
         <div className="flex gap-3">
+          <Button onClick={() => setShowCleanDialog(true)} variant="outline" className="bg-orange-50">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Clean Data
+          </Button>
           <Button onClick={() => setShowBulkImportDialog(true)} variant="outline">
             <Upload className="w-4 h-4 mr-2" />
             Bulk Import
@@ -441,8 +455,13 @@ export default function Assessments() {
                 const team = teams.find(t => t.id === assessment.team_id);
                 
                 return (
-                  <Card key={assessment.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300">
-                    <CardContent className="p-6">
+                  <Link 
+                    key={assessment.id} 
+                    to={player ? `${createPageUrl('PlayerDashboard')}?id=${player.id}` : '#'}
+                    className={player ? 'cursor-pointer' : 'cursor-default'}
+                  >
+                    <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
                           <User className="w-6 h-6 text-white" />
@@ -486,6 +505,7 @@ export default function Assessments() {
                       </div>
                     </CardContent>
                   </Card>
+                  </Link>
                 );
               })}
             </div>
@@ -767,6 +787,17 @@ export default function Assessments() {
           />
         </DialogContent>
       </Dialog>
+
+      <CleanAssessmentsDialog
+        open={showCleanDialog}
+        onClose={() => setShowCleanDialog(false)}
+        assessments={assessments}
+        players={players}
+        onComplete={() => {
+          queryClient.invalidateQueries(['assessments']);
+          setShowCleanDialog(false);
+        }}
+      />
     </div>
   );
 }

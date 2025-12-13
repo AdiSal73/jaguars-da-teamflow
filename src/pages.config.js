@@ -23,6 +23,8 @@ import Messages from './pages/Messages';
 import TeamReports from './pages/TeamReports';
 import TeamTryout from './pages/TeamTryout';
 import FAQ from './pages/FAQ';
+import FitnessResources from './pages/FitnessResources';
+import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +54,8 @@ export const PAGES = {
     "TeamReports": TeamReports,
     "TeamTryout": TeamTryout,
     "FAQ": FAQ,
+    "FitnessResources": FitnessResources,
+    "AdvancedAnalytics": AdvancedAnalytics,
 }
 
 export const pagesConfig = {

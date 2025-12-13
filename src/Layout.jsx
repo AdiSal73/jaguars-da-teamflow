@@ -115,7 +115,8 @@ export default function Layout({ children, currentPageName }) {
         { title: "Depth Chart", url: createPageUrl("FormationView") },
         { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
         { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("EvaluationsNew") }
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+        { title: "Advanced Analytics", url: createPageUrl("AdvancedAnalytics") }
       ]
     },
     {
@@ -126,7 +127,8 @@ export default function Layout({ children, currentPageName }) {
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
         { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "My Availability", url: createPageUrl("Availability") },
-        { title: "Team Reports", url: createPageUrl("TeamReports") }
+        { title: "Team Reports", url: createPageUrl("TeamReports") },
+        { title: "Fitness Resources", url: createPageUrl("FitnessResources") }
       ]
     },
     {
