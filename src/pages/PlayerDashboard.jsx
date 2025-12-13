@@ -258,34 +258,27 @@ export default function PlayerDashboard() {
   });
 
   const handleInvitePlayer = async (email, player) => {
-    await base44.integrations.Core.SendEmail({
-      to: email,
-      subject: `Invitation to Soccer Club Management System`,
-      body: `You've been invited to access ${player.full_name}'s player profile.\n\nClick here to access: ${window.location.origin}/player-dashboard?id=${player.id}\n\nPlease contact your coach if you need help accessing the system.`
-    });
+    // Note: Emails can only be sent to registered users in the app
+    // For inviting new users, they need to be invited via User Management
+    toast.info('To invite parents/players, please use User Management to create their account first.');
   };
 
   const handleSendGoalFeedback = async (player, goal, feedback) => {
-    const playerEmail = player.email;
-    const parentEmails = assignedParents.map(p => p.email).filter(Boolean);
+    // Only send notifications to registered users (parents assigned to this player)
+    const registeredUsers = assignedParents.map(p => p.email).filter(Boolean);
 
-    const recipients = [playerEmail, ...parentEmails].filter(Boolean);
-
-    for (const email of recipients) {
-      await base44.integrations.Core.SendEmail({
-        to: email,
-        subject: `Coach Feedback on Goal: ${goal.description}`,
-        body: `${currentUser?.full_name} has provided feedback on ${player.full_name}'s goal:\n\nGoal: ${goal.description}\nProgress: ${goal.current_value}/${goal.target_value}\n\nFeedback:\n${feedback}\n\nKeep up the great work!`
-      });
-
+    // Create notifications for all registered parent users
+    for (const email of registeredUsers) {
       await base44.entities.Notification.create({
         user_email: email,
         type: 'goal',
-        title: 'Coach Feedback on Your Goal',
-        message: feedback,
+        title: 'Coach Feedback on Goal',
+        message: `${currentUser?.full_name} provided feedback on ${player.full_name}'s goal: ${goal.description}\n\nFeedback: ${feedback}`,
         link: `/player-dashboard?id=${playerId}`
       });
     }
+
+    toast.success('Feedback notification sent to assigned parents');
   };
 
   const handleSaveAll = async () => {
