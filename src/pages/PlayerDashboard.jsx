@@ -98,13 +98,14 @@ export default function PlayerDashboard() {
 
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
 
-  const { data: player, isLoading: playerLoading } = useQuery({
+  const { data: player, isLoading: playerLoading, isError: playerError } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
       const players = await base44.entities.Player.list();
       return players.find(p => p.id === playerId);
     },
-    enabled: !!playerId
+    enabled: !!playerId,
+    retry: false
   });
 
   const { data: teams = [] } = useQuery({
@@ -489,11 +490,11 @@ export default function PlayerDashboard() {
     );
   }
 
-  if (!player) {
+  if (!player || playerError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-slate-500">Player not found</p>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+        <Button onClick={() => navigate(createPageUrl('Players'))}>Go to Players</Button>
       </div>
     );
   }

@@ -63,7 +63,8 @@ export default function TeamDashboard() {
     queryFn: async () => {
       const all = await base44.entities.Player.list();
       return all.filter(p => p.team_id === teamId);
-    }
+    },
+    retry: false
   });
 
   const { data: assessments = [] } = useQuery({
