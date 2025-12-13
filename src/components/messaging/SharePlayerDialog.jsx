@@ -16,7 +16,9 @@ export default function SharePlayerDialog({
   const [inviting, setInviting] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `${window.location.origin}/player-dashboard?id=${player?.id}`;
+  const shareUrl = player?.profile_password 
+    ? `${window.location.origin}/player-dashboard?id=${player.id}&pwd=${player.profile_password}`
+    : `${window.location.origin}/player-dashboard?id=${player?.id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -75,7 +77,7 @@ export default function SharePlayerDialog({
           </div>
 
           <div className="relative">
-            <Label>Or Share Link</Label>
+            <Label>Share Link {player?.profile_password && '(Password Protected)'}</Label>
             <div className="flex gap-2 mt-2">
               <Input
                 value={shareUrl}
@@ -86,6 +88,11 @@ export default function SharePlayerDialog({
                 {copied ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               </Button>
             </div>
+            {!player?.profile_password && (
+              <p className="text-xs text-orange-600 mt-1">
+                ⚠️ No password set. Set a password in Edit mode to protect this link.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4 border-t">

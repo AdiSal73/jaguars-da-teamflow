@@ -100,24 +100,32 @@ export default function TeamEvaluationForm({ teamId, teamName, existingEvaluatio
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="p-3 bg-white rounded-lg border-2 border-slate-300">
+                <p className="text-xs font-semibold text-slate-700 mb-2">Current Evaluation</p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold">{Math.round(((formData.growth_mindset + formData.resilience + formData.team_focus) / 3))}/10</span></div>
+                  <div className="flex justify-between"><span>Defending:</span><span className="font-bold">{Math.round(((formData.defending_organized + formData.defending_final_third + formData.defending_transition) / 3))}/10</span></div>
+                  <div className="flex justify-between"><span>Attacking:</span><span className="font-bold">{Math.round(((formData.attacking_organized + formData.attacking_final_third + formData.attacking_in_transition) / 3))}/10</span></div>
+                </div>
+              </div>
               {previousAvg && (
-                <div className="p-3 bg-white rounded-lg border border-blue-200">
-                  <p className="text-xs font-semibold text-blue-700 mb-2">Previous Team Evaluations ({previousEvals.length})</p>
+                <div className="p-3 bg-white rounded-lg border-2 border-blue-300">
+                  <p className="text-xs font-semibold text-blue-700 mb-2">Previous Team Avg ({previousEvals.length})</p>
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold">{previousAvg.mental}/10</span></div>
-                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold">{previousAvg.defending}/10</span></div>
-                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold">{previousAvg.attacking}/10</span></div>
+                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold text-blue-700">{previousAvg.mental}/10</span></div>
+                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold text-blue-700">{previousAvg.defending}/10</span></div>
+                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold text-blue-700">{previousAvg.attacking}/10</span></div>
                   </div>
                 </div>
               )}
               {playersAvg && (
-                <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                  <p className="text-xs font-semibold text-emerald-700 mb-2">Player Evaluations Average ({playerEvaluations.length})</p>
+                <div className="p-3 bg-white rounded-lg border-2 border-emerald-300">
+                  <p className="text-xs font-semibold text-emerald-700 mb-2">Players Avg ({playerEvaluations.length})</p>
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold">{playersAvg.mental}/10</span></div>
-                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold">{playersAvg.defending}/10</span></div>
-                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold">{playersAvg.attacking}/10</span></div>
+                    <div className="flex justify-between"><span>Mental/Character:</span><span className="font-bold text-emerald-700">{playersAvg.mental}/10</span></div>
+                    <div className="flex justify-between"><span>Defending:</span><span className="font-bold text-emerald-700">{playersAvg.defending}/10</span></div>
+                    <div className="flex justify-between"><span>Attacking:</span><span className="font-bold text-emerald-700">{playersAvg.attacking}/10</span></div>
                   </div>
                 </div>
               )}
