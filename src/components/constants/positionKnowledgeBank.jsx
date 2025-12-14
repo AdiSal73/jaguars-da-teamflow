@@ -92,6 +92,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Quick distribution after winning possession, launching counter-attacks, and managing the tempo of transitions from defense to attack.',
         points: [
           'Initiate Counter Attack',
           'Break out and find highest option',
@@ -149,6 +150,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Building from the back, providing passing options under pressure, and progressing the ball forward through the defensive line.',
         points: [
           'Initiate Build-up and Possession Forward',
           'Reading pressure',
@@ -165,6 +167,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Supporting from behind, providing balance, and contributing to finishing opportunities including set pieces.',
         points: [
           'Support Behind the ball',
           'Maintain possession, change the point, lock in',
@@ -175,6 +178,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Initiating counter-attacks with quick distribution while maintaining defensive security against opposition counters.',
         points: [
           'Initiate Counter Attack',
           'Connect 1st Pass',
@@ -187,6 +191,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Anchoring the defensive structure, communicating with teammates, managing defensive positioning, and denying penetration.',
         points: [
           'Organization-Verbal Communication',
           'Team Shape to Dictate Play',
@@ -202,6 +207,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Winning aerial duels, making crucial tackles, blocking shots, and preventing goal-scoring opportunities in the penalty area.',
         points: [
           'Dominating 1v1- Ball Winner',
           'Challenge, intercept, tackle',
@@ -215,6 +221,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Organizing defensive recovery, communicating urgency, and making intelligent decisions to prevent dangerous counter-attacks.',
         points: [
           'Providing Organization',
           'Directing Teammates and anticipating threats',
@@ -233,6 +240,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Building from the back, providing passing options under pressure, and progressing the ball forward through the defensive line.',
         points: [
           'Initiate Build-up and Possession Forward',
           'Reading pressure',
@@ -249,6 +257,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Supporting from behind, providing balance, and contributing to finishing opportunities including set pieces.',
         points: [
           'Support Behind the ball',
           'Maintain possession, change the point, lock in',
@@ -259,6 +268,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Initiating counter-attacks with quick distribution while maintaining defensive security against opposition counters.',
         points: [
           'Initiate Counter Attack',
           'Connect 1st Pass',
@@ -271,6 +281,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Anchoring the defensive structure, communicating with teammates, managing defensive positioning, and denying penetration.',
         points: [
           'Organization-Verbal Communication',
           'Team Shape to Dictate Play',
@@ -286,6 +297,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Winning aerial duels, making crucial tackles, blocking shots, and preventing goal-scoring opportunities in the penalty area.',
         points: [
           'Dominating 1v1- Ball Winner',
           'Challenge, intercept, tackle',
@@ -299,6 +311,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Organizing defensive recovery, communicating urgency, and making intelligent decisions to prevent dangerous counter-attacks.',
         points: [
           'Providing Organization',
           'Directing Teammates and anticipating threats',
@@ -317,6 +330,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Providing width in attack, overlapping runs, creating numerical superiority on the flanks, and delivering quality service.',
         points: [
           'Supporting Build-up',
           'Reading opponent\'s pressure',
@@ -335,6 +349,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Creating goalscoring opportunities through crossing, overlaps, and combinations with wide players.',
         points: [
           'Advance Forward',
           'Create overload and numbers up in final third',
@@ -349,6 +364,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Supporting counter-attacks with forward runs while maintaining defensive balance and preventing opposition counters.',
         points: [
           'Starting and Supporting Counter Attack',
           'Provide Width',
@@ -360,6 +376,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Defending wide areas, tracking runners, supporting centerbacks, and maintaining defensive discipline in positioned defense.',
         points: [
           'Reading and Positioning',
           'Communication- Help to Organize',
@@ -376,6 +393,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Preventing crosses, defending 1v1 on flanks, aerial duels, and protecting the penalty area from wide attacks.',
         points: [
           'Dominating 1v1',
           'intercept, tackle, wall pass defending, aerial battles',
@@ -393,6 +411,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Rapid defensive recovery, tracking runners, and preventing dangerous situations developing on the flanks.',
         points: [
           'Provide Organization & Anticipate Threats',
           'Delay- Deny-Dictate',
@@ -408,6 +427,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Providing width in attack, overlapping runs, creating numerical superiority on the flanks, and delivering quality service.',
         points: [
           'Supporting Build-up',
           'Reading opponent\'s pressure',
@@ -426,6 +446,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Creating goalscoring opportunities through crossing, overlaps, and combinations with wide players.',
         points: [
           'Advance Forward',
           'Create overload and numbers up in final third',
@@ -440,6 +461,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Supporting counter-attacks with forward runs while maintaining defensive balance and preventing opposition counters.',
         points: [
           'Starting and Supporting Counter Attack',
           'Provide Width',
@@ -451,6 +473,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Defending wide areas, tracking runners, supporting centerbacks, and maintaining defensive discipline in positioned defense.',
         points: [
           'Reading and Positioning',
           'Communication- Help to Organize',
@@ -467,6 +490,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Preventing crosses, defending 1v1 on flanks, aerial duels, and protecting the penalty area from wide attacks.',
         points: [
           'Dominating 1v1',
           'intercept, tackle, wall pass defending, aerial battles',
@@ -484,6 +508,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Rapid defensive recovery, tracking runners, and preventing dangerous situations developing on the flanks.',
         points: [
           'Provide Organization & Anticipate Threats',
           'Delay- Deny-Dictate',
@@ -499,6 +524,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Linking defense to attack, dictating tempo, creating from deep positions, and providing balance in possession.',
         points: [
           'Support and Initiating Build-up',
           'Reading the opponent\'s pressure',
@@ -518,6 +544,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Providing support from deep, delivering key passes, scoring from distance, and maintaining attacking balance.',
         points: [
           'Support to Break Final Line',
           'Balance- change the point and lock play in',
@@ -531,6 +558,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Connecting play in transitions, securing possession, and preventing opposition counter-attacks.',
         points: [
           'Initiate Counter Attack',
           'Connect 1st Pass- Highest Option',
@@ -542,6 +570,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Shielding the defense, breaking up opposition attacks, organizing pressing, and protecting space in front of the back line.',
         points: [
           'Organizing Team Defensive Shape',
           'Verbal Communication',
@@ -560,6 +589,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Protecting the penalty area, winning crucial duels, screening passes, and providing cover for the defensive line.',
         points: [
           'Dominating 1v1',
           'Challenge, intercept, tackle, aerial battles',
@@ -574,6 +604,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Quick defensive reactions, organizing team response, and preventing dangerous counter-attacking situations.',
         points: [
           'Provide Organization and Anticipate Threats',
           'Press vs. Regroup to Repress',
@@ -589,6 +620,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Operating between lines, creating chances, linking midfield to attack, and unlocking defensive blocks with vision and technique.',
         points: [
           'Supporting Build-up',
           'Reading opponent\'s pressure',
@@ -608,6 +640,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'The primary creative force - delivering assists, scoring goals, and making decisive actions in dangerous areas.',
         points: [
           'Creating Chances & Scoring Goals',
           'Assists- through balls, crosses',
@@ -619,6 +652,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Exploiting spaces in transition, connecting play quickly, and turning defense into attack with intelligent positioning.',
         points: [
           'Starting and Supporting Counter Attack',
           'Positioning to be an outlet',
@@ -629,6 +663,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Pressing intelligently, tracking back, protecting central areas, and contributing to the defensive block.',
         points: [
           'Dictating and Shaping Play',
           'Make Play Predictable',
@@ -647,6 +682,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Tracking back to support defense, pressing opposition playmakers, and protecting central defensive zones.',
         points: [
           'Dominating 1v1 Situations',
           'Challenge, intercept, tackle, aerial battles',
@@ -662,6 +698,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Immediate counter-pressing to regain possession or delaying opposition attacks to allow team recovery.',
         points: [
           'Prevent Counter Attack',
           'Press vs. Regroup to Repress',
@@ -677,6 +714,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Creating width, stretching defenses, beating defenders 1v1, and combining with teammates to break down organized defenses.',
         points: [
           'Supporting the build up',
           'Create Height and Width',
@@ -697,6 +735,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Primary goal threat from wide areas - creating and scoring through dribbling, crossing, and intelligent movement.',
         points: [
           'Dominating 1v1',
           'Take-on',
@@ -714,6 +753,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Exploiting space on the break with pace, providing outlets for counter-attacks, and stretching opposition defenses.',
         points: [
           'Creating & supporting Counter Attack',
           'Movement to threaten and advance forward',
@@ -723,6 +763,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Pressing from the front, tracking back to support fullbacks, and contributing to the defensive shape.',
         points: [
           'Shaping and Dictating Play',
           'Screen Middle, Press Forward and Wide',
@@ -740,6 +781,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Tracking back defensively, supporting the fullback, and preventing opposition wide play.',
         points: [
           'Dominating 1v1 Situations',
           'Challenge, intercept, tackle, Wall pass defending',
@@ -758,6 +800,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Immediate pressing to win the ball back or delaying to allow defensive recovery.',
         points: [
           'Prevent Counter Attack',
           'Immediate Pressure',
@@ -773,6 +816,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Creating width, stretching defenses, beating defenders 1v1, and combining with teammates to break down organized defenses.',
         points: [
           'Supporting the build up',
           'Create Height and Width',
@@ -793,6 +837,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Primary goal threat from wide areas - creating and scoring through dribbling, crossing, and intelligent movement.',
         points: [
           'Dominating 1v1',
           'Take-on',
@@ -810,6 +855,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Exploiting space on the break with pace, providing outlets for counter-attacks, and stretching opposition defenses.',
         points: [
           'Creating & supporting Counter Attack',
           'Movement to threaten and advance forward',
@@ -819,6 +865,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Pressing from the front, tracking back to support fullbacks, and contributing to the defensive shape.',
         points: [
           'Shaping and Dictating Play',
           'Screen Middle, Press Forward and Wide',
@@ -836,6 +883,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Tracking back defensively, supporting the fullback, and preventing opposition wide play.',
         points: [
           'Dominating 1v1 Situations',
           'Challenge, intercept, tackle, Wall pass defending',
@@ -854,6 +902,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Immediate pressing to win the ball back or delaying to allow defensive recovery.',
         points: [
           'Prevent Counter Attack',
           'Immediate Pressure',
@@ -869,6 +918,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'The engine room - controlling tempo, linking play, creating overloads, and maintaining possession in central areas.',
         points: [
           'Support and Initiating Build-up',
           'Reading the opponent\'s pressure',
@@ -883,6 +933,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Contributing to goal creation, arriving late in the box, and providing scoring threats from central positions.',
         points: [
           'Support to Break Final Line',
           'Balance- change the point and lock play in',
@@ -895,6 +946,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Key connector in transitions, distributing quickly to forwards, and supporting counter-attacks.',
         points: [
           'Initiate Counter Attack',
           'Connect 1st Pass- Highest Option',
@@ -905,6 +957,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Organizing midfield pressing, protecting central channels, supporting defensive and forward lines.',
         points: [
           'Organizing Team Defensive Shape',
           'Verbal Communication',
@@ -919,6 +972,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Supporting defensive efforts, tracking runners, and providing cover in and around the penalty area.',
         points: [
           'Dominating 1v1',
           'Challenge, intercept, tackle',
@@ -930,6 +984,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Organizing midfield recovery, delaying counter-attacks, and protecting central areas.',
         points: [
           'Provide Organization and Anticipate Threats',
           'Press vs. Regroup to Repress',
@@ -944,6 +999,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'Leading the line, holding up play, creating space for teammates, and being the focal point of attacking moves.',
         points: [
           'Supporting Build Up',
           'Create Height',
@@ -965,6 +1021,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Primary goalscorer - clinical finishing, intelligent movement in the box, and converting chances under pressure.',
         points: [
           'Creating Chances and Scoring Goals',
           'Positioning in Goal Zone',
@@ -977,6 +1034,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_transition: {
         title: 'Attacking Transition',
+        description: 'Spearheading counter-attacks, holding the ball to allow support, and creating dangerous moments in transition.',
         points: [
           'Creating Counter Attack',
           'Movement to threaten and advance forward- most dangerous player',
@@ -989,6 +1047,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Pressing from the front, making play predictable, and being the first line of defense.',
         points: [
           'Shaping and Dictating Play',
           'Positioning to make play predictable',
@@ -1007,6 +1066,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Contributing defensively during set pieces and maintaining defensive structure from the front.',
         points: [
           'Dominating 1v1 Situations',
           'Challenge, intercept, tackle',
@@ -1023,6 +1083,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Immediate counter-pressing to win possession back high up the pitch or delay to allow team recovery.',
         points: [
           'Prevent Counter Attack',
           'Immediate Pressure',
