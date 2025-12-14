@@ -967,6 +967,35 @@ export default function PlayerDashboard() {
           </CardContent>
         </Card>
       </div>
+{/* Development Notes */}
+      {currentEvaluation && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-green-800">Strengths</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-green-700">{currentEvaluation.player_strengths || 'Not specified'}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-orange-800">Areas of Growth</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-orange-700">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-blue-800">Training Focus</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-blue-700">{currentEvaluation.training_focus || 'Not specified'}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Analytics Row */}
       {(assessments.length > 1 || evaluations.length > 1) && (
@@ -1154,36 +1183,7 @@ export default function PlayerDashboard() {
         </Card>
       )}
 
-      {/* Development Notes */}
-      {currentEvaluation && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-green-800">Strengths</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-green-700">{currentEvaluation.player_strengths || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-orange-800">Areas of Growth</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-orange-700">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-blue-800">Training Focus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-blue-700">{currentEvaluation.training_focus || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
+      
       <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
