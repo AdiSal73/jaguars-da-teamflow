@@ -10,13 +10,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, BookOpen, Plus, CheckCircle, ExternalLink, Trash2, Grid3x3, Trophy } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Target, TrendingUp, BookOpen, Plus, CheckCircle, ExternalLink, Trash2, Grid3x3, Trophy, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SkillMatrixEditor from './SkillMatrixEditor';
 import EventsTimeline from './EventsTimeline';
 import DevelopmentGoalsManager from './DevelopmentGoalsManager';
 import AITrainingPlanGenerator from './AITrainingPlanGenerator';
+import TrainingFeedbackForm from './TrainingFeedbackForm';
 import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
 export default function DevelopmentPathwayManager({ player, assessments, evaluations, onUpdatePlayer, onProvideFeedback }) {
@@ -25,6 +27,7 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
   const [showSkillMatrixDialog, setShowSkillMatrixDialog] = useState(false);
   const [showSelfAssessment, setShowSelfAssessment] = useState(false);
   const [viewMode, setViewMode] = useState('list');
+  const [feedbackModule, setFeedbackModule] = useState(null);
   const [newMilestone, setNewMilestone] = useState({ title: '', description: '', target_date: '', level: 'Intermediate', category: 'Technical' });
   const [newModule, setNewModule] = useState({ 
     title: '', 
@@ -374,9 +377,22 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
                           )}
                         </button>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-slate-900">{module.title}</h4>
-                            {module.auto_suggested && <Badge className="text-[8px] bg-purple-100 text-purple-700">Auto</Badge>}
+                          <div className="flex items-center gap-2 justify-between">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-slate-900">{module.title}</h4>
+                              {module.auto_suggested && <Badge className="text-[8px] bg-purple-100 text-purple-700">Auto</Badge>}
+                            </div>
+                            {!module.completed && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFeedbackModule(module)}
+                                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 text-xs h-7"
+                              >
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                Feedback
+                              </Button>
+                            )}
                           </div>
                           <p className="text-xs text-slate-600 mt-1">{module.description}</p>
                           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -516,6 +532,16 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
           </div>
         </DialogContent>
       </Dialog>
+
+      {feedbackModule && (
+        <div className="mt-4">
+          <TrainingFeedbackForm 
+            playerId={player.id} 
+            module={feedbackModule} 
+            onClose={() => setFeedbackModule(null)} 
+          />
+        </div>
+      )}
     </div>
   );
 }
