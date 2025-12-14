@@ -258,14 +258,14 @@ export default function DevelopmentGoalsManager({ pathway, player, assessments, 
                       />
                     </div>
 
+                    {goal.plan_of_action && (
+                      <div className="mb-2">
+                        <p className="text-xs text-slate-600 italic">{goal.plan_of_action}</p>
+                      </div>
+                    )}
+
                     {isExpanded && (
                       <div className="mt-3 pt-3 border-t space-y-2">
-                        {goal.plan_of_action && (
-                          <div>
-                            <div className="text-xs font-semibold text-slate-700 mb-1">Action Plan</div>
-                            <p className="text-xs text-slate-600 bg-white p-2 rounded">{goal.plan_of_action}</p>
-                          </div>
-                        )}
                         {goal.notes && (
                           <div>
                             <div className="text-xs font-semibold text-slate-700 mb-1">Notes</div>
@@ -391,13 +391,14 @@ export default function DevelopmentGoalsManager({ pathway, player, assessments, 
             )}
 
             <div>
-              <Label>Action Plan</Label>
+              <Label>Brief Description</Label>
               <Textarea 
                 value={newGoal.plan_of_action} 
                 onChange={e => setNewGoal({...newGoal, plan_of_action: e.target.value})}
-                rows={3}
-                placeholder="What specific steps will be taken to achieve this goal?"
+                rows={2}
+                placeholder="Brief overview of what this goal entails and why it's important..."
               />
+              <p className="text-xs text-slate-500 mt-1">Provide context about this goal and its significance</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
