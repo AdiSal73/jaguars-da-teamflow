@@ -161,7 +161,7 @@ Return ONLY valid JSON matching this exact structure:
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-600" />
-              AI-Generated Training Plan - {player.full_name}
+              Adil'd Recommended Training Plan - {player.full_name}
             </DialogTitle>
           </DialogHeader>
 
