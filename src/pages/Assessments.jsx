@@ -29,6 +29,7 @@ export default function Assessments() {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
+  const [selectedBirthYear, setSelectedBirthYear] = useState('all');
   const [sortBy, setSortBy] = useState('overall_score');
   const [sortDirection, setSortDirection] = useState('desc');
   const [newAssessment, setNewAssessment] = useState({
@@ -228,12 +229,16 @@ export default function Assessments() {
     const player = players.find(p => p.id === assessment.player_id);
     const team = teams.find(t => t.id === assessment.team_id);
     const playerName = (player?.full_name || assessment.player_name || '').toLowerCase();
+    const birthYear = player?.date_of_birth ? new Date(player.date_of_birth).getFullYear().toString() : null;
+    
     const matchesSearch = playerName.includes(searchTerm.toLowerCase());
     const matchesTeam = teamFilter === 'all' || assessment.team_id === teamFilter;
     const matchesAgeGroup = selectedAgeGroup === 'all' || team?.age_group === selectedAgeGroup;
     const matchesLeague = selectedLeague === 'all' || team?.league === selectedLeague;
     const matchesGender = selectedGender === 'all' || player?.gender === selectedGender || team?.gender === selectedGender;
-    return matchesSearch && matchesTeam && matchesAgeGroup && matchesLeague && matchesGender;
+    const matchesBirthYear = selectedBirthYear === 'all' || birthYear === selectedBirthYear;
+    
+    return matchesSearch && matchesTeam && matchesAgeGroup && matchesLeague && matchesGender && matchesBirthYear;
   }).sort((a, b) => {
     const aVal = a[sortBy] || 0;
     const bVal = b[sortBy] || 0;
@@ -343,7 +348,7 @@ export default function Assessments() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 mb-2 block">Gender</label>
               <Select value={selectedGender} onValueChange={setSelectedGender}>
@@ -358,10 +363,24 @@ export default function Assessments() {
               </Select>
             </div>
             <div>
+              <label className="text-xs font-semibold text-slate-700 mb-2 block">Birth Year</label>
+              <Select value={selectedBirthYear} onValueChange={setSelectedBirthYear}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  {[...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null).filter(Boolean))].sort((a, b) => b - a).map(year => (
+                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-xs font-semibold text-slate-700 mb-2 block">Age Group</label>
               <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All Age Groups" />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Age Groups</SelectItem>
@@ -381,7 +400,7 @@ export default function Assessments() {
               <label className="text-xs font-semibold text-slate-700 mb-2 block">League</label>
               <Select value={selectedLeague} onValueChange={setSelectedLeague}>
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All Leagues" />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Leagues</SelectItem>
@@ -395,7 +414,7 @@ export default function Assessments() {
               <label className="text-xs font-semibold text-slate-700 mb-2 block">Team</label>
               <Select value={teamFilter} onValueChange={setTeamFilter}>
                 <SelectTrigger className="h-10">
-                  <SelectValue placeholder="All Teams" />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>

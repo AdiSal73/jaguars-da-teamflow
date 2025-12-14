@@ -7,32 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, TrendingUp } from 'lucide-react';
 
-const POSITION_SKILLS = {
-  'GK': ['Shot Stopping', 'Distribution', 'Command of Area', 'One-on-One', 'Footwork'],
-  'Right Centerback': ['Aerial Duels', 'Tackling', 'Positioning', 'Ball Playing', 'Communication'],
-  'Left Centerback': ['Aerial Duels', 'Tackling', 'Positioning', 'Ball Playing', 'Communication'],
-  'Right Outside Back': ['Crossing', 'Defensive Positioning', '1v1 Defending', 'Overlapping Runs', 'Recovery Speed'],
-  'Left Outside Back': ['Crossing', 'Defensive Positioning', '1v1 Defending', 'Overlapping Runs', 'Recovery Speed'],
-  'Defensive Midfielder': ['Interceptions', 'Passing Range', 'Positioning', 'Ball Winning', 'Game Reading'],
-  'Center Midfielder': ['Passing', 'Vision', 'Ball Control', 'Work Rate', 'Transition Play'],
-  'Attacking Midfielder': ['Creativity', 'Final Ball', 'Dribbling', 'Shooting', 'Movement'],
-  'Right Winger': ['Dribbling', 'Crossing', 'Pace', '1v1 Attacking', 'Cutting Inside'],
-  'Left Winger': ['Dribbling', 'Crossing', 'Pace', '1v1 Attacking', 'Cutting Inside'],
-  'Forward': ['Finishing', 'Movement', 'Hold-up Play', 'Pressing', 'Link-up Play']
-};
+
 
 export default function SkillMatrixEditor({ position, skillMatrix, onUpdate, allowPlayerInput = false }) {
   const [newSkill, setNewSkill] = useState('');
   
-  const defaultSkills = POSITION_SKILLS[position] || [];
-  const currentSkills = skillMatrix || defaultSkills.map(skill => ({
-    skill_name: skill,
-    current_rating: 5,
-    target_rating: 8,
-    coach_notes: '',
-    player_self_rating: 0,
-    player_notes: ''
-  }));
+  const currentSkills = skillMatrix || [];
 
   const handleAddSkill = () => {
     if (!newSkill.trim()) return;

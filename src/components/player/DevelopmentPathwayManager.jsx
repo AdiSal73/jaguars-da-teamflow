@@ -10,10 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Target, TrendingUp, BookOpen, Plus, CheckCircle, ExternalLink, Trash2, Grid3x3 } from 'lucide-react';
+import { Target, TrendingUp, BookOpen, Plus, CheckCircle, ExternalLink, Trash2, Grid3x3, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SkillMatrixEditor from './SkillMatrixEditor';
+import EventsTimeline from './EventsTimeline';
+import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
 export default function DevelopmentPathwayManager({ player, assessments, evaluations }) {
   const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
@@ -56,55 +58,42 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
   });
 
   const handleCreatePathway = () => {
-    const autoSuggestedMilestones = generateAutoMilestones();
     const autoSuggestedModules = generateAutoModules();
+    const initialSkillMatrix = generateInitialSkillMatrix();
     
     createPathwayMutation.mutate({
       player_id: player.id,
       position: player.primary_position,
       current_level: 'Beginner',
-      milestones: autoSuggestedMilestones,
       training_modules: autoSuggestedModules,
-      skill_matrix: [],
-      skill_goals: [],
+      skill_matrix: initialSkillMatrix,
+      events_camps: [],
       notes: ''
     });
   };
 
-  const generateAutoMilestones = () => {
-    if (!assessments || assessments.length === 0) return [];
+  const generateInitialSkillMatrix = () => {
+    const positionKnowledge = POSITION_KNOWLEDGE[player.primary_position];
+    if (!positionKnowledge) return [];
     
-    const latest = assessments[0];
-    const milestones = [];
-    
-    if (latest.endurance_score < 50) {
-      milestones.push({
-        id: `milestone_${Date.now()}_1`,
-        title: 'Reach YIRT Level 45',
-        description: 'Improve cardiovascular endurance through interval training',
-        target_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        level: 'Intermediate',
-        category: 'Physical',
-        completed: false,
-        auto_suggested: true
+    const skills = [];
+    Object.entries(positionKnowledge.categories).forEach(([category, data]) => {
+      data.points.forEach(point => {
+        skills.push({
+          skill_name: point,
+          current_rating: 5,
+          target_rating: 8,
+          coach_notes: '',
+          player_self_rating: 0,
+          player_notes: ''
+        });
       });
-    }
+    });
     
-    if (latest.speed_score < 60) {
-      milestones.push({
-        id: `milestone_${Date.now()}_2`,
-        title: 'Improve Sprint Speed',
-        description: 'Reduce 20m sprint time through speed and agility drills',
-        target_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        level: 'Intermediate',
-        category: 'Physical',
-        completed: false,
-        auto_suggested: true
-      });
-    }
-    
-    return milestones;
+    return skills;
   };
+
+
 
   const generateAutoModules = () => {
     if (!assessments || assessments.length === 0) return [];
@@ -132,32 +121,8 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
     return modules;
   };
 
-  const handleAddMilestone = () => {
-    const milestone = {
-      id: `milestone_${Date.now()}`,
-      ...newMilestone,
-      completed: false,
-      completion_date: ''
-    };
-    const updatedMilestones = [...(pathway.milestones || []), milestone];
-    updatePathwayMutation.mutate({ id: pathway.id, data: { milestones: updatedMilestones } });
-    setShowMilestoneDialog(false);
-    setNewMilestone({ title: '', description: '', target_date: '', level: 'Intermediate', category: 'Technical' });
-  };
-
-  const handleToggleMilestone = (milestoneId) => {
-    const updatedMilestones = pathway.milestones.map(m => {
-      if (m.id === milestoneId) {
-        return { ...m, completed: !m.completed, completion_date: !m.completed ? new Date().toISOString().split('T')[0] : '' };
-      }
-      return m;
-    });
-    updatePathwayMutation.mutate({ id: pathway.id, data: { milestones: updatedMilestones } });
-  };
-
-  const handleDeleteMilestone = (milestoneId) => {
-    const updatedMilestones = pathway.milestones.filter(m => m.id !== milestoneId);
-    updatePathwayMutation.mutate({ id: pathway.id, data: { milestones: updatedMilestones } });
+  const handleUpdateEvents = (updatedEvents) => {
+    updatePathwayMutation.mutate({ id: pathway.id, data: { events_camps: updatedEvents } });
   };
 
   const handleAddModule = () => {
@@ -209,7 +174,7 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
         <CardContent className="p-8 text-center">
           <Target className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No Development Pathway Yet</h3>
-          <p className="text-slate-600 text-sm mb-4">Create a structured development plan for {player.full_name}</p>
+          <p className="text-slate-600 text-sm mb-4">Create a structured development plan with auto-suggested modules based on performance</p>
           <Button onClick={handleCreatePathway} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Create Development Pathway
@@ -219,9 +184,9 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
     );
   }
 
-  const completedMilestones = pathway.milestones?.filter(m => m.completed).length || 0;
-  const totalMilestones = pathway.milestones?.length || 0;
-  const progressPercent = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0;
+  const completedModules = pathway.training_modules?.filter(m => m.completed).length || 0;
+  const totalModules = pathway.training_modules?.length || 0;
+  const progressPercent = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -247,8 +212,8 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-slate-700 font-semibold">Overall Progress</span>
-                <span className="text-emerald-600 font-bold">{completedMilestones} / {totalMilestones}</span>
+                <span className="text-slate-700 font-semibold">Training Progress</span>
+                <span className="text-emerald-600 font-bold">{completedModules} / {totalModules}</span>
               </div>
               <Progress value={progressPercent} className="h-3" />
             </div>
@@ -269,54 +234,10 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Development Milestones</CardTitle>
-            <Button onClick={() => setShowMilestoneDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Milestone
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {pathway.milestones?.length === 0 ? (
-            <p className="text-center text-slate-500 py-4 text-sm">No milestones yet</p>
-          ) : (
-            <div className="space-y-3">
-              {pathway.milestones?.map(milestone => (
-                <div key={milestone.id} className={`p-4 rounded-lg border-2 ${milestone.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <button onClick={() => handleToggleMilestone(milestone.id)} className="mt-1">
-                        {milestone.completed ? (
-                          <CheckCircle className="w-5 h-5 text-emerald-600" />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                        )}
-                      </button>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-900">{milestone.title}</h4>
-                        <p className="text-xs text-slate-600 mt-1">{milestone.description}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge className="text-[9px] bg-blue-100 text-blue-800">{milestone.level}</Badge>
-                          <Badge className="text-[9px] bg-purple-100 text-purple-800">{milestone.category}</Badge>
-                          {milestone.target_date && (
-                            <span className="text-xs text-slate-500">Target: {new Date(milestone.target_date).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteMilestone(milestone.id)}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <EventsTimeline 
+        events={pathway.events_camps || []} 
+        onUpdate={handleUpdateEvents}
+      />
 
       <Card className="border-none shadow-lg">
         <CardHeader>
@@ -464,57 +385,7 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showMilestoneDialog} onOpenChange={setShowMilestoneDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Development Milestone</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label>Title *</Label>
-              <Input value={newMilestone.title} onChange={e => setNewMilestone({...newMilestone, title: e.target.value})} placeholder="e.g., Master first touch control" />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={newMilestone.description} onChange={e => setNewMilestone({...newMilestone, description: e.target.value})} rows={2} placeholder="Describe what success looks like" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Level</Label>
-                <Select value={newMilestone.level} onValueChange={v => setNewMilestone({...newMilestone, level: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
-                    <SelectItem value="Elite">Elite</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select value={newMilestone.category} onValueChange={v => setNewMilestone({...newMilestone, category: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Technical">Technical</SelectItem>
-                    <SelectItem value="Tactical">Tactical</SelectItem>
-                    <SelectItem value="Physical">Physical</SelectItem>
-                    <SelectItem value="Mental">Mental</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label>Target Date</Label>
-              <Input type="date" value={newMilestone.target_date} onChange={e => setNewMilestone({...newMilestone, target_date: e.target.value})} />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={() => setShowMilestoneDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={handleAddMilestone} disabled={!newMilestone.title} className="flex-1 bg-emerald-600 hover:bg-emerald-700">Add Milestone</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       <Dialog open={showModuleDialog} onOpenChange={setShowModuleDialog}>
         <DialogContent className="max-w-2xl">
