@@ -1,3 +1,30 @@
+export const PHYSICAL_ASSESSMENTS = {
+  Speed: {
+    description: 'Sprint speed measures a player\'s ability to accelerate quickly and maintain high velocity over short distances.',
+    examples: ['20m sprint test', 'Flying 10m sprint', '30m acceleration test'],
+    importance: 'Critical for beating defenders, recovering defensively, and covering ground quickly',
+    training: ['Sprint drills', 'Plyometrics', 'Resistance training', 'Speed endurance work']
+  },
+  Power: {
+    description: 'Jumping power and explosive strength measure a player\'s ability to generate force quickly, crucial for aerial duels and dynamic movements.',
+    examples: ['Vertical jump test', 'Standing long jump', 'Counter movement jump'],
+    importance: 'Essential for winning headers, powerful shooting, and explosive movements',
+    training: ['Plyometric exercises', 'Olympic lifts', 'Box jumps', 'Medicine ball throws']
+  },
+  Endurance: {
+    description: 'Cardiovascular endurance measures a player\'s ability to sustain high-intensity activity throughout a match.',
+    examples: ['YIRT (Yo-Yo Intermittent Recovery Test)', 'Beep test', '12-minute run'],
+    importance: 'Fundamental for maintaining performance levels throughout the full 90 minutes',
+    training: ['Interval training', 'HIIT sessions', 'Long-distance runs', 'Small-sided games']
+  },
+  Agility: {
+    description: 'Agility measures a player\'s ability to change direction quickly while maintaining control and balance.',
+    examples: ['Shuttle run', 'T-test', '505 agility test', 'Illinois agility test'],
+    importance: 'Key for dribbling, defending 1v1 situations, and quick transitions',
+    training: ['Ladder drills', 'Cone drills', 'Change of direction exercises', 'Reactive agility work']
+  }
+};
+
 export const POSITION_KNOWLEDGE = {
   'GK': {
     name: 'Goalkeeper',

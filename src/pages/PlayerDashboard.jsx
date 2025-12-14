@@ -1046,22 +1046,16 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-      {/* Player Goals */}
-      {isAdminOrCoach && (
-        <div className="mt-4">
-          <PlayerGoalsManager 
-            player={player}
-            currentAssessment={currentAssessment}
-            onUpdate={(data) => updatePlayerMutation.mutate(data)}
-            onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
-          />
-        </div>
-      )}
-
-      {/* Development Pathway */}
+      {/* Development Pathway with Goals & Progress Tracking */}
       {isAdminOrCoach && (
         <div className="mt-6">
-          <DevelopmentPathwayManager player={player} assessments={assessments} evaluations={evaluations} />
+          <DevelopmentPathwayManager 
+            player={player} 
+            assessments={assessments} 
+            evaluations={evaluations}
+            onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+            onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
+          />
         </div>
       )}
 

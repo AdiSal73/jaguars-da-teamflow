@@ -15,9 +15,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SkillMatrixEditor from './SkillMatrixEditor';
 import EventsTimeline from './EventsTimeline';
+import DevelopmentGoalsManager from './DevelopmentGoalsManager';
 import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
-export default function DevelopmentPathwayManager({ player, assessments, evaluations }) {
+export default function DevelopmentPathwayManager({ player, assessments, evaluations, onUpdatePlayer, onProvideFeedback }) {
   const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
   const [showModuleDialog, setShowModuleDialog] = useState(false);
   const [showSkillMatrixDialog, setShowSkillMatrixDialog] = useState(false);
@@ -168,6 +169,14 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
     updatePathwayMutation.mutate({ id: pathway.id, data: { skill_matrix: updatedMatrix } });
   };
 
+  const handleUpdatePlayerGoals = (data) => {
+    const updatePlayerMutation = { mutate: (updateData) => {
+      // Update player through the parent component
+      window.location.reload(); // Temporary - ideally pass mutation from parent
+    }};
+    // This would normally be passed from parent, for now just trigger re-render
+  };
+
   if (!pathway) {
     return (
       <Card className="border-none shadow-lg">
@@ -233,6 +242,14 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
           </div>
         </CardContent>
       </Card>
+
+      <DevelopmentGoalsManager
+        pathway={pathway}
+        player={player}
+        assessments={assessments}
+        onUpdate={(data) => onUpdatePlayer && onUpdatePlayer(data)}
+        onProvideFeedback={onProvideFeedback}
+      />
 
       <EventsTimeline 
         events={pathway.events_camps || []} 

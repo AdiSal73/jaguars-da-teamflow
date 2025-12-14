@@ -255,22 +255,31 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       setCurrentStatus('Importing matched assessments...');
       
       for (let i = 0; i < assessmentsToCreate.length; i += BATCH_SIZE) {
-        const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(assessmentsToCreate.length / BATCH_SIZE);
-        
-        setCurrentStatus(`Batch ${batchNum}/${totalBatches}: Importing ${batch.length} assessments...`);
-        
-        await onImportComplete(batch, []);
-        imported += batch.length;
-        setProgress(50 + ((imported / totalItems) * 50));
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
+          const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+          const totalBatches = Math.ceil(assessmentsToCreate.length / BATCH_SIZE);
+          
+          setCurrentStatus(`Batch ${batchNum}/${totalBatches}: Importing ${batch.length} assessments...`);
+          
+          await onImportComplete(batch, []);
+          imported += batch.length;
+          setProgress(50 + ((imported / totalItems) * 50));
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (batchError) {
+          console.error('Batch error:', batchError);
+          // Continue with next batch instead of failing completely
+        }
       }
 
       // Import unassigned
       if (unassignedToCreate.length > 0) {
-        setCurrentStatus('Creating unassigned records...');
-        await onImportComplete([], unassignedToCreate);
+        try {
+          setCurrentStatus('Creating unassigned records...');
+          await onImportComplete([], unassignedToCreate);
+        } catch (unassignedError) {
+          console.error('Unassigned import error:', unassignedError);
+        }
       }
 
       setCurrentStatus('Complete!');
@@ -283,8 +292,17 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       });
       setProgress(100);
     } catch (error) {
+      console.error('Import error:', error);
       setErrors([{ line: 0, error: `Import failed: ${error.message}`, row: '' }]);
       setCurrentStatus('Failed');
+      setProgress(100);
+      setResults({
+        total: 0,
+        success: 0,
+        unassigned: 0,
+        duplicates: 0,
+        failed: 1
+      });
     } finally {
       setImporting(false);
     }
