@@ -18,11 +18,25 @@ export default function AITrainingPlanGenerator({ player, pathway, assessments, 
   const [loading, setLoading] = useState(false);
   const [selectedModules, setSelectedModules] = useState([]);
   const [weeklyFocus, setWeeklyFocus] = useState('');
+  const [feedbackData, setFeedbackData] = useState([]);
 
   const generatePlanMutation = useMutation({
     mutationFn: async () => {
+      // Fetch player feedback
+      const feedback = await base44.entities.TrainingFeedback.filter({ player_id: player.id }, '-session_date', 20);
+      setFeedbackData(feedback);
+
       const latestAssessment = assessments[0];
+      const previousAssessment = assessments[1];
       const latestEval = evaluations[0];
+      
+      // Calculate performance trends
+      const performanceTrend = previousAssessment ? {
+        speed_change: (latestAssessment?.speed_score || 0) - (previousAssessment?.speed_score || 0),
+        power_change: (latestAssessment?.power_score || 0) - (previousAssessment?.power_score || 0),
+        endurance_change: (latestAssessment?.endurance_score || 0) - (previousAssessment?.endurance_score || 0),
+        agility_change: (latestAssessment?.agility_score || 0) - (previousAssessment?.agility_score || 0)
+      } : null;
       
       const weakAreas = [];
       if (latestAssessment) {
@@ -38,7 +52,17 @@ export default function AITrainingPlanGenerator({ player, pathway, assessments, 
         .slice(0, 5)
         .map(s => `${s.skill_name} (${s.current_rating}/${s.target_rating})`);
 
-      const prompt = `You are a professional soccer development coach. Create a personalized 4-week training plan for:
+      // Analyze feedback patterns
+      const feedbackAnalysis = feedback.length > 0 ? {
+        avg_exertion: (feedback.reduce((sum, f) => sum + (f.perceived_exertion || 0), 0) / feedback.length).toFixed(1),
+        completion_rate: ((feedback.filter(f => f.completion_status === 'Completed').length / feedback.length) * 100).toFixed(0) + '%',
+        difficulty_feedback: feedback.filter(f => f.felt_difficulty === 'Too Hard').length > feedback.length * 0.3 ? 'Many sessions felt too hard - consider reducing intensity' : 
+                            feedback.filter(f => f.felt_difficulty === 'Too Easy').length > feedback.length * 0.3 ? 'Many sessions felt too easy - increase challenge' : 
+                            'Difficulty level appears appropriate',
+        recent_skips: feedback.slice(0, 5).filter(f => f.completion_status === 'Skipped').length
+      } : null;
+
+      const prompt = `You are a professional soccer development coach with expertise in adaptive training methodologies. Create a personalized 4-week training plan for:
 
 Player: ${player.full_name}
 Position: ${player.primary_position}
@@ -47,6 +71,26 @@ Current Level: ${pathway?.current_level || 'Intermediate'}
 PERFORMANCE DATA:
 Physical Weaknesses: ${weakAreas.length > 0 ? weakAreas.join(', ') : 'None identified'}
 Skills Needing Improvement: ${lowSkills.length > 0 ? lowSkills.join(', ') : 'On track'}
+
+${performanceTrend ? `PERFORMANCE TREND (Recent Changes):
+- Speed: ${performanceTrend.speed_change > 0 ? '+' : ''}${performanceTrend.speed_change} (${performanceTrend.speed_change > 0 ? 'Improving ✓' : performanceTrend.speed_change < 0 ? 'Declining ⚠' : 'Stable'})
+- Power: ${performanceTrend.power_change > 0 ? '+' : ''}${performanceTrend.power_change} (${performanceTrend.power_change > 0 ? 'Improving ✓' : performanceTrend.power_change < 0 ? 'Declining ⚠' : 'Stable'})
+- Endurance: ${performanceTrend.endurance_change > 0 ? '+' : ''}${performanceTrend.endurance_change} (${performanceTrend.endurance_change > 0 ? 'Improving ✓' : performanceTrend.endurance_change < 0 ? 'Declining ⚠' : 'Stable'})
+- Agility: ${performanceTrend.agility_change > 0 ? '+' : ''}${performanceTrend.agility_change} (${performanceTrend.agility_change > 0 ? 'Improving ✓' : performanceTrend.agility_change < 0 ? 'Declining ⚠' : 'Stable'})` : ''}
+
+${feedbackAnalysis ? `ADAPTIVE LEARNING - PLAYER FEEDBACK ANALYSIS:
+- Average RPE (Rate of Perceived Exertion): ${feedbackAnalysis.avg_exertion}/10
+- Session Completion Rate: ${feedbackAnalysis.completion_rate}
+- Difficulty Assessment: ${feedbackAnalysis.difficulty_feedback}
+- Recent Skipped Sessions: ${feedbackAnalysis.recent_skips}
+${feedbackAnalysis.avg_exertion > 8 ? '⚠️ HIGH EXERTION - Player may be overtraining, reduce intensity' : ''}
+${feedbackAnalysis.recent_skips > 2 ? '⚠️ MULTIPLE SKIPS - Plan may be too demanding or motivation issue' : ''}
+${feedbackAnalysis.avg_exertion < 5 ? '📈 LOW EXERTION - Player can handle more challenging workload' : ''}
+
+ADAPTIVE RECOMMENDATIONS:
+${feedbackAnalysis.avg_exertion > 8 ? '- Reduce training volume by 15-20%\n- Include more recovery sessions\n- Lower intensity targets' : ''}
+${feedbackAnalysis.avg_exertion < 5 ? '- Increase training intensity by 10-15%\n- Add more challenging exercises\n- Reduce rest periods' : ''}
+${feedbackAnalysis.recent_skips > 2 ? '- Simplify session structure\n- Reduce session frequency\n- Add variety to prevent monotony' : ''}` : ''}
 
 ${latestEval ? `Latest Evaluation:
 - Growth Mindset: ${latestEval.growth_mindset}/10
@@ -59,13 +103,15 @@ Strengths: ${latestEval.player_strengths || 'Not specified'}
 Areas of Growth: ${latestEval.areas_of_growth || 'Not specified'}
 Training Focus: ${latestEval.training_focus || 'Not specified'}` : ''}
 
-Create a comprehensive 4-week training plan with:
+Create an ADAPTIVE comprehensive 4-week training plan with:
 1. Weekly training modules (3-4 per week)
 2. Each module should include: title, detailed description with SPECIFIC EXERCISES, training type, weekly sessions, duration
 3. Focus on addressing weaknesses while maintaining strengths
 4. Include both physical and technical/tactical training
-5. Progressive difficulty week-by-week
+5. Progressive difficulty week-by-week, BUT ADJUST based on feedback analysis above
 6. CRITICAL: In the description, reference specific exercises from the knowledge bank (Speed, Power, Endurance, Agility, Strength, Flexibility) and explicitly mention them. For example: "Week 1-2: Focus on plyometric exercises (see Power training) including box jumps and depth jumps"
+7. ADAPTIVE LEARNING: If feedback shows overtraining (high RPE, skips), reduce intensity. If undertraining (low RPE, too easy), increase challenge.
+8. Include recommended_intensity field (percentage 60-100%) based on feedback analysis
 
 Return ONLY valid JSON matching this exact structure:
 {
@@ -102,6 +148,7 @@ Return ONLY valid JSON matching this exact structure:
                   weekly_sessions: { type: 'number' },
                   number_of_weeks: { type: 'number' },
                   session_duration: { type: 'number' },
+                  recommended_intensity: { type: 'number' },
                   knowledge_bank_links: { type: 'array', items: { type: 'string' } }
                 }
               }
@@ -170,13 +217,21 @@ Return ONLY valid JSON matching this exact structure:
               <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
                 <CardContent className="p-6 text-center">
                   <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                  <h3 className="font-semibold text-lg mb-2">Generate Personalized Training Plan</h3>
+                  <h3 className="font-semibold text-lg mb-2">Generate Adaptive Training Plan</h3>
                   <p className="text-sm text-slate-600 mb-4">
-                    We will analyze {player.full_name}'s performance data, skill gaps, and development goals to create a customized 4-week training program.
+                    AI analyzes {player.full_name}'s performance data, skill gaps, recent feedback, and progression trends to create an optimized 4-week training program that adapts to their response.
                   </p>
+                  {feedbackData.length > 0 && (
+                    <div className="mb-4 p-3 bg-white/60 rounded-lg text-left">
+                      <div className="text-xs font-semibold text-purple-700 mb-1">📊 Using {feedbackData.length} feedback sessions</div>
+                      <div className="text-xs text-slate-600">
+                        Recent training load and player responses will inform intensity recommendations
+                      </div>
+                    </div>
+                  )}
                   <Button onClick={handleGenerate} className="bg-purple-600 hover:bg-purple-700">
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Plan
+                    Generate Adaptive Plan
                   </Button>
                 </CardContent>
               </Card>
@@ -239,6 +294,11 @@ Return ONLY valid JSON matching this exact structure:
                                 {module.priority}
                               </Badge>
                               <Badge className="text-[9px] bg-indigo-100 text-indigo-800">{module.training_type}</Badge>
+                              {module.recommended_intensity && (
+                                <Badge className={`text-[9px] ${module.recommended_intensity > 85 ? 'bg-red-100 text-red-800' : module.recommended_intensity > 70 ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                                  {module.recommended_intensity}% intensity
+                                </Badge>
+                              )}
                               <span className="text-xs text-slate-600">{module.weekly_sessions}x/week</span>
                               <span className="text-xs text-slate-600">• {module.number_of_weeks}w</span>
                               <span className="text-xs text-slate-600">• {module.session_duration}min</span>
