@@ -794,8 +794,13 @@ export default function Assessments() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showBulkImportDialog} onOpenChange={setShowBulkImportDialog}>
-        <DialogContent className="max-w-3xl">
+      <Dialog open={showBulkImportDialog} onOpenChange={(open) => {
+        // Only allow closing if not importing
+        if (!open) {
+          setShowBulkImportDialog(false);
+        }
+      }}>
+        <DialogContent className="max-w-4xl" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Bulk Import Assessments</DialogTitle>
           </DialogHeader>
