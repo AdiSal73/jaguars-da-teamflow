@@ -192,29 +192,10 @@ export default function Assessments() {
     }
   });
 
-  const bulkCreateMutation = useMutation({
-    mutationFn: async ({ assessments, unassigned }) => {
-      // Check for duplicates before creating
-      for (const assessment of assessments) {
-        const existing = await base44.entities.PhysicalAssessment.filter({
-          player_id: assessment.player_id,
-          assessment_date: assessment.assessment_date
-        });
-        
-        if (existing.length === 0) {
-          await base44.entities.PhysicalAssessment.create(assessment);
-        }
-      }
-      for (const record of unassigned) {
-        await base44.entities.UnassignedPhysicalAssessment.create(record);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['assessments']);
-      queryClient.invalidateQueries(['unassignedAssessments']);
-      setShowBulkImportDialog(false);
-    }
-  });
+  const handleImportComplete = () => {
+    queryClient.invalidateQueries(['assessments']);
+    queryClient.invalidateQueries(['unassignedAssessments']);
+  };
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -803,8 +784,10 @@ export default function Assessments() {
             <BulkImportAssessments
               players={players}
               teams={teams}
-              onImportComplete={(assessments, unassigned) => bulkCreateMutation.mutate({ assessments, unassigned })}
-              onClose={() => setShowBulkImportDialog(false)}
+              onClose={() => {
+                handleImportComplete();
+                setShowBulkImportDialog(false);
+              }}
             />
           </DialogContent>
         </Dialog>

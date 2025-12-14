@@ -58,24 +58,29 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
     onSuccess: () => queryClient.invalidateQueries(['pathway', player.id])
   });
 
-  const handleCreatePathway = () => {
+  const handleCreatePathway = async () => {
     if (!player?.id || !player?.primary_position) {
-      alert('Player must have a primary position set');
+      alert('Player must have a primary position set before creating a pathway');
       return;
     }
     
     const autoSuggestedModules = generateAutoModules();
     const initialSkillMatrix = generateInitialSkillMatrix();
     
-    createPathwayMutation.mutate({
-      player_id: player.id,
-      position: player.primary_position,
-      current_level: 'Beginner',
-      training_modules: autoSuggestedModules,
-      skill_matrix: initialSkillMatrix,
-      events_camps: [],
-      notes: ''
-    });
+    try {
+      await createPathwayMutation.mutateAsync({
+        player_id: player.id,
+        position: player.primary_position,
+        current_level: 'Beginner',
+        training_modules: autoSuggestedModules,
+        skill_matrix: initialSkillMatrix,
+        events_camps: [],
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Failed to create pathway:', error);
+      alert('Failed to create pathway. Please try again.');
+    }
   };
 
   const generateInitialSkillMatrix = () => {

@@ -1,27 +1,65 @@
 export const PHYSICAL_ASSESSMENTS = {
   Speed: {
     description: 'Sprint speed measures a player\'s ability to accelerate quickly and maintain high velocity over short distances.',
-    examples: ['20m sprint test', 'Flying 10m sprint', '30m acceleration test'],
-    importance: 'Critical for beating defenders, recovering defensively, and covering ground quickly',
-    training: ['Sprint drills', 'Plyometrics', 'Resistance training', 'Speed endurance work']
+    examples: ['20m sprint test - Acceleration from standing start to 20m mark, focus on first step explosion and stride frequency', 'Flying 10m sprint - Max velocity assessment with 20m run-up to measure top-end speed capability', '30m acceleration test - Extended sprint to assess sustained acceleration ability'],
+    importance: 'Critical for beating defenders in 1v1 situations, recovering defensively to track runners, covering ground quickly in transition, pressing opponents effectively, and making recovery runs',
+    training: ['Resisted sprints with bands/sleds to build explosive power', 'Plyometric drills including box jumps and bounds', 'Hill sprints for leg strength development', 'Speed endurance intervals (6x40m with 30s rest)', 'Technique work on arm drive and stride mechanics'],
+    benchmarks: {
+      elite: '< 2.9s',
+      good: '2.9-3.2s',
+      average: '3.2-3.5s',
+      developing: '> 3.5s'
+    }
   },
   Power: {
     description: 'Jumping power and explosive strength measure a player\'s ability to generate force quickly, crucial for aerial duels and dynamic movements.',
-    examples: ['Vertical jump test', 'Standing long jump', 'Counter movement jump'],
-    importance: 'Essential for winning headers, powerful shooting, and explosive movements',
-    training: ['Plyometric exercises', 'Olympic lifts', 'Box jumps', 'Medicine ball throws']
+    examples: ['Vertical jump test - Measure max vertical displacement from standing position, indicates lower body explosive power', 'Standing long jump - Horizontal power assessment, tests total body coordination and force production', 'Counter movement jump - Jump with preparatory dip to measure stretch-shortening cycle efficiency'],
+    importance: 'Essential for winning aerial duels in both attack and defense, powerful shooting and clearances, explosive first step in sprints, jumping to head crosses and corners, and physical dominance in challenges',
+    training: ['Depth jumps from boxes progressing 12"-24" height', 'Olympic lift variations (clean, snatch) for full-body power', 'Single-leg plyometrics for balance and unilateral strength', 'Medicine ball throws and slams', 'Weighted jump squats building to 30-40% bodyweight'],
+    benchmarks: {
+      elite: '> 20 inches',
+      good: '16-20 inches',
+      average: '13-16 inches',
+      developing: '< 13 inches'
+    }
   },
   Endurance: {
-    description: 'Cardiovascular endurance measures a player\'s ability to sustain high-intensity activity throughout a match.',
-    examples: ['YIRT (Yo-Yo Intermittent Recovery Test)', 'Beep test', '12-minute run'],
-    importance: 'Fundamental for maintaining performance levels throughout the full 90 minutes',
-    training: ['Interval training', 'HIIT sessions', 'Long-distance runs', 'Small-sided games']
+    description: 'Cardiovascular endurance measures a player\'s ability to sustain high-intensity activity throughout a match, recover between efforts, and maintain technical quality when fatigued.',
+    examples: ['YIRT (Yo-Yo Intermittent Recovery Test) - Progressive shuttle runs with short recovery, sport-specific endurance measure', 'Beep test (Multi-stage fitness test) - Incremental shuttle run until exhaustion', '12-minute Cooper run - Distance covered in 12 minutes for aerobic capacity', '30-15 Intermittent Fitness Test - Soccer-specific high-intensity intervals'],
+    importance: 'Fundamental for maintaining performance throughout full 90 minutes plus stoppage, recovery between high-intensity actions, sustaining pressing intensity, competing in final minutes when matches are decided, and reducing injury risk from fatigue',
+    training: ['High-intensity interval training (HIIT) - 8x2min at 90% with 1min recovery', 'Small-sided games 4v4/5v5 with small pitch dimensions', 'Fartlek running mixing speeds and intensities', 'Threshold runs at lactate threshold pace', 'Position-specific conditioning drills mimicking match demands'],
+    benchmarks: {
+      elite: '> Level 18',
+      good: 'Level 14-18',
+      average: 'Level 10-14',
+      developing: '< Level 10'
+    }
   },
   Agility: {
-    description: 'Agility measures a player\'s ability to change direction quickly while maintaining control and balance.',
-    examples: ['Shuttle run', 'T-test', '505 agility test', 'Illinois agility test'],
-    importance: 'Key for dribbling, defending 1v1 situations, and quick transitions',
-    training: ['Ladder drills', 'Cone drills', 'Change of direction exercises', 'Reactive agility work']
+    description: 'Agility measures a player\'s ability to change direction quickly while maintaining control, balance, and body position - essential for both attacking and defending movements.',
+    examples: ['Shuttle run (5-10-5 test) - Multi-directional speed with rapid deceleration and acceleration', 'T-test - Forward sprint, lateral shuffles, and backpedaling in T-pattern', '505 agility test - 180-degree turn assessment', 'Illinois agility test - Complex pattern with multiple direction changes', 'Reactive agility drills responding to visual/auditory cues'],
+    importance: 'Key for dribbling in tight spaces and beating defenders, defending 1v1 situations and staying with attackers, quick transitions between attack and defense, evading pressure when receiving, and maintaining balance through physical contact',
+    training: ['Ladder drills with varying patterns and progressions', 'Cone drill circuits with cuts at different angles', 'Change of direction exercises with deceleration emphasis', 'Reactive agility with partner/coach providing visual cues', 'Small-sided games on reduced space forcing quick turns'],
+    benchmarks: {
+      elite: '< 4.8s',
+      good: '4.8-5.2s',
+      average: '5.2-5.6s',
+      developing: '> 5.6s'
+    }
+  },
+  Strength: {
+    description: 'Muscular strength and core stability enable players to hold position, win physical duels, maintain balance under pressure, and prevent injuries.',
+    examples: ['Max squat/deadlift relative to bodyweight', 'Plank holds and variations', 'Single-leg strength assessments', 'Push-up and pull-up tests', 'Core rotation exercises'],
+    importance: 'Vital for shielding the ball from defenders, winning physical battles and holding off challenges, injury prevention through muscular support, powerful striking and throwing, and maintaining technique under fatigue',
+    training: ['Compound lifts (squat, deadlift, bench, row) 3-5 sets of 3-6 reps', 'Core stability work - planks, dead bugs, pallof presses', 'Single-leg exercises for balance and stability', 'Functional movements mimicking soccer actions', 'Resistance band work for injury prevention'],
+    benchmarks: 'Bodyweight squat minimum, progressing to 1.5x bodyweight for advanced players'
+  },
+  Flexibility: {
+    description: 'Range of motion and flexibility allow for optimal movement patterns, reduce injury risk, and enable technical execution.',
+    examples: ['Sit and reach test', 'Hip flexor mobility assessment', 'Ankle dorsiflexion range', 'Shoulder mobility tests', 'Dynamic movement screening'],
+    importance: 'Reduces muscle strain and injury risk, enables full range of motion for technical skills, improves kicking power and accuracy, allows for dynamic movements and quick changes of direction',
+    training: ['Dynamic warm-up routine before every session', 'Static stretching post-training when muscles are warm', 'Yoga or mobility-specific sessions weekly', 'Foam rolling and self-myofascial release', 'PNF stretching with partner'],
+    benchmarks: 'Position-specific ranges with emphasis on hip, ankle, and shoulder mobility'
   }
 };
 

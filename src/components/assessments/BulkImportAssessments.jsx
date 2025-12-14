@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, Loader2, Copy } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, Copy, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { base44 } from '@/api/base44Client';
 
-export default function BulkImportAssessments({ players, teams, onImportComplete, onClose }) {
+export default function BulkImportAssessments({ players, teams, onClose }) {
   const [pastedData, setPastedData] = useState('');
+  const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
@@ -20,13 +22,19 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
   const [unassignedList, setUnassignedList] = useState([]);
   const [matchedList, setMatchedList] = useState([]);
   const [currentStatus, setCurrentStatus] = useState('');
+  const [importMethod, setImportMethod] = useState('paste');
 
   const template = `Name\tDate\tSprint\tVertical\tYIRT\tShuttle
-Alexis Blondeel\t09/01/25\t3.37\t16.3\t11\t5.77
-Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
+Alexis Blondeel\t09/01/2025\t3.37\t16.3\t11\t5.77
+Allison Kraus\t09/01/2025\t3.31\t17.9\t45\t5.39`;
 
   const copyTemplate = () => {
     navigator.clipboard.writeText(template);
+  };
+
+  const parseCSV = async (file) => {
+    const text = await file.text();
+    return parseData(text);
   };
 
   const parseData = (text) => {
@@ -77,7 +85,13 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
   };
 
   const calculateScores = (sprint, vertical, yirt, shuttle) => {
+    sprint = parseFloat(sprint) || 0;
+    vertical = parseFloat(vertical) || 0;
+    yirt = parseFloat(yirt) || 0;
+    shuttle = parseFloat(shuttle) || 0;
+
     const speed = sprint > 0 ? 5 * (20 - 10 * (3.5 * (sprint - 2.8) / sprint)) : 0;
+    
     let power = 0;
     if (vertical > 13) power = 5 * (20 - (20 * (26 - vertical) / vertical));
     else if (vertical === 13) power = 10;
@@ -85,6 +99,7 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
     else if (vertical === 11) power = 8;
     else if (vertical === 10) power = 7;
     else if (vertical < 10) power = 5;
+    
     const endurance = yirt > 0 ? 5 * (20 - 10 * (55 - yirt) / 32) : 0;
     const agility = shuttle > 0 ? 5 * (20 - 10 * (5.2 * (shuttle - 4.6) / shuttle)) : 0;
     const overall = ((6 * speed) + (3 * power) + (6 * endurance)) / 15;
@@ -93,13 +108,21 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
       speed_score: Math.max(0, Math.min(100, Math.round(speed))),
       power_score: Math.max(0, Math.min(100, Math.round(power))),
       endurance_score: Math.max(0, Math.min(100, Math.round(endurance))),
-      agility_score: shuttle > 0 ? Math.max(0, Math.min(100, Math.round(agility))) : 0,
+      agility_score: Math.max(0, Math.min(100, Math.round(agility))),
       overall_score: Math.max(0, Math.min(100, Math.round(overall)))
     };
   };
 
   const handleImport = async () => {
-    if (!pastedData.trim()) return;
+    let dataText = '';
+    
+    if (importMethod === 'paste') {
+      if (!pastedData.trim()) return;
+      dataText = pastedData;
+    } else {
+      if (!file) return;
+      dataText = await file.text();
+    }
 
     setImporting(true);
     setProgress(0);
@@ -111,7 +134,7 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
     setCurrentStatus('Parsing data...');
 
     try {
-      const rows = parseData(pastedData);
+      const rows = parseData(dataText);
       
       setCurrentStatus(`Found ${rows.length} records - analyzing...`);
       setProgress(5);
@@ -124,7 +147,7 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        setProgress(5 + ((i + 1) / rows.length) * 20);
+        setProgress(5 + ((i + 1) / rows.length) * 15);
         
         const playerName = (row.name || '').trim();
         const dateStr = (row.date || '').trim();
@@ -191,45 +214,49 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
       setDuplicates(dups);
       setUnassignedList(unassigned);
       setMatchedList(matched);
-      setProgress(25);
+      setProgress(20);
 
-      const BATCH_SIZE = 10;
-      let done = 0;
-
-      setCurrentStatus(`Importing ${toCreate.length} matched assessments...`);
+      // Direct database operations - no callbacks
+      let successCount = 0;
       
-      for (let i = 0; i < toCreate.length; i += BATCH_SIZE) {
-        const batch = toCreate.slice(i, i + BATCH_SIZE);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(toCreate.length / BATCH_SIZE);
-        
-        setCurrentStatus(`Batch ${batchNum}/${totalBatches}: ${done + batch.length}/${toCreate.length} assessments...`);
+      setCurrentStatus(`Creating ${toCreate.length} assessments directly in database...`);
+      
+      for (let i = 0; i < toCreate.length; i++) {
+        const assessment = toCreate[i];
+        setCurrentStatus(`Creating assessment ${i + 1}/${toCreate.length}: ${assessment.player_name}...`);
         
         try {
-          await onImportComplete(batch, []);
-          done += batch.length;
-          setProgress(25 + ((done / toCreate.length) * 65));
-          await new Promise(r => setTimeout(r, 500));
+          await base44.entities.PhysicalAssessment.create(assessment);
+          successCount++;
+          setProgress(20 + ((successCount / toCreate.length) * 70));
         } catch (e) {
-          console.error('Batch error:', e);
+          console.error(`Failed to create assessment for ${assessment.player_name}:`, e);
+          importErrors.push({ 
+            line: i + 1, 
+            error: e.message, 
+            row: assessment.player_name 
+          });
         }
       }
 
       if (unassigned.length > 0) {
-        setCurrentStatus('Saving unassigned records...');
+        setCurrentStatus(`Saving ${unassigned.length} unassigned records...`);
         setProgress(90);
-        try {
-          await onImportComplete([], unassigned);
-        } catch (e) {
-          console.error('Unassigned error:', e);
+        for (const record of unassigned) {
+          try {
+            await base44.entities.UnassignedPhysicalAssessment.create(record);
+          } catch (e) {
+            console.error('Unassigned error:', e);
+          }
         }
       }
 
-      setCurrentStatus('✓ Import Complete');
+      setCurrentStatus('✓ Import Complete - All records processed');
       setProgress(100);
+      setErrors(importErrors);
       setResults({
         total: rows.length,
-        success: done,
+        success: successCount,
         unassigned: unassigned.length,
         duplicates: dups.length,
         failed: importErrors.length
@@ -237,8 +264,8 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
       
     } catch (error) {
       console.error('Import error:', error);
-      setErrors([{ line: 0, error: error.message, row: '' }]);
-      setCurrentStatus('Failed');
+      setErrors([{ line: 0, error: error.message, row: 'System Error' }]);
+      setCurrentStatus('Import Failed');
       setResults({ total: 0, success: 0, unassigned: 0, duplicates: 0, failed: 1 });
     } finally {
       setImporting(false);
@@ -250,48 +277,82 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
       {!results ? (
         <Card>
           <CardHeader>
-            <CardTitle>Import Physical Assessments</CardTitle>
+            <CardTitle>Bulk Import Physical Assessments</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Paste spreadsheet data with columns: Name, Date, Sprint, Vertical, YIRT, Shuttle
-              </AlertDescription>
-            </Alert>
+            <Tabs value={importMethod} onValueChange={setImportMethod}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="paste">Paste Spreadsheet</TabsTrigger>
+                <TabsTrigger value="file">Upload CSV File</TabsTrigger>
+              </TabsList>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label>Paste Data (Tab or Comma Separated)</Label>
-                <Button onClick={copyTemplate} variant="outline" size="sm">
-                  <Copy className="w-3 h-3 mr-1" />
-                  Copy Template
-                </Button>
-              </div>
-              <Textarea
-                value={pastedData}
-                onChange={(e) => setPastedData(e.target.value)}
-                placeholder="Paste your spreadsheet data here (Ctrl+V)..."
-                className="font-mono text-xs h-64"
-                disabled={importing}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Copy cells from Excel/Sheets and paste here. Include header row.
-              </p>
-            </div>
+              <TabsContent value="paste" className="space-y-4">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Copy data from Excel/Google Sheets and paste below. Required columns: Name, Date, Sprint, Vertical, YIRT, Shuttle
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label>Paste Data Here</Label>
+                    <Button onClick={copyTemplate} variant="outline" size="sm">
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Template
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={pastedData}
+                    onChange={(e) => setPastedData(e.target.value)}
+                    placeholder="Paste your spreadsheet data here (Ctrl+V)..."
+                    className="font-mono text-xs h-64"
+                    disabled={importing}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Include header row. Date format: MM/DD/YYYY
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="file" className="space-y-4">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Upload a CSV file with columns: Name, Date, Sprint, Vertical, YIRT, Shuttle
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <Label>Select CSV File</Label>
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    disabled={importing}
+                    className="mt-2"
+                  />
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg text-xs font-mono">
+                  <div className="font-bold mb-1">Template Format:</div>
+                  <div className="whitespace-pre">{template}</div>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             <Button 
               onClick={handleImport} 
-              disabled={importing || !pastedData.trim()}
+              disabled={importing || (importMethod === 'paste' && !pastedData.trim()) || (importMethod === 'file' && !file)}
               className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-base font-semibold"
             >
               {importing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing {Math.round(progress)}% - DO NOT CLOSE
+                  Processing {Math.round(progress)}% - DO NOT CLOSE DIALOG
                 </>
               ) : (
-                `Import Data`
+                `Start Import`
               )}
             </Button>
 
@@ -322,7 +383,7 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
                   
                   <Alert className="bg-red-50 border-red-300">
                     <AlertDescription className="text-xs font-bold text-red-900 text-center">
-                      ⚠️ DO NOT CLOSE - Processing in progress
+                      ⚠️ PROCESSING - DO NOT CLOSE THIS DIALOG
                     </AlertDescription>
                   </Alert>
                 </CardContent>
@@ -333,15 +394,15 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
       ) : (
         <Card>
           <CardContent className="p-6 space-y-4">
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <Alert className={results.success > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
+              <CheckCircle className={`h-4 w-4 ${results.success > 0 ? 'text-green-600' : 'text-red-600'}`} />
               <AlertDescription>
-                <div className="font-bold mb-2 text-green-900 text-lg">✓ Import Complete</div>
+                <div className="font-bold mb-2 text-lg">{results.success > 0 ? '✓ Import Complete' : '✗ Import Failed'}</div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="p-2 bg-white rounded">✓ <strong>{results.success}</strong> imported</div>
-                  <div className="p-2 bg-white rounded">⊗ <strong>{results.duplicates}</strong> duplicates</div>
-                  <div className="p-2 bg-white rounded text-orange-700">⚠ <strong>{results.unassigned}</strong> unassigned</div>
-                  <div className="p-2 bg-white rounded text-red-700">✗ <strong>{results.failed}</strong> errors</div>
+                  <div className="p-2 bg-white rounded font-semibold text-green-700">✓ {results.success} successfully imported</div>
+                  <div className="p-2 bg-white rounded">⊗ {results.duplicates} duplicates skipped</div>
+                  <div className="p-2 bg-white rounded text-orange-700">⚠ {results.unassigned} players not matched</div>
+                  <div className="p-2 bg-white rounded text-red-700">✗ {results.failed} errors</div>
                 </div>
               </AlertDescription>
             </Alert>
@@ -370,7 +431,7 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
                   {unassignedList.map((item, idx) => (
                     <div key={idx} className="text-xs p-3 bg-orange-50 rounded mb-1 border border-orange-200">
                       <div className="font-medium text-orange-900">"{item.player_name}"</div>
-                      <div className="text-orange-700 text-[10px]">{item.assessment_date} - No match found</div>
+                      <div className="text-orange-700 text-[10px]">{item.assessment_date} - No player match found</div>
                     </div>
                   ))}
                 </ScrollArea>
@@ -401,13 +462,15 @@ Allison Kraus\t09/01/25\t3.31\t17.9\t45\t5.39`;
             <div className="flex gap-3 pt-4">
               <Button onClick={() => {
                 setPastedData('');
+                setFile(null);
                 setResults(null);
                 setErrors([]);
                 setDuplicates([]);
                 setUnassignedList([]);
                 setMatchedList([]);
+                setProgress(0);
               }} variant="outline" className="flex-1">
-                Import More
+                Import More Data
               </Button>
               <Button onClick={onClose} className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-12 font-semibold">
                 Done - Close Dialog
