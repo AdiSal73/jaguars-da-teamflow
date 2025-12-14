@@ -59,6 +59,11 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
   });
 
   const handleCreatePathway = () => {
+    if (!player?.id || !player?.primary_position) {
+      alert('Player must have a primary position set');
+      return;
+    }
+    
     const autoSuggestedModules = generateAutoModules();
     const initialSkillMatrix = generateInitialSkillMatrix();
     
