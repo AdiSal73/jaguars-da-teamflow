@@ -184,10 +184,23 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
           <Target className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No Development Pathway Yet</h3>
           <p className="text-slate-600 text-sm mb-4">Create a structured development plan with auto-suggested modules based on performance</p>
-          <Button onClick={handleCreatePathway} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button 
+            onClick={() => {
+              if (!player?.primary_position) {
+                alert('Player must have a primary position set before creating a pathway');
+                return;
+              }
+              handleCreatePathway();
+            }} 
+            className="bg-emerald-600 hover:bg-emerald-700"
+            disabled={!player?.primary_position}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Development Pathway
           </Button>
+          {!player?.primary_position && (
+            <p className="text-xs text-red-600 mt-2">Please set player's primary position first</p>
+          )}
         </CardContent>
       </Card>
     );

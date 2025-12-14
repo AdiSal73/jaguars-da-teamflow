@@ -794,23 +794,21 @@ export default function Assessments() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showBulkImportDialog} onOpenChange={(open) => {
-        // Only allow closing if not importing
-        if (!open) {
-          setShowBulkImportDialog(false);
-        }
-      }}>
-        <DialogContent className="max-w-4xl" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle>Bulk Import Assessments</DialogTitle>
-          </DialogHeader>
-          <BulkImportAssessments
-            players={players}
-            teams={teams}
-            onImportComplete={(assessments, unassigned) => bulkCreateMutation.mutate({ assessments, unassigned })}
-          />
-        </DialogContent>
-      </Dialog>
+      {showBulkImportDialog && (
+        <Dialog open={true} onOpenChange={() => {}}>
+          <DialogContent className="max-w-4xl" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>Bulk Import Assessments</DialogTitle>
+            </DialogHeader>
+            <BulkImportAssessments
+              players={players}
+              teams={teams}
+              onImportComplete={(assessments, unassigned) => bulkCreateMutation.mutate({ assessments, unassigned })}
+              onClose={() => setShowBulkImportDialog(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       <CleanAssessmentsDialog
         open={showCleanDialog}

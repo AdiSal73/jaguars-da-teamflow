@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 
-export default function BulkImportAssessments({ players, teams, onImportComplete }) {
+export default function BulkImportAssessments({ players, teams, onImportComplete, onClose }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -282,35 +282,34 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       setMatchedList(matched);
       setProgress(30);
 
-      // Import in small batches
-      const BATCH_SIZE = 3;
+      // Import ALL matched assessments in batches
+      const BATCH_SIZE = 10;
       let imported = 0;
       const totalToImport = assessmentsToCreate.length;
 
-      setCurrentStatus('Importing matched assessments...');
+      setCurrentStatus(`Starting import of ${totalToImport} matched records...`);
       
       for (let i = 0; i < assessmentsToCreate.length; i += BATCH_SIZE) {
+        const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(assessmentsToCreate.length / BATCH_SIZE);
+        
+        setCurrentStatus(`Batch ${batchNum}/${totalBatches}: Creating ${batch.length} assessments (${imported + batch.length}/${totalToImport} total)...`);
+        
         try {
-          const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
-          const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-          const totalBatches = Math.ceil(assessmentsToCreate.length / BATCH_SIZE);
-          
-          setCurrentStatus(`Batch ${batchNum}/${totalBatches}: Creating ${batch.length} records...`);
-          
           await onImportComplete(batch, []);
           imported += batch.length;
           
           const importProgress = 30 + ((imported / totalToImport) * 60);
           setProgress(importProgress);
           
-          // Delay between batches
-          if (i + BATCH_SIZE < assessmentsToCreate.length) {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          }
+          // Small delay between batches
+          await new Promise(resolve => setTimeout(resolve, 800));
         } catch (batchError) {
-          console.error(`Batch ${Math.floor(i / BATCH_SIZE) + 1} error:`, batchError);
+          console.error(`Batch ${batchNum} error:`, batchError);
+          // Continue with next batch even if one fails
           importErrors.push({ 
-            line: 'Batch ' + (Math.floor(i / BATCH_SIZE) + 1), 
+            line: `Batch ${batchNum}`, 
             error: batchError.message, 
             row: `Records ${i+1}-${Math.min(i+BATCH_SIZE, assessmentsToCreate.length)}` 
           });
@@ -365,6 +364,12 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
     setMatchedList([]);
     setProgress(0);
     setCurrentStatus('');
+  };
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -548,8 +553,11 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
               </Tabs>
 
               <div className="flex gap-3">
-                <Button onClick={handleReset} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={handleReset} variant="outline" className="flex-1">
                   Import Another File
+                </Button>
+                <Button onClick={handleClose} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  Close
                 </Button>
               </div>
             </div>
