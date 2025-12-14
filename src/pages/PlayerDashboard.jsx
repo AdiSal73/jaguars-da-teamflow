@@ -508,54 +508,75 @@ export default function PlayerDashboard() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900">{player.full_name}</h1>
-          {player.status === 'Injured' && (
-            <Badge className="bg-red-100 text-red-800">
-              Injured
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={!previousPlayer} onClick={() => navigate(`?id=${previousPlayer?.id}`)}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          {isAdminOrCoach && (
-            <Button variant="outline" size="sm" onClick={() => setShowShareDialog(true)}>
-              <Share2 className="w-4 h-4 mr-1" />
-              Share
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
-            <FileDown className="w-4 h-4 mr-1" />
-            Export
-          </Button>
-          <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            {isEditing ? <><Save className="w-4 h-4 mr-2" />Save All</> : 'Edit'}
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-blue-50/30">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-600 text-white shadow-2xl">
+        <div className="max-w-[1600px] mx-auto p-6 md:p-8">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl md:text-4xl font-bold shadow-lg">
+                  {player.jersey_number || player.full_name?.charAt(0)}
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-4xl font-bold">{player.full_name}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40">
+                      {player.primary_position}
+                    </Badge>
+                    <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40">
+                      {team?.name}
+                    </Badge>
+                    {player.status === 'Injured' && (
+                      <Badge className="bg-red-500 text-white">
+                        Injured
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" disabled={!previousPlayer} onClick={() => navigate(`?id=${previousPlayer?.id}`)} className="text-white hover:bg-white/20">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)} className="text-white hover:bg-white/20">
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              {isAdminOrCoach && (
+                <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)} className="text-white hover:bg-white/20">
+                  <Share2 className="w-4 h-4 mr-1" />
+                  Share
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)} className="text-white hover:bg-white/20">
+                <FileDown className="w-4 h-4 mr-1" />
+                Export
+              </Button>
+              <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-white text-emerald-600 hover:bg-white/90 shadow-lg">
+                {isEditing ? <><Save className="w-4 h-4 mr-2" />Save</> : 'Edit'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+      <div className="max-w-[1600px] mx-auto p-4 md:p-6 -mt-8">
+
+      <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
         {/* Player Info & Contact */}
-        <Card className="border-none shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="w-4 h-4" /> Player Info
+        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b">
+            <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
+              <User className="w-5 h-5 text-emerald-600" /> Player Info
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-center mb-3">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="flex justify-center mb-4">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-emerald-600 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-xl ring-4 ring-emerald-100">
                 {player.jersey_number || player.full_name?.charAt(0)}
               </div>
             </div>
@@ -682,9 +703,9 @@ export default function PlayerDashboard() {
 
         {/* Tryout Info - Only visible to admin/coach */}
         {isAdminOrCoach && (
-        <Card className="border-none shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Tryout Info</CardTitle>
+        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b">
+            <CardTitle className="text-base font-bold text-slate-900">Tryout Info</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -797,9 +818,9 @@ export default function PlayerDashboard() {
         )}
 
         {/* Physical Assessment */}
-        <Card className="border-none shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center justify-between">
+        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 border-b">
+            <CardTitle className="text-base flex items-center justify-between font-bold text-slate-900">
               <div className="flex items-center gap-2">
                 Physical Assessment
                 {assessments.length > 1 && (
@@ -877,9 +898,9 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Evaluation Metrics */}
-        <Card className="border-none shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center justify-between">
+        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-b">
+            <CardTitle className="text-base flex items-center justify-between font-bold text-slate-900">
               <div className="flex items-center gap-2">
                 Evaluation
                 {evaluations.length > 1 && (
@@ -949,11 +970,11 @@ export default function PlayerDashboard() {
 
       {/* Analytics Row */}
       {(assessments.length > 1 || evaluations.length > 1) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {assessments.length > 1 && (
-            <Card className="border-none shadow-lg">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-2 bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-b">
+                <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
                   Physical Progress ({assessments.length} assessments)
                 </CardTitle>
@@ -998,9 +1019,9 @@ export default function PlayerDashboard() {
           )}
 
           {evaluations.length > 1 && (
-            <Card className="border-none shadow-lg">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b">
+                <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
                   <TrendingUp className="w-4 h-4 text-blue-600" />
                   Evaluation Progress ({evaluations.length} evaluations)
                 </CardTitle>
@@ -1053,7 +1074,7 @@ export default function PlayerDashboard() {
 
       {/* Injury History */}
       {(isAdminOrCoach || injuries.length > 0) && (
-        <Card className="border-none shadow-lg mt-4">
+        <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Injury History</CardTitle>
@@ -1101,7 +1122,7 @@ export default function PlayerDashboard() {
 
       {/* Documents */}
       {isAdminOrCoach && (
-        <Card className="border-none shadow-lg mt-4">
+        <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Documents & Reports</CardTitle>
@@ -1141,8 +1162,8 @@ export default function PlayerDashboard() {
 
       {/* Development Notes */}
       {currentEvaluation && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <Card className="border-none shadow-lg bg-green-50">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-green-800">Strengths</CardTitle>
             </CardHeader>
@@ -1150,7 +1171,7 @@ export default function PlayerDashboard() {
               <p className="text-sm text-green-700">{currentEvaluation.player_strengths || 'Not specified'}</p>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-lg bg-orange-50">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-orange-800">Areas of Growth</CardTitle>
             </CardHeader>
@@ -1158,7 +1179,7 @@ export default function PlayerDashboard() {
               <p className="text-sm text-orange-700">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-lg bg-blue-50">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-blue-800">Training Focus</CardTitle>
             </CardHeader>
@@ -1262,6 +1283,7 @@ export default function PlayerDashboard() {
         player={player}
         onSendFeedback={handleSendGoalFeedback}
       />
+      </div>
       </div>
       );
       }

@@ -12,6 +12,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
   const [results, setResults] = useState(null);
   const [errors, setErrors] = useState([]);
   const [duplicates, setDuplicates] = useState([]);
+  const [unassignedList, setUnassignedList] = useState([]);
   const [importDetails, setImportDetails] = useState({ processed: 0, total: 0 });
 
   const downloadTemplate = () => {
@@ -27,13 +28,30 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
 
   const parseCSV = (text) => {
     const lines = text.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim());
+    const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
     
     return lines.slice(1).map((line, idx) => {
-      const values = line.split(',').map(v => v.trim());
+      // Better CSV parsing that handles quoted values
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim().replace(/^["']|["']$/g, ''));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim().replace(/^["']|["']$/g, ''));
+      
       const row = {};
       headers.forEach((header, i) => {
-        row[header] = values[i];
+        row[header] = values[i] || '';
       });
       row._lineNumber = idx + 2;
       return row;
@@ -115,13 +133,39 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           continue;
         }
 
-        // Try to match player by name (flexible matching)
+        // Enhanced player name matching
+        const normalizedRowName = playerName.toLowerCase().trim().replace(/\s+/g, ' ');
         const player = players.find(p => {
-          const pName = p.full_name.toLowerCase().trim();
-          const rName = playerName.toLowerCase().trim();
-          return pName === rName || 
-                 pName.includes(rName) || 
-                 rName.includes(pName);
+          const pName = p.full_name.toLowerCase().trim().replace(/\s+/g, ' ');
+          
+          // Exact match
+          if (pName === normalizedRowName) return true;
+          
+          // Match by last name, first name
+          const rowParts = normalizedRowName.split(' ');
+          const playerParts = pName.split(' ');
+          
+          // "Last, First" format
+          if (normalizedRowName.includes(',')) {
+            const [last, first] = normalizedRowName.split(',').map(s => s.trim());
+            const playerLast = playerParts[playerParts.length - 1];
+            const playerFirst = playerParts.slice(0, -1).join(' ');
+            if (last === playerLast && first === playerFirst) return true;
+          }
+          
+          // Match last name and at least part of first name
+          if (rowParts.length >= 2 && playerParts.length >= 2) {
+            const rowLast = rowParts[rowParts.length - 1];
+            const playerLast = playerParts[playerParts.length - 1];
+            const rowFirst = rowParts[0];
+            const playerFirst = playerParts[0];
+            
+            if (rowLast === playerLast && (rowFirst === playerFirst || rowFirst.startsWith(playerFirst) || playerFirst.startsWith(rowFirst))) {
+              return true;
+            }
+          }
+          
+          return false;
         });
 
         const team = teams.find(t => {
@@ -181,13 +225,14 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
 
       setErrors(importErrors);
       setDuplicates(foundDuplicates);
+      setUnassignedList(unassignedToCreate);
 
       // Import in batches to avoid rate limits
-      const BATCH_SIZE = 10;
+      const BATCH_SIZE = 5;
       for (let i = 0; i < assessmentsToCreate.length; i += BATCH_SIZE) {
         const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
         await onImportComplete(batch, i === 0 ? unassignedToCreate : []);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit delay
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       setResults({
@@ -277,13 +322,29 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
                 <Alert className="bg-amber-50 border-amber-200">
                   <AlertCircle className="h-4 w-4 text-amber-600" />
                   <AlertDescription>
-                    <div className="font-semibold mb-2">Duplicates Found:</div>
-                    <ul className="text-xs space-y-1">
-                      {duplicates.slice(0, 5).map((dup, idx) => (
-                        <li key={idx}>Line {dup.line}: {dup.player} on {dup.date}</li>
-                      ))}
-                      {duplicates.length > 5 && <li>... and {duplicates.length - 5} more</li>}
-                    </ul>
+                    <div className="font-semibold mb-2">Duplicates Skipped ({duplicates.length}):</div>
+                    <div className="max-h-32 overflow-y-auto">
+                      <ul className="text-xs space-y-1">
+                        {duplicates.map((dup, idx) => (
+                          <li key={idx}>Line {dup.line}: {dup.player} on {dup.date}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {unassignedList.length > 0 && (
+                <Alert className="bg-orange-50 border-orange-200">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription>
+                    <div className="font-semibold mb-2">Unassigned Records ({unassignedList.length}):</div>
+                    <div className="max-h-32 overflow-y-auto">
+                      <ul className="text-xs space-y-1">
+                        {unassignedList.map((rec, idx) => (
+                          <li key={idx}>"{rec.player_name}" - No matching player found</li>
+                        ))}
+                      </ul>
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
