@@ -48,6 +48,9 @@ export default function PositionKnowledgeBank({ position }) {
                   <span className="text-2xl">{categoryIcons[key]}</span>
                   <h3 className="font-bold text-base">{category.title}</h3>
                 </div>
+                {category.description && (
+                  <p className="text-xs text-white/90 mt-2 leading-relaxed">{category.description}</p>
+                )}
               </div>
               <div className="bg-white p-4">
                 <ul className="space-y-2">
