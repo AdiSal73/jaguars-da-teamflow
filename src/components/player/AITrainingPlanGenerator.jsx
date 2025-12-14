@@ -153,7 +153,7 @@ Return ONLY valid JSON matching this exact structure:
         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
       >
         <Sparkles className="w-4 h-4 mr-2" />
-        AI Training Plan
+        Adil's Training Recommendation
       </Button>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
