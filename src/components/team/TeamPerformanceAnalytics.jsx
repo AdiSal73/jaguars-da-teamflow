@@ -240,7 +240,7 @@ Be specific and actionable.`,
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-600" />
-              AI-Powered Team Insights
+              Adil's Insight
             </CardTitle>
             <Button 
               onClick={generateAIInsights} 
