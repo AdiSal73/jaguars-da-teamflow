@@ -1060,8 +1060,8 @@ export default function PlayerDashboard() {
 
       {/* Development Pathway */}
       {isAdminOrCoach && (
-        <div className="mt-4">
-          <DevelopmentPathwayManager player={player} />
+        <div className="mt-6">
+          <DevelopmentPathwayManager player={player} assessments={assessments} evaluations={evaluations} />
         </div>
       )}
 

@@ -13,7 +13,13 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
   const [errors, setErrors] = useState([]);
   const [duplicates, setDuplicates] = useState([]);
   const [unassignedList, setUnassignedList] = useState([]);
-  const [importDetails, setImportDetails] = useState({ processed: 0, total: 0 });
+  const [importDetails, setImportDetails] = useState({ 
+    processed: 0, 
+    total: 0, 
+    successful: 0, 
+    currentBatch: 0, 
+    totalBatches: 0 
+  });
 
   const downloadTemplate = () => {
     const csv = 'Name,Team,Date,Sprint,Vertical,YIRT,Shuttle\nJohn Doe,Team A,2025-01-15,3.5,15,45,4.8\nJane Smith,Team B,2025-01-16,3.2,18,50,';
@@ -133,34 +139,50 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           continue;
         }
 
-        // Enhanced player name matching
-        const normalizedRowName = playerName.toLowerCase().trim().replace(/\s+/g, ' ');
+        // Enhanced player name matching - very flexible
+        const normalizedRowName = playerName.toLowerCase().trim().replace(/\s+/g, ' ').replace(/['"]/g, '');
         const player = players.find(p => {
-          const pName = p.full_name.toLowerCase().trim().replace(/\s+/g, ' ');
+          const pName = p.full_name.toLowerCase().trim().replace(/\s+/g, ' ').replace(/['"]/g, '');
           
           // Exact match
           if (pName === normalizedRowName) return true;
           
-          // Match by last name, first name
-          const rowParts = normalizedRowName.split(' ');
-          const playerParts = pName.split(' ');
+          // "Last, First" format or "First Last" format
+          const rowParts = normalizedRowName.split(/[,\s]+/).filter(Boolean);
+          const playerParts = pName.split(/\s+/).filter(Boolean);
           
-          // "Last, First" format
+          if (rowParts.length === 0 || playerParts.length === 0) return false;
+          
+          // Handle "Last, First" format
           if (normalizedRowName.includes(',')) {
-            const [last, first] = normalizedRowName.split(',').map(s => s.trim());
+            const [last, ...firstParts] = normalizedRowName.split(',').map(s => s.trim());
+            const first = firstParts.join(' ').trim();
             const playerLast = playerParts[playerParts.length - 1];
             const playerFirst = playerParts.slice(0, -1).join(' ');
+            
             if (last === playerLast && first === playerFirst) return true;
+            if (last === playerLast && first.split(/\s+/)[0] === playerFirst.split(/\s+/)[0]) return true;
           }
           
-          // Match last name and at least part of first name
-          if (rowParts.length >= 2 && playerParts.length >= 2) {
-            const rowLast = rowParts[rowParts.length - 1];
-            const playerLast = playerParts[playerParts.length - 1];
-            const rowFirst = rowParts[0];
-            const playerFirst = playerParts[0];
-            
-            if (rowLast === playerLast && (rowFirst === playerFirst || rowFirst.startsWith(playerFirst) || playerFirst.startsWith(rowFirst))) {
+          // Match by comparing all parts (handles different orderings)
+          const rowFirst = rowParts[0];
+          const rowLast = rowParts[rowParts.length - 1];
+          const playerFirst = playerParts[0];
+          const playerLast = playerParts[playerParts.length - 1];
+          
+          // Last name must match
+          if (rowLast === playerLast || rowFirst === playerLast) {
+            // Check if any first name part matches
+            const firstMatches = rowParts.some(rp => 
+              playerParts.some(pp => rp === pp || rp.startsWith(pp) || pp.startsWith(rp))
+            );
+            if (firstMatches) return true;
+          }
+          
+          // Try reverse (in case CSV has First Last but we're checking Last First)
+          if (rowParts.length === 2 && playerParts.length >= 2) {
+            if (rowParts[0] === playerParts[playerParts.length - 1] && 
+                rowParts[1] === playerParts[0]) {
               return true;
             }
           }
@@ -229,10 +251,26 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
 
       // Import in batches to avoid rate limits
       const BATCH_SIZE = 5;
+      const totalBatches = Math.ceil(assessmentsToCreate.length / BATCH_SIZE) + (unassignedToCreate.length > 0 ? 1 : 0);
+      let successCount = 0;
+      
+      setImportDetails(prev => ({ ...prev, totalBatches }));
+
       for (let i = 0; i < assessmentsToCreate.length; i += BATCH_SIZE) {
         const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
-        await onImportComplete(batch, i === 0 ? unassignedToCreate : []);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+        setImportDetails(prev => ({ ...prev, currentBatch }));
+        
+        await onImportComplete(batch, []);
+        successCount += batch.length;
+        setImportDetails(prev => ({ ...prev, successful: successCount }));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Import unassigned separately
+      if (unassignedToCreate.length > 0) {
+        setImportDetails(prev => ({ ...prev, currentBatch: totalBatches }));
+        await onImportComplete([], unassignedToCreate);
       }
 
       setResults({
@@ -296,10 +334,20 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           )}
 
           {importing && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Progress value={progress} />
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 bg-blue-50 rounded text-center">
+                  <div className="font-bold text-lg text-blue-700">{importDetails.processed}/{importDetails.total}</div>
+                  <div className="text-slate-600">Analyzed</div>
+                </div>
+                <div className="p-2 bg-green-50 rounded text-center">
+                  <div className="font-bold text-lg text-green-700">{importDetails.successful}</div>
+                  <div className="text-slate-600">Imported</div>
+                </div>
+              </div>
               <p className="text-sm text-slate-600 text-center">
-                Processing {importDetails.processed} of {importDetails.total} records...
+                {importDetails.currentBatch > 0 && `Batch ${importDetails.currentBatch}/${importDetails.totalBatches}`}
               </p>
             </div>
           )}
