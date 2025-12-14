@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, MessageSquare, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -86,6 +89,7 @@ export default function PlayerDashboard() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackGoal, setFeedbackGoal] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -293,6 +297,55 @@ export default function PlayerDashboard() {
     await updatePlayerMutation.mutateAsync(playerData);
     await updateTryoutMutation.mutateAsync(tryoutForm);
     setIsEditing(false);
+  };
+
+  const handleExportFullPagePDF = async () => {
+    setExportingPDF(true);
+    toast.info('Generating PDF... This may take a moment');
+    
+    try {
+      const element = document.querySelector('.min-h-screen'); 
+      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#f8fafc'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`${player.full_name.replace(/\s+/g, '_')}_Dashboard.pdf`);
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF');
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   // Navigation - filtered by team
@@ -552,9 +605,13 @@ export default function PlayerDashboard() {
                   Share
                 </Button>
               )}
+              <Button variant="ghost" size="sm" onClick={handleExportFullPagePDF} disabled={exportingPDF} className="text-white hover:bg-white/20">
+                <Printer className="w-4 h-4 mr-1" />
+                {exportingPDF ? 'Exporting...' : 'Export PDF'}
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)} className="text-white hover:bg-white/20">
                 <FileDown className="w-4 h-4 mr-1" />
-                Export
+                Export Data
               </Button>
               <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-white text-emerald-600 hover:bg-white/90 shadow-lg">
                 {isEditing ? <><Save className="w-4 h-4 mr-2" />Save</> : 'Edit'}
