@@ -216,25 +216,23 @@ Allison Kraus\t09/01/2025\t3.31\t17.9\t45\t5.39`;
       setMatchedList(matched);
       setProgress(20);
 
-      // Direct database operations - no callbacks
+      // Use bulk operations to avoid rate limits
       let successCount = 0;
       
-      setCurrentStatus(`Creating ${toCreate.length} assessments directly in database...`);
-      
-      for (let i = 0; i < toCreate.length; i++) {
-        const assessment = toCreate[i];
-        setCurrentStatus(`Creating assessment ${i + 1}/${toCreate.length}: ${assessment.player_name}...`);
+      if (toCreate.length > 0) {
+        setCurrentStatus(`Bulk creating ${toCreate.length} assessments...`);
+        setProgress(25);
         
         try {
-          await base44.entities.PhysicalAssessment.create(assessment);
-          successCount++;
-          setProgress(20 + ((successCount / toCreate.length) * 70));
+          await base44.entities.PhysicalAssessment.bulkCreate(toCreate);
+          successCount = toCreate.length;
+          setProgress(85);
         } catch (e) {
-          console.error(`Failed to create assessment for ${assessment.player_name}:`, e);
+          console.error('Bulk create error:', e);
           importErrors.push({ 
-            line: i + 1, 
+            line: 'Bulk', 
             error: e.message, 
-            row: assessment.player_name 
+            row: 'Multiple records' 
           });
         }
       }
@@ -242,12 +240,10 @@ Allison Kraus\t09/01/2025\t3.31\t17.9\t45\t5.39`;
       if (unassigned.length > 0) {
         setCurrentStatus(`Saving ${unassigned.length} unassigned records...`);
         setProgress(90);
-        for (const record of unassigned) {
-          try {
-            await base44.entities.UnassignedPhysicalAssessment.create(record);
-          } catch (e) {
-            console.error('Unassigned error:', e);
-          }
+        try {
+          await base44.entities.UnassignedPhysicalAssessment.bulkCreate(unassigned);
+        } catch (e) {
+          console.error('Unassigned bulk error:', e);
         }
       }
 

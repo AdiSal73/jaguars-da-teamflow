@@ -16,6 +16,7 @@ import { createPageUrl } from '@/utils';
 import SkillMatrixEditor from './SkillMatrixEditor';
 import EventsTimeline from './EventsTimeline';
 import DevelopmentGoalsManager from './DevelopmentGoalsManager';
+import AITrainingPlanGenerator from './AITrainingPlanGenerator';
 import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
 
 export default function DevelopmentPathwayManager({ player, assessments, evaluations, onUpdatePlayer, onProvideFeedback }) {
@@ -175,6 +176,11 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
     updatePathwayMutation.mutate({ id: pathway.id, data: { training_modules: updatedModules } });
   };
 
+  const handleAddAIModules = (modules) => {
+    const updatedModules = [...(pathway.training_modules || []), ...modules];
+    updatePathwayMutation.mutate({ id: pathway.id, data: { training_modules: updatedModules } });
+  };
+
   const handleUpdateSkillMatrix = (updatedMatrix) => {
     updatePathwayMutation.mutate({ id: pathway.id, data: { skill_matrix: updatedMatrix } });
   };
@@ -295,6 +301,13 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
                   Calendar
                 </Button>
               </div>
+              <AITrainingPlanGenerator
+                player={player}
+                pathway={pathway}
+                assessments={assessments}
+                evaluations={evaluations}
+                onAddModules={handleAddAIModules}
+              />
               <Button onClick={() => setShowModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Module
