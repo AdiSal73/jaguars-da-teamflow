@@ -61,11 +61,11 @@ Training Focus: ${latestEval.training_focus || 'Not specified'}` : ''}
 
 Create a comprehensive 4-week training plan with:
 1. Weekly training modules (3-4 per week)
-2. Each module should include: title, detailed description, training type, weekly sessions, duration, and specific exercises
+2. Each module should include: title, detailed description with SPECIFIC EXERCISES, training type, weekly sessions, duration
 3. Focus on addressing weaknesses while maintaining strengths
 4. Include both physical and technical/tactical training
 5. Progressive difficulty week-by-week
-6. Link exercises to knowledge bank concepts where applicable
+6. CRITICAL: In the description, reference specific exercises from the knowledge bank (Speed, Power, Endurance, Agility, Strength, Flexibility) and explicitly mention them. For example: "Week 1-2: Focus on plyometric exercises (see Power training) including box jumps and depth jumps"
 
 Return ONLY valid JSON matching this exact structure:
 {
@@ -222,7 +222,18 @@ Return ONLY valid JSON matching this exact structure:
                           />
                           <div className="flex-1">
                             <h4 className="font-semibold text-slate-900">{module.title}</h4>
-                            <p className="text-xs text-slate-600 mt-1">{module.description}</p>
+                            <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{module.description}</p>
+                            {module.knowledge_bank_links?.length > 0 && (
+                              <div className="flex items-center gap-1 mt-2 text-xs">
+                                <span className="text-slate-500">📚 Knowledge Bank:</span>
+                                {module.knowledge_bank_links.map((link, i) => (
+                                  <span key={link}>
+                                    <span className="text-purple-600 font-medium">{link}</span>
+                                    {i < module.knowledge_bank_links.length - 1 && <span className="text-slate-400">, </span>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             <div className="flex flex-wrap gap-2 mt-2">
                               <Badge className={`text-[9px] ${module.priority === 'High' ? 'bg-red-100 text-red-800' : module.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
                                 {module.priority}
@@ -232,15 +243,6 @@ Return ONLY valid JSON matching this exact structure:
                               <span className="text-xs text-slate-600">• {module.number_of_weeks}w</span>
                               <span className="text-xs text-slate-600">• {module.session_duration}min</span>
                             </div>
-                            {module.knowledge_bank_links?.length > 0 && (
-                              <div className="flex gap-1 mt-2">
-                                {module.knowledge_bank_links.map(link => (
-                                  <Badge key={link} className="text-[8px] bg-purple-100 text-purple-700">
-                                    📚 {link}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </CardContent>
