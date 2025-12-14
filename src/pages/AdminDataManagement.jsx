@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Upload, Download, Users, Shield, UserCog, UserPlus, Trash2, AlertTriangle, Calendar } from 'lucide-react';
+import { Upload, Download, Users, Shield, UserCog, UserPlus, Trash2, AlertTriangle, Calendar, Activity } from 'lucide-react';
 import CreateNextSeasonTeamsDialog from '../components/teams/CreateNextSeasonTeamsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +48,11 @@ export default function AdminDataManagement() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list()
+  });
+
+  const { data: assessments = [] } = useQuery({
+    queryKey: ['assessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list()
   });
 
   const parents = users.filter(u => u.role === 'parent');
@@ -195,6 +200,8 @@ export default function AdminDataManagement() {
       await base44.entities.Team.delete(entityId);
     } else if (deleteAllType === 'coaches') {
       await base44.entities.Coach.delete(entityId);
+    } else if (deleteAllType === 'assessments') {
+      await base44.entities.PhysicalAssessment.delete(entityId);
     }
   };
 
@@ -202,6 +209,7 @@ export default function AdminDataManagement() {
     queryClient.invalidateQueries(['players']);
     queryClient.invalidateQueries(['teams']);
     queryClient.invalidateQueries(['coaches']);
+    queryClient.invalidateQueries(['assessments']);
     setDeleteAllType(null);
   };
 
@@ -321,6 +329,22 @@ export default function AdminDataManagement() {
                   <Download className="w-4 h-4 mr-2" />Export Parents CSV
                 </Button>
                 <p className="text-xs text-slate-500">Parents must be invited via User Management</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-red-600" />Assessments ({assessments.length})
+                  </span>
+                  <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => setDeleteAllType('assessments')}>
+                    <Trash2 className="w-4 h-4 mr-1" />Delete All
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-slate-500">Delete all physical assessment records from the system</p>
               </CardContent>
             </Card>
           </div>
@@ -498,7 +522,7 @@ export default function AdminDataManagement() {
         open={!!deleteAllType}
         onClose={() => handleDeleteAllComplete()}
         entityType={deleteAllType}
-        entities={deleteAllType === 'players' ? players : deleteAllType === 'teams' ? teams : coaches}
+        entities={deleteAllType === 'players' ? players : deleteAllType === 'teams' ? teams : deleteAllType === 'coaches' ? coaches : assessments}
         onDelete={handleDeleteEntity}
       />
 

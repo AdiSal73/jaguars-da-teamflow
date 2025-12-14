@@ -11,6 +11,8 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
   const [errors, setErrors] = useState([]);
+  const [duplicates, setDuplicates] = useState([]);
+  const [importDetails, setImportDetails] = useState({ processed: 0, total: 0 });
 
   const downloadTemplate = () => {
     const csv = 'Name,Team,Date,Sprint,Vertical,YIRT,Shuttle\nJohn Doe,Team A,2025-01-15,3.5,15,45,4.8\nJane Smith,Team B,2025-01-16,3.2,18,50,';
@@ -75,6 +77,7 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
     setImporting(true);
     setProgress(0);
     setErrors([]);
+    setDuplicates([]);
 
     try {
       const text = await file.text();
@@ -82,8 +85,12 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
       const importErrors = [];
       const assessmentsToCreate = [];
       const unassignedToCreate = [];
+      const foundDuplicates = [];
 
-      rows.forEach(row => {
+      setImportDetails({ processed: 0, total: rows.length });
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const playerName = row.Name || row.name;
         const teamName = row.Team || row.team;
         const date = row.Date || row.date;
@@ -92,44 +99,64 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
         const yirt = parseFloat(row.YIRT || row.yirt);
         const shuttle = parseFloat(row.Shuttle || row.shuttle);
 
+        setProgress(((i + 1) / rows.length) * 100);
+        setImportDetails({ processed: i + 1, total: rows.length });
+
         if (!playerName) {
           importErrors.push(`Line ${row._lineNumber}: Missing player name`);
-          return;
-        }
-        if (!teamName) {
-          importErrors.push(`Line ${row._lineNumber}: Missing team name`);
-          return;
+          continue;
         }
         if (!date) {
           importErrors.push(`Line ${row._lineNumber}: Missing date`);
-          return;
+          continue;
         }
         if (isNaN(sprint) || isNaN(vertical) || isNaN(yirt)) {
           importErrors.push(`Line ${row._lineNumber}: Invalid numeric values for required fields (Sprint, Vertical, YIRT)`);
-          return;
+          continue;
         }
 
-        const player = players.find(p => 
-          p.full_name.toLowerCase().trim() === playerName.toLowerCase().trim()
-        );
-        const team = teams.find(t => 
-          t.name.toLowerCase().trim() === teamName.toLowerCase().trim()
-        );
+        // Try to match player by name (flexible matching)
+        const player = players.find(p => {
+          const pName = p.full_name.toLowerCase().trim();
+          const rName = playerName.toLowerCase().trim();
+          return pName === rName || 
+                 pName.includes(rName) || 
+                 rName.includes(pName);
+        });
+
+        const team = teams.find(t => {
+          if (!teamName) return null;
+          const tName = t.name.toLowerCase().trim();
+          const rTeam = teamName.toLowerCase().trim();
+          return tName === rTeam || 
+                 tName.includes(rTeam) || 
+                 rTeam.includes(tName);
+        });
 
         if (!player) {
-          const scores = calculateScores(sprint, vertical, yirt, shuttle);
+          // Still create unassigned record with all available data
+          const scores = calculateScores(sprint, vertical, yirt, !isNaN(shuttle) ? shuttle : null);
           unassignedToCreate.push({
             player_name: playerName,
-            team_name: teamName,
+            team_name: teamName || '',
             assessment_date: date,
             sprint,
             vertical,
             yirt,
-            shuttle,
+            shuttle: !isNaN(shuttle) ? shuttle : null,
             ...scores,
             assigned: false
           });
-          return;
+          continue;
+        }
+
+        // Check for duplicates in import batch
+        const isDuplicate = assessmentsToCreate.some(a => 
+          a.player_id === player.id && a.assessment_date === date
+        );
+        if (isDuplicate) {
+          foundDuplicates.push({ player: player.full_name, date, line: row._lineNumber });
+          continue;
         }
 
         const scores = calculateScores(sprint, vertical, yirt, !isNaN(shuttle) ? shuttle : null);
@@ -150,20 +177,24 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
         }
         
         assessmentsToCreate.push(assessmentData);
-      });
+      }
 
       setErrors(importErrors);
+      setDuplicates(foundDuplicates);
 
-      if (assessmentsToCreate.length > 0) {
-        await onImportComplete(assessmentsToCreate, unassignedToCreate);
-      } else if (unassignedToCreate.length > 0) {
-        await onImportComplete([], unassignedToCreate);
+      // Import in batches to avoid rate limits
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < assessmentsToCreate.length; i += BATCH_SIZE) {
+        const batch = assessmentsToCreate.slice(i, i + BATCH_SIZE);
+        await onImportComplete(batch, i === 0 ? unassignedToCreate : []);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit delay
       }
 
       setResults({
         total: rows.length,
         success: assessmentsToCreate.length,
         unassigned: unassignedToCreate.length,
+        duplicates: foundDuplicates.length,
         failed: importErrors.length
       });
       setProgress(100);
@@ -222,17 +253,41 @@ export default function BulkImportAssessments({ players, teams, onImportComplete
           {importing && (
             <div className="space-y-2">
               <Progress value={progress} />
-              <p className="text-sm text-slate-600 text-center">Importing assessments...</p>
+              <p className="text-sm text-slate-600 text-center">
+                Processing {importDetails.processed} of {importDetails.total} records...
+              </p>
             </div>
           )}
 
           {results && (
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                Import complete: {results.success} assigned, {results.unassigned || 0} unassigned, {results.failed} failed out of {results.total} total
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-3">
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription>
+                  <div className="font-semibold mb-2">Import Complete!</div>
+                  <div className="text-sm space-y-1">
+                    <div>✓ {results.success} assessments imported</div>
+                    {results.unassigned > 0 && <div>⚠️ {results.unassigned} unassigned (no matching player)</div>}
+                    {results.duplicates > 0 && <div>⊗ {results.duplicates} duplicates skipped</div>}
+                    {results.failed > 0 && <div className="text-red-600">✗ {results.failed} errors</div>}
+                  </div>
+                </AlertDescription>
+              </Alert>
+              {duplicates.length > 0 && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription>
+                    <div className="font-semibold mb-2">Duplicates Found:</div>
+                    <ul className="text-xs space-y-1">
+                      {duplicates.slice(0, 5).map((dup, idx) => (
+                        <li key={idx}>Line {dup.line}: {dup.player} on {dup.date}</li>
+                      ))}
+                      {duplicates.length > 5 && <li>... and {duplicates.length - 5} more</li>}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
 
           {errors.length > 0 && (

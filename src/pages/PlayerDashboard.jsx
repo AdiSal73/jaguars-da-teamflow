@@ -20,6 +20,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 import PlayerGoalsManager from '../components/player/PlayerGoalsManager';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
+import DevelopmentPathwayManager from '../components/player/DevelopmentPathwayManager';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -1033,6 +1034,13 @@ export default function PlayerDashboard() {
             onUpdate={(data) => updatePlayerMutation.mutate(data)}
             onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
           />
+        </div>
+      )}
+
+      {/* Development Pathway */}
+      {isAdminOrCoach && (
+        <div className="mt-4">
+          <DevelopmentPathwayManager player={player} />
         </div>
       )}
 

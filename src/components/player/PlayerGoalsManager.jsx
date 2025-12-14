@@ -22,36 +22,42 @@ export default function PlayerGoalsManager({ player, currentAssessment, onUpdate
   const goals = player.goals || [];
   const positionKnowledge = POSITION_KNOWLEDGE[selectedPosition];
 
-  // Auto-suggest endurance goal if assessment shows low endurance
+  // Auto-suggest fitness goal if YIRT or endurance score is low
   React.useEffect(() => {
-    if (currentAssessment && currentAssessment.endurance_score < 30) {
-      const hasEnduranceGoal = goals.some(g => 
-        g.description?.toLowerCase().includes('endurance') || 
-        g.category?.toLowerCase().includes('endurance')
-      );
+    if (currentAssessment) {
+      const hasLowYIRT = currentAssessment.yirt < 30;
+      const hasLowEndurance = currentAssessment.endurance_score < 30;
       
-      if (!hasEnduranceGoal && goals.length < 5) {
-        const today = new Date();
-        const suggestedCompletion = new Date(today);
-        suggestedCompletion.setMonth(suggestedCompletion.getMonth() + 2);
+      if (hasLowYIRT || hasLowEndurance) {
+        const hasFitnessGoal = goals.some(g => 
+          g.description?.toLowerCase().includes('fitness') ||
+          g.description?.toLowerCase().includes('endurance') || 
+          g.category?.toLowerCase().includes('fitness')
+        );
         
-        const enduranceGoal = {
-          id: `goal_${Date.now()}_endurance`,
-          description: 'Improve cardiovascular endurance to maintain performance for full 90 minutes',
-          plan_of_action: 'Follow 90Min fitness program workouts 2-3x per week. Focus on YIRT improvement and interval training.',
-          suggested_start_date: today.toISOString().split('T')[0],
-          start_date: '',
-          suggested_completion_date: suggestedCompletion.toISOString().split('T')[0],
-          completion_date: '',
-          progress: 0,
-          notes: `Current endurance score: ${currentAssessment.endurance_score}. Target: 60+`,
-          category: 'fitness',
-          position: player.primary_position,
-          completed: false,
-          created_date: new Date().toISOString()
-        };
-        
-        onUpdate({ goals: [...goals, enduranceGoal] });
+        if (!hasFitnessGoal) {
+          const today = new Date();
+          const suggestedCompletion = new Date(today);
+          suggestedCompletion.setMonth(suggestedCompletion.getMonth() + 2);
+          
+          const fitnessGoal = {
+            id: `goal_${Date.now()}_fitness`,
+            description: '90Min Fitness Program: Improve cardiovascular endurance for full match performance',
+            plan_of_action: 'Complete the 4-week 90Min fitness program with focus on YIRT improvement, interval training, and building aerobic base. Track workouts on Strava and monitor heart rate zones.',
+            suggested_start_date: today.toISOString().split('T')[0],
+            start_date: '',
+            suggested_completion_date: suggestedCompletion.toISOString().split('T')[0],
+            completion_date: '',
+            progress: 0,
+            notes: `Current YIRT: ${currentAssessment.yirt}, Endurance Score: ${currentAssessment.endurance_score}. Target YIRT: 45+, Endurance Score: 60+. Reference the Fitness Resources page for the complete training program.`,
+            category: 'Fitness',
+            position: player.primary_position,
+            completed: false,
+            created_date: new Date().toISOString()
+          };
+          
+          onUpdate({ goals: [...goals, fitnessGoal] });
+        }
       }
     }
   }, [currentAssessment]);
