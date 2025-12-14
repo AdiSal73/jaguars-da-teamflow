@@ -14,7 +14,7 @@ export default function TeamPerformanceAnalytics({ teamId, teamName }) {
     queryKey: ['players', teamId],
     queryFn: async () => {
       const allPlayers = await base44.entities.Player.list();
-      return allPlayers.filter(p => p.team_id === teamId);
+      return allPlayers.filter((p) => p.team_id === teamId);
     }
   });
 
@@ -22,13 +22,13 @@ export default function TeamPerformanceAnalytics({ teamId, teamName }) {
     queryKey: ['teamAssessments', teamId],
     queryFn: async () => {
       const allAssessments = await base44.entities.PhysicalAssessment.list();
-      return allAssessments.filter(a => a.team_id === teamId);
+      return allAssessments.filter((a) => a.team_id === teamId);
     }
   });
 
   const calculateAverages = () => {
     if (assessments.length === 0) return null;
-    
+
     const totals = assessments.reduce((acc, a) => ({
       speed: acc.speed + (a.speed_score || 0),
       power: acc.power + (a.power_score || 0),
@@ -48,8 +48,8 @@ export default function TeamPerformanceAnalytics({ teamId, teamName }) {
 
   const getTopPerformers = () => {
     const latestAssessments = new Map();
-    
-    assessments.forEach(a => {
+
+    assessments.forEach((a) => {
       const existing = latestAssessments.get(a.player_id);
       if (!existing || new Date(a.assessment_date) > new Date(existing.assessment_date)) {
         latestAssessments.set(a.player_id, a);
@@ -114,18 +114,18 @@ Be specific and actionable.`,
   const topPerformers = getTopPerformers();
 
   const radarData = averages ? [
-    { metric: 'Speed', value: averages.speed },
-    { metric: 'Power', value: averages.power },
-    { metric: 'Endurance', value: averages.endurance },
-    { metric: 'Agility', value: averages.agility }
-  ] : [];
+  { metric: 'Speed', value: averages.speed },
+  { metric: 'Power', value: averages.power },
+  { metric: 'Endurance', value: averages.endurance },
+  { metric: 'Agility', value: averages.agility }] :
+  [];
 
   const comparisonData = [
-    { name: 'Speed', teamAvg: averages?.speed || 0, leagueAvg: 65 },
-    { name: 'Power', teamAvg: averages?.power || 0, leagueAvg: 60 },
-    { name: 'Endurance', teamAvg: averages?.endurance || 0, leagueAvg: 70 },
-    { name: 'Agility', teamAvg: averages?.agility || 0, leagueAvg: 55 }
-  ];
+  { name: 'Speed', teamAvg: averages?.speed || 0, leagueAvg: 65 },
+  { name: 'Power', teamAvg: averages?.power || 0, leagueAvg: 60 },
+  { name: 'Endurance', teamAvg: averages?.endurance || 0, leagueAvg: 70 },
+  { name: 'Agility', teamAvg: averages?.agility || 0, leagueAvg: 55 }];
+
 
   if (!averages) {
     return (
@@ -133,8 +133,8 @@ Be specific and actionable.`,
         <CardContent className="p-12 text-center">
           <p className="text-slate-500">No assessment data available for this team</p>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
@@ -221,15 +221,15 @@ Be specific and actionable.`,
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Object.entries(topPerformers).filter(([key]) => key !== 'overall').map(([category, assessment]) => (
-              <div key={category} className="p-4 bg-slate-50 rounded-xl">
+            {Object.entries(topPerformers).filter(([key]) => key !== 'overall').map(([category, assessment]) =>
+            <div key={category} className="p-4 bg-slate-50 rounded-xl">
                 <div className="text-sm font-semibold text-slate-600 capitalize mb-2">{category}</div>
                 <div className="font-bold text-slate-900">{assessment?.player_name || 'N/A'}</div>
                 <div className="text-2xl font-bold text-emerald-600 mt-1">
                   {assessment?.[`${category}_score`] || 0}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -242,54 +242,54 @@ Be specific and actionable.`,
               <Sparkles className="w-5 h-5 text-purple-600" />
               Adil's Insight
             </CardTitle>
-            <Button 
-              onClick={generateAIInsights} 
+            <Button
+              onClick={generateAIInsights}
               disabled={loadingInsights}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
+              className="bg-purple-600 hover:bg-purple-700">
+              
               {loadingInsights ? 'Analyzing...' : aiInsights ? 'Refresh' : 'Generate'}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {aiInsights ? (
-            <div className="space-y-6">
+          {aiInsights ?
+          <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-emerald-700 mb-2">💪 Team Strengths</h3>
                 <ul className="space-y-1">
-                  {aiInsights.strengths?.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-700">• {s}</li>
-                  ))}
+                  {aiInsights.strengths?.map((s, i) =>
+                <li key={i} className="text-sm text-slate-700">• {s}</li>
+                )}
                 </ul>
               </div>
               <div>
                 <h3 className="font-semibold text-orange-700 mb-2">🎯 Areas to Address</h3>
                 <ul className="space-y-1">
-                  {aiInsights.weaknesses?.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-700">• {s}</li>
-                  ))}
+                  {aiInsights.weaknesses?.map((s, i) =>
+                <li key={i} className="text-sm text-slate-700">• {s}</li>
+                )}
                 </ul>
               </div>
               <div>
                 <h3 className="font-semibold text-purple-700 mb-2">🏋️ Coaching Recommendations</h3>
                 <ul className="space-y-1">
-                  {aiInsights.recommendations?.map((s, i) => (
-                    <li key={i} className="text-sm text-slate-700">• {s}</li>
-                  ))}
+                  {aiInsights.recommendations?.map((s, i) =>
+                <li key={i} className="text-sm text-slate-700">• {s}</li>
+                )}
                 </ul>
               </div>
-              {aiInsights.position_insights && (
-                <div>
+              {aiInsights.position_insights &&
+            <div>
                   <h3 className="font-semibold text-blue-700 mb-2">⚽ Position Insights</h3>
                   <p className="text-sm text-slate-700">{aiInsights.position_insights}</p>
                 </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-slate-600 text-center py-8">Click "Generate" for AI analysis</p>
-          )}
+            }
+            </div> :
+
+          <p className="text-slate-600 text-center py-8">Click "Generate" for Adil's analysis</p>
+          }
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
