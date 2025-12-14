@@ -172,7 +172,7 @@ Return ONLY valid JSON matching this exact structure:
                   <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
                   <h3 className="font-semibold text-lg mb-2">Generate Personalized Training Plan</h3>
                   <p className="text-sm text-slate-600 mb-4">
-                    AI will analyze {player.full_name}'s performance data, skill gaps, and development goals to create a customized 4-week training program.
+                    We will analyze {player.full_name}'s performance data, skill gaps, and development goals to create a customized 4-week training program.
                   </p>
                   <Button onClick={handleGenerate} className="bg-purple-600 hover:bg-purple-700">
                     <Sparkles className="w-4 h-4 mr-2" />
