@@ -74,12 +74,12 @@ export default function DevelopmentPathwayManager({ player, assessments, evaluat
   };
 
   const generateInitialSkillMatrix = () => {
-    const positionKnowledge = POSITION_KNOWLEDGE[player.primary_position];
+    const positionKnowledge = POSITION_KNOWLEDGE[player?.primary_position];
     if (!positionKnowledge) return [];
     
     const skills = [];
     Object.entries(positionKnowledge.categories).forEach(([category, data]) => {
-      data.points.forEach(point => {
+      data.points.slice(0, 15).forEach(point => {
         skills.push({
           skill_name: point,
           current_rating: 5,

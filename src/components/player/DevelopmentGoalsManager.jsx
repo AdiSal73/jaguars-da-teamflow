@@ -307,21 +307,36 @@ export default function DevelopmentGoalsManager({ pathway, player, assessments, 
 
             {selectedCategory === 'skill' && (
               <div>
-                <Label>Select Skill from Knowledge Bank</Label>
-                <Select value={selectedSkill} onValueChange={setSelectedSkill}>
-                  <SelectTrigger><SelectValue placeholder="Choose a skill" /></SelectTrigger>
-                  <SelectContent>
+                <Label className="mb-3 block">Select Skill from Knowledge Bank</Label>
+                {positionSkills.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg bg-slate-50">
                     {positionSkills.map((skill, idx) => (
-                      <SelectItem key={idx} value={skill.skill_name}>{skill.skill_name}</SelectItem>
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setSelectedSkill(skill.skill_name); setCustomSkill(''); }}
+                        className={`p-3 rounded-lg border-2 text-left text-sm transition-all ${
+                          selectedSkill === skill.skill_name
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold shadow-md'
+                            : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
+                        }`}
+                      >
+                        {skill.skill_name}
+                      </button>
                     ))}
-                  </SelectContent>
-                </Select>
-                <div className="mt-2">
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 p-4 text-center border rounded-lg bg-slate-50">
+                    No skills in knowledge bank. Create pathway first to populate skill matrix.
+                  </p>
+                )}
+                <div className="mt-3">
                   <Label>Or Create Custom Skill</Label>
                   <Input 
                     value={customSkill} 
                     onChange={e => { setCustomSkill(e.target.value); setSelectedSkill(''); }}
                     placeholder="e.g., Improve weak foot" 
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -329,21 +344,36 @@ export default function DevelopmentGoalsManager({ pathway, player, assessments, 
 
             {selectedCategory === 'physical' && (
               <div>
-                <Label>Select Physical Attribute</Label>
-                <Select value={selectedSkill} onValueChange={setSelectedSkill}>
-                  <SelectTrigger><SelectValue placeholder="Choose attribute" /></SelectTrigger>
-                  <SelectContent>
-                    {physicalCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat} - {PHYSICAL_ASSESSMENTS[cat].description.substring(0, 60)}...
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="mb-3 block">Select Physical Attribute</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {physicalCategories.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedSkill(cat)}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        selectedSkill === cat
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                      }`}
+                    >
+                      <div className={`font-bold text-sm mb-1 ${selectedSkill === cat ? 'text-blue-900' : 'text-slate-900'}`}>
+                        {cat}
+                      </div>
+                      <div className="text-xs text-slate-600 line-clamp-2">
+                        {PHYSICAL_ASSESSMENTS[cat].description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
                 {selectedSkill && PHYSICAL_ASSESSMENTS[selectedSkill] && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg text-xs">
-                    <p className="font-semibold text-blue-900 mb-1">{selectedSkill}</p>
-                    <p className="text-blue-700">{PHYSICAL_ASSESSMENTS[selectedSkill].description}</p>
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="font-semibold text-sm text-blue-900 mb-2">{selectedSkill}</p>
+                    <p className="text-xs text-blue-800 mb-2">{PHYSICAL_ASSESSMENTS[selectedSkill].description}</p>
+                    <div className="text-xs text-blue-700">
+                      <div className="font-semibold mb-1">Importance:</div>
+                      <p>{PHYSICAL_ASSESSMENTS[selectedSkill].importance}</p>
+                    </div>
                   </div>
                 )}
               </div>
