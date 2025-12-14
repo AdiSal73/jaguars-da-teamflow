@@ -69,6 +69,7 @@ export const POSITION_KNOWLEDGE = {
     categories: {
       attacking_organized: {
         title: 'Attacking Organized',
+        description: 'The goalkeeper\'s role in initiating attacks, playing out from the back, and supporting the build-up phase. Critical for modern possession-based systems.',
         points: [
           'Initiate build up and possession forward',
           'Help break initial lines',
@@ -81,6 +82,7 @@ export const POSITION_KNOWLEDGE = {
       },
       attacking_final_third: {
         title: 'Attacking Final Third',
+        description: 'Supporting attacks from deep, maintaining team shape, and providing defensive cover when the team is in attacking positions.',
         points: [
           'Help to organize and keep ball in attacking half',
           'Move and support behind the ball',
@@ -101,6 +103,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_organized: {
         title: 'Defending Organized',
+        description: 'Commanding the defensive area, organizing the back line, managing space behind defenders, and communicating to maintain defensive shape.',
         points: [
           'Helping Defensive Organization',
           'Recognizing Threats- Space or Players',
@@ -116,6 +119,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_final_third: {
         title: 'Defending Final Third',
+        description: 'Shot-stopping, dealing with crosses, 1v1 situations, and organizing the defensive box. The last line of defense.',
         points: [
           'Controlling the Box',
           'Defending Crosses, long passes and 1v1 Situations',
@@ -128,6 +132,7 @@ export const POSITION_KNOWLEDGE = {
       },
       defending_transition: {
         title: 'Defending Transition',
+        description: 'Rapid decision-making when possession is lost, organizing defensive recovery, and protecting vulnerable spaces during transitions.',
         points: [
           'Direct teammates and anticipate threats',
           'Counter Measures',

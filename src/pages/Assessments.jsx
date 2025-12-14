@@ -6,6 +6,7 @@ import { createPageUrl } from '@/utils';
 import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import BulkImportAssessments from '../components/assessments/BulkImportAssessments';
 import CleanAssessmentsDialog from '../components/assessments/CleanAssessmentsDialog';
+import AssessmentAnalytics from '../components/assessments/AssessmentAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -435,9 +436,14 @@ export default function Assessments() {
 
       <Tabs defaultValue="cards" className="w-full">
         <TabsList>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="cards">Card View</TabsTrigger>
           <TabsTrigger value="table">Table View</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="analytics">
+          <AssessmentAnalytics assessments={assessments} players={players} />
+        </TabsContent>
 
         <TabsContent value="cards">
           {filteredAssessments.length === 0 ? (
