@@ -19,10 +19,6 @@ export default function BookCoach() {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [bookingNotes, setBookingNotes] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
-  const [selectedLocationId, setSelectedLocationId] = useState('');
-  const [newLocationName, setNewLocationName] = useState('');
-  const [newLocationAddress, setNewLocationAddress] = useState('');
-  const [showNewLocationForm, setShowNewLocationForm] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const { data: user } = useQuery({
@@ -58,17 +54,6 @@ export default function BookCoach() {
     return players.filter(p => p.email === user?.email);
   }, [players, user]);
 
-  const createLocationMutation = useMutation({
-    mutationFn: (data) => base44.entities.Location.create(data),
-    onSuccess: (newLocation) => {
-      queryClient.invalidateQueries(['locations']);
-      setSelectedLocationId(newLocation.id);
-      setShowNewLocationForm(false);
-      setNewLocationName('');
-      setNewLocationAddress('');
-    }
-  });
-
   const createBookingMutation = useMutation({
     mutationFn: (data) => base44.entities.Booking.create(data),
     onSuccess: () => {
@@ -79,7 +64,6 @@ export default function BookCoach() {
         setBookingSuccess(false);
         setSelectedSlot(null);
         setBookingNotes('');
-        setSelectedLocationId('');
       }, 2000);
     }
   });
@@ -145,7 +129,8 @@ export default function BookCoach() {
               start_time: startTimeStr,
               end_time: endTimeStr,
               service_name: serviceName,
-              duration: service.duration
+              duration: service.duration,
+              location_id: slot.location_id
             });
           }
           
@@ -187,14 +172,6 @@ export default function BookCoach() {
     return dates;
   }, [selectedCoach, calendarDays, bookings]);
 
-  const handleCreateLocation = () => {
-    if (!newLocationName || !newLocationAddress) return;
-    createLocationMutation.mutate({
-      name: newLocationName,
-      address: newLocationAddress
-    });
-  };
-
   const handleBookSlot = () => {
     const player = myPlayers.find(p => p.id === selectedPlayerId) || myPlayers[0];
     createBookingMutation.mutate({
@@ -203,7 +180,7 @@ export default function BookCoach() {
       player_id: player?.id,
       player_name: player?.full_name,
       parent_id: user?.id,
-      location_id: selectedLocationId,
+      location_id: selectedSlot.location_id,
       service_name: selectedSlot.service_name,
       booking_date: selectedDate.toISOString().split('T')[0],
       start_time: selectedSlot.start_time,
@@ -212,6 +189,11 @@ export default function BookCoach() {
       status: 'confirmed',
       notes: bookingNotes
     });
+  };
+
+  const getLocationName = (locationId) => {
+    const location = locations.find(l => l.id === locationId);
+    return location ? `${location.name} - ${location.address}` : 'Location TBD';
   };
 
   return (
@@ -325,18 +307,24 @@ export default function BookCoach() {
                     <button
                       key={idx}
                       onClick={() => { setSelectedSlot(slot); setShowBookingDialog(true); }}
-                      className={`w-full p-4 rounded-lg border-2 flex items-center justify-between transition-all hover:shadow-md ${
+                      className={`w-full p-4 rounded-lg border-2 transition-all hover:shadow-md ${
                         selectedSlot === slot 
                           ? 'border-emerald-500 bg-emerald-50' 
                           : 'border-slate-200 hover:border-emerald-300'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                        <span className="font-medium">{formatTimeDisplay(slot.start_time)}</span>
-                        <Badge variant="outline">{slot.service_name} ({slot.duration} min)</Badge>
+                      <div className="flex flex-col gap-2 text-left">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                            <span className="font-medium">{formatTimeDisplay(slot.start_time)}</span>
+                          </div>
+                          <Badge variant="outline">{slot.service_name} ({slot.duration} min)</Badge>
+                        </div>
+                        <div className="text-xs text-slate-600 ml-5">
+                          {getLocationName(slot.location_id)}
+                        </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
                     </button>
                   ))}
                 </div>
@@ -378,6 +366,10 @@ export default function BookCoach() {
                     <span className="text-slate-600">Time</span>
                     <span className="font-medium">{selectedSlot && formatTimeDisplay(selectedSlot.start_time)}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Location</span>
+                    <span className="font-medium text-right text-sm">{selectedSlot && getLocationName(selectedSlot.location_id)}</span>
+                  </div>
                 </div>
                 
                 {myPlayers.length > 1 && (
@@ -395,48 +387,6 @@ export default function BookCoach() {
                 )}
                 
                 <div>
-                  <Label className="mb-2 block">Location *</Label>
-                  {!showNewLocationForm ? (
-                    <div className="space-y-2">
-                      <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
-                        <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
-                        <SelectContent>
-                          {locations.map(loc => (
-                            <SelectItem key={loc.id} value={loc.id}>
-                              {loc.name} - {loc.address}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="link" size="sm" onClick={() => setShowNewLocationForm(true)} className="p-0 h-auto">
-                        + Add new location
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 p-3 border rounded-lg">
-                      <Input 
-                        placeholder="Location name *" 
-                        value={newLocationName}
-                        onChange={(e) => setNewLocationName(e.target.value)}
-                      />
-                      <Input 
-                        placeholder="Address *" 
-                        value={newLocationAddress}
-                        onChange={(e) => setNewLocationAddress(e.target.value)}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleCreateLocation} disabled={!newLocationName || !newLocationAddress}>
-                          Create
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setShowNewLocationForm(false)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
                   <Label className="mb-2 block">Notes (optional)</Label>
                   <Textarea
                     value={bookingNotes}
@@ -448,7 +398,7 @@ export default function BookCoach() {
                 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">Cancel</Button>
-                  <Button onClick={handleBookSlot} disabled={!selectedLocationId} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={handleBookSlot} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                     Confirm Booking
                   </Button>
                 </div>

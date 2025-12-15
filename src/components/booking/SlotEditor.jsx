@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { X, Plus, Clock, Calendar, Repeat } from 'lucide-react';
+import { X, Plus, Clock, Calendar, Repeat, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,13 +9,14 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
+export default function SlotEditor({ slot, services = [], locations = [], onSave, onCancel }) {
   const [formData, setFormData] = useState(slot || {
     id: Date.now().toString(),
     day_of_week: 1,
     start_time: '09:00',
     end_time: '17:00',
     services: [],
+    location_id: '',
     buffer_before: 0,
     buffer_after: 0,
     is_recurring: true,
@@ -55,6 +56,10 @@ export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
     }
     if (formData.services.length === 0) {
       alert('Please select at least one service');
+      return;
+    }
+    if (!formData.location_id) {
+      alert('Please select a location');
       return;
     }
     onSave(formData);
@@ -120,6 +125,32 @@ export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
               onChange={(e) => setFormData({...formData, end_time: e.target.value})}
             />
           </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <Label className="flex items-center gap-2 mb-2">
+            <MapPin className="w-4 h-4 text-emerald-600" />
+            Location *
+          </Label>
+          <Select 
+            value={formData.location_id}
+            onValueChange={(value) => setFormData({...formData, location_id: value})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a location" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map(loc => (
+                <SelectItem key={loc.id} value={loc.id}>
+                  {loc.name} - {loc.address}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {locations.length === 0 && (
+            <p className="text-xs text-red-600 mt-1">No locations available. Please create locations first.</p>
+          )}
         </div>
 
         {/* Services */}
@@ -220,7 +251,7 @@ export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
           <Button variant="outline" onClick={onCancel} className="flex-1">
             Cancel
           </Button>
-          <Button onClick={handleSave} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={handleSave} disabled={!formData.location_id} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
             Save Slot
           </Button>
         </div>

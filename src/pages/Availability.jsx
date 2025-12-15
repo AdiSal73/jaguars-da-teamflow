@@ -37,6 +37,11 @@ export default function Availability() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => base44.entities.Location.list()
+  });
+
 
   const currentCoach = coaches.find(c => c.email === user?.email);
 
@@ -185,6 +190,11 @@ export default function Availability() {
 
   const slotsByDay = groupSlotsByDay();
 
+  const getLocationName = (locationId) => {
+    const location = locations.find(l => l.id === locationId);
+    return location ? `${location.name}` : 'No location';
+  };
+
 
   if (!user) return null;
 
@@ -286,6 +296,11 @@ export default function Availability() {
                                           Recurring
                                         </Badge>
                                       )}
+                                      {slot.location_id && (
+                                        <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                          {getLocationName(slot.location_id)}
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="flex flex-wrap gap-1 mb-2">
                                       {slot.services?.map(serviceName => {
@@ -349,6 +364,7 @@ export default function Availability() {
                   <ul className="text-sm text-slate-700 space-y-1">
                     <li>• Add time slots for each day you're available</li>
                     <li>• Select which services are bookable during each slot</li>
+                    <li>• Set the location for each availability slot</li>
                     <li>• Set buffers to add padding between sessions</li>
                     <li>• Make slots recurring for consistent weekly availability</li>
                     <li>• Click on dates to add blackouts</li>
@@ -415,6 +431,7 @@ export default function Availability() {
           <SlotEditor
             slot={editingSlot}
             services={services}
+            locations={locations}
             onSave={handleSaveSlot}
             onCancel={() => { setShowSlotDialog(false); setEditingSlot(null); }}
           />
@@ -472,4 +489,3 @@ export default function Availability() {
     </div>
   );
 }
-
