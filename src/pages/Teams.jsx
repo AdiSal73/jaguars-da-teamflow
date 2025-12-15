@@ -373,17 +373,19 @@ export default function Teams() {
                         <Users className="w-3 h-3" />{teamPlayers.length}
                       </span>
                     </div>
-                    {teamCoaches.length > 0 && (
-                      <div className={`pt-2 border-t ${isMaleTeam ? 'border-slate-700' : 'border-slate-100'}`}>
-                        <div className={`text-[10px] mb-1 ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>Coaches:</div>
-                        {teamCoaches.slice(0, 2).map(coach => (
+                    <div className={`pt-2 border-t ${isMaleTeam ? 'border-slate-700' : 'border-slate-100'}`}>
+                      <div className={`text-[10px] mb-1 ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>Coaches:</div>
+                      {teamCoaches.length > 0 ? (
+                        teamCoaches.slice(0, 2).map(coach => (
                           <div key={coach.id} className="flex items-center gap-1 text-xs mb-1">
                             <User className={`w-3 h-3 ${isMaleTeam ? 'text-emerald-400' : 'text-emerald-600'}`} />
                             <span className={`truncate ${isMaleTeam ? 'text-slate-300' : 'text-slate-700'}`}>{coach.full_name}</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                      ) : (
+                        <div className={`text-xs italic ${isMaleTeam ? 'text-slate-500' : 'text-slate-400'}`}>No coaches assigned</div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
