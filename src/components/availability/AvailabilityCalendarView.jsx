@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, Ban, Calendar, Copy } fr
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import LocationSelector from '../booking/LocationSelector';
 
 export default function AvailabilityCalendarView({ 
   slots = [], 
@@ -33,6 +34,7 @@ export default function AvailabilityCalendarView({
     start_time: '09:00',
     end_time: '17:00',
     services: [],
+    location_id: '',
     is_recurring: false,
     buffer_before: 0,
     buffer_after: 0,
@@ -54,14 +56,11 @@ export default function AvailabilityCalendarView({
     const dateStr = format(date, 'yyyy-MM-dd');
     
     return slots.filter(slot => {
-      // Check for specific date slots first (non-recurring or single-date)
       if (slot.specific_date === dateStr) {
         return true;
       }
       
-      // Check recurring slots
       if (slot.is_recurring && slot.day_of_week === dayOfWeek) {
-        // Check date range
         if (slot.recurring_start_date && isBefore(date, parseISO(slot.recurring_start_date))) {
           return false;
         }
@@ -71,7 +70,6 @@ export default function AvailabilityCalendarView({
         return true;
       }
       
-      // Legacy support for day_of_week without recurring flag
       if (!slot.is_recurring && !slot.specific_date && slot.day_of_week === dayOfWeek) {
         return true;
       }
@@ -102,6 +100,7 @@ export default function AvailabilityCalendarView({
           start_time: '09:00',
           end_time: '17:00',
           services: [],
+          location_id: '',
           is_recurring: false,
           buffer_before: 0,
           buffer_after: 0,
@@ -125,6 +124,7 @@ export default function AvailabilityCalendarView({
     setSlotForm({
       ...slot,
       services: slot.services || [],
+      location_id: slot.location_id || '',
       recurring_start_date: slot.recurring_start_date || '',
       recurring_end_date: slot.recurring_end_date || ''
     });
@@ -146,7 +146,6 @@ export default function AvailabilityCalendarView({
       day_of_week: selectedDate ? getDay(selectedDate) : slotForm.day_of_week
     };
 
-    // If not recurring, set specific_date instead
     if (!slotForm.is_recurring) {
       slotData.specific_date = dateStr;
       delete slotData.recurring_start_date;
@@ -171,6 +170,7 @@ export default function AvailabilityCalendarView({
       start_time: '09:00',
       end_time: '17:00',
       services: [],
+      location_id: '',
       is_recurring: false,
       buffer_before: 0,
       buffer_after: 0,
@@ -206,12 +206,12 @@ export default function AvailabilityCalendarView({
     const newDayOfWeek = getDay(targetDate);
     const dateStr = format(targetDate, 'yyyy-MM-dd');
     
-    // Create a NEW single-date slot (not modify the original)
     const newSlot = {
       id: `slot-${Date.now()}`,
       start_time: draggedSlot.start_time,
       end_time: draggedSlot.end_time,
       services: draggedSlot.services || [],
+      location_id: draggedSlot.location_id || '',
       buffer_before: draggedSlot.buffer_before || 0,
       buffer_after: draggedSlot.buffer_after || 0,
       day_of_week: newDayOfWeek,
@@ -245,7 +245,6 @@ export default function AvailabilityCalendarView({
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Legend */}
         <div className="flex flex-wrap gap-4 mb-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-emerald-100 border border-emerald-300 rounded"></div>
@@ -265,16 +264,13 @@ export default function AvailabilityCalendarView({
           </div>
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-1">
-          {/* Header */}
           {days.map(day => (
             <div key={day} className="text-center text-sm font-semibold text-slate-600 py-2">
               {day}
             </div>
           ))}
 
-          {/* Days */}
           {calendarDays.map((day, idx) => {
             const daySlots = getSlotsForDay(day);
             const isBlackout = isBlackoutDate(day);
@@ -347,7 +343,6 @@ export default function AvailabilityCalendarView({
         </div>
       </CardContent>
 
-      {/* Add/Edit Slot Dialog */}
       <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -410,6 +405,15 @@ export default function AvailabilityCalendarView({
             )}
 
             <div>
+              <Label className="mb-2 block">Location *</Label>
+              <LocationSelector
+                value={slotForm.location_id}
+                onChange={(locationId) => setSlotForm({...slotForm, location_id: locationId})}
+                required
+              />
+            </div>
+
+            <div>
               <Label className="mb-2 block">Services Available</Label>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {services.map(service => (
@@ -459,14 +463,13 @@ export default function AvailabilityCalendarView({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSlotDialog(false)}>Cancel</Button>
-            <Button onClick={handleSaveSlot} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleSaveSlot} disabled={!slotForm.location_id} className="bg-emerald-600 hover:bg-emerald-700">
               {editingSlot ? 'Update Slot' : 'Add Slot'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { X, Plus, Clock, Calendar, Repeat, MapPin } from 'lucide-react';
+import { X, Plus, Clock, Calendar, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import LocationSelector from './LocationSelector';
 
-export default function SlotEditor({ slot, services = [], locations = [], onSave, onCancel }) {
+export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
   const [formData, setFormData] = useState(slot || {
     id: Date.now().toString(),
     day_of_week: 1,
@@ -84,21 +84,17 @@ export default function SlotEditor({ slot, services = [], locations = [], onSave
             <Calendar className="w-4 h-4 text-emerald-600" />
             Day of Week
           </Label>
-          <Select 
-            value={formData.day_of_week.toString()} 
-            onValueChange={(value) => setFormData({...formData, day_of_week: parseInt(value)})}
+          <select
+            value={formData.day_of_week}
+            onChange={(e) => setFormData({...formData, day_of_week: parseInt(e.target.value)})}
+            className="w-full h-10 border border-slate-300 rounded-md px-3"
           >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {daysOfWeek.map(day => (
-                <SelectItem key={day.value} value={day.value.toString()}>
-                  {day.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {daysOfWeek.map(day => (
+              <option key={day.value} value={day.value}>
+                {day.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Time Range */}
@@ -129,28 +125,12 @@ export default function SlotEditor({ slot, services = [], locations = [], onSave
 
         {/* Location */}
         <div>
-          <Label className="flex items-center gap-2 mb-2">
-            <MapPin className="w-4 h-4 text-emerald-600" />
-            Location *
-          </Label>
-          <Select 
+          <Label className="mb-2 block">Location *</Label>
+          <LocationSelector
             value={formData.location_id}
-            onValueChange={(value) => setFormData({...formData, location_id: value})}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a location" />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map(loc => (
-                <SelectItem key={loc.id} value={loc.id}>
-                  {loc.name} - {loc.address}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {locations.length === 0 && (
-            <p className="text-xs text-red-600 mt-1">No locations available. Please create locations first.</p>
-          )}
+            onChange={(locationId) => setFormData({...formData, location_id: locationId})}
+            required
+          />
         </div>
 
         {/* Services */}
