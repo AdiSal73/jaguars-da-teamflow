@@ -232,7 +232,7 @@ export default function PlayerDashboard() {
         const removedParentEmails = currentParentEmails.filter(email => !data.parent_emails.includes(email));
 
         for (const email of removedParentEmails) {
-          const existingUser = allUsers.find(u => u.email === email && u.role === 'parent');
+          const existingUser = allUsers.find(u => u.email === email);
           if (existingUser) {
             const updatedPlayerIds = (existingUser.player_ids || []).filter(id => id !== playerId);
             await base44.entities.User.update(existingUser.id, { player_ids: updatedPlayerIds });
@@ -329,7 +329,7 @@ export default function PlayerDashboard() {
         type: 'goal',
         title: 'Coach Feedback on Goal',
         message: `${currentUser?.full_name} provided feedback on ${player.full_name}'s goal: ${goal.description}\n\nFeedback: ${feedback}`,
-        link: `/player-dashboard?id=${playerId}`
+        link: `${createPageUrl('PlayerDashboard')}?id=${playerId}`
       });
     }
 
