@@ -814,7 +814,7 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Tryout Info - Only visible to admin/coach */}
-        {isAdminOrCoach && (
+        {(user?.role === 'admin' || coaches.some(c => c.email === user?.email)) && (
         <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b">
             <CardTitle className="text-base font-bold text-slate-900">Tryout Info</CardTitle>
