@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, ChevronLeft, ChevronRight, User, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, ChevronLeft, ChevronRight, User, CheckCircle, Share2, Copy, Mail, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function BookCoach() {
   const queryClient = useQueryClient();
@@ -20,6 +21,8 @@ export default function BookCoach() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -95,9 +98,19 @@ export default function BookCoach() {
     const dateStr = date.toISOString().split('T')[0];
     
     const slots = selectedCoach.availability_slots?.filter(slot => {
+      // Check if specific date or recurring
+      if (slot.specific_date) {
+        return slot.specific_date === dateStr;
+      }
+      
       if (slot.day_of_week !== dayOfWeek) return false;
-      if (slot.recurring_start_date && date < new Date(slot.recurring_start_date)) return false;
-      if (slot.recurring_end_date && date > new Date(slot.recurring_end_date)) return false;
+      
+      // Check recurring date range
+      if (slot.is_recurring) {
+        if (slot.recurring_start_date && date < new Date(slot.recurring_start_date)) return false;
+        if (slot.recurring_end_date && date > new Date(slot.recurring_end_date)) return false;
+      }
+      
       return true;
     }) || [];
 
@@ -111,18 +124,27 @@ export default function BookCoach() {
         
         let currentTime = parseTime(slot.start_time);
         const endTime = parseTime(slot.end_time);
+        const bufferBefore = slot.buffer_before || 0;
+        const bufferAfter = slot.buffer_after || 0;
         
         while (currentTime + service.duration <= endTime) {
           const startTimeStr = formatTime(currentTime);
           const endTimeStr = formatTime(currentTime + service.duration);
           
-          // Check if slot is already booked
-          const isBooked = bookings.some(b => 
-            b.coach_id === selectedCoach.id && 
-            b.booking_date === dateStr && 
-            b.start_time === startTimeStr &&
-            b.status !== 'cancelled'
-          );
+          // Check if slot is already booked or conflicts with buffer
+          const isBooked = bookings.some(b => {
+            if (b.coach_id !== selectedCoach.id || b.booking_date !== dateStr || b.status === 'cancelled') {
+              return false;
+            }
+            
+            const bookingStart = parseTime(b.start_time);
+            const bookingEnd = parseTime(b.end_time);
+            const slotStart = currentTime;
+            const slotEnd = currentTime + service.duration;
+            
+            // Check overlap including buffers
+            return !(slotEnd + bufferAfter <= bookingStart || slotStart - bufferBefore >= bookingEnd);
+          });
           
           if (!isBooked) {
             timeSlots.push({
@@ -134,7 +156,7 @@ export default function BookCoach() {
             });
           }
           
-          currentTime += service.duration + (slot.buffer_after || 0);
+          currentTime += service.duration + bufferAfter;
         }
       });
     });
@@ -196,11 +218,35 @@ export default function BookCoach() {
     return location ? `${location.name} - ${location.address}` : 'Location TBD';
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Booking page link copied');
+  };
+
+  const handleShareEmail = async () => {
+    if (!shareEmail) return;
+    
+    await base44.integrations.Core.SendEmail({
+      to: shareEmail,
+      subject: 'Book a Session with Our Coaches',
+      body: `You've been invited to book a coaching session.\n\nClick here to view available times and book: ${window.location.href}\n\nSelect your preferred coach, date, and time to get started.`
+    });
+    
+    toast.success('Invitation sent');
+    setShareEmail('');
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Book a Session</h1>
-        <p className="text-slate-600 mt-1">Select a coach, date, and time slot to book</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Book a Session</h1>
+          <p className="text-slate-600 mt-1">Select a coach, date, and time slot to book</p>
+        </div>
+        <Button variant="outline" onClick={() => setShowShareDialog(true)}>
+          <Share2 className="w-4 h-4 mr-2" />
+          Share Booking Page
+        </Button>
       </div>
 
       {/* Coach Selection */}
@@ -301,29 +347,36 @@ export default function BookCoach() {
                   <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p>Select a date to view available times</p>
                 </div>
+              ) : getAvailableSlotsForDate(selectedDate).length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>No available time slots for this date</p>
+                </div>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
                   {getAvailableSlotsForDate(selectedDate).map((slot, idx) => (
                     <button
                       key={idx}
                       onClick={() => { setSelectedSlot(slot); setShowBookingDialog(true); }}
-                      className={`w-full p-4 rounded-lg border-2 transition-all hover:shadow-md ${
+                      className={`p-3 rounded-lg border-2 transition-all hover:shadow-md ${
                         selectedSlot === slot 
                           ? 'border-emerald-500 bg-emerald-50' 
                           : 'border-slate-200 hover:border-emerald-300'
                       }`}
                     >
-                      <div className="flex flex-col gap-2 text-left">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                            <span className="font-medium">{formatTimeDisplay(slot.start_time)}</span>
-                          </div>
-                          <Badge variant="outline">{slot.service_name} ({slot.duration} min)</Badge>
+                      <div className="text-left space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3 h-3 text-emerald-600" />
+                          <span className="font-semibold text-sm">{formatTimeDisplay(slot.start_time)}</span>
                         </div>
-                        <div className="text-xs text-slate-600 ml-5">
-                          {getLocationName(slot.location_id)}
+                        <div className="text-xs text-slate-600">
+                          {slot.service_name}
                         </div>
+                        <div className="text-xs text-slate-500 flex items-start gap-1">
+                          <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                          <span className="line-clamp-2">{getLocationName(slot.location_id)}</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">{slot.duration} min</Badge>
                       </div>
                     </button>
                   ))}
@@ -333,6 +386,46 @@ export default function BookCoach() {
           </Card>
         </div>
       )}
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-emerald-600" />
+              Share Booking Page
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Copy Link</Label>
+              <div className="flex gap-2 mt-2">
+                <Input value={window.location.href} readOnly className="flex-1 bg-slate-50 text-xs" />
+                <Button onClick={handleCopyLink} variant="outline">
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Share via Email</Label>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  type="email"
+                  value={shareEmail}
+                  onChange={(e) => setShareEmail(e.target.value)}
+                  placeholder="recipient@email.com"
+                  className="flex-1"
+                />
+                <Button onClick={handleShareEmail} disabled={!shareEmail} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Mail className="w-4 h-4 mr-1" />
+                  Send
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Booking Confirmation Dialog */}
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
@@ -401,6 +494,10 @@ export default function BookCoach() {
                   <Button onClick={handleBookSlot} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                     Confirm Booking
                   </Button>
+                </div>
+                
+                <div className="pt-3 border-t text-xs text-slate-500 text-center">
+                  After booking, you'll receive a calendar invite to sync with Google/Apple Calendar
                 </div>
               </div>
             </>
