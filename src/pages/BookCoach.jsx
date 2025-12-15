@@ -179,15 +179,14 @@ export default function BookCoach() {
             return (bufferedSlotStart < bookingEnd && bufferedSlotEnd > bookingStart);
           });
           
-          if (!isBooked) {
-            timeSlots.push({
-              start_time: formatTime(slotStart),
-              end_time: formatTime(slotEnd),
-              service_name: serviceName,
-              duration: service.duration,
-              location_id: slot.location_id
-            });
-          }
+          timeSlots.push({
+            start_time: formatTime(slotStart),
+            end_time: formatTime(slotEnd),
+            service_name: serviceName,
+            duration: service.duration,
+            location_id: slot.location_id,
+            isBooked
+          });
           
           currentTime += service.duration + bufferAfter;
         }
@@ -411,22 +410,30 @@ export default function BookCoach() {
                     {getAvailableSlotsForDate(selectedDate).map((slot, idx) => (
                       <button
                         key={idx}
-                        onClick={() => { setSelectedSlot(slot); setShowBookingDialog(true); }}
-                        className="group p-4 rounded-xl border-2 transition-all hover:shadow-lg hover:-translate-y-1 text-left bg-white border-slate-200 hover:border-emerald-300"
+                        onClick={() => { if (!slot.isBooked) { setSelectedSlot(slot); setShowBookingDialog(true); } }}
+                        disabled={slot.isBooked}
+                        className={`group p-4 rounded-xl border-2 transition-all text-left ${
+                          slot.isBooked 
+                            ? 'bg-red-50 border-red-200 cursor-not-allowed opacity-75' 
+                            : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1'
+                        }`}
                       >
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-emerald-600" />
-                            <span className="font-bold text-lg text-slate-900">{formatTimeDisplay(slot.start_time)}</span>
+                            <Clock className={`w-4 h-4 ${slot.isBooked ? 'text-red-600' : 'text-emerald-600'}`} />
+                            <span className={`font-bold text-lg ${slot.isBooked ? 'text-slate-900 line-through' : 'text-slate-900'}`}>
+                              {formatTimeDisplay(slot.start_time)}
+                            </span>
+                            {slot.isBooked && <Badge className="bg-red-500 text-white text-[10px]">Booked</Badge>}
                           </div>
-                          <div className="text-sm font-medium text-slate-700">
+                          <div className={`text-sm font-medium ${slot.isBooked ? 'text-slate-700' : 'text-slate-700'}`}>
                             {slot.service_name}
                           </div>
                           <div className="flex items-start gap-1 text-xs text-slate-500">
                             <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
                             <span className="line-clamp-2">{getLocationName(slot.location_id)}</span>
                           </div>
-                          <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                          <Badge variant="outline" className={`text-[10px] ${slot.isBooked ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
                             {slot.duration} min
                           </Badge>
                         </div>
