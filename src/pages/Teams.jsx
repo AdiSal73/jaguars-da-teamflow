@@ -184,7 +184,15 @@ export default function Teams() {
   const actualTeams = teams.filter(team => team.name && team.age_group);
 
   const filteredTeams = useMemo(() => {
-    let result = actualTeams.filter(team => {
+    let teamList = actualTeams;
+    
+    // Coaches only see their assigned teams
+    if (currentCoach && user?.role !== 'admin') {
+      const coachTeamIds = currentCoach.team_ids || [];
+      teamList = teamList.filter(t => coachTeamIds.includes(t.id));
+    }
+    
+    let result = teamList.filter(team => {
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
       if (filterLeague !== 'all' && team.league !== filterLeague) return false;
       if (filterBranch !== 'all' && team.branch !== filterBranch) return false;
@@ -215,7 +223,7 @@ export default function Teams() {
     });
 
     return result;
-  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterGender, filterCoach, coaches, sortField, sortDirection, players]);
+  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))];
