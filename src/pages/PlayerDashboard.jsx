@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -177,7 +176,7 @@ export default function PlayerDashboard() {
   });
 
   const assignedParents = allUsers.filter(u => 
-    u.role === 'parent' && (u.player_ids || []).includes(playerId)
+    (u.player_ids || []).includes(playerId)
   );
 
   const currentAssessment = assessments[assessmentIndex] || null;
@@ -250,16 +249,6 @@ export default function PlayerDashboard() {
                 player_ids: [...currentPlayerIds, playerId]
               });
             }
-            if (existingUser.role !== 'parent') { // Promote user to parent if not already
-              await base44.entities.User.update(existingUser.id, { role: 'parent' });
-            }
-          } else {
-            // If user doesn't exist, create a basic parent account.
-            // A proper user management flow might involve inviting them,
-            // but for automatic linking, a basic account is needed.
-            // For now, assume users are managed elsewhere or this is only for existing users.
-            // Alternatively, create a placeholder user:
-            // await base44.entities.User.create({ email: email, role: 'parent', player_ids: [playerId], full_name: 'Parent' });
           }
         }
       }

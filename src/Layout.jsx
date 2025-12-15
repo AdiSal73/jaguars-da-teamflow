@@ -51,9 +51,10 @@ export default function Layout({ children, currentPageName }) {
   const getUserRole = () => {
     if (!user) return null;
     if (user.role === 'admin') return 'admin';
-    if (user.role === 'parent') return 'parent';
     const isCoach = coaches.find((c) => c.email === user.email);
     if (isCoach) return 'coach';
+    // Check if user is a parent (has player_ids array with values)
+    if (user.player_ids && user.player_ids.length > 0) return 'parent';
     return 'user';
   };
 

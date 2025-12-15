@@ -60,7 +60,8 @@ export default function BookCoach() {
   // Get players for this parent/user
   const myPlayers = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'parent' && user.player_ids) {
+    // Check if user has linked players (is a parent)
+    if (user.player_ids && user.player_ids.length > 0) {
       return players.filter(p => user.player_ids.includes(p.id));
     }
     return players.filter(p => p.email === user.email);
