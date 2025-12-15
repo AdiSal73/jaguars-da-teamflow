@@ -52,19 +52,28 @@ export default function Layout({ children, currentPageName }) {
     if (!user) return null;
     if (user.role === 'admin') return 'admin';
     const isCoach = coaches.find((c) => c.email === user.email);
-    if (isCoach) return 'coach';
+    if (isCoach) return isCoach;
     // Check if user is a parent (has player_ids array with values)
     if (user.player_ids && user.player_ids.length > 0) return 'parent';
     return 'user';
   };
 
   const userRole = getUserRole();
+  const currentCoach = typeof userRole === 'object' ? userRole : null;
+  const roleType = currentCoach ? 'coach' : userRole;
 
   React.useEffect(() => {
-    if (userRole && location.pathname === '/') {
+    if (roleType && location.pathname === '/') {
       navigate(createPageUrl('Messages'));
     }
-  }, [userRole, location.pathname, navigate]);
+  }, [roleType, location.pathname, navigate]);
+
+  const getCoachTeamIds = () => {
+    if (!currentCoach || !currentCoach.team_ids) return [];
+    return currentCoach.team_ids;
+  };
+
+  const coachTeamIds = getCoachTeamIds();
 
   const navigationItems = [
     {
@@ -101,15 +110,13 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Tryouts",
       icon: TrendingUp,
-      roles: ["admin", "coach"],
+      roles: ["admin"],
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Team Assignments", url: createPageUrl("TeamTryout") },
         { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
         { title: "Depth Chart", url: createPageUrl("FormationView") },
         { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
-        { title: "Assessments", url: createPageUrl("Assessments") },
-        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
         { title: "Advanced Analytics", url: createPageUrl("AdvancedAnalytics") }
       ]
     },
@@ -122,14 +129,34 @@ export default function Layout({ children, currentPageName }) {
         { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "My Availability", url: createPageUrl("Availability") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
+        { title: "Assessments", url: createPageUrl("Assessments") },
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+        { title: "Formation View", url: createPageUrl("FormationView") },
         { title: "Fitness Resources", url: createPageUrl("FitnessResources") }
       ]
     },
     {
       title: "Player Profile",
-      url: createPageUrl("PlayerDashboard"),
       icon: Activity,
-      roles: ["user", "parent"]
+      roles: ["user"],
+      onClick: () => {
+        const currentPlayer = players.find((p) => p.email === user.email);
+        if (currentPlayer) {
+          navigate(createPageUrl('PlayerDashboard', `id=${currentPlayer.id}`));
+        }
+      }
+    },
+    {
+      title: "My Players",
+      icon: Users,
+      roles: ["parent"],
+      submenu: (user?.player_ids || []).map(playerId => {
+        const player = players.find(p => p.id === playerId);
+        return {
+          title: player?.full_name || 'Player',
+          url: createPageUrl('PlayerDashboard', `id=${playerId}`)
+        };
+      })
     },
     {
       title: "Book Session",
@@ -158,13 +185,13 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const filteredNavItems = navigationItems.filter((item) =>
-    userRole && item.roles.includes(userRole)
+    roleType && item.roles.includes(roleType)
   );
 
   const isActive = (url) => location.pathname === url;
   const isSubmenuActive = (submenu) => submenu?.some((item) => location.pathname === item.url);
 
-  if (!user || !userRole) {
+  if (!user || !roleType) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-pulse flex items-center gap-3">
@@ -221,6 +248,16 @@ export default function Layout({ children, currentPageName }) {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                ) : item.onClick ? (
+                  <Button
+                    key={item.title}
+                    variant="ghost"
+                    onClick={item.onClick}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="font-medium text-sm">{item.title}</span>
+                  </Button>
                 ) : (
                   <Link key={item.title} to={item.url}>
                     <Button
@@ -250,19 +287,21 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                     <div className="hidden md:block text-left">
                       <p className="text-sm font-medium text-slate-900">{user?.full_name || 'User'}</p>
-                      <p className="text-xs text-slate-500 capitalize">{userRole}</p>
+                      <p className="text-xs text-slate-500 capitalize">{roleType}</p>
                     </div>
                     <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => navigate(createPageUrl('UserManagement'))}
-                    className="text-slate-600"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
+                  {roleType === 'admin' && (
+                    <DropdownMenuItem
+                      onClick={() => navigate(createPageUrl('UserManagement'))}
+                      className="text-slate-600"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => base44.auth.logout()}
@@ -306,7 +345,7 @@ export default function Layout({ children, currentPageName }) {
                       <div className="ml-6 pb-2 space-y-1">
                         {item.submenu.map((subItem) => (
                           <Link
-                            key={subItem.title}
+                            key={subItem.title || subItem.url}
                             to={subItem.url}
                             onClick={() => setMobileMenuOpen(false)}
                             className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
@@ -321,6 +360,15 @@ export default function Layout({ children, currentPageName }) {
                       </div>
                     )}
                   </div>
+                ) : item.onClick ? (
+                  <button
+                    key={item.title}
+                    onClick={() => { item.onClick(); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.title}
+                  </button>
                 ) : (
                   <Link
                     key={item.title}
