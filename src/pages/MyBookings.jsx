@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Calendar, Clock, User, X, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import BookingCalendarSync from '../components/booking/BookingCalendarSync';
 
 export default function MyBookings() {
   const queryClient = useQueryClient();
@@ -117,6 +118,7 @@ export default function MyBookings() {
           
           {booking.status === 'confirmed' && booking.booking_date >= today && (
             <div className="mt-4 flex gap-2">
+              <BookingCalendarSync booking={booking} coach={coach} location={location} />
               <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowCancelDialog(true); }}>
                 <X className="w-4 h-4 mr-1" />
                 Cancel
