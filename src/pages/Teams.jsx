@@ -62,10 +62,17 @@ export default function Teams() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
     queryFn: () => base44.entities.Coach.list()
   });
+
+  const currentCoach = coaches.find(c => c.email === user?.email);
 
   const createTeamMutation = useMutation({
     mutationFn: (data) => base44.entities.Team.create(data),

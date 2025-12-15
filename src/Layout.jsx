@@ -90,22 +90,22 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     {
-      title: "Boys",
+      title: "Boys Teams",
       icon: Users,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "Teams", url: createPageUrl("Teams") + "?gender=Boys" },
-        { title: "Players", url: createPageUrl("Players") + "?gender=Male" }
-      ]
+      url: createPageUrl("Teams") + "?gender=Boys",
+      roles: ["admin", "coach"]
     },
     {
-      title: "Girls",
+      title: "Girls Teams",
       icon: Users,
-      roles: ["admin", "coach"],
-      submenu: [
-        { title: "Teams", url: createPageUrl("Teams") + "?gender=Girls" },
-        { title: "Players", url: createPageUrl("Players") + "?gender=Female" }
-      ]
+      url: createPageUrl("Teams") + "?gender=Girls",
+      roles: ["admin", "coach"]
+    },
+    {
+      title: "All Players",
+      icon: Users,
+      url: createPageUrl("Players"),
+      roles: ["admin"]
     },
     {
       title: "Tryouts",
@@ -146,18 +146,18 @@ export default function Layout({ children, currentPageName }) {
         }
       }
     },
-    {
-      title: "My Players",
-      icon: Users,
-      roles: ["parent"],
-      submenu: (user?.player_ids || []).map(playerId => {
-        const player = players.find(p => p.id === playerId);
-        return {
-          title: player?.full_name || 'Player',
-          url: createPageUrl('PlayerDashboard', `id=${playerId}`)
-        };
-      })
-    },
+    ...(roleType === 'parent' && (user?.player_ids || []).length > 0 
+      ? (user.player_ids || []).map(playerId => {
+          const player = players.find(p => p.id === playerId);
+          return {
+            title: player?.full_name || 'Player',
+            url: createPageUrl('PlayerDashboard', `id=${playerId}`),
+            icon: Activity,
+            roles: ["parent"]
+          };
+        })
+      : []
+    ),
     {
       title: "Book Session",
       url: createPageUrl("BookCoach"),
