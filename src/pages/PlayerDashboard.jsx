@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -21,9 +20,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
-import PlayerGoalsManager from '../components/player/PlayerGoalsManager';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
-import DevelopmentPathwayManager from '../components/player/DevelopmentPathwayManager';
+import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
+import EventsTimeline from '../components/player/EventsTimeline';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -166,7 +165,15 @@ export default function PlayerDashboard() {
     enabled: !!playerId
   });
 
-  // Get parents assigned to this player
+  const { data: pathway } = useQuery({
+    queryKey: ['pathway', playerId],
+    queryFn: async () => {
+      const pathways = await base44.entities.DevelopmentPathway.filter({ player_id: playerId });
+      return pathways[0] || null;
+    },
+    enabled: !!playerId
+  });
+
   const assignedParents = allUsers.filter(u => 
     u.role === 'parent' && (u.player_ids || []).includes(playerId)
   );
@@ -228,6 +235,15 @@ export default function PlayerDashboard() {
     onSuccess: () => queryClient.invalidateQueries(['tryout', playerId])
   });
 
+  const updatePathwayMutation = useMutation({
+    mutationFn: (data) => {
+      if (pathway?.id) {
+        return base44.entities.DevelopmentPathway.update(pathway.id, data);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries(['pathway', playerId])
+  });
+
   const uploadDocumentMutation = useMutation({
     mutationFn: async (data) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: data.file });
@@ -266,16 +282,12 @@ export default function PlayerDashboard() {
   });
 
   const handleInvitePlayer = async (email, player) => {
-    // Note: Emails can only be sent to registered users in the app
-    // For inviting new users, they need to be invited via User Management
     toast.info('To invite parents/players, please use User Management to create their account first.');
   };
 
   const handleSendGoalFeedback = async (player, goal, feedback) => {
-    // Only send notifications to registered users (parents assigned to this player)
     const registeredUsers = assignedParents.map(p => p.email).filter(Boolean);
 
-    // Create notifications for all registered parent users
     for (const email of registeredUsers) {
       await base44.entities.Notification.create({
         user_email: email,
@@ -348,7 +360,6 @@ export default function PlayerDashboard() {
     }
   };
 
-  // Navigation - filtered by team
   const teamPlayers = player?.team_id 
     ? [...allPlayers].filter(p => p.team_id === player.team_id).sort((a, b) => {
         const lastNameA = a.full_name?.split(' ').pop() || '';
@@ -365,10 +376,8 @@ export default function PlayerDashboard() {
   const previousPlayer = currentPlayerIndex > 0 ? teamPlayers[currentPlayerIndex - 1] : null;
   const nextPlayer = currentPlayerIndex < teamPlayers.length - 1 ? teamPlayers[currentPlayerIndex + 1] : null;
 
-  // Get unique team names for combobox
   const existingTeamNames = [...new Set(allTeams.map(t => t.name).filter(Boolean))];
 
-  // Export functions
   const handleExport = (format, selectedOptions) => {
     if (format === 'csv') {
       const headers = ['Field', 'Value'];
@@ -522,7 +531,6 @@ export default function PlayerDashboard() {
     ...(isAdminOrCoach ? [{ id: 'tryout', label: 'Tryout Information' }] : [])
   ];
 
-  // Analytics data with raw metrics in tooltip
   const physicalTrendData = assessments.slice().reverse().map(a => ({
     date: new Date(a.assessment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     Speed: a.speed_score || 0,
@@ -542,6 +550,10 @@ export default function PlayerDashboard() {
     Defending: Math.round(((e.defending_organized || 0) + (e.defending_final_third || 0) + (e.defending_transition || 0)) / 3),
     Attacking: Math.round(((e.attacking_organized || 0) + (e.attacking_final_third || 0) + (e.attacking_in_transition || 0)) / 3)
   }));
+
+  const handleUpdateEvents = (updatedEvents) => {
+    updatePathwayMutation.mutate({ events_camps: updatedEvents });
+  };
 
   if (playerLoading) {
     return (
@@ -735,28 +747,27 @@ export default function PlayerDashboard() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                                    <Phone className="w-3 h-3 text-slate-400" />
-                                    {isEditing ? (
-                                      <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" />
-                                    ) : (
-                                      <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
-                                    )}
-                                  </div>
-                                </div>
-                                {/* Parent Contacts */}
-                                {assignedParents.length > 0 && (
-                                  <div className="border-t pt-2 mt-2">
-                                    <div className="text-[10px] font-semibold text-slate-500 mb-1">Assigned Parents</div>
-                                    {assignedParents.map(parent => (
-                                      <div key={parent.id} className="text-xs text-slate-600 mb-1">
-                                        <div className="font-medium">{parent.full_name}</div>
-                                        <div className="text-slate-500">{parent.email}</div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
+                <Phone className="w-3 h-3 text-slate-400" />
+                {isEditing ? (
+                  <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" />
+                ) : (
+                  <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
+                )}
+              </div>
+            </div>
+            {assignedParents.length > 0 && (
+              <div className="border-t pt-2 mt-2">
+                <div className="text-[10px] font-semibold text-slate-500 mb-1">Assigned Parents</div>
+                {assignedParents.map(parent => (
+                  <div key={parent.id} className="text-xs text-slate-600 mb-1">
+                    <div className="font-medium">{parent.full_name}</div>
+                    <div className="text-slate-500">{parent.email}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Tryout Info - Only visible to admin/coach */}
         {isAdminOrCoach && (
@@ -1024,7 +1035,8 @@ export default function PlayerDashboard() {
           </CardContent>
         </Card>
       </div>
-{/* Development Notes */}
+
+      {/* Development Notes */}
       {currentEvaluation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
@@ -1132,14 +1144,15 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-      {/* Development Pathway with Goals & Progress Tracking */}
+      {/* Player Development Pathway & Training Modules */}
       {isAdminOrCoach && (
         <div className="mt-6">
-          <DevelopmentPathwayManager 
-            player={player} 
-            assessments={assessments} 
-            evaluations={evaluations}
+          <PlayerDevelopmentDisplay
+            player={player}
+            pathway={pathway}
+            assessments={assessments}
             onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+            onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
             onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
           />
         </div>
@@ -1147,8 +1160,18 @@ export default function PlayerDashboard() {
 
       {/* Position Knowledge Bank */}
       {player.primary_position && (
-        <div className="mt-4">
+        <div className="mt-6">
           <PositionKnowledgeBank position={player.primary_position} />
+        </div>
+      )}
+
+      {/* Events Timeline */}
+      {isAdminOrCoach && pathway && (
+        <div className="mt-6">
+          <EventsTimeline 
+            events={pathway.events_camps || []} 
+            onUpdate={handleUpdateEvents}
+          />
         </div>
       )}
 
