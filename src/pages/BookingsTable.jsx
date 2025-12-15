@@ -25,6 +25,11 @@ export default function BookingsTable() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => base44.entities.Location.list()
+  });
+
   const updateBookingMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Booking.update(id, data),
     onSuccess: () => queryClient.invalidateQueries(['bookings'])
@@ -59,16 +64,20 @@ export default function BookingsTable() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Time', 'Coach', 'Player', 'Service', 'Status', 'Notes'];
-    const rows = filteredBookings.map(b => [
-      b.booking_date,
-      `${b.start_time} - ${b.end_time}`,
-      b.coach_name,
-      b.player_name,
-      b.service_name,
-      b.status,
-      b.notes || ''
-    ]);
+    const headers = ['Date', 'Time', 'Coach', 'Player', 'Service', 'Location', 'Status', 'Notes'];
+    const rows = filteredBookings.map(b => {
+      const location = locations.find(l => l.id === b.location_id);
+      return [
+        b.booking_date,
+        `${b.start_time} - ${b.end_time}`,
+        b.coach_name,
+        b.player_name,
+        b.service_name,
+        location?.name || '',
+        b.status,
+        b.notes || ''
+      ];
+    });
     
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -150,8 +159,9 @@ export default function BookingsTable() {
                   <th className="px-4 py-3 text-left text-xs font-bold">Coach</th>
                   <th className="px-4 py-3 text-left text-xs font-bold">Player</th>
                   <th className="px-4 py-3 text-left text-xs font-bold">Service</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Location</th>
                   <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,6 +176,9 @@ export default function BookingsTable() {
                     <td className="px-4 py-3 text-sm">{booking.coach_name}</td>
                     <td className="px-4 py-3 text-sm">{booking.player_name || '-'}</td>
                     <td className="px-4 py-3 text-sm">{booking.service_name}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {locations.find(l => l.id === booking.location_id)?.name || '-'}
+                    </td>
                     <td className="px-4 py-3">
                       <Select 
                         value={booking.status} 

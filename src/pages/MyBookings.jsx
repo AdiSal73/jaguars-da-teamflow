@@ -30,6 +30,11 @@ export default function MyBookings() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => base44.entities.Location.list()
+  });
+
   const cancelBookingMutation = useMutation({
     mutationFn: (id) => base44.entities.Booking.update(id, { status: 'cancelled' }),
     onSuccess: () => {
@@ -68,6 +73,7 @@ export default function MyBookings() {
 
   const BookingCard = ({ booking }) => {
     const coach = coaches.find(c => c.id === booking.coach_id);
+    const location = locations.find(l => l.id === booking.location_id);
     return (
       <Card className="border-none shadow-md hover:shadow-lg transition-all">
         <CardContent className="p-5">
@@ -81,6 +87,9 @@ export default function MyBookings() {
                 <p className="text-sm text-slate-600">with {coach?.full_name || booking.coach_name}</p>
                 {booking.player_name && (
                   <p className="text-xs text-slate-500 mt-1">Player: {booking.player_name}</p>
+                )}
+                {location && (
+                  <p className="text-xs text-slate-500 mt-1">📍 {location.name}</p>
                 )}
               </div>
             </div>
@@ -97,6 +106,10 @@ export default function MyBookings() {
               {formatTimeDisplay(booking.start_time)} - {formatTimeDisplay(booking.end_time)}
             </div>
           </div>
+          
+          {location && (
+            <p className="mt-2 text-xs text-slate-600">{location.address}</p>
+          )}
           
           {booking.notes && (
             <p className="mt-3 text-sm text-slate-500 bg-slate-50 p-2 rounded">{booking.notes}</p>
