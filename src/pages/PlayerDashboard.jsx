@@ -1219,9 +1219,19 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-      {/* Injury History */}
-      {(isAdminOrCoach || injuries.length > 0) && (
-        <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
+            {/* Events Timeline */}
+            {pathway && (
+              <div className="mt-6">
+                <EventsTimeline 
+                  events={pathway.events_camps || []} 
+                  onUpdate={handleUpdateEvents}
+                />
+              </div>
+            )}
+
+            {/* Injury History */}
+            {(isAdminOrCoach || injuries.length > 0) && (
+              <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Injury History</CardTitle>
