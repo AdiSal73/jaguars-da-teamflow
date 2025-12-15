@@ -55,6 +55,12 @@ export default function Players() {
   const [filterGender, setFilterGender] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
+  const [filterPosition, setFilterPosition] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSpeed, setFilterSpeed] = useState('all');
+  const [filterResilience, setFilterResilience] = useState('all');
+  const [sortBy, setSortBy] = useState('full_name');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [viewMode, setViewMode] = useState('cards');
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
@@ -137,6 +143,18 @@ export default function Players() {
   const { data: tryouts = [] } = useQuery({
     queryKey: ['tryouts'],
     queryFn: () => base44.entities.PlayerTryout.list(),
+    enabled: !!user
+  });
+
+  const { data: assessments = [] } = useQuery({
+    queryKey: ['assessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list(),
+    enabled: !!user
+  });
+
+  const { data: evaluations = [] } = useQuery({
+    queryKey: ['evaluations'],
+    queryFn: () => base44.entities.Evaluation.list(),
     enabled: !!user
   });
 
@@ -307,20 +325,67 @@ export default function Players() {
         if (!(matchesSearch && matchesGender)) return false;
       }
 
+      const matchesPosition = filterPosition === 'all' || player.primary_position === filterPosition;
+      const matchesStatus = filterStatus === 'all' || player.status === filterStatus;
+      
+      const playerAssessments = assessments.filter(a => a.player_id === player.id).sort((a, b) => 
+        new Date(b.assessment_date) - new Date(a.assessment_date)
+      );
+      const matchesSpeed = filterSpeed === 'all' || (() => {
+        if (playerAssessments.length === 0) return filterSpeed === 'none';
+        const latestSpeed = playerAssessments[0].speed_score || 0;
+        if (filterSpeed === 'high') return latestSpeed >= 70;
+        if (filterSpeed === 'medium') return latestSpeed >= 40 && latestSpeed < 70;
+        if (filterSpeed === 'low') return latestSpeed < 40;
+        return false;
+      })();
+      
+      const playerEvaluations = evaluations.filter(e => e.player_id === player.id).sort((a, b) => 
+        new Date(b.created_date) - new Date(a.created_date)
+      );
+      const matchesResilience = filterResilience === 'all' || (() => {
+        if (playerEvaluations.length === 0) return filterResilience === 'none';
+        const latestResilience = playerEvaluations[0].resilience || 0;
+        if (filterResilience === 'high') return latestResilience >= 7;
+        if (filterResilience === 'medium') return latestResilience >= 4 && latestResilience < 7;
+        if (filterResilience === 'low') return latestResilience < 4;
+        return false;
+      })();
+
       const trappedMatch = !showTrappedOnly || isTrappedPlayer(player.date_of_birth);
-      return trappedMatch;
+      return trappedMatch && matchesPosition && matchesStatus && matchesSpeed && matchesResilience;
     })
     .sort((a, b) => {
-      // Sort by team first
-      const teamA = teams.find(t => t.id === a.team_id);
-      const teamB = teams.find(t => t.id === b.team_id);
-      const teamCompare = (teamA?.name || '').localeCompare(teamB?.name || '');
-      if (teamCompare !== 0) return teamCompare;
+      let aVal, bVal;
       
-      // Then alphabetically by last name
-      const lastNameA = a.full_name?.split(' ').pop() || '';
-      const lastNameB = b.full_name?.split(' ').pop() || '';
-      return lastNameA.localeCompare(lastNameB);
+      if (sortBy === 'full_name') {
+        aVal = a.full_name?.split(' ').pop() || '';
+        bVal = b.full_name?.split(' ').pop() || '';
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      
+      if (sortBy === 'jersey_number') {
+        aVal = a.jersey_number || 0;
+        bVal = b.jersey_number || 0;
+      } else if (sortBy === 'speed_score') {
+        const aAssessments = assessments.filter(x => x.player_id === a.id).sort((x, y) => new Date(y.assessment_date) - new Date(x.assessment_date));
+        const bAssessments = assessments.filter(x => x.player_id === b.id).sort((x, y) => new Date(y.assessment_date) - new Date(x.assessment_date));
+        aVal = aAssessments[0]?.speed_score || 0;
+        bVal = bAssessments[0]?.speed_score || 0;
+      } else if (sortBy === 'resilience') {
+        const aEvals = evaluations.filter(x => x.player_id === a.id).sort((x, y) => new Date(y.created_date) - new Date(x.created_date));
+        const bEvals = evaluations.filter(x => x.player_id === b.id).sort((x, y) => new Date(y.created_date) - new Date(x.created_date));
+        aVal = aEvals[0]?.resilience || 0;
+        bVal = bEvals[0]?.resilience || 0;
+      } else {
+        aVal = a[sortBy] || '';
+        bVal = b[sortBy] || '';
+      }
+      
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
     });
 
   const statusColors = {
@@ -359,7 +424,7 @@ export default function Players() {
             className="pl-10"
           />
         </div>
-        <div className="grid md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <div>
             <Label className="mb-2 block text-xs">Scope</Label>
             <Select value={showAllPlayers ? 'all' : 'filtered'} onValueChange={(val) => setShowAllPlayers(val === 'all')}>
@@ -376,7 +441,7 @@ export default function Players() {
             <Label className="mb-2 block text-xs">Team</Label>
             <Select value={filterTeam} onValueChange={setFilterTeam}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="All Teams" />
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
@@ -390,10 +455,10 @@ export default function Players() {
             <Label className="mb-2 block text-xs">Age Group</Label>
             <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="All Age Groups" />
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Age Groups</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
                   const extractAge = (ag) => {
                     const match = ag?.match(/U-?(\d+)/i);
@@ -423,10 +488,10 @@ export default function Players() {
             <Label className="mb-2 block text-xs">League</Label>
             <Select value={filterLeague} onValueChange={setFilterLeague}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="All Leagues" />
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Leagues</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {uniqueLeagues.map(league => (
                   <SelectItem key={league} value={league}>{league}</SelectItem>
                 ))}
@@ -437,10 +502,10 @@ export default function Players() {
             <Label className="mb-2 block text-xs">Branch</Label>
             <Select value={filterBranch} onValueChange={setFilterBranch}>
               <SelectTrigger className="h-9 text-xs">
-                <SelectValue placeholder="All Branches" />
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Branches</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {BRANCH_OPTIONS.map(branch => (
                   <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                 ))}
@@ -459,11 +524,95 @@ export default function Players() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          <div>
+            <Label className="mb-2 block text-xs">Position</Label>
+            <Select value={filterPosition} onValueChange={setFilterPosition}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Positions</SelectItem>
+                {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                  <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Status</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Injured">Injured</SelectItem>
+                <SelectItem value="Suspended">Suspended</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Speed</Label>
+            <Select value={filterSpeed} onValueChange={setFilterSpeed}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="high">High (70+)</SelectItem>
+                <SelectItem value="medium">Med (40-69)</SelectItem>
+                <SelectItem value="low">Low (&lt;40)</SelectItem>
+                <SelectItem value="none">No Data</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Resilience</Label>
+            <Select value={filterResilience} onValueChange={setFilterResilience}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="high">High (7+)</SelectItem>
+                <SelectItem value="medium">Med (4-6)</SelectItem>
+                <SelectItem value="low">Low (&lt;4)</SelectItem>
+                <SelectItem value="none">No Data</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Sort By</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full_name">Name</SelectItem>
+                <SelectItem value="jersey_number">Jersey #</SelectItem>
+                <SelectItem value="primary_position">Position</SelectItem>
+                <SelectItem value="speed_score">Speed</SelectItem>
+                <SelectItem value="resilience">Resilience</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-end gap-2">
-            <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')} className={viewMode === 'cards' ? 'bg-emerald-600' : ''}>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+              className="h-9 flex-1"
+            >
+              {sortDirection === 'asc' ? '↑ Asc' : '↓ Desc'}
+            </Button>
+            <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')} className={`${viewMode === 'cards' ? 'bg-emerald-600' : ''} h-9`}>
               <Grid className="w-4 h-4" />
             </Button>
-            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className={viewMode === 'table' ? 'bg-emerald-600' : ''}>
+            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className={`${viewMode === 'table' ? 'bg-emerald-600' : ''} h-9`}>
               <TableIcon className="w-4 h-4" />
             </Button>
           </div>
