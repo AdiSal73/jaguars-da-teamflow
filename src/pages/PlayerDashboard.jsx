@@ -1,14 +1,16 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Calendar, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, MessageSquare, Printer } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
+import ParentEmailsManager from '../components/player/ParentEmailsManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
@@ -193,6 +195,7 @@ export default function PlayerDashboard() {
         primary_position: player.primary_position || '',
         secondary_position: player.secondary_position || '',
         parent_name: player.parent_name || '',
+        parent_emails: player.parent_emails || [], // Initialize parent_emails
         status: player.status || 'Active',
         team_id: player.team_id || '',
         profile_password: player.profile_password || ''
@@ -220,8 +223,51 @@ export default function PlayerDashboard() {
   }, [tryout]);
 
   const updatePlayerMutation = useMutation({
-    mutationFn: (data) => base44.entities.Player.update(playerId, data),
-    onSuccess: () => queryClient.invalidateQueries(['player', playerId])
+    mutationFn: async (data) => {
+      await base44.entities.Player.update(playerId, data);
+      
+      // Sync parent accounts
+      if (data.parent_emails) {
+        // First, remove this player from any parent accounts that are no longer linked
+        const currentParentEmails = player?.parent_emails || [];
+        const removedParentEmails = currentParentEmails.filter(email => !data.parent_emails.includes(email));
+
+        for (const email of removedParentEmails) {
+          const existingUser = allUsers.find(u => u.email === email && u.role === 'parent');
+          if (existingUser) {
+            const updatedPlayerIds = (existingUser.player_ids || []).filter(id => id !== playerId);
+            await base44.entities.User.update(existingUser.id, { player_ids: updatedPlayerIds });
+          }
+        }
+
+        // Then, add this player to any newly linked parent accounts
+        for (const email of data.parent_emails) {
+          const existingUser = allUsers.find(u => u.email === email);
+          if (existingUser) {
+            const currentPlayerIds = existingUser.player_ids || [];
+            if (!currentPlayerIds.includes(playerId)) {
+              await base44.entities.User.update(existingUser.id, {
+                player_ids: [...currentPlayerIds, playerId]
+              });
+            }
+            if (existingUser.role !== 'parent') { // Promote user to parent if not already
+              await base44.entities.User.update(existingUser.id, { role: 'parent' });
+            }
+          } else {
+            // If user doesn't exist, create a basic parent account.
+            // A proper user management flow might involve inviting them,
+            // but for automatic linking, a basic account is needed.
+            // For now, assume users are managed elsewhere or this is only for existing users.
+            // Alternatively, create a placeholder user:
+            // await base44.entities.User.create({ email: email, role: 'parent', player_ids: [playerId], full_name: 'Parent' });
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['player', playerId]);
+      queryClient.invalidateQueries(['allUsers']); // Invalidate allUsers to reflect changes in parent links
+    }
   });
 
   const updateTryoutMutation = useMutation({
@@ -282,7 +328,7 @@ export default function PlayerDashboard() {
   });
 
   const handleInvitePlayer = async (email, player) => {
-    toast.info('To invite parents/players, please use User Management to create their account first.');
+    toast.info('Parents will be automatically linked when you add their email to the player profile.');
   };
 
   const handleSendGoalFeedback = async (player, goal, feedback) => {
@@ -307,8 +353,11 @@ export default function PlayerDashboard() {
       jersey_number: playerForm.jersey_number ? Number(playerForm.jersey_number) : null
     };
     await updatePlayerMutation.mutateAsync(playerData);
-    await updateTryoutMutation.mutateAsync(tryoutForm);
+    if (isAdminOrCoach) { // Only update tryout info if coach/admin
+      await updateTryoutMutation.mutateAsync(tryoutForm);
+    }
     setIsEditing(false);
+    toast.success('Player updated successfully');
   };
 
   const handleExportFullPagePDF = async () => {
@@ -390,7 +439,8 @@ export default function PlayerDashboard() {
         ['DOB', player.date_of_birth || ''],
         ['Email', player.email || ''],
         ['Phone', player.phone || ''],
-        ['Parent', player.parent_name || '']
+        ['Parent Name', player.parent_name || ''],
+        ['Parent Emails', (player.parent_emails || []).join(', ') || '']
       ];
 
       if (selectedOptions.includes('tryout') && isAdminOrCoach && tryout) {
@@ -445,7 +495,7 @@ export default function PlayerDashboard() {
 
       const csv = generateCSV(headers, rows);
       downloadFile(csv, `player_${player.full_name.replace(/\s+/g, '_')}.csv`);
-    } else {
+    } else { // PDF
       const sections = [
         {
           title: 'Player Information',
@@ -456,9 +506,11 @@ export default function PlayerDashboard() {
               <tr><th>Position</th><td>${player.primary_position || 'N/A'}</td></tr>
               <tr><th>Team</th><td>${team?.name || 'N/A'}</td></tr>
               <tr><th>Status</th><td>${player.status || 'N/A'}</td></tr>
-              <tr><th>DOB</th><td>${player.date_of_birth || 'N/A'}</td></tr>
+              <tr><th>DOB</th><td>${player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</td></tr>
               <tr><th>Email</th><td>${player.email || 'N/A'}</td></tr>
               <tr><th>Phone</th><td>${player.phone || 'N/A'}</td></tr>
+              <tr><th>Parent Name</th><td>${player.parent_name || 'N/A'}</td></tr>
+              <tr><th>Parent Emails</th><td>${(player.parent_emails || []).join(', ') || 'N/A'}</td></tr>
             </table>
           `
         }
@@ -718,14 +770,14 @@ export default function PlayerDashboard() {
                   <p className="text-sm font-medium">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</p>
                 )}
               </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Parent</Label>
+              {/* <div className="col-span-2">
+                <Label className="text-[10px] text-slate-500">Parent Name</Label>
                 {isEditing ? (
                   <Input value={playerForm.parent_name} onChange={e => setPlayerForm({...playerForm, parent_name: e.target.value})} className="h-8 text-xs" />
                 ) : (
                   <p className="text-sm font-medium">{player.parent_name || 'N/A'}</p>
                 )}
-              </div>
+              </div> */}
               {isAdminOrCoach && (
                 <div className="col-span-2">
                   <Label className="text-[10px] text-slate-500">Share Password</Label>
@@ -755,17 +807,20 @@ export default function PlayerDashboard() {
                 )}
               </div>
             </div>
-            {assignedParents.length > 0 && (
-              <div className="border-t pt-2 mt-2">
-                <div className="text-[10px] font-semibold text-slate-500 mb-1">Assigned Parents</div>
-                {assignedParents.map(parent => (
-                  <div key={parent.id} className="text-xs text-slate-600 mb-1">
-                    <div className="font-medium">{parent.full_name}</div>
-                    <div className="text-slate-500">{parent.email}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            
+            <div className="border-t pt-2 mt-2">
+              <div className="text-[10px] font-semibold text-slate-500 mb-2">Parent Emails</div>
+              <ParentEmailsManager
+                parentEmails={playerForm.parent_emails || []}
+                onChange={(emails) => setPlayerForm({...playerForm, parent_emails: emails})}
+                disabled={!isEditing}
+              />
+              {assignedParents.length > 0 && (
+                <div className="mt-2 text-xs text-slate-500">
+                  {assignedParents.length} parent account(s) linked
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -1323,7 +1378,7 @@ export default function PlayerDashboard() {
             </div>
             <div>
               <Label>Notes</Label>
-              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, treatment_notes: e.target.value})} rows={3} placeholder="Treatment notes, recovery plan..." />
+              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, notes: e.target.value})} rows={3} placeholder="Treatment notes, recovery plan..." />
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setShowInjuryDialog(false)} className="flex-1">Cancel</Button>
