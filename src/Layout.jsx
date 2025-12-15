@@ -45,7 +45,7 @@ export default function Layout({ children, currentPageName }) {
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list(),
-    enabled: !!user && user.role === 'user'
+    enabled: !!user
   });
 
   const getUserRole = () => {
