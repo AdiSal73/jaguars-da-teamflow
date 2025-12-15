@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Search, Download, Filter } from 'lucide-react';
+import BookingCalendarSync from '../components/booking/BookingCalendarSync';
 
 export default function BookingsTable() {
   const queryClient = useQueryClient();
@@ -162,48 +163,59 @@ export default function BookingsTable() {
                   <th className="px-4 py-3 text-left text-xs font-bold">Location</th>
                   <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-bold">Notes</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking, idx) => (
-                  <tr key={booking.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono">
-                      {formatTimeDisplay(booking.start_time)} - {formatTimeDisplay(booking.end_time)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">{booking.coach_name}</td>
-                    <td className="px-4 py-3 text-sm">{booking.player_name || '-'}</td>
-                    <td className="px-4 py-3 text-sm">{booking.service_name}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {locations.find(l => l.id === booking.location_id)?.name || '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Select 
-                        value={booking.status} 
-                        onValueChange={(value) => updateBookingMutation.mutate({ id: booking.id, data: { status: value } })}
-                      >
-                        <SelectTrigger className="h-8 w-28">
-                          <Badge className={`${statusColors[booking.status]} text-xs`}>{booking.status}</Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-4 py-3">
-                      {booking.notes && (
-                        <span className="text-xs text-slate-500 truncate max-w-[150px] block" title={booking.notes}>
-                          {booking.notes}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {filteredBookings.map((booking, idx) => {
+                  const coach = coaches.find(c => c.id === booking.coach_id);
+                  const location = locations.find(l => l.id === booking.location_id);
+                  
+                  return (
+                    <tr key={booking.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-mono">
+                        {formatTimeDisplay(booking.start_time)} - {formatTimeDisplay(booking.end_time)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{booking.coach_name}</td>
+                      <td className="px-4 py-3 text-sm">{booking.player_name || '-'}</td>
+                      <td className="px-4 py-3 text-sm">{booking.service_name}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {location?.name || '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Select 
+                          value={booking.status} 
+                          onValueChange={(value) => updateBookingMutation.mutate({ id: booking.id, data: { status: value } })}
+                        >
+                          <SelectTrigger className="h-8 w-28">
+                            <Badge className={`${statusColors[booking.status]} text-xs`}>{booking.status}</Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        {booking.notes && (
+                          <span className="text-xs text-slate-500 truncate max-w-[150px] block" title={booking.notes}>
+                            {booking.notes}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {booking.status === 'confirmed' && (
+                          <BookingCalendarSync booking={booking} coach={coach} location={location} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {filteredBookings.length === 0 && (
