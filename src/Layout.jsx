@@ -69,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
         currentPlayer = players.find((p) => p.email === user.email);
       }
       if (currentPlayer) {
-        navigate(`${createPageUrl('PlayerDashboard')}?id=${currentPlayer.id}`);
+        navigate(createPageUrl('PlayerDashboard') + `?id=${currentPlayer.id}`);
       }
     }
   }, [userRole, players, location.pathname, user, navigate]);

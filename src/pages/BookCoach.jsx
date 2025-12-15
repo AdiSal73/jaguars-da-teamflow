@@ -72,13 +72,15 @@ export default function BookCoach() {
     return [...new Set(myPlayers.map(p => p.team_id).filter(Boolean))];
   }, [myPlayers]);
 
-  // Filter coaches by team assignment
+  // Filter coaches by team assignment - only show coaches for player's teams
   const availableCoaches = useMemo(() => {
+    // If user has no players or teams, show no coaches
+    if (myTeamIds.length === 0) return [];
+    
     return coaches.filter(c => {
       if (c.booking_enabled === false || !c.availability_slots?.length) return false;
-      // If no teams assigned or no players, show all coaches
-      if (myTeamIds.length === 0 || !c.team_ids?.length) return true;
-      // Show coaches assigned to player's teams
+      // Only show coaches assigned to the player's specific teams
+      if (!c.team_ids?.length) return false;
       return c.team_ids.some(teamId => myTeamIds.includes(teamId));
     });
   }, [coaches, myTeamIds]);
@@ -292,7 +294,8 @@ export default function BookCoach() {
             {availableCoaches.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500">No coaches available for booking</p>
+                <p className="text-slate-600 font-semibold mb-2">No coaches available for your team</p>
+                <p className="text-slate-500 text-sm">There are no coaches assigned to your player's team with booking enabled. Please contact your club administrator.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
