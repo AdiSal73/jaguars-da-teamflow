@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Search, ChevronDown, ChevronUp, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ export default function EvaluationsNew() {
   const preselectedPlayerId = urlParams.get('playerId');
 
   const [showDialog, setShowDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingEvaluation, setEditingEvaluation] = useState(null);
   const [deleteEvalId, setDeleteEvalId] = useState(null);
   const [search, setSearch] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
@@ -42,7 +45,7 @@ export default function EvaluationsNew() {
   
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     player_id: '',
     player_name: '',
     birth_year: '',
@@ -79,9 +82,22 @@ export default function EvaluationsNew() {
     position_role_2_label: '',
     position_role_3_label: '',
     position_role_4_label: ''
-  });
+  };
+  const [formData, setFormData] = useState(initialFormData);
 
   const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
+  const isAdminOrCoach = user?.role === 'admin' || coaches.some(c => c.email === user?.email);
 
   const { data: evaluations = [] } = useQuery({
     queryKey: ['evaluations'],
@@ -98,10 +114,12 @@ export default function EvaluationsNew() {
     queryFn: () => base44.entities.Team.list()
   });
 
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
+  useEffect(() => {
+    // Set evaluator for new forms if user is available
+    if (user && formData.evaluator === '') {
+      setFormData(prev => ({ ...prev, evaluator: user.full_name || '' }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (preselectedPlayerId && players.length > 0) {
@@ -122,6 +140,15 @@ export default function EvaluationsNew() {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Evaluation.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['evaluations']);
+      setShowEditDialog(false);
+      setEditingEvaluation(null);
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Evaluation.delete(id),
     onSuccess: () => {
@@ -132,38 +159,8 @@ export default function EvaluationsNew() {
 
   const resetForm = () => {
     setFormData({
-      player_id: '',
-      player_name: '',
-      birth_year: '',
-      team_name: '',
-      my_goals: '',
-      evaluator: user?.full_name || '',
-      current_team_status: '',
-      growth_mindset: 5,
-      resilience: 5,
-      efficiency_in_execution: 5,
-      athleticism: 5,
-      team_focus: 5,
-      primary_position: '',
-      secondary_position: '',
-      preferred_foot: 'Right',
-      defending_organized: 5,
-      defending_final_third: 5,
-      defending_transition: 5,
-      attacking_organized: 5,
-      attacking_final_third: 5,
-      attacking_in_transition: 5,
-      player_strengths: '',
-      areas_of_growth: '',
-      training_focus: '',
-      position_role_1: 5,
-      position_role_2: 5,
-      position_role_3: 5,
-      position_role_4: 5,
-      position_role_1_label: '',
-      position_role_2_label: '',
-      position_role_3_label: '',
-      position_role_4_label: ''
+      ...initialFormData,
+      evaluator: user?.full_name || ''
     });
   };
 
@@ -175,8 +172,8 @@ export default function EvaluationsNew() {
       const position = player.primary_position || '';
       const positionFields = getPositionFields(position);
       
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         player_id: playerId,
         player_name: player.full_name,
         birth_year: birthYear,
@@ -184,28 +181,79 @@ export default function EvaluationsNew() {
         primary_position: position,
         secondary_position: player.secondary_position || '',
         preferred_foot: player.preferred_foot || 'Right',
-        evaluator: user?.full_name || formData.evaluator,
+        evaluator: prev.evaluator || user?.full_name || '',
         position_role_1_label: positionFields[0]?.label || '',
         position_role_2_label: positionFields[1]?.label || '',
         position_role_3_label: positionFields[2]?.label || '',
         position_role_4_label: positionFields[3]?.label || ''
-      });
+      }));
     }
   };
 
   const handlePositionChange = (position) => {
     const positionFields = getPositionFields(position);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       primary_position: position,
       position_role_1_label: positionFields[0]?.label || '',
       position_role_2_label: positionFields[1]?.label || '',
       position_role_3_label: positionFields[2]?.label || '',
       position_role_4_label: positionFields[3]?.label || ''
-    });
+    }));
   };
 
-  const positionFields = getPositionFields(formData.primary_position);
+  const handleEditEvaluation = (evaluation) => {
+    setEditingEvaluation(evaluation);
+    const positionFields = getPositionFields(evaluation.primary_position);
+
+    setFormData({
+      player_id: evaluation.player_id || '',
+      player_name: evaluation.player_name || '',
+      birth_year: evaluation.birth_year || '',
+      team_name: evaluation.team_name || '',
+      my_goals: evaluation.my_goals || '',
+      evaluator: evaluation.evaluator || user?.full_name || '',
+      current_team_status: evaluation.current_team_status || '',
+      growth_mindset: evaluation.growth_mindset || 5,
+      resilience: evaluation.resilience || 5,
+      efficiency_in_execution: evaluation.efficiency_in_execution || 5,
+      athleticism: evaluation.athleticism || 5,
+      team_focus: evaluation.team_focus || 5,
+      primary_position: evaluation.primary_position || '',
+      secondary_position: evaluation.secondary_position || '',
+      preferred_foot: evaluation.preferred_foot || 'Right',
+      defending_organized: evaluation.defending_organized || 5,
+      defending_final_third: evaluation.defending_final_third || 5,
+      defending_transition: evaluation.defending_transition || 5,
+      pressing: evaluation.pressing || 5,
+      defending_set_pieces: evaluation.defending_set_pieces || 5,
+      attacking_organized: evaluation.attacking_organized || 5,
+      attacking_final_third: evaluation.attacking_final_third || 5,
+      attacking_in_transition: evaluation.attacking_in_transition || 5,
+      building_out: evaluation.building_out || 5,
+      attacking_set_pieces: evaluation.attacking_set_pieces || 5,
+      player_strengths: evaluation.player_strengths || '',
+      areas_of_growth: evaluation.areas_of_growth || '',
+      training_focus: evaluation.training_focus || '',
+      position_role_1: evaluation.position_role_1 || 5,
+      position_role_2: evaluation.position_role_2 || 5,
+      position_role_3: evaluation.position_role_3 || 5,
+      position_role_4: evaluation.position_role_4 || 5,
+      position_role_1_label: evaluation.position_role_1_label || positionFields[0]?.label || '',
+      position_role_2_label: evaluation.position_role_2_label || positionFields[1]?.label || '',
+      position_role_3_label: evaluation.position_role_3_label || positionFields[2]?.label || '',
+      position_role_4_label: evaluation.position_role_4_label || positionFields[3]?.label || ''
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingEvaluation) {
+      updateMutation.mutate({ id: editingEvaluation.id, data: formData });
+    }
+  };
+
+  const dialogPositionFields = getPositionFields(formData.primary_position);
 
   const RatingSlider = ({ label, value, onChange, description }) => (
     <div className="space-y-3">
@@ -265,10 +313,12 @@ export default function EvaluationsNew() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Player Evaluations</h1>
           <p className="text-slate-600 mt-1">Comprehensive player assessment and development tracking</p>
         </div>
-        <Button onClick={() => { resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6 text-base font-semibold shadow-lg">
-          <Plus className="w-5 h-5 mr-2" />
-          New Evaluation
-        </Button>
+        {isAdminOrCoach && (
+          <Button onClick={() => { resetForm(); setShowDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6 text-base font-semibold shadow-lg">
+            <Plus className="w-5 h-5 mr-2" />
+            New Evaluation
+          </Button>
+        )}
       </div>
 
       <Card className="border-none shadow-lg mb-6">
@@ -317,12 +367,11 @@ export default function EvaluationsNew() {
         {filteredEvaluations.map(evaluation => {
           const evalPositionFields = getPositionFields(evaluation.primary_position);
           const isExpanded = expandedCards.has(evaluation.id);
-          const player = players.find(p => p.id === evaluation.player_id);
           
           return (
             <Card 
               key={evaluation.id} 
-              className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+              className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer relative group"
               onClick={() => !isExpanded && navigate(`${createPageUrl('PlayerDashboard')}?id=${evaluation.player_id}`)}
             >
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b pb-3">
@@ -344,14 +393,26 @@ export default function EvaluationsNew() {
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteEvalId(evaluation.id)}
-                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {isAdminOrCoach && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditEvaluation(evaluation)}
+                        className="h-8 w-8 hover:bg-emerald-50"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {isAdminOrCoach && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteEvalId(evaluation.id)}
+                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -410,13 +471,15 @@ export default function EvaluationsNew() {
                           {[
                             { label: 'Organized', value: evaluation.defending_organized },
                             { label: 'Final Third', value: evaluation.defending_final_third },
-                            { label: 'Transition', value: evaluation.defending_transition }
-                          ].map(item => (
+                            { label: 'Transition', value: evaluation.defending_transition },
+                            { label: 'Pressing', value: evaluation.pressing },
+                            { label: 'Set-Pieces', value: evaluation.defending_set_pieces }
+                          ].map(item => item.value !== undefined && item.value !== null ? (
                             <div key={item.label} className="flex justify-between items-center p-2 bg-red-50 rounded text-xs">
                               <span className="text-slate-700">{item.label}</span>
                               <span className="font-bold text-red-700">{item.value}</span>
                             </div>
-                          ))}
+                          ) : null)}
                         </div>
                       </div>
 
@@ -426,13 +489,15 @@ export default function EvaluationsNew() {
                           {[
                             { label: 'Organized', value: evaluation.attacking_organized },
                             { label: 'Final Third', value: evaluation.attacking_final_third },
-                            { label: 'Transition', value: evaluation.attacking_in_transition }
-                          ].map(item => (
+                            { label: 'Transition', value: evaluation.attacking_in_transition },
+                            { label: 'Building Out', value: evaluation.building_out },
+                            { label: 'Set-Pieces', value: evaluation.attacking_set_pieces }
+                          ].map(item => item.value !== undefined && item.value !== null ? (
                             <div key={item.label} className="flex justify-between items-center p-2 bg-orange-50 rounded text-xs">
                               <span className="text-slate-700">{item.label}</span>
                               <span className="font-bold text-orange-700">{item.value}</span>
                             </div>
-                          ))}
+                          ) : null)}
                         </div>
                       </div>
                     </div>
@@ -444,7 +509,7 @@ export default function EvaluationsNew() {
                           {evalPositionFields.map((field, idx) => {
                             const value = evaluation[`position_role_${idx + 1}`];
                             const label = evaluation[`position_role_${idx + 1}_label`] || field.label;
-                            if (!value) return null;
+                            if (value === undefined || value === null) return null;
                             return (
                               <div key={idx} className="flex justify-between items-center p-2 bg-indigo-50 rounded text-xs">
                                 <span className="text-slate-700 truncate pr-2">{label}</span>
@@ -478,7 +543,18 @@ export default function EvaluationsNew() {
                         )}
                       </div>
                     )}
-
+                    {evaluation.current_team_status && (
+                        <div className="p-2 bg-gray-50 rounded">
+                          <div className="text-xs font-semibold text-gray-700 mb-1">Current Team Status</div>
+                          <div className="text-xs text-slate-700">{evaluation.current_team_status}</div>
+                        </div>
+                    )}
+                    {evaluation.my_goals && (
+                        <div className="p-2 bg-yellow-50 rounded">
+                          <div className="text-xs font-semibold text-yellow-700 mb-1">Player's Goals</div>
+                          <div className="text-xs text-slate-700">{evaluation.my_goals}</div>
+                        </div>
+                    )}
                     <div className="text-xs text-slate-500 border-t pt-2">
                       Evaluated by {evaluation.evaluator} • {new Date(evaluation.created_date).toLocaleDateString()}
                     </div>
@@ -496,6 +572,7 @@ export default function EvaluationsNew() {
         </div>
       )}
 
+      {/* New Evaluation Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
@@ -637,13 +714,13 @@ export default function EvaluationsNew() {
                   <CardTitle className="text-lg">Position-Specific Skills ({formData.primary_position})</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 md:p-6 space-y-6">
-                  {positionFields.map((field, idx) => (
+                  {dialogPositionFields.map((field, idx) => (
                     <RatingSlider
                       key={field.key}
                       label={field.label}
                       description={field.description}
                       value={formData[`position_role_${idx + 1}`]}
-                      onChange={(val) => setFormData({...formData, [`position_role_${idx + 1}`]: val})}
+                      onChange={(val) => setFormData(prev => ({...prev, [`position_role_${idx + 1}`]: val}))}
                     />
                   ))}
                 </CardContent>
@@ -699,6 +776,206 @@ export default function EvaluationsNew() {
               className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
             >
               Create Evaluation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Evaluation Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              Edit Player Evaluation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-8 mt-6">
+            <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+              <CardHeader className="border-b bg-gradient-to-r from-emerald-100 to-blue-100">
+                <CardTitle className="text-lg">Player Information</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-semibold">Player Name</Label>
+                    <Input value={formData.player_name} readOnly className="bg-slate-50 border-2 h-12" />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Birth Year</Label>
+                    <Input value={formData.birth_year} readOnly className="bg-slate-50 border-2 h-12" />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Team Name</Label>
+                    <Input value={formData.team_name} readOnly className="bg-slate-50 border-2 h-12" />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Evaluator</Label>
+                    <Input
+                      value={formData.evaluator}
+                      onChange={(e) => setFormData({...formData, evaluator: e.target.value})}
+                      placeholder="Your name"
+                      className="border-2 h-12"
+                    />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Primary Position</Label>
+                    <Select value={formData.primary_position} onValueChange={handlePositionChange}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue placeholder="Select position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POSITIONS.map(pos => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Preferred Foot</Label>
+                    <Select value={formData.preferred_foot} onValueChange={(val) => setFormData({...formData, preferred_foot: val})}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Left">Left</SelectItem>
+                        <SelectItem value="Right">Right</SelectItem>
+                        <SelectItem value="Both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="font-semibold">Current Team Status</Label>
+                    <Input
+                      value={formData.current_team_status}
+                      onChange={(e) => setFormData({...formData, current_team_status: e.target.value})}
+                      placeholder="e.g., Starter, Rotation, Development"
+                      className="border-2 h-12"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="font-semibold">Player's Goals</Label>
+                    <Textarea
+                      value={formData.my_goals}
+                      onChange={(e) => setFormData({...formData, my_goals: e.target.value})}
+                      placeholder="What are the player's personal goals?"
+                      rows={2}
+                      className="border-2 resize-none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-blue-200">
+              <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-purple-100">
+                <CardTitle className="text-lg">Mental & Physical Attributes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-6">
+                <RatingSlider label="Growth Mindset" value={formData.growth_mindset} onChange={(val) => setFormData({...formData, growth_mindset: val})} />
+                <RatingSlider label="Resilience" value={formData.resilience} onChange={(val) => setFormData({...formData, resilience: val})} />
+                <RatingSlider label="Efficiency in Execution" value={formData.efficiency_in_execution} onChange={(val) => setFormData({...formData, efficiency_in_execution: val})} />
+                <RatingSlider label="Athleticism" value={formData.athleticism} onChange={(val) => setFormData({...formData, athleticism: val})} />
+                <RatingSlider label="Team Focus" value={formData.team_focus} onChange={(val) => setFormData({...formData, team_focus: val})} />
+              </CardContent>
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="border-2 border-blue-200">
+                <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-cyan-100">
+                  <CardTitle className="text-lg">Defending Skills</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  <RatingSlider label="Defending Organized" value={formData.defending_organized} onChange={(val) => setFormData({...formData, defending_organized: val})} />
+                  <RatingSlider label="Defending Final Third" value={formData.defending_final_third} onChange={(val) => setFormData({...formData, defending_final_third: val})} />
+                  <RatingSlider label="Defending Transition" value={formData.defending_transition} onChange={(val) => setFormData({...formData, defending_transition: val})} />
+                  <RatingSlider label="Pressing" value={formData.pressing} onChange={(val) => setFormData({...formData, pressing: val})} />
+                  <RatingSlider label="Defending Set-Pieces" value={formData.defending_set_pieces} onChange={(val) => setFormData({...formData, defending_set_pieces: val})} />
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-orange-200">
+                <CardHeader className="border-b bg-gradient-to-r from-orange-100 to-red-100">
+                  <CardTitle className="text-lg">Attacking Skills</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  <RatingSlider label="Attacking Organized" value={formData.attacking_organized} onChange={(val) => setFormData({...formData, attacking_organized: val})} />
+                  <RatingSlider label="Attacking Final Third" value={formData.attacking_final_third} onChange={(val) => setFormData({...formData, attacking_final_third: val})} />
+                  <RatingSlider label="Attacking in Transition" value={formData.attacking_in_transition} onChange={(val) => setFormData({...formData, attacking_in_transition: val})} />
+                  <RatingSlider label="Building Out" value={formData.building_out} onChange={(val) => setFormData({...formData, building_out: val})} />
+                  <RatingSlider label="Attacking Set-Pieces" value={formData.attacking_set_pieces} onChange={(val) => setFormData({...formData, attacking_set_pieces: val})} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {formData.primary_position && (
+              <Card className="border-2 border-indigo-200">
+                <CardHeader className="border-b bg-gradient-to-r from-indigo-100 to-purple-100">
+                  <CardTitle className="text-lg">Position-Specific Skills ({formData.primary_position})</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  {dialogPositionFields.map((field, idx) => (
+                    <RatingSlider
+                      key={field.key}
+                      label={field.label}
+                      description={field.description}
+                      value={formData[`position_role_${idx + 1}`]}
+                      onChange={(val) => setFormData(prev => ({...prev, [`position_role_${idx + 1}`]: val}))}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border-2 border-purple-200">
+              <CardHeader className="border-b bg-gradient-to-r from-purple-100 to-pink-100">
+                <CardTitle className="text-lg">Development Notes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4">
+                <div>
+                  <Label className="font-semibold">Player's Strengths</Label>
+                  <Textarea
+                    value={formData.player_strengths}
+                    onChange={(e) => setFormData({...formData, player_strengths: e.target.value})}
+                    placeholder="What does this player excel at?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+                <div>
+                  <Label className="font-semibold">Areas of Growth</Label>
+                  <Textarea
+                    value={formData.areas_of_growth}
+                    onChange={(e) => setFormData({...formData, areas_of_growth: e.target.value})}
+                    placeholder="What areas need improvement?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+                <div>
+                  <Label className="font-semibold">Training Focus</Label>
+                  <Textarea
+                    value={formData.training_focus}
+                    onChange={(e) => setFormData({...formData, training_focus: e.target.value})}
+                    placeholder="What should training focus on?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => setShowEditDialog(false)} className="h-12 px-8">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveEdit}
+              disabled={!formData.player_id}
+              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
+            >
+              Save Changes
             </Button>
           </div>
         </DialogContent>

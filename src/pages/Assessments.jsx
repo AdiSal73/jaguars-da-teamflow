@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
+import { Activity, User, Search, Plus, Trash2, ArrowUpDown, Users as UsersIcon, Upload, ChevronUp, ChevronDown, Sparkles, Edit } from 'lucide-react';
 import BulkImportAssessments from '../components/assessments/BulkImportAssessments';
 import CleanAssessmentsDialog from '../components/assessments/CleanAssessmentsDialog';
 import AssessmentAnalytics from '../components/assessments/AssessmentAnalytics';
@@ -22,6 +22,8 @@ export default function Assessments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingAssessment, setEditingAssessment] = useState(null);
   const [selectedAssessments, setSelectedAssessments] = useState([]);
   const [bulkTeamId, setBulkTeamId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -51,6 +53,13 @@ export default function Assessments() {
     queryFn: () => base44.auth.me()
   });
 
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
+  const isAdminOrCoach = user?.role === 'admin' || coaches.some(c => c.email === user?.email);
+
   const { data: assessments = [] } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
@@ -61,7 +70,6 @@ export default function Assessments() {
         return allAssessments.filter(a => a.player_id === currentPlayer?.id);
       }
       if (user?.role === 'coach') {
-        const coaches = await base44.entities.Coach.list();
         const currentCoach = coaches.find(c => c.email === user.email);
         if (currentCoach?.team_ids) {
           return allAssessments.filter(a => currentCoach.team_ids.includes(a.team_id));
@@ -80,11 +88,6 @@ export default function Assessments() {
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
     queryFn: () => base44.entities.Team.list()
-  });
-
-  const { data: coaches = [] } = useQuery({
-    queryKey: ['coaches'],
-    queryFn: () => base44.entities.Coach.list()
   });
 
   const calculateScores = (sprint, vertical, yirt, shuttle) => {
@@ -159,7 +162,11 @@ export default function Assessments() {
         ...scores
       });
     },
-    onSuccess: () => queryClient.invalidateQueries(['assessments'])
+    onSuccess: () => {
+      queryClient.invalidateQueries(['assessments']);
+      setEditingAssessment(null);
+      setShowEditDialog(false);
+    }
   });
 
   const deleteAssessmentMutation = useMutation({
@@ -245,6 +252,18 @@ export default function Assessments() {
       notes: newAssessment.notes || ''
     };
     createAssessmentMutation.mutate(cleanData);
+  };
+
+  const handleEditAssessment = () => {
+    updateAssessmentMutation.mutate({
+      id: editingAssessment.id,
+      data: {
+        sprint: parseFloat(editingAssessment.sprint) || 0,
+        vertical: parseFloat(editingAssessment.vertical) || 0,
+        yirt: parseFloat(editingAssessment.yirt) || 0,
+        shuttle: parseFloat(editingAssessment.shuttle) || 0
+      }
+    });
   };
 
   const handleSelectAll = (checked) => {
@@ -461,57 +480,70 @@ export default function Assessments() {
                 const team = teams.find(t => t.id === assessment.team_id);
                 
                 return (
-                  <Link 
-                    key={assessment.id} 
-                    to={player ? `${createPageUrl('PlayerDashboard')}?id=${player.id}` : '#'}
-                    className={player ? 'cursor-pointer' : 'cursor-default'}
-                  >
-                    <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300">
-                      <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
-                          <User className="w-6 h-6 text-white" />
+                  <div key={assessment.id} className="relative group">
+                    <Link 
+                      to={player ? `${createPageUrl('PlayerDashboard')}?id=${player.id}` : '#'}
+                      className={player ? 'cursor-pointer' : 'cursor-default'}
+                    >
+                      <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300">
+                        <CardContent className="p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center">
+                            <User className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-slate-900">{player?.full_name || assessment.player_name || 'Player'}</h3>
+                            <p className="text-xs text-slate-600">{new Date(assessment.assessment_date).toLocaleDateString()}</p>
+                            {team && <p className="text-xs text-slate-500">{team.name}</p>}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-slate-900">{player?.full_name || assessment.player_name || 'Player'}</h3>
-                          <p className="text-xs text-slate-600">{new Date(assessment.assessment_date).toLocaleDateString()}</p>
-                          {team && <p className="text-xs text-slate-500">{team.name}</p>}
+                        
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className="p-3 bg-red-50 rounded-lg">
+                            <div className="text-xs text-red-600 mb-1">Sprint</div>
+                            <div className="text-lg font-bold text-red-700">{assessment.sprint?.toFixed(2)}s</div>
+                          </div>
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <div className="text-xs text-blue-600 mb-1">Vertical</div>
+                            <div className="text-lg font-bold text-blue-700">{assessment.vertical}"</div>
+                          </div>
+                          <div className="p-3 bg-emerald-50 rounded-lg">
+                            <div className="text-xs text-emerald-600 mb-1">YIRT</div>
+                            <div className="text-lg font-bold text-emerald-700">{assessment.yirt}</div>
+                          </div>
+                          <div className="p-3 bg-pink-50 rounded-lg">
+                            <div className="text-xs text-pink-600 mb-1">Shuttle</div>
+                            <div className="text-lg font-bold text-pink-700">{assessment.shuttle?.toFixed(2)}s</div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="p-3 bg-red-50 rounded-lg">
-                          <div className="text-xs text-red-600 mb-1">Sprint</div>
-                          <div className="text-lg font-bold text-red-700">{assessment.sprint?.toFixed(2)}s</div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <div className="text-xs text-blue-600 mb-1">Vertical</div>
-                          <div className="text-lg font-bold text-blue-700">{assessment.vertical}"</div>
-                        </div>
-                        <div className="p-3 bg-emerald-50 rounded-lg">
-                          <div className="text-xs text-emerald-600 mb-1">YIRT</div>
-                          <div className="text-lg font-bold text-emerald-700">{assessment.yirt}</div>
-                        </div>
-                        <div className="p-3 bg-pink-50 rounded-lg">
-                          <div className="text-xs text-pink-600 mb-1">Shuttle</div>
-                          <div className="text-lg font-bold text-pink-700">{assessment.shuttle?.toFixed(2)}s</div>
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-4 gap-2 mb-4">
-                        <CircleProgress value={assessment.speed_score || 0} label="Speed" color="#ef4444" />
-                        <CircleProgress value={assessment.power_score || 0} label="Power" color="#3b82f6" />
-                        <CircleProgress value={assessment.endurance_score || 0} label="Endurance" color="#10b981" />
-                        <CircleProgress value={assessment.agility_score || 0} label="Agility" color="#ec4899" />
-                      </div>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                          <CircleProgress value={assessment.speed_score || 0} label="Speed" color="#ef4444" />
+                          <CircleProgress value={assessment.power_score || 0} label="Power" color="#3b82f6" />
+                          <CircleProgress value={assessment.endurance_score || 0} label="Endurance" color="#10b981" />
+                          <CircleProgress value={assessment.agility_score || 0} label="Agility" color="#ec4899" />
+                        </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                        <span className="text-sm text-slate-600">Overall Score</span>
-                        <span className="text-2xl font-bold text-emerald-600">{assessment.overall_score || 0}</span>
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                          <span className="text-sm text-slate-600">Overall Score</span>
+                          <span className="text-2xl font-bold text-emerald-600">{assessment.overall_score || 0}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    </Link>
+                    {isAdminOrCoach && (
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="bg-white shadow-md hover:bg-slate-100 h-8 w-8"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingAssessment(assessment); setShowEditDialog(true); }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                  </Link>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -666,20 +698,37 @@ export default function Assessments() {
                           <TableCell className="text-center font-semibold text-pink-600">{assessment.agility_score || 0}</TableCell>
                           <TableCell className="text-center font-bold text-slate-900">{assessment.overall_score || 0}</TableCell>
                           <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (window.confirm('Delete this assessment?')) {
-                                  deleteAssessmentMutation.mutate(assessment.id);
-                                }
-                              }}
-                              className="hover:bg-red-50 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              {isAdminOrCoach && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-7 w-7 hover:bg-emerald-50"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setEditingAssessment(assessment);
+                                    setShowEditDialog(true);
+                                  }}
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (window.confirm('Delete this assessment?')) {
+                                    deleteAssessmentMutation.mutate(assessment.id);
+                                  }
+                                }}
+                                className="h-7 w-7 hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -761,6 +810,48 @@ export default function Assessments() {
               Create Assessment
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Assessment</DialogTitle>
+          </DialogHeader>
+          {editingAssessment && (
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Sprint (seconds) *</Label>
+                <Input type="number" step="0.01" value={editingAssessment.sprint} 
+                  onChange={(e) => setEditingAssessment({...editingAssessment, sprint: parseFloat(e.target.value)})} 
+                  placeholder="e.g., 3.5" />
+              </div>
+              <div>
+                <Label>Vertical Jump (inches) *</Label>
+                <Input type="number" value={editingAssessment.vertical} 
+                  onChange={(e) => setEditingAssessment({...editingAssessment, vertical: parseInt(e.target.value)})} 
+                  placeholder="e.g., 15" />
+              </div>
+              <div>
+                <Label>YIRT (levels) *</Label>
+                <Input type="number" value={editingAssessment.yirt} 
+                  onChange={(e) => setEditingAssessment({...editingAssessment, yirt: parseInt(e.target.value)})} 
+                  placeholder="e.g., 45" />
+              </div>
+              <div>
+                <Label>Shuttle (seconds) *</Label>
+                <Input type="number" step="0.01" value={editingAssessment.shuttle} 
+                  onChange={(e) => setEditingAssessment({...editingAssessment, shuttle: parseFloat(e.target.value)})} 
+                  placeholder="e.g., 4.8" />
+              </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleEditAssessment} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
