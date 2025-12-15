@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Users, Shield, Calendar, Activity, LogOut,
-  ChevronDown, Clock, BarChart3, UserCog, MessageSquare,
+  ChevronDown, ChevronUp, Clock, BarChart3, UserCog, MessageSquare,
   TrendingUp, Settings, Menu, X, HelpCircle } from
 "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -22,6 +22,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMobileMenus, setExpandedMobileMenus] = useState({});
 
   const { data: user, isError } = useQuery({
     queryKey: ['currentUser'],
@@ -293,40 +294,48 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white py-4 px-4">
-            <nav className="space-y-2">
+          <div className="lg:hidden border-t border-slate-200 bg-white py-4 px-4 max-h-[calc(100vh-64px)] overflow-y-auto">
+            <nav className="space-y-1">
               {filteredNavItems.map((item) =>
                 item.submenu ? (
-                  <div key={item.title} className="space-y-1">
-                    <div className="px-3 py-2 text-sm font-semibold text-slate-900 flex items-center gap-2">
-                      <item.icon className="w-4 h-4" />
-                      {item.title}
-                    </div>
-                    <div className="ml-6 space-y-1">
-                      {item.submenu.map((subItem) => (
-                        <Link
-                          key={subItem.title}
-                          to={subItem.url}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
-                            isActive(subItem.url)
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'text-slate-600 hover:bg-slate-100'
-                          }`}
-                        >
-                          {subItem.title}
-                        </Link>
-                      ))}
-                    </div>
+                  <div key={item.title} className="border-b border-slate-100">
+                    <button
+                      onClick={() => setExpandedMobileMenus(prev => ({...prev, [item.title]: !prev[item.title]}))}
+                      className="w-full px-3 py-3 text-sm font-semibold text-slate-900 flex items-center justify-between hover:bg-slate-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <item.icon className="w-4 h-4" />
+                        {item.title}
+                      </div>
+                      {expandedMobileMenus[item.title] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {expandedMobileMenus[item.title] && (
+                      <div className="ml-6 pb-2 space-y-1">
+                        {item.submenu.map((subItem) => (
+                          <Link
+                            key={subItem.title}
+                            to={subItem.url}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                              isActive(subItem.url)
+                                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {subItem.title}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Link
                     key={item.title}
                     to={item.url}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors ${
                       isActive(item.url)
-                        ? 'bg-emerald-50 text-emerald-700'
+                        ? 'bg-emerald-50 text-emerald-700 font-medium'
                         : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
