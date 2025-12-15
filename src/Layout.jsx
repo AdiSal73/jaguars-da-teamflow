@@ -142,7 +142,7 @@ export default function Layout({ children, currentPageName }) {
       onClick: () => {
         const currentPlayer = players.find((p) => p.email === user.email);
         if (currentPlayer) {
-          navigate(createPageUrl('PlayerDashboard', `id=${currentPlayer.id}`));
+          navigate(`${createPageUrl('PlayerDashboard')}?id=${currentPlayer.id}`);
         }
       }
     },
@@ -151,7 +151,7 @@ export default function Layout({ children, currentPageName }) {
           const player = players.find(p => p.id === playerId);
           return {
             title: player?.full_name || 'Player',
-            url: createPageUrl('PlayerDashboard', `id=${playerId}`),
+            url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
             icon: Activity,
             roles: ["parent"]
           };
@@ -171,8 +171,8 @@ export default function Layout({ children, currentPageName }) {
       roles: ["user", "parent", "coach"]
     },
     {
-      title: "Messages",
-      url: createPageUrl("Messages"),
+      title: "Communications",
+      url: createPageUrl("Communications"),
       icon: MessageSquare,
       roles: ["admin", "coach", "user", "parent"]
     },
