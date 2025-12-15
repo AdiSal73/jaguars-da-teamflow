@@ -25,6 +25,7 @@ import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF }
 import TeamEvaluationForm from '../components/team/TeamEvaluationForm';
 import BulkInviteDialog from '../components/team/BulkInviteDialog';
 import TeamComparisonsTab from '../components/team/TeamComparisonsTab';
+import CoachAssignmentDialog from '../components/team/CoachAssignmentDialog';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function TeamDashboard() {
   const [showTeamEvalDialog, setShowTeamEvalDialog] = useState(false);
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showBulkInviteDialog, setShowBulkInviteDialog] = useState(false);
+  const [showCoachAssignDialog, setShowCoachAssignDialog] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState({
     full_name: '',
     gender: 'Female',
@@ -493,6 +495,10 @@ export default function TeamDashboard() {
               <Button variant="outline" size="sm" onClick={() => setShowBulkInviteDialog(true)} className="bg-blue-50">
                 <Mail className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 <span className="hidden md:inline">Invite All</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowCoachAssignDialog(true)} className="bg-purple-50">
+                <User className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden md:inline">Assign Coaches</span>
               </Button>
             </div>
             <p className="text-sm md:text-base text-slate-600">{team?.age_group} • {team?.league}</p>
@@ -1267,6 +1273,13 @@ export default function TeamDashboard() {
         onClose={() => setShowBulkInviteDialog(false)}
         team={team}
         players={players}
+      />
+
+      <CoachAssignmentDialog
+        open={showCoachAssignDialog}
+        onClose={() => setShowCoachAssignDialog(false)}
+        teamId={teamId}
+        teamName={team?.name}
       />
 
       <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>

@@ -14,8 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import TeamAssignmentSelector from '../components/coach/TeamAssignmentSelector';
 
 export default function CoachManagement() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editingCoach, setEditingCoach] = useState(null);
@@ -31,7 +35,8 @@ export default function CoachManagement() {
     branch: '',
     bio: '',
     is_admin: false,
-    booking_enabled: true
+    booking_enabled: true,
+    team_ids: []
   });
 
   const queryClient = useQueryClient();
@@ -91,7 +96,8 @@ export default function CoachManagement() {
       branch: '',
       bio: '',
       is_admin: false,
-      booking_enabled: true
+      booking_enabled: true,
+      team_ids: []
     });
   };
 
@@ -104,7 +110,8 @@ export default function CoachManagement() {
       branch: coach.branch || '',
       bio: coach.bio || '',
       is_admin: coach.is_admin || false,
-      booking_enabled: coach.booking_enabled !== false
+      booking_enabled: coach.booking_enabled !== false,
+      team_ids: coach.team_ids || []
     });
     setShowDialog(true);
   };
@@ -236,17 +243,29 @@ export default function CoachManagement() {
                     <div className="space-y-2 text-sm">
                       {coach.email && <div><span className="text-slate-500">Email:</span> <span className="ml-1">{coach.email}</span></div>}
                       {coach.phone && <div><span className="text-slate-500">Phone:</span> <span className="ml-1">{coach.phone}</span></div>}
-                      {coachTeams.length > 0 && (
-                        <div className="pt-2">
-                          <span className="text-slate-500 text-xs">Teams:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {coachTeams.slice(0, 3).map(t => (
-                              <Badge key={t.id} variant="outline" className="text-xs">{t.name}</Badge>
-                            ))}
-                            {coachTeams.length > 3 && <Badge variant="outline" className="text-xs">+{coachTeams.length - 3}</Badge>}
-                          </div>
+                      <div className="pt-2">
+                        <span className="text-slate-500 text-xs">Teams:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {coachTeams.length === 0 ? (
+                            <span className="text-xs italic text-slate-400">No teams assigned</span>
+                          ) : (
+                            coachTeams.map(t => (
+                              <Button
+                                key={t.id}
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-xs hover:bg-emerald-50 hover:border-emerald-500"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(createPageUrl('TeamDashboard', `teamId=${t.id}`));
+                                }}
+                              >
+                                {t.name}
+                              </Button>
+                            ))
+                          )}
                         </div>
-                      )}
+                      </div>
                       <div className="flex gap-2 pt-2">
                         {coach.is_admin && <Badge className="bg-emerald-100 text-emerald-800"><Shield className="w-3 h-3 mr-1" />Admin</Badge>}
                         {coach.booking_enabled && <Badge variant="outline">Bookings</Badge>}
@@ -389,6 +408,14 @@ export default function CoachManagement() {
                 <p className="text-xs text-slate-500">Allow session bookings</p>
               </div>
               <Switch checked={coachForm.booking_enabled} onCheckedChange={(checked) => setCoachForm({...coachForm, booking_enabled: checked})} />
+            </div>
+            <div>
+              <Label>Assign Teams</Label>
+              <TeamAssignmentSelector
+                teams={teams}
+                selectedTeamIds={coachForm.team_ids}
+                onChange={(teamIds) => setCoachForm({...coachForm, team_ids: teamIds})}
+              />
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
