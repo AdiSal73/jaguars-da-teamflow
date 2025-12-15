@@ -61,18 +61,10 @@ export default function Layout({ children, currentPageName }) {
   const userRole = getUserRole();
 
   React.useEffect(() => {
-    if ((userRole === 'user' || userRole === 'parent') && players.length > 0 && location.pathname === '/') {
-      let currentPlayer;
-      if (userRole === 'parent' && (user.player_ids || []).length > 0) {
-        currentPlayer = players.find((p) => p.id === user.player_ids[0]);
-      } else {
-        currentPlayer = players.find((p) => p.email === user.email);
-      }
-      if (currentPlayer) {
-        navigate(createPageUrl('PlayerDashboard', `id=${currentPlayer.id}`));
-      }
+    if (userRole && location.pathname === '/') {
+      navigate(createPageUrl('Messages'));
     }
-  }, [userRole, players, location.pathname, user, navigate]);
+  }, [userRole, location.pathname, navigate]);
 
   const navigationItems = [
     {
