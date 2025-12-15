@@ -163,9 +163,29 @@ export default function FormationView() {
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
   
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
+  const currentCoach = coaches.find(c => c.email === user?.email);
+
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => base44.entities.Team.list()
+    queryFn: async () => {
+      const allTeams = await base44.entities.Team.list();
+      if (currentCoach && user?.role !== 'admin') {
+        const coachTeamIds = currentCoach.team_ids || [];
+        return allTeams.filter(t => coachTeamIds.includes(t.id));
+      }
+      return allTeams;
+    },
+    enabled: !!user
   });
 
   const { data: allPlayers = [] } = useQuery({

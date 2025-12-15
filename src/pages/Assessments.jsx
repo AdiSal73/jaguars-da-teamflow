@@ -58,7 +58,8 @@ export default function Assessments() {
     queryFn: () => base44.entities.Coach.list()
   });
 
-  const isAdminOrCoach = user?.role === 'admin' || coaches.some(c => c.email === user?.email);
+  const currentCoach = coaches.find(c => c.email === user?.email);
+  const isAdminOrCoach = user?.role === 'admin' || !!currentCoach;
 
   const { data: assessments = [] } = useQuery({
     queryKey: ['assessments'],
@@ -69,11 +70,9 @@ export default function Assessments() {
         const currentPlayer = players.find(p => p.email === user.email);
         return allAssessments.filter(a => a.player_id === currentPlayer?.id);
       }
-      if (user?.role === 'coach') {
-        const currentCoach = coaches.find(c => c.email === user.email);
-        if (currentCoach?.team_ids) {
-          return allAssessments.filter(a => currentCoach.team_ids.includes(a.team_id));
-        }
+      if (currentCoach && user?.role !== 'admin') {
+        const coachTeamIds = currentCoach.team_ids || [];
+        return allAssessments.filter(a => coachTeamIds.includes(a.team_id));
       }
       return allAssessments;
     },

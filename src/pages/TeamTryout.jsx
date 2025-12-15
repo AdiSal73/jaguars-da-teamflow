@@ -56,10 +56,36 @@ export default function TeamTryout() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: tryouts = [] } = useQuery({
+    queryKey: ['tryouts'],
+    queryFn: () => base44.entities.PlayerTryout.list()
+  });
+
   const updatePlayerTeamMutation = useMutation({
-    mutationFn: ({ playerId, teamId }) => base44.entities.Player.update(playerId, { team_id: teamId }),
+    mutationFn: async ({ playerId, teamId }) => {
+      await base44.entities.Player.update(playerId, { team_id: teamId });
+      
+      // Check if moving to a 26/27 team and update next_year_team
+      if (teamId) {
+        const team = teams.find(t => t.id === teamId);
+        if (team?.name?.includes('26') || team?.name?.includes('27')) {
+          const tryout = tryouts.find(t => t.player_id === playerId);
+          if (tryout) {
+            await base44.entities.PlayerTryout.update(tryout.id, { next_year_team: team.name });
+          } else {
+            const player = allPlayers.find(p => p.id === playerId);
+            await base44.entities.PlayerTryout.create({ 
+              player_id: playerId, 
+              player_name: player?.full_name,
+              next_year_team: team.name 
+            });
+          }
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['tryouts']);
     }
   });
 
@@ -73,10 +99,13 @@ export default function TeamTryout() {
     updatePlayerTeamMutation.mutate({ playerId, teamId: finalTeamId });
   };
 
-  // Filter teams
+  // Filter teams - only show 26/27 teams
   const filteredTeams = useMemo(() => {
     return teams
       .filter(team => {
+        const is2627Team = team.name?.includes('26') || team.name?.includes('27');
+        if (!is2627Team) return false;
+        
         const ageGroupMatch = filterAgeGroup === 'all' || team.age_group === filterAgeGroup;
         const coachMatch = filterCoach === 'all' || (team.coach_ids || []).includes(filterCoach);
         const leagueMatch = filterLeague === 'all' || team.league === filterLeague;

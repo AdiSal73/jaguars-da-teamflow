@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -97,11 +96,21 @@ export default function EvaluationsNew() {
     queryFn: () => base44.entities.Coach.list()
   });
 
-  const isAdminOrCoach = user?.role === 'admin' || coaches.some(c => c.email === user?.email);
+  const currentCoach = coaches.find(c => c.email === user?.email);
+  const isAdminOrCoach = user?.role === 'admin' || !!currentCoach;
 
   const { data: evaluations = [] } = useQuery({
     queryKey: ['evaluations'],
-    queryFn: () => base44.entities.Evaluation.list('-created_date')
+    queryFn: async () => {
+      const allEvals = await base44.entities.Evaluation.list('-created_date');
+      if (currentCoach && user?.role !== 'admin') {
+        const coachTeamIds = currentCoach.team_ids || [];
+        const players = await base44.entities.Player.list();
+        const coachPlayerIds = players.filter(p => coachTeamIds.includes(p.team_id)).map(p => p.id);
+        return allEvals.filter(e => coachPlayerIds.includes(e.player_id));
+      }
+      return allEvals;
+    }
   });
 
   const { data: players = [] } = useQuery({

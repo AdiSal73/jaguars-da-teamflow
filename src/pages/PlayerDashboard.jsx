@@ -1210,7 +1210,7 @@ export default function PlayerDashboard() {
       )}
 
       {/* Events Timeline */}
-      {isAdminOrCoach && pathway && (
+      {pathway && (
         <div className="mt-6">
           <EventsTimeline 
             events={pathway.events_camps || []} 
