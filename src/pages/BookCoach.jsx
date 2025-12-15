@@ -19,6 +19,10 @@ export default function BookCoach() {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [bookingNotes, setBookingNotes] = useState('');
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
+  const [selectedLocationId, setSelectedLocationId] = useState('');
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationAddress, setNewLocationAddress] = useState('');
+  const [showNewLocationForm, setShowNewLocationForm] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const { data: user } = useQuery({
@@ -41,6 +45,11 @@ export default function BookCoach() {
     queryFn: () => base44.entities.Player.list()
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => base44.entities.Location.list()
+  });
+
   // Get players for this parent
   const myPlayers = useMemo(() => {
     if (user?.role === 'parent' && user?.player_ids) {
@@ -48,6 +57,17 @@ export default function BookCoach() {
     }
     return players.filter(p => p.email === user?.email);
   }, [players, user]);
+
+  const createLocationMutation = useMutation({
+    mutationFn: (data) => base44.entities.Location.create(data),
+    onSuccess: (newLocation) => {
+      queryClient.invalidateQueries(['locations']);
+      setSelectedLocationId(newLocation.id);
+      setShowNewLocationForm(false);
+      setNewLocationName('');
+      setNewLocationAddress('');
+    }
+  });
 
   const createBookingMutation = useMutation({
     mutationFn: (data) => base44.entities.Booking.create(data),
@@ -59,6 +79,7 @@ export default function BookCoach() {
         setBookingSuccess(false);
         setSelectedSlot(null);
         setBookingNotes('');
+        setSelectedLocationId('');
       }, 2000);
     }
   });
@@ -166,6 +187,14 @@ export default function BookCoach() {
     return dates;
   }, [selectedCoach, calendarDays, bookings]);
 
+  const handleCreateLocation = () => {
+    if (!newLocationName || !newLocationAddress) return;
+    createLocationMutation.mutate({
+      name: newLocationName,
+      address: newLocationAddress
+    });
+  };
+
   const handleBookSlot = () => {
     const player = myPlayers.find(p => p.id === selectedPlayerId) || myPlayers[0];
     createBookingMutation.mutate({
@@ -174,6 +203,7 @@ export default function BookCoach() {
       player_id: player?.id,
       player_name: player?.full_name,
       parent_id: user?.id,
+      location_id: selectedLocationId,
       service_name: selectedSlot.service_name,
       booking_date: selectedDate.toISOString().split('T')[0],
       start_time: selectedSlot.start_time,
@@ -365,6 +395,48 @@ export default function BookCoach() {
                 )}
                 
                 <div>
+                  <Label className="mb-2 block">Location *</Label>
+                  {!showNewLocationForm ? (
+                    <div className="space-y-2">
+                      <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                        <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
+                        <SelectContent>
+                          {locations.map(loc => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.name} - {loc.address}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="link" size="sm" onClick={() => setShowNewLocationForm(true)} className="p-0 h-auto">
+                        + Add new location
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 border rounded-lg">
+                      <Input 
+                        placeholder="Location name *" 
+                        value={newLocationName}
+                        onChange={(e) => setNewLocationName(e.target.value)}
+                      />
+                      <Input 
+                        placeholder="Address *" 
+                        value={newLocationAddress}
+                        onChange={(e) => setNewLocationAddress(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleCreateLocation} disabled={!newLocationName || !newLocationAddress}>
+                          Create
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowNewLocationForm(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
                   <Label className="mb-2 block">Notes (optional)</Label>
                   <Textarea
                     value={bookingNotes}
@@ -376,7 +448,7 @@ export default function BookCoach() {
                 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">Cancel</Button>
-                  <Button onClick={handleBookSlot} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={handleBookSlot} disabled={!selectedLocationId} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                     Confirm Booking
                   </Button>
                 </div>
