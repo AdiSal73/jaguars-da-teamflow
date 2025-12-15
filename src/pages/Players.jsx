@@ -57,8 +57,8 @@ export default function Players() {
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterSpeed, setFilterSpeed] = useState('all');
-  const [filterResilience, setFilterResilience] = useState('all');
+  const [filterOverall, setFilterOverall] = useState('all');
+  const [filterTeamRole, setFilterTeamRole] = useState('all');
   const [sortBy, setSortBy] = useState('full_name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [viewMode, setViewMode] = useState('cards');
@@ -331,29 +331,23 @@ export default function Players() {
       const playerAssessments = assessments.filter(a => a.player_id === player.id).sort((a, b) => 
         new Date(b.assessment_date) - new Date(a.assessment_date)
       );
-      const matchesSpeed = filterSpeed === 'all' || (() => {
-        if (playerAssessments.length === 0) return filterSpeed === 'none';
-        const latestSpeed = playerAssessments[0].speed_score || 0;
-        if (filterSpeed === 'high') return latestSpeed >= 70;
-        if (filterSpeed === 'medium') return latestSpeed >= 40 && latestSpeed < 70;
-        if (filterSpeed === 'low') return latestSpeed < 40;
+      const matchesOverall = filterOverall === 'all' || (() => {
+        if (playerAssessments.length === 0) return filterOverall === 'none';
+        const latestOverall = playerAssessments[0].overall_score || 0;
+        if (filterOverall === 'high') return latestOverall >= 70;
+        if (filterOverall === 'medium') return latestOverall >= 40 && latestOverall < 70;
+        if (filterOverall === 'low') return latestOverall < 40;
         return false;
       })();
       
-      const playerEvaluations = evaluations.filter(e => e.player_id === player.id).sort((a, b) => 
-        new Date(b.created_date) - new Date(a.created_date)
-      );
-      const matchesResilience = filterResilience === 'all' || (() => {
-        if (playerEvaluations.length === 0) return filterResilience === 'none';
-        const latestResilience = playerEvaluations[0].resilience || 0;
-        if (filterResilience === 'high') return latestResilience >= 7;
-        if (filterResilience === 'medium') return latestResilience >= 4 && latestResilience < 7;
-        if (filterResilience === 'low') return latestResilience < 4;
-        return false;
+      const playerTryout = tryouts.find(t => t.player_id === player.id);
+      const matchesTeamRole = filterTeamRole === 'all' || (() => {
+        if (!playerTryout || !playerTryout.team_role) return filterTeamRole === 'none';
+        return playerTryout.team_role === filterTeamRole;
       })();
 
       const trappedMatch = !showTrappedOnly || isTrappedPlayer(player.date_of_birth);
-      return trappedMatch && matchesPosition && matchesStatus && matchesSpeed && matchesResilience;
+      return trappedMatch && matchesPosition && matchesStatus && matchesOverall && matchesTeamRole;
     })
     .sort((a, b) => {
       let aVal, bVal;
@@ -367,16 +361,16 @@ export default function Players() {
       if (sortBy === 'jersey_number') {
         aVal = a.jersey_number || 0;
         bVal = b.jersey_number || 0;
-      } else if (sortBy === 'speed_score') {
+      } else if (sortBy === 'overall_score') {
         const aAssessments = assessments.filter(x => x.player_id === a.id).sort((x, y) => new Date(y.assessment_date) - new Date(x.assessment_date));
         const bAssessments = assessments.filter(x => x.player_id === b.id).sort((x, y) => new Date(y.assessment_date) - new Date(x.assessment_date));
-        aVal = aAssessments[0]?.speed_score || 0;
-        bVal = bAssessments[0]?.speed_score || 0;
-      } else if (sortBy === 'resilience') {
-        const aEvals = evaluations.filter(x => x.player_id === a.id).sort((x, y) => new Date(y.created_date) - new Date(x.created_date));
-        const bEvals = evaluations.filter(x => x.player_id === b.id).sort((x, y) => new Date(y.created_date) - new Date(x.created_date));
-        aVal = aEvals[0]?.resilience || 0;
-        bVal = bEvals[0]?.resilience || 0;
+        aVal = aAssessments[0]?.overall_score || 0;
+        bVal = bAssessments[0]?.overall_score || 0;
+      } else if (sortBy === 'team_role') {
+        const aTryout = tryouts.find(t => t.player_id === a.id);
+        const bTryout = tryouts.find(t => t.player_id === b.id);
+        aVal = aTryout?.team_role || '';
+        bVal = bTryout?.team_role || '';
       } else {
         aVal = a[sortBy] || '';
         bVal = b[sortBy] || '';
@@ -556,8 +550,8 @@ export default function Players() {
             </Select>
           </div>
           <div>
-            <Label className="mb-2 block text-xs">Speed</Label>
-            <Select value={filterSpeed} onValueChange={setFilterSpeed}>
+            <Label className="mb-2 block text-xs">Overall</Label>
+            <Select value={filterOverall} onValueChange={setFilterOverall}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
@@ -571,16 +565,20 @@ export default function Players() {
             </Select>
           </div>
           <div>
-            <Label className="mb-2 block text-xs">Resilience</Label>
-            <Select value={filterResilience} onValueChange={setFilterResilience}>
+            <Label className="mb-2 block text-xs">Team Role</Label>
+            <Select value={filterTeamRole} onValueChange={setFilterTeamRole}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="high">High (7+)</SelectItem>
-                <SelectItem value="medium">Med (4-6)</SelectItem>
-                <SelectItem value="low">Low (&lt;4)</SelectItem>
+                <SelectItem value="Indispensable Player">Indispensable</SelectItem>
+                <SelectItem value="GA Starter">GA Starter</SelectItem>
+                <SelectItem value="GA Rotation">GA Rotation</SelectItem>
+                <SelectItem value="Aspire Starter">Aspire Starter</SelectItem>
+                <SelectItem value="Aspire Rotation">Aspire Rotation</SelectItem>
+                <SelectItem value="United Starter">United Starter</SelectItem>
+                <SelectItem value="United Rotation">United Rotation</SelectItem>
                 <SelectItem value="none">No Data</SelectItem>
               </SelectContent>
             </Select>
@@ -595,8 +593,8 @@ export default function Players() {
                 <SelectItem value="full_name">Name</SelectItem>
                 <SelectItem value="jersey_number">Jersey #</SelectItem>
                 <SelectItem value="primary_position">Position</SelectItem>
-                <SelectItem value="speed_score">Speed</SelectItem>
-                <SelectItem value="resilience">Resilience</SelectItem>
+                <SelectItem value="overall_score">Overall</SelectItem>
+                <SelectItem value="team_role">Team Role</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -896,8 +894,6 @@ export default function Players() {
                 placeholder="e.g., 10"
               />
             </div>
-            {/* Added Parent Name and Email editing as requested */}
-            {/* These were already present in the form, confirming they are editable */}
             <div>
               <Label>Primary Position *</Label>
               <Select value={playerForm.primary_position} onValueChange={(value) => setPlayerForm({...playerForm, primary_position: value})}>
