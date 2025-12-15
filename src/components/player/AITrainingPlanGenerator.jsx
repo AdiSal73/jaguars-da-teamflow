@@ -219,7 +219,7 @@ Return ONLY valid JSON matching this exact structure:
                   <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
                   <h3 className="font-semibold text-lg mb-2">Generate Adaptive Training Plan</h3>
                   <p className="text-sm text-slate-600 mb-4">
-                    AI analyzes {player.full_name}'s performance data, skill gaps, recent feedback, and progression trends to create an optimized 4-week training program that adapts to their response.
+                    Adil will analyze {player.full_name}'s performance data, skill gaps, recent feedback, and progression trends to create an optimized 4-week training program that adapts to their response.
                   </p>
                   {feedbackData.length > 0 && (
                     <div className="mb-4 p-3 bg-white/60 rounded-lg text-left">
