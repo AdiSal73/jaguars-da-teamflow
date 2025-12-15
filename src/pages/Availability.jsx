@@ -42,8 +42,19 @@ export default function Availability() {
     queryFn: () => base44.entities.Location.list()
   });
 
+  const { data: bookings = [] } = useQuery({
+    queryKey: ['bookings'],
+    queryFn: () => base44.entities.Booking.list()
+  });
+
 
   const currentCoach = coaches.find(c => c.email === user?.email);
+  const isAdmin = user?.role === 'admin';
+  
+  // Filter bookings for coaches
+  const relevantBookings = isAdmin 
+    ? bookings 
+    : bookings.filter(b => b.coach_id === currentCoach?.id);
 
 
   React.useEffect(() => {
@@ -229,6 +240,7 @@ export default function Availability() {
             slots={availabilitySlots}
             services={services}
             blackoutDates={blackoutDates}
+            bookings={relevantBookings}
             onAddSlot={handleSaveSlot}
             onEditSlot={handleSaveSlot}
             onDeleteSlot={handleDeleteSlot}

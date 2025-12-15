@@ -15,6 +15,14 @@ export default function BookingsTable() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCoach, setFilterCoach] = useState('all');
   const [filterDate, setFilterDate] = useState('');
+  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterBranch, setFilterBranch] = useState('all');
+  const [filterLeague, setFilterLeague] = useState('all');
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['bookings'],
@@ -26,10 +34,18 @@ export default function BookingsTable() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list()
+  });
+
   const { data: locations = [] } = useQuery({
     queryKey: ['locations'],
     queryFn: () => base44.entities.Location.list()
   });
+
+  const currentCoach = coaches.find(c => c.email === user?.email);
+  const isAdmin = user?.role === 'admin';
 
   const updateBookingMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Booking.update(id, data),
@@ -37,7 +53,14 @@ export default function BookingsTable() {
   });
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter(booking => {
+    let filtered = bookings;
+    
+    // Coaches only see their own bookings
+    if (currentCoach && !isAdmin) {
+      filtered = filtered.filter(b => b.coach_id === currentCoach.id);
+    }
+    
+    return filtered.filter(booking => {
       const matchesSearch = 
         booking.player_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.coach_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,9 +68,18 @@ export default function BookingsTable() {
       const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
       const matchesCoach = filterCoach === 'all' || booking.coach_id === filterCoach;
       const matchesDate = !filterDate || booking.booking_date === filterDate;
-      return matchesSearch && matchesStatus && matchesCoach && matchesDate;
+      
+      // Admin filters
+      const coach = coaches.find(c => c.id === booking.coach_id);
+      const teamIds = coach?.team_ids || [];
+      const coachTeams = teams.filter(t => teamIds.includes(t.id));
+      const matchesAgeGroup = filterAgeGroup === 'all' || coachTeams.some(t => t.age_group === filterAgeGroup);
+      const matchesBranch = filterBranch === 'all' || coachTeams.some(t => t.branch === filterBranch) || coach?.branch === filterBranch;
+      const matchesLeague = filterLeague === 'all' || coachTeams.some(t => t.league === filterLeague);
+      
+      return matchesSearch && matchesStatus && matchesCoach && matchesDate && matchesAgeGroup && matchesBranch && matchesLeague;
     });
-  }, [bookings, searchTerm, filterStatus, filterCoach, filterDate]);
+  }, [bookings, searchTerm, filterStatus, filterCoach, filterDate, filterAgeGroup, filterBranch, filterLeague, currentCoach, isAdmin, coaches, teams]);
 
   const formatTimeDisplay = (timeStr) => {
     if (!timeStr) return '';
@@ -105,8 +137,8 @@ export default function BookingsTable() {
       {/* Filters */}
       <Card className="border-none shadow-lg mb-6">
         <CardContent className="p-4">
-          <div className="grid md:grid-cols-5 gap-4">
-            <div className="md:col-span-2 relative">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+            <div className="lg:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Search by player, coach, or service..."
@@ -127,17 +159,6 @@ export default function BookingsTable() {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterCoach} onValueChange={setFilterCoach}>
-              <SelectTrigger>
-                <SelectValue placeholder="Coach" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Coaches</SelectItem>
-                {coaches.map(coach => (
-                  <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Input
               type="date"
               value={filterDate}
@@ -145,6 +166,55 @@ export default function BookingsTable() {
               placeholder="Filter by date"
             />
           </div>
+          
+          {isAdmin && (
+            <div className="grid md:grid-cols-4 gap-4">
+              <Select value={filterCoach} onValueChange={setFilterCoach}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Coach" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches</SelectItem>
+                  {coaches.map(coach => (
+                    <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Age Group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Age Groups</SelectItem>
+                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort().map(ag => (
+                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterBranch} onValueChange={setFilterBranch}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {[...new Set([...teams.map(t => t.branch), ...coaches.map(c => c.branch)].filter(Boolean))].map(branch => (
+                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterLeague} onValueChange={setFilterLeague}>
+                <SelectTrigger>
+                  <SelectValue placeholder="League" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
+                    <SelectItem key={league} value={league}>{league}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
