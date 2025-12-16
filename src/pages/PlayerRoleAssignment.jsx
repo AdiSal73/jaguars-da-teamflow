@@ -196,7 +196,7 @@ export default function PlayerRoleAssignment() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {teams.filter(t => t.gender === filterGender || !t.gender).map(t => (
+                  {teams.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string').map(t => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -317,7 +317,7 @@ export default function PlayerRoleAssignment() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Teams</SelectItem>
-                      {teams.filter(t => t.gender === filterGender || !t.gender).map(t => (
+                      {teams.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string').map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                       ))}
                     </SelectContent>

@@ -289,7 +289,7 @@ export default function Tryouts() {
   const calculateTeamPriority = (team) => {
     if (team.league === 'Girls Academy') return 1;
     if (team.league === 'Aspire') return 2;
-    const name = team.name.toLowerCase();
+    const name = typeof team.name === 'string' ? team.name.toLowerCase() : '';
     if (name.includes('green')) return 3;
     if (name.includes('white')) return 4;
     if (name.includes('black')) return 5;
@@ -319,7 +319,7 @@ export default function Tryouts() {
         const pA = calculateTeamPriority(a);
         const pB = calculateTeamPriority(b);
         if (pA !== pB) return pA - pB;
-        return a.name.localeCompare(b.name);
+        return (typeof a.name === 'string' ? a.name : '').localeCompare(typeof b.name === 'string' ? b.name : '');
     });
 
     let allPlayers = players.filter((p) => ageGroupTeams.some((t) => t.id === p.team_id));
@@ -395,7 +395,7 @@ export default function Tryouts() {
                   const pA = calculateTeamPriority(a);
                   const pB = calculateTeamPriority(b);
                   if (pA !== pB) return pA - pB;
-                  return a.name.localeCompare(b.name);
+                  return (typeof a.name === 'string' ? a.name : '').localeCompare(typeof b.name === 'string' ? b.name : '');
               })
               .map((team) => {
               const teamPlayers = getTeamPlayers(team);
