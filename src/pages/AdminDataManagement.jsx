@@ -242,7 +242,7 @@ export default function AdminDataManagement() {
         <div className="flex gap-2">
           <Button onClick={() => setShowNextSeasonDialog(true)} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
             <Calendar className="w-4 h-4 mr-2" />
-            Create 26/27 Teams
+            Create Future Teams
           </Button>
           <Button onClick={() => setShowCleanDialog(true)} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
             <AlertTriangle className="w-4 h-4 mr-2" />
@@ -539,6 +539,14 @@ export default function AdminDataManagement() {
         open={showNextSeasonDialog}
         onClose={() => { setShowNextSeasonDialog(false); queryClient.invalidateQueries(['teams']); }}
         onCreate={async (teamData) => await base44.entities.Team.create(teamData)}
+        onDeleteAll={async () => {
+          const teamsToDelete = teams.filter(t => t.season === '26/27');
+          for (const team of teamsToDelete) {
+            await base44.entities.Team.delete(team.id);
+          }
+          queryClient.invalidateQueries(['teams']);
+          toast.success(`Deleted ${teamsToDelete.length} teams`);
+        }}
       />
     </div>
   );
