@@ -181,6 +181,12 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach", "user", "parent"]
     },
     {
+      title: "Preferences",
+      url: createPageUrl("CommunicationPreferences"),
+      icon: Settings,
+      roles: ["admin", "coach", "user", "parent"]
+    },
+    {
       title: "FAQ",
       url: createPageUrl("FAQ"),
       icon: HelpCircle,

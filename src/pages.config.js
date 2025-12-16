@@ -30,6 +30,7 @@ import CoachingResources from './pages/CoachingResources';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import PDPViewer from './pages/PDPViewer';
 import EmailTemplates from './pages/EmailTemplates';
+import CommunicationPreferences from './pages/CommunicationPreferences';
 import __Layout from './Layout.jsx';
 
 
@@ -66,6 +67,7 @@ export const PAGES = {
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "PDPViewer": PDPViewer,
     "EmailTemplates": EmailTemplates,
+    "CommunicationPreferences": CommunicationPreferences,
 }
 
 export const pagesConfig = {
