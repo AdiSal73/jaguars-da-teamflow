@@ -647,9 +647,9 @@ export default function PlayerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-green-50/30 to-teal-50/40">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100">
       {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white shadow-2xl overflow-hidden">
+      <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsLTE4LjE1LTE4LjE1QzM1LjIyIDI0IDM2IDIxLjA4IDM2IDE4em0tMTggMTRjLTcuNzMgMC0xNC02LjI3LTE0LTE0UzEwLjI3IDQgMTggNHMxNCA2LjI3IDE0IDE0LTYuMjcgMTQtMTQgMTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
         <div className="max-w-[1600px] mx-auto p-6 md:p-8 relative z-10">
           <div className="flex items-start justify-between mb-4">
@@ -711,9 +711,9 @@ export default function PlayerDashboard() {
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 -mt-8">
 
       <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
-        {/* Player Info & Contact */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/60 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 via-green-600/90 to-teal-600/90 text-white border-b border-emerald-400/30">
+      {/* Player Info & Contact */}
+      <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+      <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
             <CardTitle className="text-base flex items-center gap-2 font-bold">
               <User className="w-5 h-5" /> Player Info
             </CardTitle>
@@ -855,8 +855,8 @@ export default function PlayerDashboard() {
 
         {/* Tryout Info - Only visible to admin/coach */}
         {isAdminOrCoach && (
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-purple-600/90 via-pink-600/90 to-purple-600/90 text-white border-b border-purple-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-700 to-green-700 text-white border-b border-emerald-400/30">
             <CardTitle className="text-base font-bold">🎯 Tryout Info</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -970,8 +970,8 @@ export default function PlayerDashboard() {
         )}
 
         {/* Physical Assessment */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-red-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-red-600/90 via-orange-600/90 to-yellow-600/90 text-white border-b border-red-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
             <CardTitle className="text-base flex items-center justify-between font-bold">
               <div className="flex items-center gap-2">
                 💪 Physical Assessment
@@ -1050,8 +1050,8 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Evaluation Metrics */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90 text-white border-b border-blue-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
             <div className="flex items-center justify-between mb-1">
               <CardTitle className="text-base flex items-center gap-2 font-bold">
                 📊 Evaluation
@@ -1124,28 +1124,28 @@ export default function PlayerDashboard() {
       {/* Development Notes */}
       {currentEvaluation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-emerald-50 to-green-50 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-emerald-900">Strengths</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-emerald-800">{currentEvaluation.player_strengths || 'Not specified'}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-2xl bg-gradient-to-br from-emerald-100 to-green-100 overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-emerald-900">Areas of Growth</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-emerald-800">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
+            </CardContent>
+          </Card>
           <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-green-800">Strengths</CardTitle>
+              <CardTitle className="text-sm text-green-900">Training Focus</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-green-700">{currentEvaluation.player_strengths || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-orange-800">Areas of Growth</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-orange-700">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-blue-800">Training Focus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-blue-700">{currentEvaluation.training_focus || 'Not specified'}</p>
+              <p className="text-sm text-green-800">{currentEvaluation.training_focus || 'Not specified'}</p>
             </CardContent>
           </Card>
         </div>
@@ -1155,8 +1155,8 @@ export default function PlayerDashboard() {
       {(assessments.length > 1 || evaluations.length > 1) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {assessments.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 to-green-600/90 text-white border-b border-emerald-400/30">
+            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
                 <CardTitle className="text-base flex items-center gap-2 font-bold">
                   <TrendingUp className="w-4 h-4" />
                   Physical Progress ({assessments.length})
@@ -1202,8 +1202,8 @@ export default function PlayerDashboard() {
           )}
 
           {evaluations.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-              <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white border-b border-blue-400/30">
+            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
                 <CardTitle className="text-base flex items-center gap-2 font-bold">
                   <TrendingUp className="w-4 h-4" />
                   Evaluation Progress ({evaluations.length})
@@ -1252,8 +1252,8 @@ export default function PlayerDashboard() {
       {/* Bento Grid - Events, Injuries, Documents */}
       <div className="grid md:grid-cols-3 gap-6 mt-6">
         {/* Events & Camps */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-purple-50/80 via-pink-50/50 to-purple-50/80 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-purple-600/90 via-pink-600/90 to-purple-600/90 text-white border-b border-purple-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 🏆 Events & Camps
@@ -1315,8 +1315,8 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Injury Tracking */}
-            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-3 bg-gradient-to-r from-red-600/90 via-orange-600/90 to-red-600/90 text-white border-b border-red-400/30">
+            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-gradient-to-br from-white to-red-50 backdrop-blur-sm">
+          <CardHeader className="pb-3 bg-gradient-to-r from-red-600 to-orange-600 text-white border-b border-red-400/30">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 🏥 Injury Tracking
@@ -1408,8 +1408,8 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Documents & Reports */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-blue-50/80 via-cyan-50/50 to-blue-50/80 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 via-cyan-600/90 to-blue-600/90 text-white border-b border-blue-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 📄 Documents & Reports
