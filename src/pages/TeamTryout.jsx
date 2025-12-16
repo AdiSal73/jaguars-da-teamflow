@@ -106,6 +106,13 @@ export default function TeamTryout() {
   const uniqueCurrentTeams = [...new Set(players.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
   const uniqueSeasons = [...new Set(teams.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean))].sort().reverse();
 
+  const getPlayerWithTryoutData = (playerId) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return null;
+    const tryout = tryouts.find(t => t.player_id === playerId);
+    return { ...player, tryout: tryout || {} };
+  };
+
   const handleBulkAssign = async () => {
     if (!bulkAssignTeam || selectedPlayers.length === 0) {
       toast.error('Select team and players');
