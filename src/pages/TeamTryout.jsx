@@ -109,11 +109,11 @@ export default function TeamTryout() {
       if (seen.has(t.name)) return false;
       seen.add(t.name);
       
-      const matchesSearch = t.name.toLowerCase().includes(teamSearchTerm.toLowerCase());
+      const matchesSearch = typeof teamSearchTerm === 'string' && t.name.toLowerCase().includes(teamSearchTerm.toLowerCase());
       const matchesGender = teamFilterGender === 'all' || t.gender === teamFilterGender;
-      const matchesBranch = teamFilterBranch === 'all' || t.branch === teamFilterBranch;
-      const matchesAgeGroup = teamFilterAgeGroup === 'all' || t.age_group === teamFilterAgeGroup;
-      const matchesLeague = teamFilterLeague === 'all' || t.league === teamFilterLeague;
+      const matchesBranch = teamFilterBranch === 'all' || (typeof t.branch === 'string' && t.branch === teamFilterBranch);
+      const matchesAgeGroup = teamFilterAgeGroup === 'all' || (typeof t.age_group === 'string' && t.age_group === teamFilterAgeGroup);
+      const matchesLeague = teamFilterLeague === 'all' || (typeof t.league === 'string' && t.league === teamFilterLeague);
       
       return matchesSearch && matchesGender && matchesBranch && matchesAgeGroup && matchesLeague;
     }).sort((a, b) => {
