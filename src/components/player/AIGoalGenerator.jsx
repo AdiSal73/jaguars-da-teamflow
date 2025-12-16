@@ -24,7 +24,21 @@ export default function AIGoalGenerator({ player, onUpdatePlayer, assessments })
   const handleGenerateGoals = async () => {
     setGenerating(true);
     try {
-      const prompt = `Generate personalized development goals for a soccer player based on their evaluation data.
+      const positionKnowledge = POSITION_KNOWLEDGE_BANK[player.primary_position] || {};
+      
+      const knowledgeContext = positionKnowledge.title ? `
+Position: ${positionKnowledge.title}
+Role: ${(positionKnowledge.role || []).join(', ')}
+Key Traits: ${(positionKnowledge.traits || []).slice(0, 5).join(', ')}
+Defending Focus: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+Attacking Focus: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+` : '';
+
+      const prompt = `Generate personalized development goals for a soccer player based on their evaluation data and position requirements.
+
+${knowledgeContext}
+
+Player Profile:
 
 Player Profile:
 - Name: ${player.full_name}

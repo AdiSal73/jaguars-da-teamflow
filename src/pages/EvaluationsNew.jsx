@@ -352,8 +352,20 @@ export default function EvaluationsNew() {
     setGeneratingNotes(true);
     try {
       const player = players.find(p => p.id === formData.player_id);
+      const positionKnowledge = require('../components/constants/positionKnowledgeBank').POSITION_KNOWLEDGE_BANK[formData.primary_position] || {};
       
-      const prompt = `You are Adil, an expert soccer coach analyzing a player's evaluation data. Generate development notes for ${formData.player_name}.
+      const knowledgeContext = positionKnowledge.title ? `
+Position Knowledge for ${positionKnowledge.title}:
+Role: ${(positionKnowledge.role || []).join(', ')}
+Key Traits: ${(positionKnowledge.traits || []).slice(0, 5).join(', ')}
+Defending: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+Attacking: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+` : '';
+      
+      const prompt = `You are Adil, an expert soccer coach analyzing a player's evaluation data using the Jaguars Knowledge Bank. Generate development notes for ${formData.player_name}.
+
+${knowledgeContext}
+
 
 Position: ${formData.primary_position}
 Team: ${formData.team_name}
