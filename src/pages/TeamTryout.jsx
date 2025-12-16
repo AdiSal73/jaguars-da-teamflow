@@ -556,6 +556,7 @@ export default function TeamTryout() {
           </CardContent>
         </Card>
       </div>
+      </DragDropContext>
 
       <Dialog open={showCreateTeamDialog} onOpenChange={setShowCreateTeamDialog}>
         <DialogContent className="max-w-lg">
