@@ -952,7 +952,7 @@ export default function Players() {
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.map(team => (
+                  {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>
