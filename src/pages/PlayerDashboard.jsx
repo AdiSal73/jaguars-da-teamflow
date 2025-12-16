@@ -632,19 +632,12 @@ export default function PlayerDashboard() {
     );
   }
 
-  if (!player || playerError) {
+  if (!player || playerError || !isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-slate-500">Player not found</p>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
-      </div>
-    );
-  }
-  
-  if (!isAuthorized) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-slate-500">You do not have permission to view this player</p>
+        <p className="text-slate-500">
+          {!player ? 'Player not found' : !isAuthorized ? 'You do not have permission to view this player' : 'Error loading player'}
+        </p>
         <Button onClick={() => navigate(-1)}>Go Back</Button>
       </div>
     );
@@ -851,7 +844,7 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Tryout Info - Only visible to admin/coach */}
-        {(user?.role === 'admin' || coaches.some(c => c.email === user?.email)) && (
+        {isAdminOrCoach && (
         <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b">
             <CardTitle className="text-base font-bold text-slate-900">Tryout Info</CardTitle>
