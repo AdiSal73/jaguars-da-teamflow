@@ -808,7 +808,17 @@ Be specific and actionable. Focus on the position and ratings provided.`;
 
             <Card className="border-2 border-purple-200">
               <CardHeader className="border-b bg-gradient-to-r from-purple-100 to-pink-100">
-                <CardTitle className="text-lg">Development Notes</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Development Notes</CardTitle>
+                  <Button
+                    onClick={handleGenerateNotes}
+                    disabled={!formData.player_id || generatingNotes}
+                    variant="outline"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {generatingNotes ? 'Generating...' : "Adil's Notes"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-4 md:p-6 space-y-4">
                 <div>
@@ -1008,7 +1018,17 @@ Be specific and actionable. Focus on the position and ratings provided.`;
 
             <Card className="border-2 border-purple-200">
               <CardHeader className="border-b bg-gradient-to-r from-purple-100 to-pink-100">
-                <CardTitle className="text-lg">Development Notes</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Development Notes</CardTitle>
+                  <Button
+                    onClick={handleGenerateNotes}
+                    disabled={!formData.player_id || generatingNotes}
+                    variant="outline"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {generatingNotes ? 'Generating...' : "Adil's Notes"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-4 md:p-6 space-y-4">
                 <div>
