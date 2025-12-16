@@ -102,9 +102,9 @@ export default function Tryouts() {
     return teamList.filter((t) => t.gender === selectedGender);
   };
 
-  const gaTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy'))))));
-  const aspireTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire'))))));
-  const otherTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire'))))));
+  const gaTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string'))))));
+  const aspireTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string'))))));
+  const otherTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string'))))));
 
   const getTeamPlayers = (team) => {
     let teamPlayers = players.filter((p) => p.team_id === team.id);
@@ -415,10 +415,10 @@ export default function Tryouts() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 md:gap-3">
                             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-md">
-                              {team.age_group || team.name.charAt(0)}
+                              {team.age_group || (team.name && typeof team.name === 'string' ? team.name.charAt(0) : '?')}
                             </div>
                             <div>
-                              <div className="font-bold text-slate-900 text-sm md:text-lg">{team.name}</div>
+                              <div className="font-bold text-slate-900 text-sm md:text-lg">{team.name && typeof team.name === 'string' ? team.name : 'Unknown'}</div>
                               <div className="text-[10px] md:text-xs text-slate-600 font-medium flex items-center gap-1 md:gap-2">
                                 <span>{team.age_group}</span>
                                 <span>•</span>
@@ -851,7 +851,7 @@ export default function Tryouts() {
                     className="p-3 md:p-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl border-2 border-slate-200 hover:border-emerald-500 transition-all hover:shadow-lg">
                       <div className="flex items-center gap-2 md:gap-3">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md text-sm md:text-base">
-                          {team.age_group || team.name.charAt(0)}
+                          {team.age_group || (team.name && typeof team.name === 'string' ? team.name.charAt(0) : '?')}
                         </div>
                         <div className="text-left flex-1 min-w-0">
                           <div className="font-bold text-slate-900 text-sm md:text-base truncate">{team.name}</div>
