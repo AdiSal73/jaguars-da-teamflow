@@ -22,7 +22,7 @@ export default function ComboboxInput({ value, onChange, options = [], placehold
   }, []);
 
   const filteredOptions = options.filter(opt => 
-    opt.toLowerCase().includes(search.toLowerCase())
+    typeof opt === 'string' && opt.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleInputChange = (e) => {

@@ -7,10 +7,10 @@ import { Search, Plus, X } from 'lucide-react';
 export default function TeamAssignmentSelector({ teams, selectedTeamIds = [], onChange }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const assignedTeams = teams.filter(t => selectedTeamIds.includes(t.id));
-  const unassignedTeams = teams.filter(t => !selectedTeamIds.includes(t.id));
+  const assignedTeams = teams.filter(t => selectedTeamIds.includes(t.id) && t.name && typeof t.name === 'string');
+  const unassignedTeams = teams.filter(t => !selectedTeamIds.includes(t.id) && t.name && typeof t.name === 'string');
   const filteredUnassigned = unassignedTeams.filter(t =>
-    t.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    t.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = (teamId) => {
