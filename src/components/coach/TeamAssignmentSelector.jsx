@@ -10,7 +10,7 @@ export default function TeamAssignmentSelector({ teams, selectedTeamIds = [], on
   const assignedTeams = teams.filter(t => selectedTeamIds.includes(t.id) && t.name && typeof t.name === 'string');
   const unassignedTeams = teams.filter(t => !selectedTeamIds.includes(t.id) && t.name && typeof t.name === 'string');
   const filteredUnassigned = unassignedTeams.filter(t =>
-    t.name.toLowerCase().includes(searchTerm.toLowerCase())
+    t.name && typeof t.name === 'string' && t.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = (teamId) => {
