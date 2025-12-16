@@ -33,6 +33,7 @@ export default function Teams() {
   const [sortDirection, setSortDirection] = useState('asc');
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
@@ -257,6 +258,15 @@ export default function Teams() {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3 flex-1">
+              <div className="col-span-2">
+                <Label className="mb-2 block text-xs">Search</Label>
+                <Input
+                  placeholder="Search teams..."
+                  value={teamSearchTerm}
+                  onChange={(e) => setTeamSearchTerm(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
               <div>
                 <Label className="mb-2 block text-xs">Age Group</Label>
                 <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
