@@ -787,16 +787,6 @@ export default function PlayerDashboard() {
                   <p className="text-sm font-medium">{player.parent_name || 'N/A'}</p>
                 )}
               </div> */}
-              {isAdminOrCoach && (
-                <div className="col-span-2">
-                  <Label className="text-[10px] text-slate-500">Share Password</Label>
-                  {isEditing ? (
-                    <Input value={playerForm.profile_password || ''} onChange={e => setPlayerForm({...playerForm, profile_password: e.target.value})} className="h-8 text-xs" placeholder="Set password for sharing" />
-                  ) : (
-                    <p className="text-sm font-medium">{player.profile_password ? '••••••••' : 'Not set'}</p>
-                  )}
-                </div>
-              )}
               </div>
             <div className="border-t pt-2 space-y-2">
               <div className="flex items-center gap-2">

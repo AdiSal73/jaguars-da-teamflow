@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 
 export default function TeamTryout() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [teamFilterGender, setTeamFilterGender] = useState('all');
@@ -188,6 +189,7 @@ export default function TeamTryout() {
   };
 
   const PlayerCard = ({ player, isDragging }) => {
+    const navigate = useNavigate();
     const tryout = tryouts.find(t => t.player_id === player.id);
     const team = teams.find(t => t.id === player.team_id);
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
@@ -199,7 +201,10 @@ export default function TeamTryout() {
     })() : false;
     
     return (
-      <div className={`p-2.5 border-2 rounded-xl transition-all ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}>
+      <div 
+        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+        className={`p-2.5 border-2 rounded-xl transition-all cursor-pointer ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
+      >
         <div className="flex items-start gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
             {player.jersey_number || <User className="w-4 h-4" />}
@@ -207,6 +212,7 @@ export default function TeamTryout() {
           <div className="flex-1 min-w-0">
             <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
             <div className="text-[10px] text-slate-600 font-medium">{player.primary_position}</div>
+            {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
             <div className="flex flex-wrap gap-0.5 mt-1.5">
               {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
               {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
@@ -299,12 +305,12 @@ export default function TeamTryout() {
           </Card>
 
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
+            <div className="grid md:grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
               {nextYearTeams.map(team => {
                 const teamPlayers = getTeamPlayers(team.name);
                 return (
-                  <Card key={team.id} className={`border-2 shadow-lg hover:shadow-xl transition-all ${team.gender === 'Male' ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100' : 'border-pink-400 bg-gradient-to-br from-pink-50 to-pink-100'}`}>
-                    <CardHeader className={`pb-2 ${team.gender === 'Male' ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700' : 'bg-gradient-to-r from-pink-600 via-pink-700 to-rose-700'} text-white shadow-md`}>
+                  <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white shadow-md">
                       <CardTitle className="text-sm flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="font-bold truncate">{team.name}</div>
@@ -327,7 +333,7 @@ export default function TeamTryout() {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? `${team.gender === 'Male' ? 'bg-blue-200' : 'bg-pink-200'} border-2 border-dashed ${team.gender === 'Male' ? 'border-blue-500' : 'border-pink-500'} scale-105` : 'bg-white/60'}`}
+                            className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                           >
                             {teamPlayers.map((player, index) => (
                               <Draggable key={player.id} draggableId={player.id} index={index}>
