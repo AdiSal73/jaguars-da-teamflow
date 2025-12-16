@@ -102,6 +102,7 @@ export default function BulkImportPlayers({ teams, coaches, onImportComplete }) 
           
           // Try to find existing team by matching name, age group, and gender
           let team = teams.find(t => 
+            t.name && typeof t.name === 'string' &&
             t.name.toLowerCase().trim() === teamName.toLowerCase().trim() &&
             t.gender === gender
           );
@@ -109,6 +110,7 @@ export default function BulkImportPlayers({ teams, coaches, onImportComplete }) 
           // If no exact match, try to find by similar characteristics
           if (!team) {
             team = teams.find(t => 
+              t.name && typeof t.name === 'string' &&
               t.age_group === parsedAgeGroup &&
               t.gender === gender &&
               t.league === league &&
