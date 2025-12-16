@@ -191,9 +191,15 @@ export default function TeamTryout() {
     const tryout = tryouts.find(t => t.player_id === player.id);
     const team = teams.find(t => t.id === player.team_id);
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
+    const isTrapped = player.date_of_birth ? (() => {
+      const dob = new Date(player.date_of_birth);
+      const month = dob.getMonth();
+      const day = dob.getDate();
+      return (month === 7 && day >= 1) || (month >= 8 && month <= 11);
+    })() : false;
     
     return (
-      <div className={`p-2.5 bg-white border-2 rounded-xl transition-all ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}>
+      <div className={`p-2.5 border-2 rounded-xl transition-all ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}>
         <div className="flex items-start gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
             {player.jersey_number || <User className="w-4 h-4" />}
@@ -202,6 +208,7 @@ export default function TeamTryout() {
             <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
             <div className="text-[10px] text-slate-600 font-medium">{player.primary_position}</div>
             <div className="flex flex-wrap gap-0.5 mt-1.5">
+              {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
               {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
               {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
               {tryout?.team_role && <Badge className="text-[8px] px-1.5 py-0.5 bg-purple-100 text-purple-800 font-semibold">{tryout.team_role.replace('Indispensable Player', 'IND').replace(' Starter', '').replace(' Rotation', ' R')}</Badge>}
