@@ -724,7 +724,7 @@ export default function PlayerDashboard() {
                 )}
               </div>
               <div>
-                <Label className="text-[10px] text-slate-500">Position</Label>
+                <Label className="text-[10px] text-slate-500">Primary Position</Label>
                 {isEditing ? (
                   <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -736,6 +736,22 @@ export default function PlayerDashboard() {
                   </Select>
                 ) : (
                   <p className="text-sm font-medium">{player.primary_position || 'N/A'}</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-[10px] text-slate-500">Secondary Position</Label>
+                {isEditing ? (
+                  <Select value={playerForm.secondary_position || ''} onValueChange={v => setPlayerForm({...playerForm, secondary_position: v})}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                        <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm font-medium">{player.secondary_position || 'N/A'}</p>
                 )}
               </div>
               <div>
@@ -1196,18 +1212,16 @@ export default function PlayerDashboard() {
       )}
 
       {/* Player Development Pathway & Training Modules */}
-      {isAdminOrCoach && (
-        <div className="mt-6">
-          <PlayerDevelopmentDisplay
-            player={player}
-            pathway={pathway}
-            assessments={assessments}
-            onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
-            onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
-            onProvideFeedback={(goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); }}
-          />
-        </div>
-      )}
+      <div className="mt-6">
+        <PlayerDevelopmentDisplay
+          player={player}
+          pathway={pathway}
+          assessments={assessments}
+          onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+          onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
+          onProvideFeedback={isAdminOrCoach ? (goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); } : null}
+        />
+      </div>
 
       {/* Position Knowledge Bank */}
       {player.primary_position && (
