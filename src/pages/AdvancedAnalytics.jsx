@@ -185,7 +185,7 @@ export default function AdvancedAnalytics() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Teams</SelectItem>
-              {teams.map(team => (
+              {teams.filter(team => team.name && typeof team.name === 'string').map(team => (
                 <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
               ))}
             </SelectContent>
