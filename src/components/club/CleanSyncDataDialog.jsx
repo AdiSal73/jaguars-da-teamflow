@@ -39,9 +39,9 @@ export default function CleanSyncDataDialog({
 
   const scanData = useMemo(() => {
     const emptyRecords = {
-      players: players.filter(p => !p.full_name || p.full_name.trim() === ''),
-      teams: teams.filter(t => !t.name || t.name.trim() === ''),
-      coaches: coaches.filter(c => !c.full_name || c.full_name.trim() === '')
+      players: players.filter(p => !p.full_name || (typeof p.full_name === 'string' && p.full_name.trim() === '')),
+      teams: teams.filter(t => !t.name || (typeof t.name === 'string' && t.name.trim() === '')),
+      coaches: coaches.filter(c => !c.full_name || (typeof c.full_name === 'string' && c.full_name.trim() === ''))
     };
 
     const duplicates = {
@@ -71,7 +71,7 @@ export default function CleanSyncDataDialog({
     // Find duplicate teams
     const teamMap = new Map();
     teams.forEach(t => {
-      const key = t.name?.toLowerCase().trim();
+      const key = t.name && typeof t.name === 'string' ? t.name.toLowerCase().trim() : null;
       if (key) {
         if (teamMap.has(key)) {
           teamMap.get(key).push(t);
