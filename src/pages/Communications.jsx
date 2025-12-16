@@ -518,7 +518,9 @@ export default function Communications() {
               <div>
                 <Label>Select Teams</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                  {(isAdmin ? teams : teams.filter(t => currentCoach?.team_ids?.includes(t.id))).map(team => (
+                  {(isAdmin ? teams : teams.filter(t => currentCoach?.team_ids?.includes(t.id)))
+                    .filter(team => team.name && typeof team.name === 'string')
+                    .map(team => (
                     <label key={team.id} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
