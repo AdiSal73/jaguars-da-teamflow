@@ -12,6 +12,7 @@ import { Target, Plus, Trash2, CheckCircle, BookOpen, MessageSquare, ChevronDown
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { POSITION_KNOWLEDGE, PHYSICAL_ASSESSMENTS } from '../constants/positionKnowledgeBank';
+import AIGoalGenerator from './AIGoalGenerator';
 
 export default function PlayerDevelopmentDisplay({ 
   player, 
