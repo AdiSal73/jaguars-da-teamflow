@@ -195,9 +195,9 @@ export default function Teams() {
     
     let result = teamList.filter(team => {
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
-      if (filterLeague !== 'all' && team.league !== filterLeague) return false;
-      if (filterBranch !== 'all' && team.branch !== filterBranch) return false;
-      if (filterSeason !== 'all' && team.season !== filterSeason) return false;
+      if (filterLeague !== 'all' && (team.league !== filterLeague || !team.league)) return false;
+      if (filterBranch !== 'all' && (team.branch !== filterBranch || !team.branch)) return false;
+      if (filterSeason !== 'all' && (team.season !== filterSeason || !team.season)) return false;
       if (filterGender !== 'all') {
         if (filterGender === 'Boys' && team.gender !== 'Male') return false;
         if (filterGender === 'Girls' && team.gender !== 'Female') return false;
@@ -227,11 +227,11 @@ export default function Teams() {
     return result;
   }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterSeason, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user]);
 
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
-  const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))];
-  
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
+  const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(b => b && typeof b === 'string'))];
+
   // Ensure team names are strings before sorting
-  const uniqueSeasons = [...new Set(teams.map(t => t.season).filter(Boolean))].filter(s => typeof s === 'string');
+  const uniqueSeasons = [...new Set(teams.map(t => t.season).filter(s => s && typeof s === 'string'))];
 
   const SortIcon = ({ field }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
