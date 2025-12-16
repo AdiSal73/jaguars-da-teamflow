@@ -1075,8 +1075,8 @@ export default function PlayerDashboard() {
                 </Button>
               </div>
               </div>
-              <p className="text-[10px] text-slate-500 italic mt-1">Ratings are 1-10. 10 is what a national team starter would get.</p>
-              {currentEvaluation && <span className="text-[10px] font-normal text-slate-500">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
+              <p className="text-[10px] text-white/90 italic mt-1">Ratings are 1-10. 10 is what a national team starter would get.</p>
+              {currentEvaluation && <span className="text-[10px] font-normal text-white/80">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
           </CardHeader>
           <CardContent>
             {currentEvaluation ? (
