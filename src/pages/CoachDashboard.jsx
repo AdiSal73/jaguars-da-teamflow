@@ -116,7 +116,9 @@ export default function CoachDashboard() {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5);
 
-  const teamPerformance = coachTeams.map(team => {
+  const teamPerformance = coachTeams
+    .filter(team => team.name && typeof team.name === 'string')
+    .map(team => {
     const teamAssessments = assessments.filter(a => a.team_id === team.id);
     const avgOverall = teamAssessments.length > 0
       ? Math.round(teamAssessments.reduce((sum, a) => sum + (a.overall_score || 0), 0) / teamAssessments.length)
