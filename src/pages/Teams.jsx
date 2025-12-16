@@ -194,6 +194,8 @@ export default function Teams() {
     }
     
     let result = teamList.filter(team => {
+      const matchesSearch = team.name && typeof team.name === 'string' ? team.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) : false;
+      if (!matchesSearch) return false;
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
       if (filterLeague !== 'all' && (team.league !== filterLeague || !team.league)) return false;
       if (filterBranch !== 'all' && (team.branch !== filterBranch || !team.branch)) return false;
