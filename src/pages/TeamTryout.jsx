@@ -289,13 +289,14 @@ export default function TeamTryout() {
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-        {/* Teams Section */}
-        <div>
-          <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
-            <CardContent className="p-4">
-              <Label className="text-sm font-bold text-slate-700 mb-3 block">Filter Teams</Label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+          {/* Teams Section */}
+          <div>
+            <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
+              <CardContent className="p-4">
+                <Label className="text-sm font-bold text-slate-700 mb-3 block">Filter Teams</Label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
@@ -350,73 +351,71 @@ export default function TeamTryout() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <DragDropContext onDragEnd={onDragEnd}>
             <div className="grid md:grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
-              {nextYearTeams.map(team => {
-                const teamPlayers = getTeamPlayers(team.name);
-                return (
-                  <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
-                    <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white shadow-md">
-                      <CardTitle className="text-sm flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold truncate">{team.name}</div>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.age_group}</Badge>
-                            {team.league && <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.league}</Badge>}
-                          </div>
+            {nextYearTeams.map(team => {
+              const teamPlayers = getTeamPlayers(team.name);
+              return (
+                <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
+                  <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white shadow-md">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold truncate">{team.name}</div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.age_group}</Badge>
+                          {team.league && <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.league}</Badge>}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
-                          <button onClick={() => deleteTeamMutation.mutate(team.id)} className="ml-1 p-1 hover:bg-white/20 rounded transition-colors">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
+                        <button onClick={() => deleteTeamMutation.mutate(team.id)} className="ml-1 p-1 hover:bg-white/20 rounded transition-colors">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2">
+                    <Droppable droppableId={team.name}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                        >
+                          {teamPlayers.map((player, index) => (
+                            <Draggable key={player.id} draggableId={player.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                >
+                                  <PlayerCard player={player} isDragging={snapshot.isDragging} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                          {teamPlayers.length === 0 && (
+                            <div className="text-center py-12 text-slate-400 text-xs">
+                              <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                              <p>Drop players here</p>
+                            </div>
+                          )}
                         </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-2">
-                      <Droppable droppableId={team.name}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
-                          >
-                            {teamPlayers.map((player, index) => (
-                              <Draggable key={player.id} draggableId={player.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                  >
-                                    <PlayerCard player={player} isDragging={snapshot.isDragging} />
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                            {teamPlayers.length === 0 && (
-                              <div className="text-center py-12 text-slate-400 text-xs">
-                                <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                                <p>Drop players here</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Droppable>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </DragDropContext>
-        </div>
+                      )}
+                    </Droppable>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          </div>
 
-        {/* Unassigned Players Sidebar */}
-        <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          {/* Unassigned Players Sidebar */}
+          <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 text-white shadow-md">
             <CardTitle className="text-sm flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -509,53 +508,51 @@ export default function TeamTryout() {
               </div>
             )}
             
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="unassigned">
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
-                    style={{ maxHeight: 'calc(100vh - 580px)' }}
-                  >
-                    {unassignedPlayers.map((player, index) => (
-                      <Draggable key={player.id} draggableId={player.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="relative"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedPlayers.includes(player.id)}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                if (e.target.checked) {
-                                  setSelectedPlayers([...selectedPlayers, player.id]);
-                                } else {
-                                  setSelectedPlayers(selectedPlayers.filter(id => id !== player.id));
-                                }
-                              }}
-                              className="absolute top-2 right-2 w-4 h-4 rounded border-2 border-emerald-600 text-emerald-600 focus:ring-emerald-500 z-10"
-                            />
-                            <PlayerCard player={player} isDragging={snapshot.isDragging} />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                    {unassignedPlayers.length === 0 && (
-                      <div className="text-center py-12 text-slate-400 text-xs">
-                        <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                        <p>No unassigned players</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+            <Droppable droppableId="unassigned">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                  style={{ maxHeight: 'calc(100vh - 580px)' }}
+                >
+                  {unassignedPlayers.map((player, index) => (
+                    <Draggable key={player.id} draggableId={player.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="relative"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPlayers.includes(player.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              if (e.target.checked) {
+                                setSelectedPlayers([...selectedPlayers, player.id]);
+                              } else {
+                                setSelectedPlayers(selectedPlayers.filter(id => id !== player.id));
+                              }
+                            }}
+                            className="absolute top-2 right-2 w-4 h-4 rounded border-2 border-emerald-600 text-emerald-600 focus:ring-emerald-500 z-10"
+                          />
+                          <PlayerCard player={player} isDragging={snapshot.isDragging} />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                  {unassignedPlayers.length === 0 && (
+                    <div className="text-center py-12 text-slate-400 text-xs">
+                      <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
+                      <p>No unassigned players</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Droppable>
           </CardContent>
         </Card>
       </div>

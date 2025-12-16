@@ -27,6 +27,7 @@ import FitnessResources from './pages/FitnessResources';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import PlayerProgressDashboard from './pages/PlayerProgressDashboard';
 import Communications from './pages/Communications';
+import TeamRoster from './pages/TeamRoster';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "AdvancedAnalytics": AdvancedAnalytics,
     "PlayerProgressDashboard": PlayerProgressDashboard,
     "Communications": Communications,
+    "TeamRoster": TeamRoster,
 }
 
 export const pagesConfig = {
