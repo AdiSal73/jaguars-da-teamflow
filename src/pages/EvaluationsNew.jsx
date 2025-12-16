@@ -107,14 +107,17 @@ export default function EvaluationsNew() {
     queryKey: ['evaluations'],
     queryFn: async () => {
       const allEvals = await base44.entities.Evaluation.list('-created_date');
-      if (currentCoach && user?.role !== 'admin') {
+      if (user?.role === 'admin') {
+        return allEvals;
+      } else if (currentCoach) {
         const coachTeamIds = currentCoach.team_ids || [];
         const players = await base44.entities.Player.list();
         const coachPlayerIds = players.filter(p => coachTeamIds.includes(p.team_id)).map(p => p.id);
         return allEvals.filter(e => coachPlayerIds.includes(e.player_id));
       }
-      return allEvals;
-    }
+      return [];
+    },
+    enabled: !!user
   });
 
   const { data: players = [] } = useQuery({
@@ -233,7 +236,15 @@ export default function EvaluationsNew() {
     }));
   };
 
+  const canEditEvaluation = (evaluation) => {
+    if (user?.role === 'admin') return true;
+    if (currentCoach && evaluation.evaluator === user?.full_name) return true;
+    return false;
+  };
+
   const handleEditEvaluation = (evaluation) => {
+    if (!canEditEvaluation(evaluation)) return;
+    
     setEditingEvaluation(evaluation);
     const positionFields = getPositionFields(evaluation.primary_position);
 
@@ -518,7 +529,7 @@ Be specific and actionable. Focus on the position and ratings provided.`;
             >
               <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b pb-3">
                 <div className="flex justify-between items-start">
-                  <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex-1">
                     <CardTitle className="text-lg text-slate-900 mb-1">{evaluation.player_name}</CardTitle>
                     <div className="flex flex-wrap gap-2 text-xs text-slate-600">
                       <Badge className="bg-slate-100 text-slate-700">{evaluation.birth_year}</Badge>
@@ -531,7 +542,7 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -540,21 +551,21 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </Button>
-                    {isAdminOrCoach && (
+                    {canEditEvaluation(evaluation) && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleEditEvaluation(evaluation)}
+                        onClick={(e) => { e.stopPropagation(); handleEditEvaluation(evaluation); }}
                         className="h-8 w-8 hover:bg-emerald-50"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                     )}
-                    {isAdminOrCoach && (
+                    {canEditEvaluation(evaluation) && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setDeleteEvalId(evaluation.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteEvalId(evaluation.id); }}
                         className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -747,6 +758,216 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Birth Year</Label>
+                    <Input value={formData.birth_year} readOnly className="bg-slate-50 border-2 h-12" />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Team Name</Label>
+                    <Input value={formData.team_name} readOnly className="bg-slate-50 border-2 h-12" />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Evaluator</Label>
+                    <Input
+                      value={formData.evaluator}
+                      onChange={(e) => setFormData({...formData, evaluator: e.target.value})}
+                      placeholder="Your name"
+                      className="border-2 h-12"
+                    />
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Primary Position</Label>
+                    <Select value={formData.primary_position} onValueChange={handlePositionChange}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue placeholder="Select position" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {POSITIONS.map(pos => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Preferred Foot</Label>
+                    <Select value={formData.preferred_foot} onValueChange={(val) => setFormData({...formData, preferred_foot: val})}>
+                      <SelectTrigger className="border-2 h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Left">Left</SelectItem>
+                        <SelectItem value="Right">Right</SelectItem>
+                        <SelectItem value="Both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="font-semibold">Current Team Status</Label>
+                    <Input
+                      value={formData.current_team_status}
+                      onChange={(e) => setFormData({...formData, current_team_status: e.target.value})}
+                      placeholder="e.g., Starter, Rotation, Development"
+                      className="border-2 h-12"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="font-semibold">Player's Goals</Label>
+                    <Textarea
+                      value={formData.my_goals}
+                      onChange={(e) => setFormData({...formData, my_goals: e.target.value})}
+                      placeholder="What are the player's personal goals?"
+                      rows={2}
+                      className="border-2 resize-none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-blue-200">
+              <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-purple-100">
+                <CardTitle className="text-lg">Mental & Physical Attributes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-6">
+                <RatingSlider label="Growth Mindset" value={formData.growth_mindset} onChange={(val) => setFormData({...formData, growth_mindset: val})} />
+                <RatingSlider label="Resilience" value={formData.resilience} onChange={(val) => setFormData({...formData, resilience: val})} />
+                <RatingSlider label="Efficiency in Execution" value={formData.efficiency_in_execution} onChange={(val) => setFormData({...formData, efficiency_in_execution: val})} />
+                <RatingSlider label="Athleticism" value={formData.athleticism} onChange={(val) => setFormData({...formData, athleticism: val})} />
+                <RatingSlider label="Team Focus" value={formData.team_focus} onChange={(val) => setFormData({...formData, team_focus: val})} />
+              </CardContent>
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="border-2 border-blue-200">
+                <CardHeader className="border-b bg-gradient-to-r from-blue-100 to-cyan-100">
+                  <CardTitle className="text-lg">Defending Skills</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  <RatingSlider label="Defending Organized" value={formData.defending_organized} onChange={(val) => setFormData({...formData, defending_organized: val})} />
+                  <RatingSlider label="Defending Final Third" value={formData.defending_final_third} onChange={(val) => setFormData({...formData, defending_final_third: val})} />
+                  <RatingSlider label="Defending Transition" value={formData.defending_transition} onChange={(val) => setFormData({...formData, defending_transition: val})} />
+                  <RatingSlider label="Pressing" value={formData.pressing} onChange={(val) => setFormData({...formData, pressing: val})} />
+                  <RatingSlider label="Defending Set-Pieces" value={formData.defending_set_pieces} onChange={(val) => setFormData({...formData, defending_set_pieces: val})} />
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-orange-200">
+                <CardHeader className="border-b bg-gradient-to-r from-orange-100 to-red-100">
+                  <CardTitle className="text-lg">Attacking Skills</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  <RatingSlider label="Attacking Organized" value={formData.attacking_organized} onChange={(val) => setFormData({...formData, attacking_organized: val})} />
+                  <RatingSlider label="Attacking Final Third" value={formData.attacking_final_third} onChange={(val) => setFormData({...formData, attacking_final_third: val})} />
+                  <RatingSlider label="Attacking in Transition" value={formData.attacking_in_transition} onChange={(val) => setFormData({...formData, attacking_in_transition: val})} />
+                  <RatingSlider label="Building Out" value={formData.building_out} onChange={(val) => setFormData({...formData, building_out: val})} />
+                  <RatingSlider label="Attacking Set-Pieces" value={formData.attacking_set_pieces} onChange={(val) => setFormData({...formData, attacking_set_pieces: val})} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {formData.primary_position && (
+              <Card className="border-2 border-indigo-200">
+                <CardHeader className="border-b bg-gradient-to-r from-indigo-100 to-purple-100">
+                  <CardTitle className="text-lg">Position-Specific Skills ({formData.primary_position})</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  {dialogPositionFields.map((field, idx) => (
+                    <RatingSlider
+                      key={field.key}
+                      label={field.label}
+                      description={field.description}
+                      value={formData[`position_role_${idx + 1}`]}
+                      onChange={(val) => setFormData(prev => ({...prev, [`position_role_${idx + 1}`]: val}))}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="border-2 border-purple-200">
+              <CardHeader className="border-b bg-gradient-to-r from-purple-100 to-pink-100">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Development Notes</CardTitle>
+                  <Button
+                    onClick={handleGenerateNotes}
+                    disabled={!formData.player_id || generatingNotes}
+                    variant="outline"
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                  >
+                    {generatingNotes ? 'Generating...' : "Adil's Notes"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4">
+                <div>
+                  <Label className="font-semibold">Player's Strengths</Label>
+                  <Textarea
+                    value={formData.player_strengths}
+                    onChange={(e) => setFormData({...formData, player_strengths: e.target.value})}
+                    placeholder="What does this player excel at?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+                <div>
+                  <Label className="font-semibold">Areas of Growth</Label>
+                  <Textarea
+                    value={formData.areas_of_growth}
+                    onChange={(e) => setFormData({...formData, areas_of_growth: e.target.value})}
+                    placeholder="What areas need improvement?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+                <div>
+                  <Label className="font-semibold">Training Focus</Label>
+                  <Textarea
+                    value={formData.training_focus}
+                    onChange={(e) => setFormData({...formData, training_focus: e.target.value})}
+                    placeholder="What should training focus on?"
+                    rows={3}
+                    className="border-2 resize-none"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button variant="outline" onClick={() => setShowDialog(false)} className="h-12 px-8">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => createMutation.mutate(formData)}
+              disabled={!formData.player_id}
+              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 h-12 px-8 text-base font-semibold shadow-lg"
+            >
+              Create Evaluation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Evaluation Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-500 rounded-full" />
+              Edit Player Evaluation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-8 mt-6">
+            <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+              <CardHeader className="border-b bg-gradient-to-r from-emerald-100 to-blue-100">
+                <CardTitle className="text-lg">Player Information</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="font-semibold">Player Name</Label>
+                    <Input value={formData.player_name} readOnly className="bg-slate-50 border-2 h-12" />
                   </div>
                   <div>
                     <Label className="font-semibold">Birth Year</Label>
