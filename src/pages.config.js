@@ -1,7 +1,6 @@
 import Players from './pages/Players';
 import Teams from './pages/Teams';
 import Assessments from './pages/Assessments';
-import TeamDashboard from './pages/TeamDashboard';
 import ClubManagement from './pages/ClubManagement';
 import CoachManagement from './pages/CoachManagement';
 import UserManagement from './pages/UserManagement';
@@ -19,20 +18,17 @@ import Availability from './pages/Availability';
 import BookCoach from './pages/BookCoach';
 import MyBookings from './pages/MyBookings';
 import BookingsTable from './pages/BookingsTable';
-import Messages from './pages/Messages';
 import TeamReports from './pages/TeamReports';
 import TeamTryout from './pages/TeamTryout';
 import FAQ from './pages/FAQ';
 import FitnessResources from './pages/FitnessResources';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
-import PlayerProgressDashboard from './pages/PlayerProgressDashboard';
 import Communications from './pages/Communications';
 import TeamRoster from './pages/TeamRoster';
 import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
 import CoachingResources from './pages/CoachingResources';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import PDPViewer from './pages/PDPViewer';
-import PlayerKnowledgeDetail from './pages/PlayerKnowledgeDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -40,7 +36,6 @@ export const PAGES = {
     "Players": Players,
     "Teams": Teams,
     "Assessments": Assessments,
-    "TeamDashboard": TeamDashboard,
     "ClubManagement": ClubManagement,
     "CoachManagement": CoachManagement,
     "UserManagement": UserManagement,
@@ -58,24 +53,21 @@ export const PAGES = {
     "BookCoach": BookCoach,
     "MyBookings": MyBookings,
     "BookingsTable": BookingsTable,
-    "Messages": Messages,
     "TeamReports": TeamReports,
     "TeamTryout": TeamTryout,
     "FAQ": FAQ,
     "FitnessResources": FitnessResources,
     "AdvancedAnalytics": AdvancedAnalytics,
-    "PlayerProgressDashboard": PlayerProgressDashboard,
     "Communications": Communications,
     "TeamRoster": TeamRoster,
     "AITrainingPlanGenerator": AITrainingPlanGenerator,
     "CoachingResources": CoachingResources,
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "PDPViewer": PDPViewer,
-    "PlayerKnowledgeDetail": PlayerKnowledgeDetail,
 }
 
 export const pagesConfig = {
-    mainPage: "Messages",
+    mainPage: "Players",
     Pages: PAGES,
     Layout: __Layout,
 };
