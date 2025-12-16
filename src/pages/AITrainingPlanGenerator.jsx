@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { POSITION_KNOWLEDGE_BANK } from '../components/constants/positionKnowledgeBank';
 
 export default function AITrainingPlanGenerator() {
   const navigate = useNavigate();
@@ -72,9 +73,21 @@ export default function AITrainingPlanGenerator() {
     try {
       const latestAssessment = assessments[0];
       const latestEvaluation = evaluations[0];
+      const positionKnowledge = POSITION_KNOWLEDGE_BANK[player.primary_position] || {};
 
-      const prompt = `Generate a personalized training plan for a soccer player with the following profile:
+      const knowledgeContext = positionKnowledge.title ? `
+Position Knowledge (${positionKnowledge.title}):
+Role: ${(positionKnowledge.role || []).join(', ')}
+Key Traits: ${(positionKnowledge.traits || []).slice(0, 5).join(', ')}
+Defending Focus: ${(positionKnowledge.defending?.balanced || []).slice(0, 3).map(r => r.title).join(', ')}
+Attacking Focus: ${(positionKnowledge.attacking?.balanced || []).slice(0, 3).map(r => r.title).join(', ')}
+` : '';
 
+      const prompt = `Generate a personalized training plan for a soccer player using relevant information from the Jaguars Knowledge Bank and the Player Development Program (PDP).
+
+${knowledgeContext}
+
+Player Profile:
 Name: ${player.full_name}
 Position: ${player.primary_position}
 Age: ${player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : 'Unknown'}
@@ -95,7 +108,7 @@ ${latestEvaluation ? `Latest Evaluation:
 ${player.goals?.length > 0 ? `Current Goals:
 ${player.goals.map(g => `- ${g.description} (${g.progress}% complete)`).join('\n')}` : ''}
 
-Please generate 4-6 specific training modules that will help this player develop. Each module should include:
+Please generate 4-6 specific training modules that will help this player develop according to PDP principles. Each module should include:
 1. A specific, actionable title
 2. A brief description of what the module covers
 3. Training type (Mobility Training, Technical Training, Functional Training, Video Analysis/Tactical Training)

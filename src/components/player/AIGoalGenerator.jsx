@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sparkles, Loader2, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { POSITION_KNOWLEDGE_BANK } from '../constants/positionKnowledgeBank';
 import { toast } from 'sonner';
 
 export default function AIGoalGenerator({ player, onUpdatePlayer, assessments }) {
@@ -27,18 +28,16 @@ export default function AIGoalGenerator({ player, onUpdatePlayer, assessments })
       const positionKnowledge = POSITION_KNOWLEDGE_BANK[player.primary_position] || {};
       
       const knowledgeContext = positionKnowledge.title ? `
-Position: ${positionKnowledge.title}
+Position Knowledge (${positionKnowledge.title}):
 Role: ${(positionKnowledge.role || []).join(', ')}
 Key Traits: ${(positionKnowledge.traits || []).slice(0, 5).join(', ')}
 Defending Focus: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
 Attacking Focus: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
 ` : '';
 
-      const prompt = `Generate personalized development goals for a soccer player based on their evaluation data and position requirements.
+      const prompt = `Generate personalized development goals for a soccer player based on their evaluation data and position requirements, referencing concepts from the Jaguars Knowledge Bank and the Player Development Program (PDP).
 
 ${knowledgeContext}
-
-Player Profile:
 
 Player Profile:
 - Name: ${player.full_name}
@@ -64,7 +63,7 @@ ${latestAssessment ? `Physical Assessment:
 
 Based on this data, generate 3-5 SMART development goals that are:
 1. Specific and measurable
-2. Aligned with the player's position requirements
+2. Aligned with the player's position requirements and PDP concepts
 3. Address identified areas of growth and training focus
 4. Mix of technical, tactical, physical, and mental aspects
 5. Realistic timeframes (suggest 4-12 weeks per goal)
