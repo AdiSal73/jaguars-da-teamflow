@@ -85,7 +85,16 @@ export default function PlayerDashboard() {
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   const [newDocument, setNewDocument] = useState({ title: '', document_type: 'Other', notes: '', file: null });
   const [showInjuryDialog, setShowInjuryDialog] = useState(false);
-  const [newInjury, setNewInjury] = useState({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
+  const [showEditInjuryDialog, setShowEditInjuryDialog] = useState(false);
+  const [editingInjury, setEditingInjury] = useState(null);
+  const [newInjury, setNewInjury] = useState({ 
+    injury_date: '', 
+    injury_type: '', 
+    recovery_date: '', 
+    treatment_notes: '',
+    severity: 'Minor',
+    status: 'Active'
+  });
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackGoal, setFeedbackGoal] = useState(null);
@@ -320,13 +329,21 @@ export default function PlayerDashboard() {
   const createInjuryMutation = useMutation({
     mutationFn: (data) => base44.entities.InjuryRecord.create({
       player_id: playerId,
-      ...data,
-      status: 'Active'
+      ...data
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['injuries', playerId]);
       setShowInjuryDialog(false);
-      setNewInjury({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '' });
+      setNewInjury({ injury_date: '', injury_type: '', recovery_date: '', treatment_notes: '', severity: 'Minor', status: 'Active' });
+    }
+  });
+
+  const updateInjuryMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.InjuryRecord.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['injuries', playerId]);
+      setShowEditInjuryDialog(false);
+      setEditingInjury(null);
     }
   });
 
@@ -1240,45 +1257,139 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-            {/* Injury History */}
+            {/* Injury Tracking System */}
             <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 bg-gradient-to-r from-red-50 to-orange-50 border-b">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Injury History</CardTitle>
+              <div>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  Injury Tracking
+                  {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') && (
+                    <Badge className="bg-red-500 text-white animate-pulse">
+                      {injuries.filter(i => i.status === 'Active' || i.status === 'Recovering').length} Active
+                    </Badge>
+                  )}
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-1">Monitor recovery, rehabilitation, and return to play</p>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge className={injuries.some(i => i.status === 'Active') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
-                  {injuries.some(i => i.status === 'Active') ? 'Currently Injured' : 'Healthy'}
+                <Badge className={injuries.some(i => i.status === 'Active' || i.status === 'Recovering') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
+                  {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') ? 'Under Treatment' : 'Healthy'}
                 </Badge>
                 {isAdminOrCoach && (
                   <Button variant="outline" size="sm" onClick={() => setShowInjuryDialog(true)}>
                     <Plus className="w-3 h-3 mr-1" />
-                    Add Injury
+                    Log Injury
                   </Button>
                 )}
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {injuries.length === 0 ? (
-              <p className="text-center text-slate-500 py-4 text-sm">No injury records</p>
+              <div className="text-center py-8 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg">
+                <p className="text-emerald-600 font-semibold mb-1">✓ No injury history</p>
+                <p className="text-xs text-slate-500">Player has a clean injury record</p>
+              </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {injuries.map(injury => (
-                  <div key={injury.id} className={`p-3 rounded-lg border-l-4 ${injury.status === 'Active' ? 'bg-red-50 border-l-red-500' : injury.status === 'Recovering' ? 'bg-yellow-50 border-l-yellow-500' : 'bg-green-50 border-l-green-500'}`}>
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <div className="font-semibold text-sm text-slate-900">{injury.injury_type}</div>
-                        <div className="text-xs text-slate-600">
-                          {new Date(injury.injury_date).toLocaleDateString()}
-                          {injury.recovery_date && ` → ${new Date(injury.recovery_date).toLocaleDateString()}`}
+                  <div 
+                    key={injury.id} 
+                    className={`rounded-xl border-2 overflow-hidden transition-all ${
+                      injury.status === 'Active' ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md' : 
+                      injury.status === 'Recovering' ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300' : 
+                      'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+                    }`}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-bold text-slate-900">{injury.injury_type}</h4>
+                            {injury.severity && (
+                              <Badge className={`text-[9px] ${
+                                injury.severity === 'Severe' ? 'bg-red-200 text-red-900' :
+                                injury.severity === 'Moderate' ? 'bg-orange-200 text-orange-900' :
+                                'bg-blue-200 text-blue-900'
+                              }`}>
+                                {injury.severity}
+                              </Badge>
+                            )}
+                            <Badge className={`text-[9px] ${
+                              injury.status === 'Active' ? 'bg-red-500 text-white' : 
+                              injury.status === 'Recovering' ? 'bg-yellow-500 text-white' : 
+                              'bg-green-500 text-white'
+                            }`}>
+                              {injury.status}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-slate-600 space-y-1">
+                            <div>📅 Injury Date: <span className="font-semibold">{new Date(injury.injury_date).toLocaleDateString()}</span></div>
+                            {injury.recovery_date && (
+                              <div>🎯 Target Return: <span className="font-semibold">{new Date(injury.recovery_date).toLocaleDateString()}</span></div>
+                            )}
+                          </div>
                         </div>
+                        {isAdminOrCoach && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => { setEditingInjury(injury); setShowEditInjuryDialog(true); }}
+                            className="hover:bg-white/50"
+                          >
+                            <span className="text-xs">Update</span>
+                          </Button>
+                        )}
                       </div>
-                      <Badge className={`text-[10px] ${injury.status === 'Active' ? 'bg-red-100 text-red-800' : injury.status === 'Recovering' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                        {injury.status}
-                      </Badge>
+                      
+                      {injury.treatment_notes && (
+                        <div className="mt-2 p-2 bg-white/70 rounded-lg">
+                          <div className="text-[10px] font-semibold text-slate-700 mb-1">Treatment Notes:</div>
+                          <p className="text-xs text-slate-600">{injury.treatment_notes}</p>
+                        </div>
+                      )}
+
+                      {injury.rehabilitation_exercises && injury.rehabilitation_exercises.length > 0 && (
+                        <div className="mt-3 p-3 bg-white/70 rounded-lg">
+                          <div className="text-[10px] font-semibold text-slate-700 mb-2">Rehabilitation Protocol:</div>
+                          <div className="space-y-2">
+                            {injury.rehabilitation_exercises.map((ex, idx) => (
+                              <div key={idx} className="text-xs border-l-2 border-blue-300 pl-2">
+                                <div className="font-semibold text-slate-900">{ex.exercise_name}</div>
+                                {ex.description && <div className="text-slate-600 text-[10px]">{ex.description}</div>}
+                                {(ex.sets_reps || ex.frequency) && (
+                                  <div className="text-slate-500 text-[10px] mt-1">
+                                    {ex.sets_reps && <span className="mr-2">📋 {ex.sets_reps}</span>}
+                                    {ex.frequency && <span>⏰ {ex.frequency}</span>}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {injury.return_to_play_protocol && injury.return_to_play_protocol.length > 0 && (
+                        <div className="mt-3 p-3 bg-white/70 rounded-lg">
+                          <div className="text-[10px] font-semibold text-slate-700 mb-2">Return to Play Progress:</div>
+                          <div className="space-y-1">
+                            {injury.return_to_play_protocol.map((phase, idx) => (
+                              <div key={idx} className={`text-xs flex items-start gap-2 p-2 rounded ${phase.completed ? 'bg-emerald-100/50' : 'bg-slate-100/50'}`}>
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 ${phase.completed ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                                  {phase.completed && <span className="text-white text-[10px]">✓</span>}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold text-slate-900">{phase.phase}</div>
+                                  <div className="text-slate-600 text-[10px]">{phase.activities}</div>
+                                  {phase.completion_date && <div className="text-slate-500 text-[9px] mt-1">Completed: {new Date(phase.completion_date).toLocaleDateString()}</div>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {injury.severity && <Badge className="text-[9px] bg-slate-100 text-slate-700 mr-2">{injury.severity}</Badge>}
-                    {injury.treatment_notes && <p className="text-xs text-slate-600 mt-1">{injury.treatment_notes}</p>}
                   </div>
                 ))}
               </div>
@@ -1368,34 +1479,86 @@ export default function PlayerDashboard() {
       </Dialog>
 
       <Dialog open={showInjuryDialog} onOpenChange={setShowInjuryDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Injury Record</DialogTitle>
+            <DialogTitle>Log New Injury</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div>
-              <Label>Date of Injury *</Label>
-              <Input type="date" value={newInjury.injury_date} onChange={e => setNewInjury({...newInjury, injury_date: e.target.value})} />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Date of Injury *</Label>
+                <Input type="date" value={newInjury.injury_date} onChange={e => setNewInjury({...newInjury, injury_date: e.target.value})} />
+              </div>
+              <div>
+                <Label>Severity *</Label>
+                <Select value={newInjury.severity} onValueChange={v => setNewInjury({...newInjury, severity: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Minor">Minor (1-2 weeks)</SelectItem>
+                    <SelectItem value="Moderate">Moderate (2-6 weeks)</SelectItem>
+                    <SelectItem value="Severe">Severe (6+ weeks)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
-              <Label>Injury Description *</Label>
-              <Input value={newInjury.injury_type} onChange={e => setNewInjury({...newInjury, injury_type: e.target.value})} placeholder="e.g., Ankle sprain" />
+              <Label>Injury Type *</Label>
+              <Input value={newInjury.injury_type} onChange={e => setNewInjury({...newInjury, injury_type: e.target.value})} placeholder="e.g., Left Ankle Sprain, Hamstring Strain" />
             </div>
             <div>
-              <Label>Projected Return to Play Date</Label>
+              <Label>Estimated Return to Play Date</Label>
               <Input type="date" value={newInjury.recovery_date} onChange={e => setNewInjury({...newInjury, recovery_date: e.target.value})} />
             </div>
             <div>
-              <Label>Notes</Label>
-              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, notes: e.target.value})} rows={3} placeholder="Treatment notes, recovery plan..." />
+              <Label>Treatment & Recovery Plan</Label>
+              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, treatment_notes: e.target.value})} rows={3} placeholder="Include initial treatment, rehabilitation plan, and any specialist referrals..." />
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowInjuryDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={() => createInjuryMutation.mutate(newInjury)} disabled={!newInjury.injury_date || !newInjury.injury_type} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                Add Injury
+              <Button onClick={() => createInjuryMutation.mutate(newInjury)} disabled={!newInjury.injury_date || !newInjury.injury_type} className="flex-1 bg-red-600 hover:bg-red-700">
+                Log Injury
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditInjuryDialog} onOpenChange={setShowEditInjuryDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Update Injury Status</DialogTitle>
+          </DialogHeader>
+          {editingInjury && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status *</Label>
+                  <Select value={editingInjury.status} onValueChange={v => setEditingInjury({...editingInjury, status: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Recovering">Recovering</SelectItem>
+                      <SelectItem value="Recovered">Recovered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Recovery Date</Label>
+                  <Input type="date" value={editingInjury.recovery_date || ''} onChange={e => setEditingInjury({...editingInjury, recovery_date: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <Label>Treatment Notes</Label>
+                <Textarea value={editingInjury.treatment_notes || ''} onChange={e => setEditingInjury({...editingInjury, treatment_notes: e.target.value})} rows={3} />
+              </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowEditInjuryDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={() => updateInjuryMutation.mutate({ id: editingInjury.id, data: editingInjury })} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  Update Status
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
