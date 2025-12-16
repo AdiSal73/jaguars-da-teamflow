@@ -1242,7 +1242,7 @@ export default function PlayerDashboard() {
         />
       </div>
 
-      {/* Position Knowledge Bank */}
+      {/* Position Knowledge Bank - Bento Grid */}
       {player.primary_position && (
         <div className="mt-6">
           <PositionKnowledgeBank position={player.primary_position} />

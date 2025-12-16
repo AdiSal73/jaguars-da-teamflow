@@ -2,8 +2,9 @@ import React from 'react';
 import { BookOpen, Shield, TrendingUp, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { POSITION_KNOWLEDGE_BANK } from '../constants/positionKnowledgeBank';
 
-const POSITIONS_DATA = {
+const POSITIONS_DATA_OLD = {
   GK: {
     title: 'Goalkeeper',
     icon: '🧤',
@@ -434,7 +435,7 @@ const POSITIONS_DATA = {
 };
 
 export default function PositionKnowledgeBank({ position }) {
-  const knowledge = POSITIONS_DATA[position];
+  const knowledge = POSITION_KNOWLEDGE_BANK[position];
 
   if (!knowledge) {
     return null;
