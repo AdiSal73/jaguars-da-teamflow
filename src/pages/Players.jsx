@@ -439,7 +439,7 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.map(team => (
+                {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
                   <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                 ))}
               </SelectContent>
