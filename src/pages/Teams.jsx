@@ -229,6 +229,9 @@ export default function Teams() {
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))];
+  
+  // Ensure team names are strings before sorting
+  const uniqueSeasons = [...new Set(teams.map(t => t.season).filter(Boolean))].filter(s => typeof s === 'string');
 
   const SortIcon = ({ field }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
@@ -260,7 +263,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
-                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort().map(ag => (
+                    {[...new Set(teams.map(t => t.age_group).filter(Boolean).filter(ag => typeof ag === 'string'))].sort().map(ag => (
                       <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                     ))}
                   </SelectContent>
@@ -329,7 +332,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Seasons</SelectItem>
-                    {[...new Set(teams.map(t => t.season).filter(Boolean))].map(season => (
+                    {uniqueSeasons.map(season => (
                       <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>
