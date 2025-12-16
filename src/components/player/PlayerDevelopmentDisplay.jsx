@@ -20,7 +20,8 @@ export default function PlayerDevelopmentDisplay({
   onUpdatePlayer, 
   onUpdatePathway, 
   onProvideFeedback,
-  assessments 
+  assessments,
+  isAdminOrCoach
 }) {
   const [showAddGoalDialog, setShowAddGoalDialog] = useState(false);
   const [showEditGoalDialog, setShowEditGoalDialog] = useState(false);
@@ -236,7 +237,7 @@ export default function PlayerDevelopmentDisplay({
               Player Development Pathway ({player.goals?.length || 0})
             </CardTitle>
             <div className="flex gap-2">
-              <AIGoalGenerator player={player} onUpdatePlayer={onUpdatePlayer} assessments={assessments} />
+              {isAdminOrCoach && <AIGoalGenerator player={player} onUpdatePlayer={onUpdatePlayer} assessments={assessments} />}
               <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Goal
@@ -380,12 +381,14 @@ export default function PlayerDevelopmentDisplay({
               Training Modules
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
-                <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
-                  <Target className="w-4 h-4 mr-1" />
-                 Adil's Recommendations
-                </Button>
-              </Link>
+              {isAdminOrCoach && (
+                <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
+                  <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                    <Target className="w-4 h-4 mr-1" />
+                   Adil's Recommendations
+                  </Button>
+                </Link>
+              )}
               <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Module

@@ -647,17 +647,18 @@ export default function PlayerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-blue-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/40">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-blue-600 text-white shadow-2xl">
-        <div className="max-w-[1600px] mx-auto p-6 md:p-8">
+      <div className="relative bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 text-white shadow-2xl overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsLTE4LjE1LTE4LjE1QzM1LjIyIDI0IDM2IDIxLjA4IDM2IDE4em0tMTggMTRjLTcuNzMgMC0xNC02LjI3LTE0LTE0UzEwLjI3IDQgMTggNHMxNCA2LjI3IDE0IDE0LTYuMjcgMTQtMTQgMTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+        <div className="max-w-[1600px] mx-auto p-6 md:p-8 relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl md:text-4xl font-bold shadow-lg">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl md:text-4xl font-bold shadow-2xl ring-4 ring-white/30">
                   {player.jersey_number || player.full_name?.charAt(0)}
                 </div>
                 <div>
@@ -711,10 +712,10 @@ export default function PlayerDashboard() {
 
       <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
         {/* Player Info & Contact */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border-b">
-            <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
-              <User className="w-5 h-5 text-emerald-600" /> Player Info
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 via-blue-600/90 to-emerald-600/90 text-white border-b border-emerald-400/30">
+            <CardTitle className="text-base flex items-center gap-2 font-bold">
+              <User className="w-5 h-5" /> Player Info
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -854,9 +855,9 @@ export default function PlayerDashboard() {
 
         {/* Tryout Info - Only visible to admin/coach */}
         {isAdminOrCoach && (
-        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b">
-            <CardTitle className="text-base font-bold text-slate-900">Tryout Info</CardTitle>
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-purple-600/90 via-pink-600/90 to-purple-600/90 text-white border-b border-purple-400/30">
+            <CardTitle className="text-base font-bold">🎯 Tryout Info</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -969,27 +970,27 @@ export default function PlayerDashboard() {
         )}
 
         {/* Physical Assessment */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 border-b">
-            <CardTitle className="text-base flex items-center justify-between font-bold text-slate-900">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-red-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-red-600/90 via-orange-600/90 to-yellow-600/90 text-white border-b border-red-400/30">
+            <CardTitle className="text-base flex items-center justify-between font-bold">
               <div className="flex items-center gap-2">
-                Physical Assessment
+                💪 Physical Assessment
                 {assessments.length > 1 && (
-                  <span className="text-[10px] text-slate-400">({assessmentIndex + 1}/{assessments.length})</span>
+                  <span className="text-[10px] text-white/70">({assessmentIndex + 1}/{assessments.length})</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
                 {assessments.length > 1 && (
                   <>
-                    <button onClick={() => setAssessmentIndex(Math.min(assessmentIndex + 1, assessments.length - 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                    <button onClick={() => setAssessmentIndex(Math.min(assessmentIndex + 1, assessments.length - 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/20 rounded disabled:opacity-30">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button onClick={() => setAssessmentIndex(Math.max(assessmentIndex - 1, 0))} disabled={assessmentIndex <= 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
+                    <button onClick={() => setAssessmentIndex(Math.max(assessmentIndex - 1, 0))} disabled={assessmentIndex <= 0} className="p-1 hover:bg-white/20 rounded disabled:opacity-30">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </>
                 )}
-                {currentAssessment && <span className="text-[10px] font-normal text-slate-500">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</span>}
+                {currentAssessment && <span className="text-[10px] font-normal text-white/80">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</span>}
               </div>
             </CardTitle>
           </CardHeader>
@@ -1049,11 +1050,11 @@ export default function PlayerDashboard() {
         </Card>
 
         {/* Evaluation Metrics */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-b">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-pink-600/90 text-white border-b border-blue-400/30">
             <div className="flex items-center justify-between mb-1">
-              <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
-                Evaluation
+              <CardTitle className="text-base flex items-center gap-2 font-bold">
+                📊 Evaluation
                 {evaluations.length > 1 && (
                   <span className="text-[10px] text-slate-400">({evaluationIndex + 1}/{evaluations.length})</span>
                 )}
@@ -1154,11 +1155,11 @@ export default function PlayerDashboard() {
       {(assessments.length > 1 || evaluations.length > 1) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {assessments.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-2 bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-b">
-                <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  Physical Progress ({assessments.length} assessments)
+            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 to-green-600/90 text-white border-b border-emerald-400/30">
+                <CardTitle className="text-base flex items-center gap-2 font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                  Physical Progress ({assessments.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1201,11 +1202,11 @@ export default function PlayerDashboard() {
           )}
 
           {evaluations.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b">
-                <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
-                  Evaluation Progress ({evaluations.length} evaluations)
+            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-purple-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
+              <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white border-b border-blue-400/30">
+                <CardTitle className="text-base flex items-center gap-2 font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                  Evaluation Progress ({evaluations.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1237,6 +1238,7 @@ export default function PlayerDashboard() {
           onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
           onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
           onProvideFeedback={isAdminOrCoach ? (goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); } : null}
+          isAdminOrCoach={isAdminOrCoach}
         />
       </div>
 
@@ -1247,148 +1249,63 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-      {/* Events Timeline */}
-      {pathway && (
-        <div className="mt-6">
-          <EventsTimeline 
-            events={pathway.events_camps || []} 
-            onUpdate={handleUpdateEvents}
-          />
-        </div>
-      )}
-
-            {/* Injury Tracking System */}
-            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2 bg-gradient-to-r from-red-50 to-orange-50 border-b">
+      {/* Bento Grid - Events, Injuries, Documents */}
+      <div className="grid md:grid-cols-3 gap-6 mt-6">
+        {/* Events & Camps */}
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-purple-50/80 via-pink-50/50 to-purple-50/80 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-purple-600/90 via-pink-600/90 to-purple-600/90 text-white border-b border-purple-400/30">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  Injury Tracking
-                  {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') && (
-                    <Badge className="bg-red-500 text-white animate-pulse">
-                      {injuries.filter(i => i.status === 'Active' || i.status === 'Recovering').length} Active
-                    </Badge>
-                  )}
-                </CardTitle>
-                <p className="text-xs text-slate-500 mt-1">Monitor recovery, rehabilitation, and return to play</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className={injuries.some(i => i.status === 'Active' || i.status === 'Recovering') ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>
-                  {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') ? 'Under Treatment' : 'Healthy'}
-                </Badge>
-                {isAdminOrCoach && (
-                  <Button variant="outline" size="sm" onClick={() => setShowInjuryDialog(true)}>
-                    <Plus className="w-3 h-3 mr-1" />
-                    Log Injury
-                  </Button>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                🏆 Events & Camps
+                {pathway?.events_camps?.length > 0 && (
+                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 text-xs">
+                    {pathway.events_camps.length}
+                  </Badge>
                 )}
-              </div>
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  const newEvent = {
+                    id: `event_${Date.now()}`,
+                    event_name: '',
+                    event_date: '',
+                    event_type: 'Training Camp',
+                    notes: ''
+                  };
+                  const updatedEvents = [...(pathway?.events_camps || []), newEvent];
+                  updatePathwayMutation.mutate({ events_camps: updatedEvents });
+                }}
+                className="text-white hover:bg-white/20 h-7 px-2"
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
-            {injuries.length === 0 ? (
-              <div className="text-center py-8 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg">
-                <p className="text-emerald-600 font-semibold mb-1">✓ No injury history</p>
-                <p className="text-xs text-slate-500">Player has a clean injury record</p>
+          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
+            {!pathway?.events_camps || pathway.events_camps.length === 0 ? (
+              <div className="text-center py-12 bg-white/60 rounded-xl">
+                <div className="text-4xl mb-3">🎯</div>
+                <p className="text-slate-500 text-sm">No events recorded</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {injuries.map(injury => (
-                  <div 
-                    key={injury.id} 
-                    className={`rounded-xl border-2 overflow-hidden transition-all ${
-                      injury.status === 'Active' ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300 shadow-md' : 
-                      injury.status === 'Recovering' ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300' : 
-                      'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
-                    }`}
-                  >
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-slate-900">{injury.injury_type}</h4>
-                            {injury.severity && (
-                              <Badge className={`text-[9px] ${
-                                injury.severity === 'Severe' ? 'bg-red-200 text-red-900' :
-                                injury.severity === 'Moderate' ? 'bg-orange-200 text-orange-900' :
-                                'bg-blue-200 text-blue-900'
-                              }`}>
-                                {injury.severity}
-                              </Badge>
-                            )}
-                            <Badge className={`text-[9px] ${
-                              injury.status === 'Active' ? 'bg-red-500 text-white' : 
-                              injury.status === 'Recovering' ? 'bg-yellow-500 text-white' : 
-                              'bg-green-500 text-white'
-                            }`}>
-                              {injury.status}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-slate-600 space-y-1">
-                            <div>📅 Injury Date: <span className="font-semibold">{new Date(injury.injury_date).toLocaleDateString()}</span></div>
-                            {injury.recovery_date && (
-                              <div>🎯 Target Return: <span className="font-semibold">{new Date(injury.recovery_date).toLocaleDateString()}</span></div>
-                            )}
-                          </div>
+              <div className="space-y-2">
+                {pathway.events_camps.map(event => (
+                  <div key={event.id} className="p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-purple-200/50 hover:border-purple-400/50 hover:shadow-lg transition-all">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-bold text-sm text-slate-900">{event.event_name}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className="text-[9px] bg-purple-100 text-purple-800">{event.event_type}</Badge>
+                          {event.event_date && (
+                            <span className="text-xs text-slate-500">
+                              {new Date(event.event_date).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
-                        {isAdminOrCoach && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => { setEditingInjury(injury); setShowEditInjuryDialog(true); }}
-                            className="hover:bg-white/50"
-                          >
-                            <span className="text-xs">Update</span>
-                          </Button>
-                        )}
+                        {event.notes && <p className="text-xs text-slate-600 mt-2 italic">{event.notes}</p>}
                       </div>
-                      
-                      {injury.treatment_notes && (
-                        <div className="mt-2 p-2 bg-white/70 rounded-lg">
-                          <div className="text-[10px] font-semibold text-slate-700 mb-1">Treatment Notes:</div>
-                          <p className="text-xs text-slate-600">{injury.treatment_notes}</p>
-                        </div>
-                      )}
-
-                      {injury.rehabilitation_exercises && injury.rehabilitation_exercises.length > 0 && (
-                        <div className="mt-3 p-3 bg-white/70 rounded-lg">
-                          <div className="text-[10px] font-semibold text-slate-700 mb-2">Rehabilitation Protocol:</div>
-                          <div className="space-y-2">
-                            {injury.rehabilitation_exercises.map((ex, idx) => (
-                              <div key={idx} className="text-xs border-l-2 border-blue-300 pl-2">
-                                <div className="font-semibold text-slate-900">{ex.exercise_name}</div>
-                                {ex.description && <div className="text-slate-600 text-[10px]">{ex.description}</div>}
-                                {(ex.sets_reps || ex.frequency) && (
-                                  <div className="text-slate-500 text-[10px] mt-1">
-                                    {ex.sets_reps && <span className="mr-2">📋 {ex.sets_reps}</span>}
-                                    {ex.frequency && <span>⏰ {ex.frequency}</span>}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {injury.return_to_play_protocol && injury.return_to_play_protocol.length > 0 && (
-                        <div className="mt-3 p-3 bg-white/70 rounded-lg">
-                          <div className="text-[10px] font-semibold text-slate-700 mb-2">Return to Play Progress:</div>
-                          <div className="space-y-1">
-                            {injury.return_to_play_protocol.map((phase, idx) => (
-                              <div key={idx} className={`text-xs flex items-start gap-2 p-2 rounded ${phase.completed ? 'bg-emerald-100/50' : 'bg-slate-100/50'}`}>
-                                <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 ${phase.completed ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                                  {phase.completed && <span className="text-white text-[10px]">✓</span>}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-slate-900">{phase.phase}</div>
-                                  <div className="text-slate-600 text-[10px]">{phase.activities}</div>
-                                  {phase.completion_date && <div className="text-slate-500 text-[9px] mt-1">Completed: {new Date(phase.completion_date).toLocaleDateString()}</div>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -1397,47 +1314,152 @@ export default function PlayerDashboard() {
           </CardContent>
         </Card>
 
-        {/* Documents */}
-        <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-2">
+        {/* Injury Tracking */}
+            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-3 bg-gradient-to-r from-red-600/90 via-orange-600/90 to-red-600/90 text-white border-b border-red-400/30">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Documents & Reports</CardTitle>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                🏥 Injury Tracking
+                {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') && (
+                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 animate-pulse text-xs">
+                    {injuries.filter(i => i.status === 'Active' || i.status === 'Recovering').length}
+                  </Badge>
+                )}
+              </CardTitle>
               {isAdminOrCoach && (
-                <Button variant="outline" size="sm" onClick={() => setShowDocumentDialog(true)}>
-                  <Plus className="w-3 h-3 mr-1" />
-                  Upload
+                <Button variant="ghost" size="sm" onClick={() => setShowInjuryDialog(true)} className="text-white hover:bg-white/20 h-7 px-2">
+                  <Plus className="w-3 h-3" />
                 </Button>
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            {documents.length === 0 ? (
-              <p className="text-center text-slate-500 py-4 text-sm">No documents uploaded</p>
+          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
+            {injuries.length === 0 ? (
+              <div className="text-center py-12 bg-white/60 rounded-xl">
+                <div className="text-4xl mb-3">✓</div>
+                <p className="text-emerald-600 font-semibold mb-1">Healthy</p>
+                <p className="text-xs text-slate-500">No injury history</p>
+              </div>
             ) : (
               <div className="space-y-2">
-                {documents.map(doc => (
-                  <div key={doc.id} className="p-3 bg-slate-50 rounded-lg flex items-start justify-between">
-                    <div className="flex-1">
-                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-emerald-600 hover:underline">
-                        {doc.title}
-                      </a>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className="text-[9px] bg-blue-100 text-blue-800">{doc.document_type}</Badge>
-                        {doc.upload_date && <span className="text-xs text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
+                {injuries.map(injury => (
+                  <div 
+                    key={injury.id} 
+                    className={`rounded-xl border overflow-hidden transition-all bg-white/80 backdrop-blur-sm hover:shadow-lg ${
+                      injury.status === 'Active' ? 'border-red-300/50' : 
+                      injury.status === 'Recovering' ? 'border-yellow-300/50' : 
+                      'border-green-300/50'
+                    }`}
+                  >
+                    <div className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <h4 className="font-bold text-sm text-slate-900">{injury.injury_type}</h4>
+                            {injury.severity && (
+                              <Badge className={`text-[8px] px-1.5 py-0 ${
+                                injury.severity === 'Severe' ? 'bg-red-100 text-red-900' :
+                                injury.severity === 'Moderate' ? 'bg-orange-100 text-orange-900' :
+                                'bg-blue-100 text-blue-900'
+                              }`}>
+                                {injury.severity}
+                              </Badge>
+                            )}
+                            <Badge className={`text-[8px] px-1.5 py-0 ${
+                              injury.status === 'Active' ? 'bg-red-500 text-white' : 
+                              injury.status === 'Recovering' ? 'bg-yellow-500 text-white' : 
+                              'bg-green-500 text-white'
+                            }`}>
+                              {injury.status}
+                            </Badge>
+                          </div>
+                          <div className="text-[10px] text-slate-600 space-y-0.5">
+                            <div>{new Date(injury.injury_date).toLocaleDateString()}</div>
+                            {injury.recovery_date && (
+                              <div className="text-slate-500">→ {new Date(injury.recovery_date).toLocaleDateString()}</div>
+                            )}
+                          </div>
+                        </div>
+                        {isAdminOrCoach && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => { setEditingInjury(injury); setShowEditInjuryDialog(true); }}
+                            className="hover:bg-slate-100 h-6 px-2 text-[10px]"
+                          >
+                            Update
+                          </Button>
+                        )}
                       </div>
-                      {doc.notes && <p className="text-xs text-slate-600 mt-1">{doc.notes}</p>}
-                      </div>
-                      {isAdminOrCoach && (
-                      <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600">
-                        <span className="text-xs">Delete</span>
-                      </Button>
+                      
+                      {injury.treatment_notes && (
+                        <div className="mt-2 p-2 bg-slate-50/80 rounded-lg">
+                          <p className="text-[10px] text-slate-600">{injury.treatment_notes}</p>
+                        </div>
                       )}
-                      </div>
+
+
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </CardContent>
-          </Card>
+        </Card>
+
+        {/* Documents & Reports */}
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-blue-50/80 via-cyan-50/50 to-blue-50/80 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-600/90 via-cyan-600/90 to-blue-600/90 text-white border-b border-blue-400/30">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                📄 Documents & Reports
+                {documents.length > 0 && (
+                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 text-xs">
+                    {documents.length}
+                  </Badge>
+                )}
+              </CardTitle>
+              {isAdminOrCoach && (
+                <Button variant="ghost" size="sm" onClick={() => setShowDocumentDialog(true)} className="text-white hover:bg-white/20 h-7 px-2">
+                  <Plus className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
+            {documents.length === 0 ? (
+              <div className="text-center py-12 bg-white/60 rounded-xl">
+                <div className="text-4xl mb-3">📁</div>
+                <p className="text-slate-500 text-sm">No documents</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {documents.map(doc => (
+                  <div key={doc.id} className="p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-200/50 hover:border-blue-400/50 hover:shadow-lg transition-all">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm text-blue-600 hover:underline">
+                          {doc.title}
+                        </a>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className="text-[8px] bg-blue-100 text-blue-800 px-1.5 py-0">{doc.document_type}</Badge>
+                          {doc.upload_date && <span className="text-[10px] text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
+                        </div>
+                        {doc.notes && <p className="text-[10px] text-slate-600 mt-1">{doc.notes}</p>}
+                      </div>
+                      {isAdminOrCoach && (
+                        <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600 h-6 px-2 text-[10px]">
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
           <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
         <DialogContent className="max-w-md">
