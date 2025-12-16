@@ -161,6 +161,7 @@ export default function TeamTryout() {
   }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear]);
 
   const getTeamPlayers = (teamName) => {
+    if (!teamName || typeof teamName !== 'string') return [];
     return players.filter(p => p.next_year_team && typeof p.next_year_team === 'string' && p.next_year_team === teamName).sort((a, b) => {
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
