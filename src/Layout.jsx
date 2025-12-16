@@ -144,6 +144,8 @@ export default function Layout({ children, currentPageName }) {
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
         { title: "Formation View", url: createPageUrl("FormationView") },
         { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
+        { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },
+        { title: "PDP 2025", url: createPageUrl("PDPViewer") },
         { title: "Fitness Resources", url: createPageUrl("FitnessResources") }
       ]
     },
