@@ -106,11 +106,15 @@ export default function PlayerDashboard() {
   const { data: player, isLoading: playerLoading, isError: playerError } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
-      const players = await base44.entities.Player.list();
-      return players.find(p => p.id === playerId);
+      const allPlayers = await base44.entities.Player.list();
+      const foundPlayer = allPlayers.find(p => p.id === playerId);
+      if (!foundPlayer) {
+        throw new Error('Player not found');
+      }
+      return foundPlayer;
     },
-    enabled: !!playerId,
-    retry: false
+    enabled: !!playerId && !!currentUser,
+    retry: 1
   });
 
   const { data: teams = [] } = useQuery({

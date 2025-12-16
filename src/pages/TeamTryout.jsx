@@ -9,23 +9,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Users, User, Plus } from 'lucide-react';
+import { Search, Users, User, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 
 export default function TeamTryout() {
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterGender, setFilterGender] = useState('all');
-  const [filterBranch, setFilterBranch] = useState('all');
-  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [teamSearchTerm, setTeamSearchTerm] = useState('');
+  const [teamFilterGender, setTeamFilterGender] = useState('all');
+  const [teamFilterBranch, setTeamFilterBranch] = useState('all');
+  const [teamFilterAgeGroup, setTeamFilterAgeGroup] = useState('all');
+  const [teamFilterLeague, setTeamFilterLeague] = useState('all');
+  
   const [playerSearchTerm, setPlayerSearchTerm] = useState('');
+  const [playerFilterBranch, setPlayerFilterBranch] = useState('all');
+  const [playerFilterAgeGroup, setPlayerFilterAgeGroup] = useState('all');
+  const [playerFilterTeamRole, setPlayerFilterTeamRole] = useState('all');
+  const [playerFilterBirthYear, setPlayerFilterBirthYear] = useState('all');
+  
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
   const [teamForm, setTeamForm] = useState({
     name: '',
     age_group: '',
     gender: 'Female',
-    branch: ''
+    branch: '',
+    league: ''
   });
 
   const { data: teams = [] } = useQuery({
@@ -43,10 +51,21 @@ export default function TeamTryout() {
     queryFn: () => base44.entities.PlayerTryout.list()
   });
 
-  const updatePlayerMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Player.update(id, data),
+  const updateTryoutMutation = useMutation({
+    mutationFn: async ({ playerId, data }) => {
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      if (existingTryout) {
+        return await base44.entities.PlayerTryout.update(existingTryout.id, data);
+      } else {
+        const player = players.find(p => p.id === playerId);
+        return await base44.entities.PlayerTryout.create({
+          player_id: playerId,
+          player_name: player?.full_name,
+          ...data
+        });
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['players']);
       queryClient.invalidateQueries(['tryouts']);
     }
   });
@@ -56,34 +75,50 @@ export default function TeamTryout() {
     onSuccess: () => {
       queryClient.invalidateQueries(['teams']);
       setShowCreateTeamDialog(false);
-      setTeamForm({ name: '', age_group: '', gender: 'Female', branch: '' });
+      setTeamForm({ name: '', age_group: '', gender: 'Female', branch: '', league: '' });
       toast.success('Team created');
     }
   });
 
-  // Filter teams for 26/27 season
-  const nextYearTeams = useMemo(() => {
-    const extractAge = (ag) => {
-      const match = ag?.match(/U-?(\d+)/i);
-      return match ? parseInt(match[1]) : 0;
-    };
+  const deleteTeamMutation = useMutation({
+    mutationFn: (teamId) => base44.entities.Team.delete(teamId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['teams']);
+      toast.success('Team deleted');
+    }
+  });
 
+  const extractAge = (ag) => {
+    const match = ag?.match(/U-?(\d+)/i);
+    return match ? parseInt(match[1]) : 0;
+  };
+
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => extractAge(b) - extractAge(a));
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueBirthYears = [...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
+
+  // Filter teams for 26/27 season - Remove duplicates by team name
+  const nextYearTeams = useMemo(() => {
+    const seen = new Set();
     return teams.filter(t => {
       const is2627 = t.name?.includes('26/27') || t.season?.includes('26/27');
       if (!is2627) return false;
       
-      const matchesSearch = t.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGender = filterGender === 'all' || t.gender === filterGender;
-      const matchesBranch = filterBranch === 'all' || t.branch === filterBranch;
-      const matchesAgeGroup = filterAgeGroup === 'all' || t.age_group === filterAgeGroup;
+      // Remove duplicates
+      if (seen.has(t.name)) return false;
+      seen.add(t.name);
       
-      return matchesSearch && matchesGender && matchesBranch && matchesAgeGroup;
+      const matchesSearch = t.name?.toLowerCase().includes(teamSearchTerm.toLowerCase());
+      const matchesGender = teamFilterGender === 'all' || t.gender === teamFilterGender;
+      const matchesBranch = teamFilterBranch === 'all' || t.branch === teamFilterBranch;
+      const matchesAgeGroup = teamFilterAgeGroup === 'all' || t.age_group === teamFilterAgeGroup;
+      const matchesLeague = teamFilterLeague === 'all' || t.league === teamFilterLeague;
+      
+      return matchesSearch && matchesGender && matchesBranch && matchesAgeGroup && matchesLeague;
     }).sort((a, b) => {
-      // Sort by age group descending (U19 first)
       const ageA = extractAge(a.age_group);
       const ageB = extractAge(b.age_group);
       if (ageA !== ageB) return ageB - ageA;
-      // Then by team hierarchy
       const priority = { 'Girls Academy': 1, 'Aspire': 2, 'Green': 3, 'White': 4, 'Pre GA 1': 5, 'Pre GA 2': 6, 'Green White': 7 };
       const getName = (name) => {
         for (const key of Object.keys(priority)) {
@@ -93,9 +128,9 @@ export default function TeamTryout() {
       };
       return (priority[getName(a.name)] || 99) - (priority[getName(b.name)] || 99);
     });
-  }, [teams, searchTerm, filterGender, filterBranch, filterAgeGroup]);
+  }, [teams, teamSearchTerm, teamFilterGender, teamFilterBranch, teamFilterAgeGroup, teamFilterLeague]);
 
-  // Get unassigned players
+  // Get unassigned players with comprehensive filtering
   const unassignedPlayers = useMemo(() => {
     return players.filter(p => {
       if (!p.next_year_team) return true;
@@ -103,19 +138,28 @@ export default function TeamTryout() {
       return !hasValidNextTeam;
     }).filter(p => {
       const matchesSearch = p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
-      return matchesSearch;
+      const matchesBranch = playerFilterBranch === 'all' || p.branch === playerFilterBranch;
+      
+      const playerTeam = teams.find(t => t.id === p.team_id);
+      const matchesAgeGroup = playerFilterAgeGroup === 'all' || playerTeam?.age_group === playerFilterAgeGroup;
+      
+      const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null;
+      const matchesBirthYear = playerFilterBirthYear === 'all' || birthYear === playerFilterBirthYear;
+      
+      const playerTryout = tryouts.find(t => t.player_id === p.id);
+      const matchesTeamRole = playerFilterTeamRole === 'all' || 
+        (playerFilterTeamRole === 'none' ? !playerTryout?.team_role : playerTryout?.team_role === playerFilterTeamRole);
+      
+      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole;
     }).sort((a, b) => {
-      // Sort oldest to youngest
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
       return new Date(a.date_of_birth) - new Date(b.date_of_birth);
     });
-  }, [players, nextYearTeams, playerSearchTerm]);
+  }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear]);
 
-  // Get players by team
   const getTeamPlayers = (teamName) => {
     return players.filter(p => p.next_year_team === teamName).sort((a, b) => {
-      // Sort oldest to youngest
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
       return new Date(a.date_of_birth) - new Date(b.date_of_birth);
@@ -124,18 +168,14 @@ export default function TeamTryout() {
 
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-
-    if (!destination) return;
+    if (!destination || source.droppableId === destination.droppableId) return;
 
     const playerId = draggableId;
-    const sourceTeam = source.droppableId === 'unassigned' ? null : source.droppableId;
     const destTeam = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
-    if (sourceTeam === destTeam) return;
-
     try {
-      await updatePlayerMutation.mutateAsync({
-        id: playerId,
+      await updateTryoutMutation.mutateAsync({
+        playerId,
         data: { next_year_team: destTeam }
       });
       toast.success('Player assignment updated');
@@ -150,25 +190,25 @@ export default function TeamTryout() {
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
     
     return (
-      <div className={`p-2.5 bg-white border-2 rounded-lg transition-all ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}>
+      <div className={`p-2.5 bg-white border-2 rounded-xl transition-all ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}>
         <div className="flex items-start gap-2">
-          <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-            {player.jersey_number || <User className="w-3 h-3" />}
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+            {player.jersey_number || <User className="w-4 h-4" />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-xs text-slate-900 truncate">{player.full_name}</div>
-            <div className="text-[10px] text-slate-500">{player.primary_position}</div>
-            <div className="flex flex-wrap gap-0.5 mt-1">
-              {team?.age_group && <Badge className="text-[8px] px-1 py-0 bg-slate-100 text-slate-700">{team.age_group}</Badge>}
-              {age && <Badge className="text-[8px] px-1 py-0 bg-blue-100 text-blue-700">{age}y</Badge>}
-              {tryout?.team_role && <Badge className="text-[8px] px-1 py-0 bg-purple-100 text-purple-700">{tryout.team_role}</Badge>}
+            <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
+            <div className="text-[10px] text-slate-600 font-medium">{player.primary_position}</div>
+            <div className="flex flex-wrap gap-0.5 mt-1.5">
+              {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
+              {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
+              {tryout?.team_role && <Badge className="text-[8px] px-1.5 py-0.5 bg-purple-100 text-purple-800 font-semibold">{tryout.team_role.replace('Indispensable Player', 'IND').replace(' Starter', '').replace(' Rotation', ' R')}</Badge>}
               {tryout?.recommendation && (
-                <Badge className={`text-[8px] px-1 py-0 ${
-                  tryout.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-700' :
-                  tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-700' :
-                  'bg-blue-100 text-blue-700'
+                <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
+                  tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                  tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                  'bg-blue-500 text-white'
                 }`}>
-                  {tryout.recommendation}
+                  {tryout.recommendation === 'Move up' ? '⬆️' : tryout.recommendation === 'Move down' ? '⬇️' : '➡️'}
                 </Badge>
               )}
             </div>
@@ -178,165 +218,205 @@ export default function TeamTryout() {
     );
   };
 
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
-    const extractAge = (ag) => {
-      const match = ag?.match(/U-?(\d+)/i);
-      return match ? parseInt(match[1]) : 0;
-    };
-    return extractAge(b) - extractAge(a);
-  });
-
   return (
-    <div className="p-4 md:p-6 max-w-[1800px] mx-auto">
+    <div className="p-4 md:p-6 max-w-[1900px] mx-auto">
       <div className="mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Team Assignments - 2026/2027 Season</h1>
-          <p className="text-slate-600 mt-1">Drag and drop players to assign them to next year's teams</p>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Team Assignments 2026/2027
+          </h1>
+          <p className="text-slate-600 mt-2">Drag and drop players to assign them to next year's teams</p>
         </div>
-        <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg">
           <Plus className="w-4 h-4 mr-2" />
           Create Team
         </Button>
       </div>
 
-      <Card className="mb-6 border-none shadow-lg">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Label className="text-xs mb-1 block">Search Teams</Label>
-              <Search className="absolute left-3 top-[30px] w-4 h-4 text-slate-400" />
+      <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+        {/* Teams Section */}
+        <div>
+          <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
+            <CardContent className="p-4">
+              <Label className="text-sm font-bold text-slate-700 mb-3 block">Filter Teams</Label>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Search..."
+                    value={teamSearchTerm}
+                    onChange={(e) => setTeamSearchTerm(e.target.value)}
+                    className="pl-10 h-9 text-xs"
+                  />
+                </div>
+                <Select value={teamFilterGender} onValueChange={setTeamFilterGender}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Gender" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Genders</SelectItem>
+                    <SelectItem value="Female">Girls</SelectItem>
+                    <SelectItem value="Male">Boys</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={teamFilterAgeGroup} onValueChange={setTeamFilterAgeGroup}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Ages</SelectItem>
+                    {uniqueAgeGroups.map(ag => (
+                      <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={teamFilterLeague} onValueChange={setTeamFilterLeague}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="League" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Leagues</SelectItem>
+                    {uniqueLeagues.map(league => (
+                      <SelectItem key={league} value={league}>{league}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={teamFilterBranch} onValueChange={setTeamFilterBranch}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Branches</SelectItem>
+                    {BRANCH_OPTIONS.map(branch => (
+                      <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
+              {nextYearTeams.map(team => {
+                const teamPlayers = getTeamPlayers(team.name);
+                return (
+                  <Card key={team.id} className={`border-2 shadow-lg hover:shadow-xl transition-all ${team.gender === 'Male' ? 'border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100' : 'border-pink-400 bg-gradient-to-br from-pink-50 to-pink-100'}`}>
+                    <CardHeader className={`pb-2 ${team.gender === 'Male' ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700' : 'bg-gradient-to-r from-pink-600 via-pink-700 to-rose-700'} text-white shadow-md`}>
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold truncate">{team.name}</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.age_group}</Badge>
+                            {team.league && <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.league}</Badge>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
+                          <button onClick={() => deleteTeamMutation.mutate(team.id)} className="ml-1 p-1 hover:bg-white/20 rounded transition-colors">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                      <Droppable droppableId={team.name}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? `${team.gender === 'Male' ? 'bg-blue-200' : 'bg-pink-200'} border-2 border-dashed ${team.gender === 'Male' ? 'border-blue-500' : 'border-pink-500'} scale-105` : 'bg-white/60'}`}
+                          >
+                            {teamPlayers.map((player, index) => (
+                              <Draggable key={player.id} draggableId={player.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                  >
+                                    <PlayerCard player={player} isDragging={snapshot.isDragging} />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                            {teamPlayers.length === 0 && (
+                              <div className="text-center py-12 text-slate-400 text-xs">
+                                <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                                <p>Drop players here</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Droppable>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </DragDropContext>
+        </div>
+
+        {/* Unassigned Players Sidebar */}
+        <Card className="border-2 border-orange-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-orange-50 to-red-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <CardHeader className="pb-2 bg-gradient-to-r from-orange-600 via-orange-700 to-red-700 text-white shadow-md">
+            <CardTitle className="text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                <span className="font-bold">Unassigned Players</span>
+              </div>
+              <Badge className="bg-white text-orange-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3">
+            <div className="space-y-2 mb-3">
+              <Label className="text-xs font-bold text-slate-700">Filter Players</Label>
               <Input
-                placeholder="Search teams..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                placeholder="Search players..."
+                value={playerSearchTerm}
+                onChange={(e) => setPlayerSearchTerm(e.target.value)}
+                className="h-8 text-xs"
               />
-            </div>
-            <div>
-              <Label className="text-xs mb-1 block">Gender</Label>
-              <Select value={filterGender} onValueChange={setFilterGender}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={playerFilterAgeGroup} onValueChange={setPlayerFilterAgeGroup}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Female">Girls</SelectItem>
-                  <SelectItem value="Male">Boys</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs mb-1 block">Age Group</Label>
-              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="all">All Age Groups</SelectItem>
                   {uniqueAgeGroups.map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label className="text-xs mb-1 block">Branch</Label>
-              <Select value={filterBranch} onValueChange={setFilterBranch}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={playerFilterBirthYear} onValueChange={setPlayerFilterBirthYear}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Birth Year" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="all">All Birth Years</SelectItem>
+                  {uniqueBirthYears.map(year => (
+                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={playerFilterBranch} onValueChange={setPlayerFilterBranch}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
                   {BRANCH_OPTIONS.map(branch => (
                     <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={playerFilterTeamRole} onValueChange={setPlayerFilterTeamRole}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Team Role" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation'].map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                  <SelectItem value="none">No Data</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          {/* Teams Grid - 3 columns */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-            {nextYearTeams.map(team => {
-              const teamPlayers = getTeamPlayers(team.name);
-              return (
-                <Card key={team.id} className={`border-2 ${team.gender === 'Male' ? 'border-blue-300' : 'border-pink-300'}`}>
-                  <CardHeader className={`pb-2 ${team.gender === 'Male' ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-pink-600 to-pink-700'} text-white`}>
-                    <CardTitle className="text-sm flex items-center justify-between">
-                      <div>
-                        <div className="font-bold">{team.name}</div>
-                        <div className="text-xs opacity-90">{team.age_group}</div>
-                      </div>
-                      <Badge className="bg-white text-slate-900 text-xs">{teamPlayers.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-2">
-                    <Droppable droppableId={team.name}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`min-h-[300px] space-y-1.5 p-2 rounded-lg ${snapshot.isDraggingOver ? `${team.gender === 'Male' ? 'bg-blue-100' : 'bg-pink-100'} border-2 border-dashed ${team.gender === 'Male' ? 'border-blue-400' : 'border-pink-400'}` : 'bg-slate-50'}`}
-                        >
-                          {teamPlayers.map((player, index) => (
-                            <Draggable key={player.id} draggableId={player.id} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                >
-                                  <PlayerCard player={player} isDragging={snapshot.isDragging} />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                          {teamPlayers.length === 0 && (
-                            <div className="text-center py-8 text-slate-400 text-xs">
-                              Drop players here
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </Droppable>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Unassigned Players Sidebar */}
-          <Card className="border-2 border-orange-300 sticky top-4 self-start" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-            <CardHeader className="pb-2 bg-gradient-to-r from-orange-500 to-red-500 text-white">
-              <CardTitle className="text-sm flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Unassigned
-                </div>
-                <Badge className="bg-white text-orange-700 text-xs">{unassignedPlayers.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2">
-              <div className="mb-2">
-                <Input
-                  placeholder="Search players..."
-                  value={playerSearchTerm}
-                  onChange={(e) => setPlayerSearchTerm(e.target.value)}
-                  className="h-8 text-xs"
-                />
-              </div>
+            
+            <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="unassigned">
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`space-y-1.5 p-2 rounded-lg overflow-y-auto ${snapshot.isDraggingOver ? 'bg-orange-100 border-2 border-dashed border-orange-400' : 'bg-slate-50'}`}
-                    style={{ maxHeight: 'calc(100vh - 400px)' }}
+                    className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-orange-200 border-2 border-dashed border-orange-500 scale-105' : 'bg-white/60'}`}
+                    style={{ maxHeight: 'calc(100vh - 580px)' }}
                   >
                     {unassignedPlayers.map((player, index) => (
                       <Draggable key={player.id} draggableId={player.id} index={index}>
@@ -353,28 +433,29 @@ export default function TeamTryout() {
                     ))}
                     {provided.placeholder}
                     {unassignedPlayers.length === 0 && (
-                      <div className="text-center py-8 text-slate-400 text-xs">
-                        No unassigned players
+                      <div className="text-center py-12 text-slate-400 text-xs">
+                        <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
+                        <p>No unassigned players</p>
                       </div>
                     )}
                   </div>
                 )}
               </Droppable>
-            </CardContent>
-          </Card>
-        </div>
-      </DragDropContext>
+            </DragDropContext>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={showCreateTeamDialog} onOpenChange={setShowCreateTeamDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create 2026/2027 Team</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Create 2026/2027 Team</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Age Group *</Label>
-              <Select value={teamForm.age_group} onValueChange={(v) => setTeamForm({...teamForm, age_group: v})}>
-                <SelectTrigger>
+              <Label className="font-semibold">Age Group *</Label>
+              <Select value={teamForm.age_group} onValueChange={(v) => setTeamForm({...teamForm, age_group: v, name: ''})}>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select age group" />
                 </SelectTrigger>
                 <SelectContent>
@@ -385,15 +466,16 @@ export default function TeamTryout() {
               </Select>
             </div>
             <div>
-              <Label>Team Level *</Label>
+              <Label className="font-semibold">Team Level *</Label>
               <Select 
-                value={teamForm.name} 
+                value={teamForm.name ? teamForm.name.split(' ').slice(1, -1).join(' ') : ''}
                 onValueChange={(v) => {
                   const fullName = `${teamForm.age_group} ${v} 26/27`;
                   setTeamForm({...teamForm, name: fullName});
                 }}
+                disabled={!teamForm.age_group}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select team level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -415,9 +497,9 @@ export default function TeamTryout() {
               </Select>
             </div>
             <div>
-              <Label>Gender *</Label>
+              <Label className="font-semibold">Gender *</Label>
               <Select value={teamForm.gender} onValueChange={(v) => setTeamForm({...teamForm, gender: v})}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -427,9 +509,9 @@ export default function TeamTryout() {
               </Select>
             </div>
             <div>
-              <Label>Branch</Label>
+              <Label className="font-semibold">Branch</Label>
               <Select value={teamForm.branch} onValueChange={(v) => setTeamForm({...teamForm, branch: v})}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,9 +521,22 @@ export default function TeamTryout() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="bg-slate-100 p-3 rounded-lg">
-              <Label className="text-xs text-slate-600">Preview Team Name:</Label>
-              <p className="font-semibold text-slate-900 mt-1">{teamForm.name || 'Select options above'}</p>
+            <div>
+              <Label className="font-semibold">League</Label>
+              <Select value={teamForm.league} onValueChange={(v) => setTeamForm({...teamForm, league: v})}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select league" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueLeagues.map(league => (
+                    <SelectItem key={league} value={league}>{league}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl border-2 border-emerald-200">
+              <Label className="text-xs text-slate-600 font-semibold">Preview Team Name:</Label>
+              <p className="font-bold text-lg text-slate-900 mt-1">{teamForm.name || 'Select options above'}</p>
             </div>
           </div>
           <div className="flex gap-3 mt-6">
@@ -454,7 +549,7 @@ export default function TeamTryout() {
                 season: '26/27'
               })}
               disabled={!teamForm.name || !teamForm.age_group}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              className="flex-1 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
             >
               Create Team
             </Button>

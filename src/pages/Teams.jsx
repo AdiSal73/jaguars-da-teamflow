@@ -27,6 +27,7 @@ export default function Teams() {
   const [filterCoach, setFilterCoach] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
+  const [filterSeason, setFilterSeason] = useState('all');
   const [viewMode, setViewMode] = useState('cards');
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
