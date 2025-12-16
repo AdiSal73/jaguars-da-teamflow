@@ -652,8 +652,8 @@ export default function Tryouts() {
         </Card>
 
         <Tabs value="columns" className="text-slate-800 w-full">
-          <TabsList className="mb-4 md:mb-6 grid grid-cols-3 w-full md:w-auto">
-            <TabsTrigger value="columns" className="text-xs md:text-sm">2-Column</TabsTrigger>
+          <TabsList className="mb-4 md:mb-6 grid grid-cols-1 w-full md:w-auto">
+            <TabsTrigger value="columns" className="text-xs md:text-sm">Team View</TabsTrigger>
           </TabsList>
 
           <TabsContent value="columns">
