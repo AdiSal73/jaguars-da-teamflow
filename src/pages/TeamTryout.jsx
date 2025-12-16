@@ -93,8 +93,8 @@ export default function TeamTryout() {
     return match ? parseInt(match[1]) : 0;
   };
 
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => extractAge(b) - extractAge(a));
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(ag => ag && typeof ag === 'string'))].sort((a, b) => extractAge(b) - extractAge(a));
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
   const uniqueBirthYears = [...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
 
   // Filter teams for 26/27 season - Remove duplicates by team name
