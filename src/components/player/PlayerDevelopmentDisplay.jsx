@@ -61,17 +61,17 @@ export default function PlayerDevelopmentDisplay({
     if (!positionKnowledge) return [];
     
     const allSkills = [];
-    ['attacking', 'defending', 'transition'].forEach(phase => {
-      if (positionKnowledge[phase]) {
-        positionKnowledge[phase].forEach(item => {
-          if (item.keyPoints) {
-            item.keyPoints.forEach(point => {
-              allSkills.push({ skill_name: point });
-            });
-          }
-        });
-      }
-    });
+    const categories = positionKnowledge.categories;
+    if (categories) {
+      Object.keys(categories).forEach(phaseKey => {
+        const phase = categories[phaseKey];
+        if (phase.points) {
+          phase.points.forEach(point => {
+            allSkills.push({ skill_name: point });
+          });
+        }
+      });
+    }
     return allSkills;
   };
 
