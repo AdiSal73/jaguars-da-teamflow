@@ -236,7 +236,7 @@ export default function FormationView() {
   });
 
   const handleSaveNewFormation = () => {
-    if (!newFormationName.trim()) return;
+    if (!newFormationName || typeof newFormationName !== 'string' || !newFormationName.trim()) return;
     saveFormationMutation.mutate({
       name: newFormationName,
       team_id: selectedTeam !== 'all' ? selectedTeam : null,
@@ -891,7 +891,7 @@ export default function FormationView() {
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setShowSaveFormationDialog(false)} className="flex-1">Cancel</Button>
-                <Button onClick={handleSaveNewFormation} disabled={!newFormationName.trim()} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={handleSaveNewFormation} disabled={!newFormationName || typeof newFormationName !== 'string' || !newFormationName.trim()} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                   <Save className="w-4 h-4 mr-2" />
                   Save Formation
                 </Button>
