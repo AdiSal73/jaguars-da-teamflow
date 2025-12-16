@@ -667,7 +667,7 @@ export default function Tryouts() {
               <TeamColumn
                 title="Aspire & Other Leagues"
                 teams={[...aspireTeams, ...otherTeams]}
-                bgColor="bg-gradient-to-r from-green-600 via-green-700 to-emerald-600"
+                bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600"
                 logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png" />
             </div>
           </TabsContent>
