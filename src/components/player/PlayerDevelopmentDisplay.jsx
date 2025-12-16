@@ -59,7 +59,6 @@ export default function PlayerDevelopmentDisplay({
     preventative_measures: ''
   });
 
-  // Get skills from player's position knowledge bank
   const getPositionSkills = () => {
     if (!player.primary_position) return [];
     const positionKnowledge = POSITION_KNOWLEDGE[player.primary_position];
@@ -241,10 +240,13 @@ export default function PlayerDevelopmentDisplay({
       <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="w-5 h-5 text-emerald-600" />
-              Player Development Pathway ({player.goals?.length || 0})
-            </CardTitle>
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Target className="w-5 h-5 text-emerald-600" />
+                Player Development Pathway ({player.goals?.length || 0})
+              </CardTitle>
+              <p className="text-xs text-slate-600 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
+            </div>
             <div className="flex gap-2">
               {isAdminOrCoach && <AIGoalGenerator player={player} onUpdatePlayer={onUpdatePlayer} assessments={assessments} />}
               <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
@@ -387,10 +389,13 @@ export default function PlayerDevelopmentDisplay({
       <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600" />
-              Training Modules
-            </CardTitle>
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+                Training Modules
+              </CardTitle>
+              <p className="text-xs text-slate-600 mt-1">Training with intent is the most efficient way to improve. Use your teams sessions or extra practices to work on your game with purpose and intent.</p>
+            </div>
             <div className="flex items-center gap-2">
               {isAdminOrCoach && (
                 <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
@@ -583,12 +588,12 @@ export default function PlayerDevelopmentDisplay({
             )}
 
             <div>
-              <Label>Brief Description</Label>
+              <Label>Plan of Action</Label>
               <Textarea 
                 value={newGoal.plan_of_action} 
                 onChange={e => setNewGoal({...newGoal, plan_of_action: e.target.value})}
                 rows={2}
-                placeholder="Brief overview of what this goal entails..."
+                placeholder="How will you achieve this goal?"
               />
             </div>
 
