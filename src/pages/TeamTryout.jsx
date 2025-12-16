@@ -198,13 +198,6 @@ export default function TeamTryout() {
     });
   }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam]);
 
-  const getPlayerWithTryoutData = (playerId) => {
-    const player = players.find(p => p.id === playerId);
-    if (!player) return null;
-    const tryout = tryouts.find(t => t.player_id === playerId);
-    return { ...player, tryout: tryout || {} };
-  };
-
   const getTeamPlayers = (teamName) => {
     if (!teamName || typeof teamName !== 'string') return [];
     return players.map(p => getPlayerWithTryoutData(p.id))
