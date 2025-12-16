@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -77,6 +78,7 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['rolePermissions']);
+      toast.success('Permissions saved');
     }
   });
 
@@ -91,7 +93,7 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['coaches']);
-      alert('User promoted to coach successfully!');
+      toast.success('User promoted to coach');
     }
   });
 
@@ -104,7 +106,7 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['coaches']);
-      alert('Coach role removed successfully!');
+      toast.success('Coach role removed');
     }
   });
 
@@ -122,8 +124,13 @@ export default function UserManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['currentUser']);
       setShowEditUserDialog(false);
       setEditingUser(null);
+      toast.success('User updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update user: ' + error.message);
     }
   });
 
@@ -138,8 +145,8 @@ export default function UserManagement() {
     setShowEditUserDialog(true);
   };
 
-  const handleSaveUser = () => {
-    updateUserMutation.mutate({
+  const handleSaveUser = async () => {
+    await updateUserMutation.mutateAsync({
       userId: editingUser.id,
       data: {
         full_name: editUserForm.full_name,
@@ -152,7 +159,7 @@ export default function UserManagement() {
   const toggleCoachRole = async (user) => {
     const currentRole = getUserRole(user);
     if (currentRole === 'admin') {
-      alert('Cannot change admin users to coach. Remove admin role first.');
+      toast.error('Cannot change admin users to coach. Remove admin role first.');
       return;
     }
     
