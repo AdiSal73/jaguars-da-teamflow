@@ -480,8 +480,10 @@ export default function FormationView() {
         const yearB = b.date_of_birth ? new Date(b.date_of_birth).getFullYear() : 9999;
         return yearA - yearB;
       } else if (unassignedSortBy === 'team') {
-        const teamA = teams.find(t => t.id === a.team_id)?.name || '';
-        const teamB = teams.find(t => t.id === b.team_id)?.name || '';
+        const teamAName = teams.find(t => t.id === a.team_id)?.name;
+        const teamBName = teams.find(t => t.id === b.team_id)?.name;
+        const teamA = typeof teamAName === 'string' ? teamAName : '';
+        const teamB = typeof teamBName === 'string' ? teamBName : '';
         return teamA.localeCompare(teamB);
       }
       return 0;
@@ -574,7 +576,7 @@ export default function FormationView() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.map((team) =>
+                {teams.filter(team => team.name && typeof team.name === 'string').map((team) =>
                 <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                 )}
               </SelectContent>
