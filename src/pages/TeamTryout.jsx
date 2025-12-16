@@ -189,7 +189,6 @@ export default function TeamTryout() {
   };
 
   const PlayerCard = ({ player, isDragging }) => {
-    const navigate = useNavigate();
     const tryout = tryouts.find(t => t.player_id === player.id);
     const team = teams.find(t => t.id === player.team_id);
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
