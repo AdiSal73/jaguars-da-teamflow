@@ -304,8 +304,9 @@ export default function Tryouts() {
     const sourceTeamId = source.droppableId.replace('team-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
+    // Update player's team if moved to different team
     if (sourceTeamId !== destTeamId) {
-       await base44.entities.Player.update(playerId, { team_id: destTeamId });
+       await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
     }
 
     const destTeam = teams.find((t) => t.id === destTeamId);
@@ -364,7 +365,7 @@ export default function Tryouts() {
     }
 
     if (updates.length > 0) {
-        updateRankingMutation.mutate(updates);
+        await updateRankingMutation.mutateAsync(updates);
     }
   };
 
