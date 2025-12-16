@@ -26,7 +26,9 @@ export default function PlayerDevelopmentDisplay({
   const [showAddGoalDialog, setShowAddGoalDialog] = useState(false);
   const [showEditGoalDialog, setShowEditGoalDialog] = useState(false);
   const [showAddModuleDialog, setShowAddModuleDialog] = useState(false);
+  const [showEditModuleDialog, setShowEditModuleDialog] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [editingModule, setEditingModule] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('skill');
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
@@ -176,6 +178,13 @@ export default function PlayerDevelopmentDisplay({
     });
   };
 
+  const handleUpdateModule = () => {
+    const updatedModules = pathway.training_modules.map(m => m.id === editingModule.id ? editingModule : m);
+    onUpdatePathway({ training_modules: updatedModules });
+    setEditingModule(null);
+    setShowEditModuleDialog(false);
+  };
+
   const handleToggleModule = (moduleId) => {
     const updatedModules = pathway.training_modules.map(m => {
       if (m.id === moduleId) {
@@ -307,14 +316,16 @@ export default function PlayerDevelopmentDisplay({
                               <MessageSquare className="w-3 h-3" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setEditingGoal(goal); setShowEditGoalDialog(true); }}
-                            className="h-6 w-6"
-                          >
-                            <Target className="w-3 h-3" />
-                          </Button>
+                          {isAdminOrCoach && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => { setEditingGoal(goal); setShowEditGoalDialog(true); }}
+                              className="h-6 w-6"
+                            >
+                              <Target className="w-3 h-3" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -458,9 +469,16 @@ export default function PlayerDevelopmentDisplay({
                         )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      {isAdminOrCoach && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-blue-50" onClick={() => { setEditingModule(module); setShowEditModuleDialog(true); }}>
+                          <BookOpen className="w-3 h-3" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -622,12 +640,20 @@ export default function PlayerDevelopmentDisplay({
 
       {/* Edit Goal Dialog */}
       <Dialog open={showEditGoalDialog} onOpenChange={setShowEditGoalDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Goal</DialogTitle>
           </DialogHeader>
           {editingGoal && (
             <div className="space-y-4 mt-4">
+              <div>
+                <Label>Goal Description *</Label>
+                <Input 
+                  value={editingGoal.description || ''} 
+                  onChange={e => setEditingGoal({...editingGoal, description: e.target.value})}
+                  placeholder="Goal description"
+                />
+              </div>
               <div>
                 <Label>Progress (%)</Label>
                 <Input 
@@ -646,6 +672,36 @@ export default function PlayerDevelopmentDisplay({
                   rows={3}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.start_date || ''} 
+                    onChange={e => setEditingGoal({...editingGoal, start_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Target Date</Label>
+                  <Input 
+                    type="date" 
+                    value={editingGoal.suggested_completion_date || ''} 
+                    onChange={e => setEditingGoal({...editingGoal, suggested_completion_date: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select value={editingGoal.category || 'Technical'} onValueChange={v => setEditingGoal({...editingGoal, category: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Technical">Technical</SelectItem>
+                    <SelectItem value="Tactical">Tactical</SelectItem>
+                    <SelectItem value="Physical">Physical</SelectItem>
+                    <SelectItem value="Mental">Mental</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Notes</Label>
                 <Textarea 
@@ -663,9 +719,97 @@ export default function PlayerDevelopmentDisplay({
         </DialogContent>
       </Dialog>
 
+      {/* Edit Module Dialog */}
+      <Dialog open={showEditModuleDialog} onOpenChange={setShowEditModuleDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Training Module</DialogTitle>
+          </DialogHeader>
+          {editingModule && (
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Title *</Label>
+                <Input value={editingModule.title} onChange={e => setEditingModule({...editingModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={editingModule.description} onChange={e => setEditingModule({...editingModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Training Type *</Label>
+                  <Select value={editingModule.training_type} onValueChange={v => setEditingModule({...editingModule, training_type: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mobility Training">Mobility Training</SelectItem>
+                      <SelectItem value="Technical Training">Technical Training</SelectItem>
+                      <SelectItem value="Functional Training">Functional Training</SelectItem>
+                      <SelectItem value="Video Analysis/Tactical Training">Video Analysis/Tactical</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Priority</Label>
+                  <Select value={editingModule.priority} onValueChange={v => setEditingModule({...editingModule, priority: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Sessions/Week</Label>
+                  <Input type="number" min="1" max="7" value={editingModule.weekly_sessions} onChange={e => setEditingModule({...editingModule, weekly_sessions: parseInt(e.target.value)})} />
+                </div>
+                <div>
+                  <Label>Number of Weeks</Label>
+                  <Input type="number" min="1" value={editingModule.number_of_weeks} onChange={e => setEditingModule({...editingModule, number_of_weeks: parseInt(e.target.value)})} />
+                </div>
+                <div>
+                  <Label>Duration (min)</Label>
+                  <Input type="number" min="15" step="15" value={editingModule.session_duration} onChange={e => setEditingModule({...editingModule, session_duration: parseInt(e.target.value)})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date</Label>
+                  <Input type="date" value={editingModule.start_date} onChange={e => setEditingModule({...editingModule, start_date: e.target.value})} />
+                </div>
+                <div>
+                  <Label>End Date</Label>
+                  <Input type="date" value={editingModule.end_date} onChange={e => setEditingModule({...editingModule, end_date: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <Label>Resource Link</Label>
+                <Input value={editingModule.resource_link} onChange={e => setEditingModule({...editingModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
+              </div>
+              <div>
+                <Label>Injury Prevention Measures (Optional)</Label>
+                <Textarea 
+                  value={editingModule.preventative_measures} 
+                  onChange={e => setEditingModule({...editingModule, preventative_measures: e.target.value})} 
+                  rows={2} 
+                  placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
+                />
+              </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowEditModuleDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleUpdateModule} disabled={!editingModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Save</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Add Module Dialog */}
       <Dialog open={showAddModuleDialog} onOpenChange={setShowAddModuleDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Training Module</DialogTitle>
           </DialogHeader>

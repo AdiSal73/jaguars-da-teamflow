@@ -647,9 +647,9 @@ export default function PlayerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/40">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-green-50/30 to-teal-50/40">
       {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 text-white shadow-2xl overflow-hidden">
+      <div className="relative bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white shadow-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsLTE4LjE1LTE4LjE1QzM1LjIyIDI0IDM2IDIxLjA4IDM2IDE4em0tMTggMTRjLTcuNzMgMC0xNC02LjI3LTE0LTE0UzEwLjI3IDQgMTggNHMxNCA2LjI3IDE0IDE0LTYuMjcgMTQtMTQgMTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
         <div className="max-w-[1600px] mx-auto p-6 md:p-8 relative z-10">
           <div className="flex items-start justify-between mb-4">
@@ -664,10 +664,10 @@ export default function PlayerDashboard() {
                 <div>
                   <h1 className="text-2xl md:text-4xl font-bold">{player.full_name}</h1>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40">
+                    <Badge className="bg-emerald-500/30 backdrop-blur-sm text-white border-emerald-300/40">
                       {player.primary_position}
                     </Badge>
-                    <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40">
+                    <Badge className="bg-green-500/30 backdrop-blur-sm text-white border-green-300/40">
                       {team?.name}
                     </Badge>
                     {player.status === 'Injured' && (
@@ -712,15 +712,15 @@ export default function PlayerDashboard() {
 
       <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
         {/* Player Info & Contact */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 via-blue-600/90 to-emerald-600/90 text-white border-b border-emerald-400/30">
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/60 backdrop-blur-sm hover:shadow-3xl transition-all">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600/90 via-green-600/90 to-teal-600/90 text-white border-b border-emerald-400/30">
             <CardTitle className="text-base flex items-center gap-2 font-bold">
               <User className="w-5 h-5" /> Player Info
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-center mb-4">
-              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-emerald-600 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-xl ring-4 ring-emerald-100">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-xl ring-4 ring-emerald-100">
                 {player.jersey_number || player.full_name?.charAt(0)}
               </div>
             </div>
