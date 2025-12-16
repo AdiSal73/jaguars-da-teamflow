@@ -221,7 +221,7 @@ Focus on the player's position-specific needs and identified areas of growth.`;
               <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-600" />
               <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to Generate Training Plan</h3>
               <p className="text-slate-600 mb-6">
-                Our AI will analyze {player.full_name}'s profile, assessments, and goals to create a personalized training plan.
+               Adil will analyze {player.full_name}'s profile, assessments, and goals to create a personalized training plan.
               </p>
               <Button 
                 onClick={handleGeneratePlan} 
