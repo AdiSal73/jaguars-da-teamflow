@@ -136,7 +136,7 @@ export default function TeamTryout() {
   const unassignedPlayers = useMemo(() => {
     return players.filter(p => {
       if (!p.next_year_team) return true;
-      const hasValidNextTeam = nextYearTeams.some(t => t.name === p.next_year_team);
+      const hasValidNextTeam = nextYearTeams.some(t => t.name && typeof t.name === 'string' && t.name === p.next_year_team);
       return !hasValidNextTeam;
     }).filter(p => {
       const matchesSearch = p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
@@ -161,7 +161,7 @@ export default function TeamTryout() {
   }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear]);
 
   const getTeamPlayers = (teamName) => {
-    return players.filter(p => p.next_year_team === teamName).sort((a, b) => {
+    return players.filter(p => p.next_year_team && typeof p.next_year_team === 'string' && p.next_year_team === teamName).sort((a, b) => {
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
       return new Date(a.date_of_birth) - new Date(b.date_of_birth);
