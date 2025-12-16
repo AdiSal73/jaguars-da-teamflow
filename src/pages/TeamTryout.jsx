@@ -23,6 +23,7 @@ export default function TeamTryout() {
   const [teamFilterBranch, setTeamFilterBranch] = useState('all');
   const [teamFilterAgeGroup, setTeamFilterAgeGroup] = useState('all');
   const [teamFilterLeague, setTeamFilterLeague] = useState('all');
+  const [teamFilterSeason, setTeamFilterSeason] = useState('all');
   
   const [playerSearchTerm, setPlayerSearchTerm] = useState('');
   const [playerFilterBranch, setPlayerFilterBranch] = useState('all');
@@ -103,6 +104,7 @@ export default function TeamTryout() {
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
   const uniqueBirthYears = [...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
   const uniqueCurrentTeams = [...new Set(players.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
+  const uniqueSeasons = [...new Set(teams.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean))].sort().reverse();
 
   const handleBulkAssign = async () => {
     if (!bulkAssignTeam || selectedPlayers.length === 0) {
@@ -125,13 +127,16 @@ export default function TeamTryout() {
     }
   };
 
-  // Filter teams for 26/27 season - Remove duplicates by team name
+  // Filter teams - Remove duplicates by team name
   const nextYearTeams = useMemo(() => {
     const seen = new Set();
     return teams.filter(t => {
       if (!t.name || typeof t.name !== 'string') return false;
-      const is2627 = t.name.includes('26/27') || (t.season && typeof t.season === 'string' && t.season.includes('26/27'));
-      if (!is2627) return false;
+      
+      // Filter by season
+      const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null);
+      const matchesSeason = teamFilterSeason === 'all' || teamSeason === teamFilterSeason;
+      if (!matchesSeason) return false;
       
       // Remove duplicates
       if (seen.has(t.name)) return false;
@@ -158,7 +163,7 @@ export default function TeamTryout() {
       };
       return (priority[getName(a.name)] || 99) - (priority[getName(b.name)] || 99);
     });
-  }, [teams, teamSearchTerm, teamFilterGender, teamFilterBranch, teamFilterAgeGroup, teamFilterLeague]);
+  }, [teams, teamSearchTerm, teamFilterGender, teamFilterBranch, teamFilterAgeGroup, teamFilterLeague, teamFilterSeason]);
 
   // Get unassigned players with comprehensive filtering
   const unassignedPlayers = useMemo(() => {
@@ -325,6 +330,15 @@ export default function TeamTryout() {
                     <SelectItem value="all">All Branches</SelectItem>
                     {BRANCH_OPTIONS.map(branch => (
                       <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={teamFilterSeason} onValueChange={setTeamFilterSeason}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Season" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Seasons</SelectItem>
+                    {uniqueSeasons.map(season => (
+                      <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

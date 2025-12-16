@@ -29,6 +29,7 @@ export default function Tryouts() {
   const [viewMode, setViewMode] = useState('columns');
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState('all');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -102,9 +103,17 @@ export default function Tryouts() {
     return teamList.filter((t) => t.gender === selectedGender);
   };
 
-  const gaTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string'))))));
-  const aspireTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string'))))));
-  const otherTeams = sortTeamsByAge(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string'))))));
+  const filterBySeason = (teamList) => {
+    if (selectedSeason === 'all') return teamList;
+    return teamList.filter((t) => {
+      const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null);
+      return teamSeason === selectedSeason;
+    });
+  };
+
+  const gaTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string')))))));
+  const aspireTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string')))))));
+  const otherTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string')))))));
 
   const getTeamPlayers = (team) => {
     let teamPlayers = players.filter((p) => p.team_id === team.id);
@@ -562,7 +571,7 @@ export default function Tryouts() {
 
         <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Scope</label>
                 <Select value={showAllPlayers ? 'all' : 'filtered'} onValueChange={(val) => setShowAllPlayers(val === 'all')}>
@@ -655,6 +664,20 @@ export default function Tryouts() {
                   value={birthdayTo}
                   onChange={(e) => setBirthdayTo(e.target.value)}
                   className="w-full h-10 md:h-12 px-3 md:px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-xs md:text-sm" />
+              </div>
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Season</label>
+                <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                  <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Seasons</SelectItem>
+                    {[...new Set(teams.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean))].sort().reverse().map(season => (
+                      <SelectItem key={season} value={season}>{season}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Trapped</label>
