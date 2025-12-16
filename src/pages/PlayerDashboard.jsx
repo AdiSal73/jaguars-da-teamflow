@@ -118,16 +118,12 @@ export default function PlayerDashboard() {
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
   
   const isAuthorized = React.useMemo(() => {
-    if (!currentUser || !player) return false;
-    if (currentUser.role === 'admin' || coaches.some(c => c.email === currentUser.email)) {
-      return true;
-    }
-    if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) {
-      return true;
-    }
-    if (player.email && player.email === currentUser.email) {
-      return true;
-    }
+    if (!currentUser) return false;
+    if (!player) return true; // Allow loading state
+    if (currentUser.role === 'admin') return true;
+    if (coaches.some(c => c.email === currentUser.email)) return true;
+    if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) return true;
+    if (player.email && player.email === currentUser.email) return true;
     return false;
   }, [currentUser, player, playerId, coaches]);
 

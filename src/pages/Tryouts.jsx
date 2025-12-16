@@ -457,60 +457,81 @@ export default function Tryouts() {
                                       snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
                                     }`}
                                     onClick={(e) => {
-                                      if (!snapshot.isDragging) {
-                                        e.stopPropagation();
-                                        navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
-                                      }
+                                     if (!snapshot.isDragging) {
+                                       e.stopPropagation();
+                                       navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
+                                     }
                                     }}
-                                  >
+                                    >
                                     <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-                                        <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
-                                          #{player.tryout?.team_ranking || '?'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                          <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
-                                            {player.primary_position}
-                                            {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="flex flex-col gap-1 items-end flex-shrink-0">
-                                        {isTrappedPlayer(player.date_of_birth) && (
-                                          <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5 font-bold">
-                                            TRAPPED
-                                          </Badge>
-                                        )}
-                                        {player.tryout?.team_role && (
-                                          <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                            player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
-                                            player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                            player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
-                                            player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
-                                            player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
-                                            player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
-                                            player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
-                                            'bg-blue-500 hover:bg-blue-600'
-                                          }`}>
-                                            {player.tryout.team_role}
-                                          </Button>
-                                        )}
-                                        {player.tryout?.recommendation && (
-                                          <Button 
-                                            size="sm"
-                                            className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                              player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                              player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                              'bg-blue-500 hover:bg-blue-600'
-                                            }`}
-                                          >
-                                            {player.tryout.recommendation}
-                                          </Button>
-                                        )}
-                                      </div>
+                                     <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                                       <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
+                                         #{player.tryout?.team_ranking || '?'}
+                                       </div>
+                                       <div className="flex-1 min-w-0">
+                                         <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
+                                         <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
+                                           {player.primary_position}
+                                           {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
+                                         </div>
+                                         {(() => {
+                                           const evaluation = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+                                           const assessment = assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+                                           if (evaluation || assessment) {
+                                             return (
+                                               <div className="flex gap-1 mt-1">
+                                                 {evaluation && (
+                                                   <div className="bg-blue-50 px-1.5 py-0.5 rounded text-[8px] text-blue-700 font-semibold">
+                                                     Eval: {Math.round(((evaluation.growth_mindset || 0) + (evaluation.athleticism || 0) + (evaluation.attacking_organized || 0) + (evaluation.defending_organized || 0)) / 4)}
+                                                   </div>
+                                                 )}
+                                                 {assessment && (
+                                                   <div className="bg-emerald-50 px-1.5 py-0.5 rounded text-[8px] text-emerald-700 font-semibold">
+                                                     Spd: {assessment.speed_score || 0} | Pwr: {assessment.power_score || 0}
+                                                   </div>
+                                                 )}
+                                               </div>
+                                             );
+                                           }
+                                           return null;
+                                         })()}
+                                       </div>
+                                     </div>
+                                     <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                                       {isTrappedPlayer(player.date_of_birth) && (
+                                         <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5 font-bold">
+                                           TRAPPED
+                                         </Badge>
+                                       )}
+                                       {player.tryout?.team_role && (
+                                         <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                           player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
+                                           player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                           player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
+                                           player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
+                                           player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
+                                           player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
+                                           player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
+                                           'bg-blue-500 hover:bg-blue-600'
+                                         }`}>
+                                           {player.tryout.team_role}
+                                         </Button>
+                                       )}
+                                       {player.tryout?.recommendation && (
+                                         <Button 
+                                           size="sm"
+                                           className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                             player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                             player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
+                                             'bg-blue-500 hover:bg-blue-600'
+                                           }`}
+                                         >
+                                           {player.tryout.recommendation}
+                                         </Button>
+                                       )}
+                                     </div>
                                     </div>
-                                  </div>
+                                    </div>
                                 </PlayerHoverTooltip>
                               )}
                             </Draggable>
@@ -698,36 +719,63 @@ export default function Tryouts() {
                         }
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-blue-50 p-2 rounded">
-                          <div className="text-slate-600">Position</div>
-                          <div className="font-semibold text-slate-900 truncate">{player.primary_position || 'N/A'}</div>
-                        </div>
-                        <div className="bg-purple-50 p-2 rounded">
-                          <div className="text-slate-600">Dominant Foot</div>
-                          <Select 
-                            value={player.tryout?.dominant_foot || ''} 
-                            onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'dominant_foot', value })}
-                          >
-                            <SelectTrigger className="h-6 text-xs p-0 border-none bg-transparent font-semibold text-slate-900 focus:ring-0">
-                              <SelectValue placeholder="N/A" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Left">Left</SelectItem>
-                              <SelectItem value="Right">Right</SelectItem>
-                              <SelectItem value="Both">Both</SelectItem>
-                              <SelectItem value="Neither">Neither</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="bg-emerald-50 p-2 rounded">
-                          <div className="text-slate-600">Team Role</div>
-                          <div className="font-semibold text-slate-900 text-[10px] truncate">{player.tryout?.team_role || 'N/A'}</div>
-                        </div>
-                        <div className="bg-orange-50 p-2 rounded">
-                          <div className="text-slate-600">Recommendation</div>
-                          <div className="font-semibold text-slate-900 text-[10px] truncate">{player.tryout?.recommendation || 'N/A'}</div>
-                        </div>
+                       <div className="bg-blue-50 p-2 rounded">
+                         <div className="text-slate-600">Position</div>
+                         <div className="font-semibold text-slate-900 truncate">{player.primary_position || 'N/A'}</div>
+                       </div>
+                       <div className="bg-purple-50 p-2 rounded">
+                         <div className="text-slate-600">Dominant Foot</div>
+                         <Select 
+                           value={player.tryout?.dominant_foot || ''} 
+                           onValueChange={(value) => updateTryoutField.mutate({ playerId: player.id, field: 'dominant_foot', value })}
+                         >
+                           <SelectTrigger className="h-6 text-xs p-0 border-none bg-transparent font-semibold text-slate-900 focus:ring-0">
+                             <SelectValue placeholder="N/A" />
+                           </SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="Left">Left</SelectItem>
+                             <SelectItem value="Right">Right</SelectItem>
+                             <SelectItem value="Both">Both</SelectItem>
+                             <SelectItem value="Neither">Neither</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                       <div className="bg-emerald-50 p-2 rounded">
+                         <div className="text-slate-600">Team Role</div>
+                         <div className="font-semibold text-slate-900 text-[10px] truncate">{player.tryout?.team_role || 'N/A'}</div>
+                       </div>
+                       <div className="bg-orange-50 p-2 rounded">
+                         <div className="text-slate-600">Recommendation</div>
+                         <div className="font-semibold text-slate-900 text-[10px] truncate">{player.tryout?.recommendation || 'N/A'}</div>
+                       </div>
                       </div>
+                      {(() => {
+                       const evaluation = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+                       const assessment = assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+                       if (evaluation || assessment) {
+                         return (
+                           <div className="grid grid-cols-2 gap-2 mt-2">
+                             {evaluation && (
+                               <div className="bg-blue-50 p-2 rounded">
+                                 <div className="text-slate-600 text-[10px]">Avg Evaluation</div>
+                                 <div className="font-bold text-blue-700 text-sm">
+                                   {Math.round(((evaluation.growth_mindset || 0) + (evaluation.athleticism || 0) + (evaluation.attacking_organized || 0) + (evaluation.defending_organized || 0)) / 4)}/10
+                                 </div>
+                               </div>
+                             )}
+                             {assessment && (
+                               <div className="bg-emerald-50 p-2 rounded">
+                                 <div className="text-slate-600 text-[10px]">Physical</div>
+                                 <div className="font-bold text-emerald-700 text-[10px]">
+                                   Spd:{assessment.speed_score || 0} Pwr:{assessment.power_score || 0}
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                         );
+                       }
+                       return null;
+                      })()}
                     </CardHeader>
                     <CardContent className="pt-4 space-y-3" onClick={(e) => e.stopPropagation()}>
                       <div>

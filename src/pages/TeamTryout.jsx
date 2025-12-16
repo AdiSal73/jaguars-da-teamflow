@@ -27,6 +27,9 @@ export default function TeamTryout() {
   const [playerFilterAgeGroup, setPlayerFilterAgeGroup] = useState('all');
   const [playerFilterTeamRole, setPlayerFilterTeamRole] = useState('all');
   const [playerFilterBirthYear, setPlayerFilterBirthYear] = useState('all');
+  const [playerFilterCurrentTeam, setPlayerFilterCurrentTeam] = useState('all');
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
+  const [bulkAssignTeam, setBulkAssignTeam] = useState('');
   
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
   const [teamForm, setTeamForm] = useState({
@@ -97,6 +100,28 @@ export default function TeamTryout() {
   const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(ag => ag && typeof ag === 'string'))].sort((a, b) => extractAge(b) - extractAge(a));
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
   const uniqueBirthYears = [...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
+  const uniqueCurrentTeams = [...new Set(players.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
+
+  const handleBulkAssign = async () => {
+    if (!bulkAssignTeam || selectedPlayers.length === 0) {
+      toast.error('Select team and players');
+      return;
+    }
+    
+    try {
+      await Promise.all(selectedPlayers.map(playerId => 
+        updateTryoutMutation.mutateAsync({
+          playerId,
+          data: { next_year_team: bulkAssignTeam }
+        })
+      ));
+      setSelectedPlayers([]);
+      setBulkAssignTeam('');
+      toast.success(`Assigned ${selectedPlayers.length} players to ${bulkAssignTeam}`);
+    } catch (error) {
+      toast.error('Failed to assign players');
+    }
+  };
 
   // Filter teams for 26/27 season - Remove duplicates by team name
   const nextYearTeams = useMemo(() => {
@@ -145,6 +170,7 @@ export default function TeamTryout() {
       
       const playerTeam = teams.find(t => t.id === p.team_id);
       const matchesAgeGroup = playerFilterAgeGroup === 'all' || playerTeam?.age_group === playerFilterAgeGroup;
+      const matchesCurrentTeam = playerFilterCurrentTeam === 'all' || playerTeam?.name === playerFilterCurrentTeam;
       
       const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null;
       const matchesBirthYear = playerFilterBirthYear === 'all' || birthYear === playerFilterBirthYear;
@@ -153,13 +179,13 @@ export default function TeamTryout() {
       const matchesTeamRole = playerFilterTeamRole === 'all' || 
         (playerFilterTeamRole === 'none' ? !playerTryout?.team_role : playerTryout?.team_role === playerFilterTeamRole);
       
-      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole;
+      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesCurrentTeam;
     }).sort((a, b) => {
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
       return new Date(a.date_of_birth) - new Date(b.date_of_birth);
     });
-  }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear]);
+  }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam]);
 
   const getTeamPlayers = (teamName) => {
     if (!teamName || typeof teamName !== 'string') return [];
@@ -422,7 +448,42 @@ export default function TeamTryout() {
                   <SelectItem value="none">No Data</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={playerFilterCurrentTeam} onValueChange={setPlayerFilterCurrentTeam}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Current Team" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {uniqueCurrentTeams.map(teamName => (
+                    <SelectItem key={teamName} value={teamName}>{teamName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
+            {selectedPlayers.length > 0 && (
+              <div className="mt-3 p-3 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                <Label className="text-xs font-bold text-emerald-800 mb-2 block">
+                  Bulk Assign {selectedPlayers.length} Selected Player{selectedPlayers.length > 1 ? 's' : ''}
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={bulkAssignTeam} onValueChange={setBulkAssignTeam}>
+                    <SelectTrigger className="h-8 text-xs flex-1">
+                      <SelectValue placeholder="Select team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nextYearTeams.map(team => (
+                        <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleBulkAssign} disabled={!bulkAssignTeam} className="h-8 bg-emerald-600 hover:bg-emerald-700 text-xs">
+                    Assign
+                  </Button>
+                  <Button onClick={() => setSelectedPlayers([])} variant="outline" className="h-8 text-xs">
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="unassigned">
@@ -440,7 +501,21 @@ export default function TeamTryout() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
+                            className="relative"
                           >
+                            <input
+                              type="checkbox"
+                              checked={selectedPlayers.includes(player.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                if (e.target.checked) {
+                                  setSelectedPlayers([...selectedPlayers, player.id]);
+                                } else {
+                                  setSelectedPlayers(selectedPlayers.filter(id => id !== player.id));
+                                }
+                              }}
+                              className="absolute top-2 right-2 w-4 h-4 rounded border-2 border-emerald-600 text-emerald-600 focus:ring-emerald-500 z-10"
+                            />
                             <PlayerCard player={player} isDragging={snapshot.isDragging} />
                           </div>
                         )}
