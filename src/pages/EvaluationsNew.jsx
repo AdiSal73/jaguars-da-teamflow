@@ -141,8 +141,24 @@ export default function EvaluationsNew() {
     }
   }, [preselectedPlayerId, players]);
 
+  const calculateOverallScore = (data) => {
+    const scores = [
+      data.growth_mindset, data.resilience, data.efficiency_in_execution,
+      data.athleticism, data.team_focus, data.defending_organized,
+      data.defending_final_third, data.defending_transition, data.pressing,
+      data.defending_set_pieces, data.attacking_organized, data.attacking_final_third,
+      data.attacking_in_transition, data.building_out, data.attacking_set_pieces
+    ].filter(s => s !== null && s !== undefined);
+    
+    if (scores.length === 0) return 0;
+    return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+  };
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Evaluation.create(data),
+    mutationFn: (data) => {
+      const overall_score = calculateOverallScore(data);
+      return base44.entities.Evaluation.create({ ...data, overall_score });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['evaluations']);
       setShowDialog(false);
@@ -151,7 +167,10 @@ export default function EvaluationsNew() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Evaluation.update(id, data),
+    mutationFn: ({ id, data }) => {
+      const overall_score = calculateOverallScore(data);
+      return base44.entities.Evaluation.update(id, { ...data, overall_score });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['evaluations']);
       setShowEditDialog(false);
@@ -461,6 +480,11 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                       <Badge className="bg-slate-100 text-slate-700">{evaluation.birth_year}</Badge>
                       <Badge className="bg-blue-100 text-blue-700">{evaluation.team_name}</Badge>
                       <Badge className="bg-purple-100 text-purple-700">{evaluation.primary_position}</Badge>
+                      {evaluation.overall_score && (
+                        <Badge className="bg-emerald-100 text-emerald-800 font-bold">
+                          Overall: {evaluation.overall_score}/10
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
