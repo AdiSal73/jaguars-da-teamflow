@@ -698,14 +698,14 @@ export default function Players() {
               <span className="text-sm font-medium">{selectedPlayers.length} players selected</span>
               <div className="flex gap-2">
                 <Select value={bulkTeamId} onValueChange={setBulkTeamId}>
-                  <SelectTrigger className="w-48 h-8 text-xs">
-                    <SelectValue placeholder="Assign to team..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                 <SelectTrigger className="w-48 h-8 text-xs">
+                   <SelectValue placeholder="Assign to team..." />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
+                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                   ))}
+                 </SelectContent>
                 </Select>
                 <Button size="sm" onClick={() => bulkUpdateTeamMutation.mutate(bulkTeamId)} disabled={!bulkTeamId} className="bg-emerald-600 hover:bg-emerald-700">
                   <Users className="w-4 h-4 mr-1" />Assign
@@ -771,14 +771,14 @@ export default function Players() {
                         </Select>
                       </td>
                       <td className="px-4 py-2">
-                        <Select value={player.team_id || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'team_id', v)}>
-                          <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Team" /></SelectTrigger>
-                          <SelectContent>
-                            {teams.map(team => (
-                              <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                       <Select value={player.team_id || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'team_id', v)}>
+                         <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Team" /></SelectTrigger>
+                         <SelectContent>
+                           {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
+                             <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
                       </td>
                       <td className="px-4 py-2">
                         <Select value={player.branch || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'branch', v)}>
