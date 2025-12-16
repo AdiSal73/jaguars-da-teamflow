@@ -377,7 +377,7 @@ export default function PlayerDevelopmentDisplay({
               <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
                 <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
                   <Target className="w-4 h-4 mr-1" />
-                  AI Generate
+                 Adil's Recommendations
                 </Button>
               </Link>
               <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
