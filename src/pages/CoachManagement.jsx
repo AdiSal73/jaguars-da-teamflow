@@ -249,7 +249,7 @@ export default function CoachManagement() {
                           {coachTeams.length === 0 ? (
                             <span className="text-xs italic text-slate-400">No teams assigned</span>
                           ) : (
-                            coachTeams.map(t => (
+                            coachTeams.filter(t => t.name && typeof t.name === 'string').map(t => (
                               <Button
                                 key={t.id}
                                 variant="outline"
@@ -342,12 +342,12 @@ export default function CoachManagement() {
                             <Input value={coach.branch || ''} onChange={(e) => handleFieldUpdate(coach.id, 'branch', e.target.value)} className="border-transparent hover:border-slate-300 text-xs h-8" />
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {coachTeams.slice(0, 2).map(t => (
-                                <Badge key={t.id} variant="outline" className="text-[10px]">{t.name}</Badge>
-                              ))}
-                              {coachTeams.length > 2 && <Badge variant="outline" className="text-[10px]">+{coachTeams.length - 2}</Badge>}
-                            </div>
+                           <div className="flex flex-wrap gap-1">
+                             {coachTeams.filter(t => t.name && typeof t.name === 'string').slice(0, 2).map(t => (
+                               <Badge key={t.id} variant="outline" className="text-[10px]">{t.name}</Badge>
+                             ))}
+                             {coachTeams.length > 2 && <Badge variant="outline" className="text-[10px]">+{coachTeams.length - 2}</Badge>}
+                           </div>
                           </td>
                           <td className="px-4 py-3">
                             <Switch checked={coach.is_admin} onCheckedChange={() => toggleAdminStatus(coach)} />
