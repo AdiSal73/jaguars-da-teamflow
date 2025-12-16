@@ -52,7 +52,8 @@ export default function PlayerDevelopmentDisplay({
     number_of_weeks: 4,
     session_duration: 60,
     start_date: '',
-    end_date: ''
+    end_date: '',
+    preventative_measures: ''
   });
 
   // Get skills from player's position knowledge bank
@@ -169,7 +170,8 @@ export default function PlayerDevelopmentDisplay({
       number_of_weeks: 4,
       session_duration: 60,
       start_date: '',
-      end_date: ''
+      end_date: '',
+      preventative_measures: ''
     });
   };
 
@@ -233,10 +235,13 @@ export default function PlayerDevelopmentDisplay({
               <Target className="w-5 h-5 text-emerald-600" />
               Player Development Pathway ({player.goals?.length || 0})
             </CardTitle>
-            <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Goal
-            </Button>
+            <div className="flex gap-2">
+              <AIGoalGenerator player={player} onUpdatePlayer={onUpdatePlayer} assessments={assessments} />
+              <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Goal
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-4">
@@ -442,6 +447,12 @@ export default function PlayerDevelopmentDisplay({
                             </a>
                           )}
                         </div>
+                        {module.preventative_measures && (
+                          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="text-[10px] font-semibold text-amber-900 mb-1">🛡️ Injury Prevention:</div>
+                            <p className="text-xs text-amber-800">{module.preventative_measures}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
@@ -717,6 +728,15 @@ export default function PlayerDevelopmentDisplay({
             <div>
               <Label>Resource Link</Label>
               <Input value={newModule.resource_link} onChange={e => setNewModule({...newModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
+            </div>
+            <div>
+              <Label>Injury Prevention Measures (Optional)</Label>
+              <Textarea 
+                value={newModule.preventative_measures} 
+                onChange={e => setNewModule({...newModule, preventative_measures: e.target.value})} 
+                rows={2} 
+                placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
+              />
             </div>
             <div className="flex gap-3 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowAddModuleDialog(false)} className="flex-1">Cancel</Button>
