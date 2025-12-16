@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { getPositionFields } from '../components/constants/positionEvaluationFields';
+import { POSITION_KNOWLEDGE_BANK } from '../components/constants/positionKnowledgeBank';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
@@ -127,7 +129,6 @@ export default function EvaluationsNew() {
   });
 
   useEffect(() => {
-    // Set evaluator for new forms if user is available
     if (user && formData.evaluator === '') {
       setFormData(prev => ({ ...prev, evaluator: user.full_name || '' }));
     }
@@ -351,26 +352,30 @@ export default function EvaluationsNew() {
     
     setGeneratingNotes(true);
     try {
-      const player = players.find(p => p.id === formData.player_id);
-      const positionKnowledge = require('../components/constants/positionKnowledgeBank').POSITION_KNOWLEDGE_BANK[formData.primary_position] || {};
+      // The 'player' variable is not used in the new prompt construction, but it's not harmful to keep.
+      // const player = players.find(p => p.id === formData.player_id); 
+      const positionKnowledge = POSITION_KNOWLEDGE_BANK[formData.primary_position] || {};
       
       const knowledgeContext = positionKnowledge.title ? `
-Position Knowledge for ${positionKnowledge.title}:
+Position Knowledge (${positionKnowledge.title}):
 Role: ${(positionKnowledge.role || []).join(', ')}
 Key Traits: ${(positionKnowledge.traits || []).slice(0, 5).join(', ')}
-Defending: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
-Attacking: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+Defending Focus: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
+Attacking Focus: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
 ` : '';
       
-      const prompt = `You are Adil, an expert soccer coach analyzing a player's evaluation data using the Jaguars Knowledge Bank. Generate development notes for ${formData.player_name}.
+      const prompt = `You are Adil, an expert soccer coach analyzing a player's evaluation data, incorporating concepts from the Jaguars Knowledge Bank and the Player Development Program (PDP).
+
+Generate comprehensive development notes for ${formData.player_name}.
 
 ${knowledgeContext}
 
+Player Profile:
+- Name: ${formData.player_name}
+- Position: ${formData.primary_position}
+- Team: ${formData.team_name}
 
-Position: ${formData.primary_position}
-Team: ${formData.team_name}
-
-Current Ratings (1-10 scale):
+Latest Evaluation Scores (1-10 scale):
 Mental & Physical:
 - Growth Mindset: ${formData.growth_mindset}/10
 - Resilience: ${formData.resilience}/10
@@ -397,7 +402,7 @@ ${formData.my_goals ? `Player's Goals: ${formData.my_goals}` : ''}
 Generate concise, actionable development notes with 3-4 bullet points each for:
 1. Strengths (what the player excels at)
 2. Areas of Growth (what needs improvement)
-3. Training Focus (specific training recommendations)
+3. Training Focus (specific training recommendations aligned with PDP principles)
 
 Be specific and actionable. Focus on the position and ratings provided.`;
 
@@ -532,7 +537,7 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => toggleCard(evaluation.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleCard(evaluation.id); }}
                       className="h-8 w-8 hover:bg-slate-200"
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
