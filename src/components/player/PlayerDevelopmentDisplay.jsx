@@ -54,7 +54,28 @@ export default function PlayerDevelopmentDisplay({
     end_date: ''
   });
 
-  const positionSkills = pathway?.skill_matrix || [];
+  // Get skills from player's position knowledge bank
+  const getPositionSkills = () => {
+    if (!player.primary_position) return [];
+    const positionKnowledge = POSITION_KNOWLEDGE[player.primary_position];
+    if (!positionKnowledge) return [];
+    
+    const allSkills = [];
+    ['attacking', 'defending', 'transition'].forEach(phase => {
+      if (positionKnowledge[phase]) {
+        positionKnowledge[phase].forEach(item => {
+          if (item.keyPoints) {
+            item.keyPoints.forEach(point => {
+              allSkills.push({ skill_name: point });
+            });
+          }
+        });
+      }
+    });
+    return allSkills;
+  };
+
+  const positionSkills = pathway?.skill_matrix?.length > 0 ? pathway.skill_matrix : getPositionSkills();
   const physicalCategories = ['Speed', 'Power', 'Endurance', 'Agility'];
 
   const handleAddGoal = () => {
@@ -352,10 +373,18 @@ export default function PlayerDevelopmentDisplay({
               <BookOpen className="w-5 h-5 text-blue-600" />
               Training Modules
             </CardTitle>
-            <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-1" />
-              Add Module
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
+                <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                  <Target className="w-4 h-4 mr-1" />
+                  AI Generate
+                </Button>
+              </Link>
+              <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Module
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-4">
@@ -446,7 +475,7 @@ export default function PlayerDevelopmentDisplay({
 
             {selectedCategory === 'skill' && (
               <div>
-                <Label className="mb-3 block">Select Skill from Knowledge Bank</Label>
+                <Label className="mb-3 block">Select Skill from Knowledge Bank {player.primary_position && `(${player.primary_position})`}</Label>
                 {positionSkills.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg bg-slate-50">
                     {positionSkills.map((skill, idx) => (
@@ -465,9 +494,10 @@ export default function PlayerDevelopmentDisplay({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 p-4 text-center border rounded-lg bg-slate-50">
-                    No skills in knowledge bank. Create pathway first to populate skill matrix.
-                  </p>
+                  <div className="text-sm text-slate-500 p-4 text-center border rounded-lg bg-amber-50 border-amber-200">
+                    <p className="mb-2">No position-specific skills available.</p>
+                    <p className="text-xs">Use custom skill input below to create your own goals.</p>
+                  </div>
                 )}
                 <div className="mt-3">
                   <Label>Or Create Custom Skill</Label>
