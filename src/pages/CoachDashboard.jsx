@@ -257,7 +257,7 @@ export default function CoachDashboard() {
           {/* Teams with Rosters */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-slate-900">My Teams & Rosters</h2>
-            {coachTeams.map(team => {
+            {coachTeams.filter(team => team.name && typeof team.name === 'string').map(team => {
               const teamPlayers = allPlayers.filter(p => p.team_id === team.id);
               const isExpanded = expandedTeams[team.id];
               const isMaleTeam = team.gender === 'Male';
