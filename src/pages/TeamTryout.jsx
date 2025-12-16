@@ -167,11 +167,9 @@ export default function TeamTryout() {
 
   // Get unassigned players with comprehensive filtering
   const unassignedPlayers = useMemo(() => {
-    return players.filter(p => {
-      if (!p.next_year_team) return true;
-      const hasValidNextTeam = nextYearTeams.some(t => t.name && typeof t.name === 'string' && t.name === p.next_year_team);
-      return !hasValidNextTeam;
-    }).filter(p => {
+    return players.map(p => getPlayerWithTryoutData(p.id))
+      .filter(p => p && (!p.tryout?.next_year_team || !nextYearTeams.some(t => t.name && typeof t.name === 'string' && t.name === p.tryout?.next_year_team)))
+      .filter(p => {
       const matchesSearch = p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
       const matchesBranch = playerFilterBranch === 'all' || p.branch === playerFilterBranch;
       
@@ -182,9 +180,8 @@ export default function TeamTryout() {
       const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null;
       const matchesBirthYear = playerFilterBirthYear === 'all' || birthYear === playerFilterBirthYear;
       
-      const playerTryout = tryouts.find(t => t.player_id === p.id);
       const matchesTeamRole = playerFilterTeamRole === 'all' || 
-        (playerFilterTeamRole === 'none' ? !playerTryout?.team_role : playerTryout?.team_role === playerFilterTeamRole);
+        (playerFilterTeamRole === 'none' ? !p.tryout?.team_role : p.tryout?.team_role === playerFilterTeamRole);
       
       return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesCurrentTeam;
     }).sort((a, b) => {
@@ -194,13 +191,22 @@ export default function TeamTryout() {
     });
   }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam]);
 
+  const getPlayerWithTryoutData = (playerId) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return null;
+    const tryout = tryouts.find(t => t.player_id === playerId);
+    return { ...player, tryout: tryout || {} };
+  };
+
   const getTeamPlayers = (teamName) => {
     if (!teamName || typeof teamName !== 'string') return [];
-    return players.filter(p => p.next_year_team && typeof p.next_year_team === 'string' && p.next_year_team === teamName).sort((a, b) => {
-      if (!a.date_of_birth) return 1;
-      if (!b.date_of_birth) return -1;
-      return new Date(a.date_of_birth) - new Date(b.date_of_birth);
-    });
+    return players.map(p => getPlayerWithTryoutData(p.id))
+      .filter(p => p && p.tryout?.next_year_team === teamName)
+      .sort((a, b) => {
+        if (!a.date_of_birth) return 1;
+        if (!b.date_of_birth) return -1;
+        return new Date(a.date_of_birth) - new Date(b.date_of_birth);
+      });
   };
 
   const onDragEnd = async (result) => {
@@ -209,21 +215,22 @@ export default function TeamTryout() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId;
-    const destTeam = destination.droppableId === 'unassigned' ? null : destination.droppableId;
+    const destTeamName = destination.droppableId === 'unassigned' ? null : destination.droppableId;
 
     try {
       await updateTryoutMutation.mutateAsync({
         playerId,
-        data: { next_year_team: destTeam }
+        data: { next_year_team: destTeamName }
       });
-      toast.success(destTeam ? `Assigned to ${destTeam}` : 'Unassigned player');
+      queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['tryouts']);
+      toast.success(destTeamName ? `Assigned to ${destTeamName}` : 'Unassigned player');
     } catch (error) {
       toast.error('Failed to update player');
     }
   };
 
   const PlayerCard = ({ player, isDragging }) => {
-    const tryout = tryouts.find(t => t.player_id === player.id);
     const team = teams.find(t => t.id === player.team_id);
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
     const isTrapped = player.date_of_birth ? (() => {
@@ -250,14 +257,14 @@ export default function TeamTryout() {
               {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
               {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
               {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
-              {tryout?.team_role && <Badge className="text-[8px] px-1.5 py-0.5 bg-purple-100 text-purple-800 font-semibold">{tryout.team_role.replace('Indispensable Player', 'IND').replace(' Starter', '').replace(' Rotation', ' R')}</Badge>}
-              {tryout?.recommendation && (
+              {player.tryout?.team_role && <Badge className="text-[8px] px-1.5 py-0.5 bg-purple-100 text-purple-800 font-semibold">{player.tryout.team_role.replace('Indispensable Player', 'IND').replace(' Starter', '').replace(' Rotation', ' R')}</Badge>}
+              {player.tryout?.recommendation && (
                 <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
-                  tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
-                  tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                  player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                  player.tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
                   'bg-blue-500 text-white'
                 }`}>
-                  {tryout.recommendation === 'Move up' ? '⬆️' : tryout.recommendation === 'Move down' ? '⬇️' : '➡️'}
+                  {player.tryout.recommendation === 'Move up' ? '⬆️' : player.tryout.recommendation === 'Move down' ? '⬇️' : '➡️'}
                 </Badge>
               )}
             </div>
