@@ -678,7 +678,7 @@ export default function Tryouts() {
           </TabsList>
 
           <TabsContent value="columns">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pb-4">
               <TeamColumn
                 title="Girls Academy"
                 teams={gaTeams}
@@ -686,8 +686,14 @@ export default function Tryouts() {
                 logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/688b1cb43_girls-academy-logo-1024x1024-2898394893.png" />
 
               <TeamColumn
-                title="Aspire & Other Leagues"
-                teams={[...aspireTeams, ...otherTeams]}
+                title="Aspire"
+                teams={aspireTeams}
+                bgColor="bg-gradient-to-r from-green-600 via-green-700 to-emerald-600"
+                logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png" />
+
+              <TeamColumn
+                title="Other Leagues"
+                teams={otherTeams}
                 bgColor="bg-gradient-to-r from-green-600 via-green-700 to-emerald-600"
                 logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png" />
             </div>

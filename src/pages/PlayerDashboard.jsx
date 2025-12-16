@@ -1018,13 +1018,13 @@ export default function PlayerDashboard() {
         {/* Evaluation Metrics */}
         <Card className="border-none shadow-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-b">
-            <CardTitle className="text-base flex items-center justify-between font-bold text-slate-900">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-1">
+              <CardTitle className="text-base flex items-center gap-2 font-bold text-slate-900">
                 Evaluation
                 {evaluations.length > 1 && (
                   <span className="text-[10px] text-slate-400">({evaluationIndex + 1}/{evaluations.length})</span>
                 )}
-              </div>
+              </CardTitle>
               <div className="flex items-center gap-1">
                 {evaluations.length > 1 && (
                   <>
@@ -1040,8 +1040,9 @@ export default function PlayerDashboard() {
                   <Plus className="w-3 h-3 mr-1" />New
                 </Button>
               </div>
-            </CardTitle>
-            {currentEvaluation && <span className="text-[10px] font-normal text-slate-500">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
+              </div>
+              <p className="text-[10px] text-slate-500 italic mt-1">Ratings are 1-10. 10 is what a national team starter would get.</p>
+              {currentEvaluation && <span className="text-[10px] font-normal text-slate-500">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
           </CardHeader>
           <CardContent>
             {currentEvaluation ? (
@@ -1225,19 +1226,8 @@ export default function PlayerDashboard() {
         </div>
       )}
 
-            {/* Events Timeline */}
-            {pathway && (
-              <div className="mt-6">
-                <EventsTimeline 
-                  events={pathway.events_camps || []} 
-                  onUpdate={handleUpdateEvents}
-                />
-              </div>
-            )}
-
             {/* Injury History */}
-            {(isAdminOrCoach || injuries.length > 0) && (
-              <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
+            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Injury History</CardTitle>
@@ -1281,18 +1271,18 @@ export default function PlayerDashboard() {
             )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Documents */}
-      {isAdminOrCoach && (
+        {/* Documents */}
         <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Documents & Reports</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => setShowDocumentDialog(true)}>
-                <Plus className="w-3 h-3 mr-1" />
-                Upload
-              </Button>
+              {isAdminOrCoach && (
+                <Button variant="outline" size="sm" onClick={() => setShowDocumentDialog(true)}>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Upload
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -1311,20 +1301,20 @@ export default function PlayerDashboard() {
                         {doc.upload_date && <span className="text-xs text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
                       </div>
                       {doc.notes && <p className="text-xs text-slate-600 mt-1">{doc.notes}</p>}
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600">
-                      <span className="text-xs">Delete</span>
-                    </Button>
-                  </div>
+                      </div>
+                      {isAdminOrCoach && (
+                      <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600">
+                        <span className="text-xs">Delete</span>
+                      </Button>
+                      )}
+                      </div>
                 ))}
               </div>
             )}
           </CardContent>
-        </Card>
-      )}
+          </Card>
 
-      
-      <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
+          <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>

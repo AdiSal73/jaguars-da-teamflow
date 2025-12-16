@@ -200,7 +200,8 @@ export default function TeamTryout() {
 
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-    if (!destination || source.droppableId === destination.droppableId) return;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId;
     const destTeam = destination.droppableId === 'unassigned' ? null : destination.droppableId;
@@ -210,7 +211,7 @@ export default function TeamTryout() {
         playerId,
         data: { next_year_team: destTeam }
       });
-      toast.success('Player assignment updated');
+      toast.success(destTeam ? `Assigned to ${destTeam}` : 'Unassigned player');
     } catch (error) {
       toast.error('Failed to update player');
     }
