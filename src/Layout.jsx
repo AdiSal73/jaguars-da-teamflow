@@ -62,6 +62,23 @@ export default function Layout({ children, currentPageName }) {
   const currentCoach = typeof userRole === 'object' ? userRole : null;
   const roleType = currentCoach ? 'coach' : userRole;
 
+  // For parents, ensure players are loaded before creating menu
+  const parentPlayerMenuItems = React.useMemo(() => {
+    if (roleType !== 'parent' || !user?.player_ids || players.length === 0) return [];
+    return user.player_ids
+      .map(playerId => {
+        const player = players.find(p => p.id === playerId);
+        if (!player) return null;
+        return {
+          title: player.full_name,
+          url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
+          icon: Activity,
+          roles: ["parent"]
+        };
+      })
+      .filter(Boolean);
+  }, [roleType, user, players]);
+
   React.useEffect(() => {
     if (roleType && location.pathname === '/') {
       navigate(createPageUrl('Communications'));
@@ -140,19 +157,7 @@ export default function Layout({ children, currentPageName }) {
         }
       }
     },
-    ...(roleType === 'parent' && (user?.player_ids || []).length > 0 && players.length > 0
-      ? (user.player_ids || []).map(playerId => {
-          const player = players.find(p => p.id === playerId);
-          if (!player) return null;
-          return {
-            title: player.full_name || 'Player',
-            url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
-            icon: Activity,
-            roles: ["parent"]
-          };
-        }).filter(Boolean)
-      : []
-    ),
+    ...parentPlayerMenuItems,
     {
       title: "Book Session",
       url: createPageUrl("BookCoach"),
