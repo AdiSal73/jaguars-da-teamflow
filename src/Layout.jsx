@@ -143,6 +143,7 @@ export default function Layout({ children, currentPageName }) {
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
         { title: "Formation View", url: createPageUrl("FormationView") },
+        { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
         { title: "Fitness Resources", url: createPageUrl("FitnessResources") }
       ]
     },

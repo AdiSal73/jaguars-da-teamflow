@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
 import { isTrappedPlayer } from '../utils/trappedPlayer';
@@ -93,6 +93,14 @@ export default function EditablePlayerCard({
 
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
 
+  const { data: latestEvaluation } = useQuery({
+    queryKey: ['latestEval', player.id],
+    queryFn: async () => {
+      const evals = await base44.entities.Evaluation.filter({ player_id: player.id }, '-created_date', 1);
+      return evals[0] || null;
+    }
+  });
+
   return (
     <>
       <div 
@@ -120,6 +128,11 @@ export default function EditablePlayerCard({
           )}
         </div>
         <div className="flex flex-wrap gap-1 mt-1">
+          {latestEvaluation?.overall_score && (
+            <Badge className="bg-emerald-100 text-emerald-800 text-[9px] px-1 font-bold">
+              Overall: {latestEvaluation.overall_score}/10
+            </Badge>
+          )}
           {tryout?.team_role && (
             <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1">{tryout.team_role}</Badge>
           )}
