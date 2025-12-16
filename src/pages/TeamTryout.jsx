@@ -122,8 +122,9 @@ export default function TeamTryout() {
       if (ageA !== ageB) return ageB - ageA;
       const priority = { 'Girls Academy': 1, 'Aspire': 2, 'Green': 3, 'White': 4, 'Pre GA 1': 5, 'Pre GA 2': 6, 'Green White': 7 };
       const getName = (name) => {
+        if (!name || typeof name !== 'string') return name;
         for (const key of Object.keys(priority)) {
-          if (name?.includes(key)) return key;
+          if (name.includes(key)) return key;
         }
         return name;
       };

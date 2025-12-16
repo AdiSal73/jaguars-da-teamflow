@@ -106,14 +106,23 @@ export default function PlayerDashboard() {
   const { data: player, isLoading: playerLoading, isError: playerError } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
-      const allPlayers = await base44.entities.Player.list();
-      const foundPlayer = allPlayers.find(p => p.id === playerId);
-      if (!foundPlayer) {
+      if (!currentUser || !playerId) return null;
+
+      // For parents, check authorization and fetch directly
+      if (currentUser.role !== 'admin' && !coaches.some(c => c.email === currentUser.email)) {
+        if (!currentUser.player_ids || !currentUser.player_ids.includes(playerId)) {
+          throw new Error('Unauthorized access');
+        }
+      }
+
+      // Fetch the specific player
+      const players = await base44.entities.Player.filter({ id: playerId });
+      if (players.length === 0) {
         throw new Error('Player not found');
       }
-      return foundPlayer;
+      return players[0];
     },
-    enabled: !!playerId && !!currentUser,
+    enabled: !!playerId && !!currentUser && coaches.length >= 0,
     retry: 1
   });
 
