@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
@@ -39,7 +40,7 @@ export default function UserManagement() {
 
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ role: '', player_ids: [] });
+  const [editUserForm, setEditUserForm] = useState({ full_name: '', email: '', role: '', player_ids: [] });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -129,6 +130,8 @@ export default function UserManagement() {
   const handleEditUser = (user) => {
     setEditingUser(user);
     setEditUserForm({
+      full_name: user.full_name || '',
+      email: user.email || '',
       role: user.role || 'user',
       player_ids: user.player_ids || []
     });
@@ -138,7 +141,11 @@ export default function UserManagement() {
   const handleSaveUser = () => {
     updateUserMutation.mutate({
       userId: editingUser.id,
-      data: editUserForm
+      data: {
+        full_name: editUserForm.full_name,
+        role: editUserForm.role,
+        player_ids: editUserForm.player_ids
+      }
     });
   };
 
@@ -401,9 +408,27 @@ export default function UserManagement() {
       <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit User - {editingUser?.full_name}</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
+            <div>
+              <Label className="mb-2 block">Full Name</Label>
+              <Input
+                value={editUserForm.full_name}
+                onChange={(e) => setEditUserForm({ ...editUserForm, full_name: e.target.value })}
+                placeholder="Full Name"
+              />
+            </div>
+            <div>
+              <Label className="mb-2 block">Email</Label>
+              <Input
+                type="email"
+                value={editUserForm.email}
+                readOnly
+                className="bg-slate-100"
+              />
+              <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+            </div>
             <div>
               <Label className="mb-2 block">Role</Label>
               <Select value={editUserForm.role} onValueChange={(v) => setEditUserForm({ ...editUserForm, role: v })}>

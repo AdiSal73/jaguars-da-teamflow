@@ -52,6 +52,22 @@ export default function EditablePlayerCard({
     onSuccess: () => queryClient.invalidateQueries(['tryouts'])
   });
 
+  const { data: latestEvaluation } = useQuery({
+    queryKey: ['latestEval', player.id],
+    queryFn: async () => {
+      const evals = await base44.entities.Evaluation.filter({ player_id: player.id }, '-created_date', 1);
+      return evals[0] || null;
+    }
+  });
+
+  const { data: latestAssessment } = useQuery({
+    queryKey: ['latestAssess', player.id],
+    queryFn: async () => {
+      const assessments = await base44.entities.PhysicalAssessment.filter({ player_id: player.id }, '-assessment_date', 1);
+      return assessments[0] || null;
+    }
+  });
+
   const handleOpenEdit = (e) => {
     e?.stopPropagation?.();
     setEditForm({
@@ -93,14 +109,6 @@ export default function EditablePlayerCard({
 
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
 
-  const { data: latestEvaluation } = useQuery({
-    queryKey: ['latestEval', player.id],
-    queryFn: async () => {
-      const evals = await base44.entities.Evaluation.filter({ player_id: player.id }, '-created_date', 1);
-      return evals[0] || null;
-    }
-  });
-
   return (
     <>
       <div 
@@ -130,7 +138,12 @@ export default function EditablePlayerCard({
         <div className="flex flex-wrap gap-1 mt-1">
           {latestEvaluation?.overall_score && (
             <Badge className="bg-emerald-100 text-emerald-800 text-[9px] px-1 font-bold">
-              Overall: {latestEvaluation.overall_score}/10
+              Eval: {latestEvaluation.overall_score}/10
+            </Badge>
+          )}
+          {latestAssessment?.overall_score && (
+            <Badge className="bg-blue-100 text-blue-800 text-[9px] px-1 font-bold">
+              Physical: {latestAssessment.overall_score}
             </Badge>
           )}
           {tryout?.team_role && (
@@ -144,6 +157,9 @@ export default function EditablePlayerCard({
             }`}>
               {tryout.recommendation}
             </Badge>
+          )}
+          {player.status === 'Injured' && (
+            <Badge className="bg-red-500 text-white text-[9px] px-1">Injured</Badge>
           )}
           {isTrappedPlayer(player.date_of_birth) && (
             <Badge className="bg-red-500 text-white text-[9px] px-1 font-bold">TRAPPED</Badge>

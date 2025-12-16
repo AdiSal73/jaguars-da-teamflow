@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -650,7 +651,7 @@ export default function PlayerDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100">
       {/* Hero Header */}
       <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsLTE4LjE1LTE4LjE1QzM1LjIyIDI0IDM2IDIxLjA4IDM2IDE4em0tMTggMTRjLTcuNzMgMC0xNC02LjI3LTE0LTE0UzEwLjI3IDQgMTggNHMxNCA2LjI3IDE0IDE0LTYuMjcgMTQtMTQgMTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsMTguMTUtMTguMTVDOzUuMjIgMjQgMzYgMjEuMDggMzYgMTh6bS0xOCAxNGMtNy43MyAwLTE0LTYuMjctMTQtMTRTMTAuMjcgNCAxOCA0czE0IDYuMjcgMTQgMTQtNi4yNyAxNC0xNCAxNHoiLz48L2c+PC9nPg8vc3ZnPg==')] opacity-20"></div>
         <div className="max-w-[1600px] mx-auto p-6 md:p-8 relative z-10">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
