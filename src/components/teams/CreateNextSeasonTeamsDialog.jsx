@@ -9,14 +9,30 @@ import { Badge } from '@/components/ui/badge';
 export default function CreateNextSeasonTeamsDialog({ 
   open, 
   onClose, 
-  onCreate
+  onCreate,
+  onDeleteAll
 }) {
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
 
-  const AGE_GROUPS = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11', 'U10', 'U9', 'U8'];
-  const VARIANTS = ['Girls Academy', 'Girls Academy Aspire', 'United Green', 'United White', 'United Black'];
+  const AGE_GROUPS_OLDER = ['U19', 'U17', 'U16', 'U15', 'U14', 'U13'];
+  const AGE_GROUPS_YOUNGER = ['U12', 'U11', 'U10', 'U9', 'U8', 'U7'];
+  const VARIANTS_OLDER = ['Girls Academy', 'Girls Academy Aspire', 'Green', 'White', 'Black'];
+  const VARIANTS_YOUNGER = ['Pre GA 1', 'Pre GA 2', 'Green', 'White', 'Black'];
+
+  const handleDeleteAll = async () => {
+    if (!window.confirm('Are you sure you want to delete all 26/27 teams? This cannot be undone.')) {
+      return;
+    }
+    
+    setDeleting(true);
+    setProgress(0);
+    await onDeleteAll();
+    setDeleting(false);
+    setProgress(0);
+  };
 
   const handleCreate = async () => {
     setCreating(true);
@@ -25,9 +41,9 @@ export default function CreateNextSeasonTeamsDialog({
     const results = { created: 0, errors: [] };
     const teamsToCreate = [];
     
-    // Generate all team combinations
-    AGE_GROUPS.forEach(ageGroup => {
-      VARIANTS.forEach(variant => {
+    // Generate teams for older age groups
+    AGE_GROUPS_OLDER.forEach(ageGroup => {
+      VARIANTS_OLDER.forEach(variant => {
         const teamName = `${ageGroup} ${variant}`;
         let league = '';
         
@@ -37,6 +53,28 @@ export default function CreateNextSeasonTeamsDialog({
           league = 'Aspire';
         } else {
           league = 'MSPSP';
+        }
+        
+        teamsToCreate.push({
+          name: teamName,
+          age_group: ageGroup,
+          gender: 'Female',
+          league: league,
+          season: '26/27'
+        });
+      });
+    });
+
+    // Generate teams for younger age groups
+    AGE_GROUPS_YOUNGER.forEach(ageGroup => {
+      VARIANTS_YOUNGER.forEach(variant => {
+        const teamName = `${ageGroup} ${variant}`;
+        let league = '';
+        
+        if (variant.startsWith('Pre GA')) {
+          league = 'Directors Academy';
+        } else {
+          league = 'MSDSL';
         }
         
         teamsToCreate.push({
@@ -88,20 +126,50 @@ export default function CreateNextSeasonTeamsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-emerald-600" />
-            Create 26/27 Season Teams
+            Create Future Season Teams
           </DialogTitle>
         </DialogHeader>
 
         {!results && (
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-blue-900 font-semibold mb-2">This will create:</p>
-              <ul className="text-blue-800 text-sm space-y-1">
-                <li>• {AGE_GROUPS.length} age groups (U19 down to U8)</li>
-                <li>• {VARIANTS.length} variants per age group</li>
-                <li>• Total: {AGE_GROUPS.length * VARIANTS.length} teams</li>
-                <li>• Season: 26/27</li>
-              </ul>
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-sm">
+              <p className="text-blue-900 font-bold mb-3 text-lg">📋 Team Structure</p>
+              <div className="space-y-3">
+                <div className="bg-white/80 rounded-lg p-3 border border-blue-100">
+                  <p className="font-semibold text-blue-900 mb-2">Older Groups (U19-U13):</p>
+                  <ul className="text-blue-800 text-sm space-y-1 ml-4">
+                    {AGE_GROUPS_OLDER.map(age => (
+                      <li key={age}>• {age}: {VARIANTS_OLDER.join(', ')}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-white/80 rounded-lg p-3 border border-blue-100">
+                  <p className="font-semibold text-blue-900 mb-2">Younger Groups (U12-U7):</p>
+                  <ul className="text-blue-800 text-sm space-y-1 ml-4">
+                    {AGE_GROUPS_YOUNGER.map(age => (
+                      <li key={age}>• {age}: {VARIANTS_YOUNGER.join(', ')}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-emerald-50 rounded-lg p-2 border border-emerald-200">
+                  <p className="text-emerald-900 font-semibold text-sm">
+                    Total: {(AGE_GROUPS_OLDER.length * VARIANTS_OLDER.length) + (AGE_GROUPS_YOUNGER.length * VARIANTS_YOUNGER.length)} teams for Season 26/27
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <Button 
+                onClick={handleDeleteAll}
+                disabled={deleting || creating}
+                variant="destructive"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleting ? 'Deleting...' : 'Delete All 26/27 Teams'}
+              </Button>
+              <span className="text-xs text-amber-800">Clear existing 26/27 teams before creating new ones</span>
             </div>
 
             {creating && (
