@@ -23,7 +23,7 @@ export default function TeamComparisonsTab({
   };
 
   const teamStats = useMemo(() => {
-    return allTeams.map(team => {
+    return allTeams.filter(team => team.name && typeof team.name === 'string').map(team => {
       const teamPlayers = allPlayers.filter(p => p.team_id === team.id);
       const teamAssessments = allAssessments.filter(a => 
         teamPlayers.some(p => p.id === a.player_id)
@@ -92,42 +92,42 @@ export default function TeamComparisonsTab({
       metric: 'Physical',
       ...selectedTeams.reduce((acc, team, idx) => ({
         ...acc,
-        [team.name]: team.overall
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.overall
       }), {})
     },
     {
       metric: 'Mental',
       ...selectedTeams.reduce((acc, team) => ({
         ...acc,
-        [team.name]: team.mental
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.mental
       }), {})
     },
     {
       metric: 'Defending',
       ...selectedTeams.reduce((acc, team) => ({
         ...acc,
-        [team.name]: team.defending
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.defending
       }), {})
     },
     {
       metric: 'Attacking',
       ...selectedTeams.reduce((acc, team) => ({
         ...acc,
-        [team.name]: team.attacking
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.attacking
       }), {})
     },
     {
       metric: 'Assessment %',
       ...selectedTeams.reduce((acc, team) => ({
         ...acc,
-        [team.name]: team.assessmentRate
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.assessmentRate
       }), {})
     },
     {
       metric: 'Retention %',
       ...selectedTeams.reduce((acc, team) => ({
         ...acc,
-        [team.name]: team.retentionRate
+        [typeof team.name === 'string' ? team.name : 'Unknown']: team.retentionRate
       }), {})
     }
   ] : [];
@@ -135,7 +135,8 @@ export default function TeamComparisonsTab({
   const radarData = ['Speed', 'Power', 'Endurance', 'Agility'].map(attr => {
     const dataPoint = { attribute: attr };
     selectedTeams.forEach(team => {
-      dataPoint[team.name] = team[attr.toLowerCase()];
+      const teamKey = typeof team.name === 'string' ? team.name : 'Unknown';
+      dataPoint[teamKey] = team[attr.toLowerCase()];
     });
     return dataPoint;
   });
