@@ -90,15 +90,9 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     {
-      title: "Boys Teams",
+      title: "Teams",
       icon: Users,
-      url: createPageUrl("Teams") + "?gender=Boys",
-      roles: ["admin", "coach"]
-    },
-    {
-      title: "Girls Teams",
-      icon: Users,
-      url: createPageUrl("Teams") + "?gender=Girls",
+      url: createPageUrl("Teams"),
       roles: ["admin", "coach"]
     },
     {
@@ -146,16 +140,17 @@ export default function Layout({ children, currentPageName }) {
         }
       }
     },
-    ...(roleType === 'parent' && (user?.player_ids || []).length > 0 
+    ...(roleType === 'parent' && (user?.player_ids || []).length > 0 && players.length > 0
       ? (user.player_ids || []).map(playerId => {
           const player = players.find(p => p.id === playerId);
+          if (!player) return null;
           return {
-            title: player?.full_name || 'Player',
+            title: player.full_name || 'Player',
             url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
             icon: Activity,
             roles: ["parent"]
           };
-        })
+        }).filter(Boolean)
       : []
     ),
     {

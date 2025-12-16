@@ -351,14 +351,14 @@ export default function TeamTryout() {
         </div>
 
         {/* Unassigned Players Sidebar */}
-        <Card className="border-2 border-orange-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-orange-50 to-red-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-          <CardHeader className="pb-2 bg-gradient-to-r from-orange-600 via-orange-700 to-red-700 text-white shadow-md">
+        <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 text-white shadow-md">
             <CardTitle className="text-sm flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
                 <span className="font-bold">Unassigned Players</span>
               </div>
-              <Badge className="bg-white text-orange-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
+              <Badge className="bg-white text-emerald-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -415,7 +415,7 @@ export default function TeamTryout() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-orange-200 border-2 border-dashed border-orange-500 scale-105' : 'bg-white/60'}`}
+                    className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                     style={{ maxHeight: 'calc(100vh - 580px)' }}
                   >
                     {unassignedPlayers.map((player, index) => (
