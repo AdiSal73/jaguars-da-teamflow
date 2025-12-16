@@ -84,7 +84,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
             <div>
               <label className="text-sm font-medium mb-2 block">Select Teams to Compare (max 5)</label>
               <div className="space-y-2">
-                {teams.slice(0, 10).map(team => (
+                {teams.filter(t => t.name && typeof t.name === 'string').slice(0, 10).map(team => (
                   <label key={team.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
                     <input
                       type="checkbox"
