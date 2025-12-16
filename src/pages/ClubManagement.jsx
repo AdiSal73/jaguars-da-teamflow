@@ -83,10 +83,12 @@ export default function ClubManagement() {
 
     const teamsByName = {};
     for (const team of teams) {
-      const key = team.name?.toLowerCase().trim();
-      if (key && key.length > 0) {
-        if (!teamsByName[key]) teamsByName[key] = [];
-        teamsByName[key].push(team);
+      if (team.name && typeof team.name === 'string') {
+        const key = team.name.toLowerCase().trim();
+        if (key && key.length > 0) {
+          if (!teamsByName[key]) teamsByName[key] = [];
+          teamsByName[key].push(team);
+        }
       }
     }
     for (const key in teamsByName) {
@@ -228,12 +230,15 @@ export default function ClubManagement() {
       : 0
   };
 
-  const comparisonData = teamStats.slice(0, 8).map(team => ({
-    name: team.name?.substring(0, 10) || 'Unknown',
-    players: team.playerCount,
-    physical: team.avgPhysical,
-    rating: team.avgRating
-  }));
+  const comparisonData = teamStats
+    .filter(team => team.name && typeof team.name === 'string')
+    .slice(0, 8)
+    .map(team => ({
+      name: team.name.substring(0, 10),
+      players: team.playerCount,
+      physical: team.avgPhysical,
+      rating: team.avgRating
+    }));
 
   const uniqueClubs = [...new Set(teams.map(t => t.league).filter(Boolean))];
 

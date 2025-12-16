@@ -313,7 +313,7 @@ export default function TeamReports() {
                   <SelectValue placeholder="Choose a team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.map(team => (
+                  {teams.filter(team => team.name && typeof team.name === 'string').map(team => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name} ({team.age_group})
                     </SelectItem>
@@ -329,7 +329,7 @@ export default function TeamReports() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
-                  {teams.filter(t => t.id !== selectedTeamId).map(team => (
+                  {teams.filter(t => t.id !== selectedTeamId && t.name && typeof t.name === 'string').map(team => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name} ({team.age_group})
                     </SelectItem>
