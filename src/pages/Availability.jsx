@@ -21,7 +21,6 @@ export default function Availability() {
   const [services, setServices] = useState([]);
   const [newService, setNewService] = useState({ name: '', duration: 60, color: '#22c55e' });
   const [blackoutDates, setBlackoutDates] = useState([]);
-  const [selectedCoaches, setSelectedCoaches] = useState([]);
 
 
   const queryClient = useQueryClient();
@@ -52,19 +51,10 @@ export default function Availability() {
   const currentCoach = coaches.find(c => c.email === user?.email);
   const isAdmin = user?.role === 'admin';
   
-  // Filter bookings for coaches or selected coaches in admin view
+  // Filter bookings for coaches
   const relevantBookings = isAdmin 
-    ? (selectedCoaches.length > 0 
-        ? bookings.filter(b => selectedCoaches.includes(b.coach_id))
-        : bookings)
+    ? bookings 
     : bookings.filter(b => b.coach_id === currentCoach?.id);
-  
-  // Get availability slots for selected coaches or current coach
-  const displayedSlots = isAdmin && selectedCoaches.length > 0
-    ? coaches.filter(c => selectedCoaches.includes(c.id)).flatMap(c => 
-        (c.availability_slots || []).map(slot => ({ ...slot, coachId: c.id, coachName: c.full_name }))
-      )
-    : (currentCoach?.availability_slots || []);
 
 
   React.useEffect(() => {
@@ -202,7 +192,7 @@ export default function Availability() {
     const grouped = {};
    
     days.forEach((day, idx) => {
-      grouped[day] = displayedSlots.filter(slot => slot.day_of_week === idx);
+      grouped[day] = availabilitySlots.filter(slot => slot.day_of_week === idx);
     });
    
     return grouped;
@@ -227,41 +217,7 @@ export default function Availability() {
           <Calendar className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
           Manage Availability
         </h1>
-        <p className="text-sm md:text-base text-slate-600 mt-1">
-          {isAdmin ? 'View and manage coach availability' : 'Configure your booking schedule and services'}
-        </p>
-        
-        {isAdmin && (
-          <Card className="mt-4 border-emerald-200 bg-emerald-50/50">
-            <CardContent className="p-4">
-              <Label className="font-semibold mb-2 block">Filter by Coach(es)</Label>
-              <div className="flex flex-wrap gap-2">
-                {coaches.map(coach => (
-                  <Button
-                    key={coach.id}
-                    variant={selectedCoaches.includes(coach.id) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCoaches(prev => 
-                        prev.includes(coach.id) 
-                          ? prev.filter(id => id !== coach.id)
-                          : [...prev, coach.id]
-                      );
-                    }}
-                    className={selectedCoaches.includes(coach.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  >
-                    {coach.full_name}
-                  </Button>
-                ))}
-                {selectedCoaches.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedCoaches([])}>
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <p className="text-sm md:text-base text-slate-600 mt-1">Configure your booking schedule and services</p>
       </div>
 
 
@@ -281,17 +237,16 @@ export default function Availability() {
 
         <TabsContent value="calendar" className="space-y-6">
           <AvailabilityCalendarView
-            slots={displayedSlots}
+            slots={availabilitySlots}
             services={services}
             blackoutDates={blackoutDates}
             bookings={relevantBookings}
-            onAddSlot={!isAdmin || selectedCoaches.length === 0 ? handleSaveSlot : null}
-            onEditSlot={!isAdmin || selectedCoaches.length === 0 ? handleSaveSlot : null}
-            onDeleteSlot={!isAdmin || selectedCoaches.length === 0 ? handleDeleteSlot : null}
-            onDeleteRecurringSlots={!isAdmin || selectedCoaches.length === 0 ? handleDeleteRecurringSlots : null}
-            onAddBlackout={!isAdmin || selectedCoaches.length === 0 ? handleAddBlackout : null}
-            onRemoveBlackout={!isAdmin || selectedCoaches.length === 0 ? handleRemoveBlackout : null}
-            isViewOnly={isAdmin && selectedCoaches.length > 0}
+            onAddSlot={handleSaveSlot}
+            onEditSlot={handleSaveSlot}
+            onDeleteSlot={handleDeleteSlot}
+            onDeleteRecurringSlots={handleDeleteRecurringSlots}
+            onAddBlackout={handleAddBlackout}
+            onRemoveBlackout={handleRemoveBlackout}
           />
         </TabsContent>
 
@@ -314,7 +269,7 @@ export default function Availability() {
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-              {displayedSlots.length === 0 ? (
+              {availabilitySlots.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No Availability Set</h3>
@@ -345,11 +300,6 @@ export default function Availability() {
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                                      {slot.coachName && (
-                                        <Badge className="bg-emerald-100 text-emerald-800 text-xs font-semibold">
-                                          {slot.coachName}
-                                        </Badge>
-                                      )}
                                       <Badge className="bg-slate-900 text-white text-xs">
                                         {slot.start_time} - {slot.end_time}
                                       </Badge>
@@ -385,26 +335,24 @@ export default function Availability() {
                                       )}
                                     </div>
                                   </div>
-                                  {(!isAdmin || selectedCoaches.length === 0) && (
-                                    <div className="flex gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => { setEditingSlot(slot); setShowSlotDialog(true); }}
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                                        onClick={() => handleDeleteSlot(slot.id)}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  )}
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => { setEditingSlot(slot); setShowSlotDialog(true); }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                      onClick={() => handleDeleteSlot(slot.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </CardContent>
                             </Card>

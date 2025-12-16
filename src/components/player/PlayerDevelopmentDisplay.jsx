@@ -297,7 +297,7 @@ export default function PlayerDevelopmentDisplay({
                           >
                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </Button>
-                          {isAdminOrCoach && onProvideFeedback && (
+                          {onProvideFeedback && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -307,26 +307,22 @@ export default function PlayerDevelopmentDisplay({
                               <MessageSquare className="w-3 h-3" />
                             </Button>
                           )}
-                          {isAdminOrCoach && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => { setEditingGoal(goal); setShowEditGoalDialog(true); }}
-                                className="h-6 w-6"
-                              >
-                                <Target className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteGoal(goal.id)}
-                                className="h-6 w-6 hover:bg-red-50 hover:text-red-600"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setEditingGoal(goal); setShowEditGoalDialog(true); }}
+                            className="h-6 w-6"
+                          >
+                            <Target className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteGoal(goal.id)}
+                            className="h-6 w-6 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
                       </div>
 
@@ -462,11 +458,9 @@ export default function PlayerDevelopmentDisplay({
                         )}
                       </div>
                     </div>
-                    {isAdminOrCoach && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               ))}
