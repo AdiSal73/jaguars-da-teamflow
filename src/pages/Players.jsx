@@ -159,7 +159,34 @@ export default function Players() {
   });
 
   const createPlayerMutation = useMutation({
-    mutationFn: (data) => base44.entities.Player.create(data),
+    mutationFn: async (data) => {
+      const newPlayer = await base44.entities.Player.create(data);
+      
+      if (data.email && data.email.trim()) {
+        try {
+          const existingUsers = await base44.entities.User.filter({ email: data.email });
+          
+          if (existingUsers.length === 0) {
+            await base44.entities.User.create({
+              email: data.email,
+              full_name: data.full_name,
+              role: 'user',
+              player_ids: [newPlayer.id]
+            });
+            
+            await base44.integrations.Core.SendEmail({
+              to: data.email,
+              subject: 'Welcome to Soccer Club Management System',
+              body: `Hi ${data.full_name},\n\nYour player account has been created! You can now log in to access your dashboard.\n\nLog in here: ${window.location.origin}\n\nBest regards,\nSoccer Club Team`
+            });
+          }
+        } catch (error) {
+          console.error('Account creation error:', error);
+        }
+      }
+      
+      return newPlayer;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
       setShowDialog(false);
@@ -168,7 +195,39 @@ export default function Players() {
   });
 
   const updatePlayerMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Player.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const updatedPlayer = await base44.entities.Player.update(id, data);
+      
+      if (data.email && data.email.trim()) {
+        try {
+          const existingUsers = await base44.entities.User.filter({ email: data.email });
+          
+          if (existingUsers.length === 0) {
+            await base44.entities.User.create({
+              email: data.email,
+              full_name: data.full_name || updatedPlayer.full_name,
+              role: 'user',
+              player_ids: [id]
+            });
+            
+            await base44.integrations.Core.SendEmail({
+              to: data.email,
+              subject: 'Welcome to Soccer Club Management System',
+              body: `Hi ${data.full_name || updatedPlayer.full_name},\n\nYour player account has been created! You can now log in to access your dashboard.\n\nLog in here: ${window.location.origin}\n\nBest regards,\nSoccer Club Team`
+            });
+          } else if (!existingUsers[0].player_ids?.includes(id)) {
+            const user = existingUsers[0];
+            await base44.entities.User.update(user.id, {
+              player_ids: [...(user.player_ids || []), id]
+            });
+          }
+        } catch (error) {
+          console.error('Account creation error:', error);
+        }
+      }
+      
+      return updatedPlayer;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
       setShowDialog(false);
