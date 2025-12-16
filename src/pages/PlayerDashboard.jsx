@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -131,7 +130,10 @@ export default function PlayerDashboard() {
     if (!currentUser) return false;
     if (!player) return true; // Allow loading state
     if (currentUser.role === 'admin') return true;
-    if (coaches.some(c => c.email === currentUser.email)) return true;
+    
+    const currentCoach = coaches.find(c => c.email === currentUser.email);
+    if (currentCoach) return true; // All coaches can view all players
+    
     if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) return true;
     if (player.email && player.email === currentUser.email) return true;
     return false;

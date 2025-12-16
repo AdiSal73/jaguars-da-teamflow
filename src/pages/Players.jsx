@@ -701,7 +701,9 @@ export default function Players() {
                              {team?.league && <span> • {team.league}</span>}
                            </div>
                            <div className="flex flex-wrap gap-1">
-                             <Badge className={statusColors[player.status]}>{player.status}</Badge>
+                             {player.status === 'Injured' && (
+                               <Badge className="bg-red-500 text-white text-[10px]">Injured</Badge>
+                             )}
                              {tryout?.team_role && (
                                <Badge className="bg-purple-100 text-purple-800 text-[10px]">{tryout.team_role}</Badge>
                              )}
