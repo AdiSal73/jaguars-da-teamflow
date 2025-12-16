@@ -195,12 +195,12 @@ export default function Teams() {
     }
     
     let result = teamList.filter(team => {
-      const matchesSearch = team.name && typeof team.name === 'string' ? team.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) : false;
+      const matchesSearch = team.name && typeof team.name === 'string' && typeof teamSearchTerm === 'string' ? team.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) : false;
       if (!matchesSearch) return false;
-      if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
-      if (filterLeague !== 'all' && (team.league !== filterLeague || !team.league)) return false;
-      if (filterBranch !== 'all' && (team.branch !== filterBranch || !team.branch)) return false;
-      if (filterSeason !== 'all' && (team.season !== filterSeason || !team.season)) return false;
+      if (filterAgeGroup !== 'all' && (typeof team.age_group !== 'string' || team.age_group !== filterAgeGroup)) return false;
+      if (filterLeague !== 'all' && (typeof team.league !== 'string' || team.league !== filterLeague)) return false;
+      if (filterBranch !== 'all' && (typeof team.branch !== 'string' || team.branch !== filterBranch)) return false;
+      if (filterSeason !== 'all' && (typeof team.season !== 'string' || team.season !== filterSeason)) return false;
       if (filterGender !== 'all') {
         if (filterGender === 'Boys' && team.gender !== 'Male') return false;
         if (filterGender === 'Girls' && team.gender !== 'Female') return false;
@@ -220,7 +220,7 @@ export default function Teams() {
         aVal = players.filter(p => p.team_id === a.id).length;
         bVal = players.filter(p => p.team_id === b.id).length;
       }
-      if (typeof aVal === 'string') {
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
@@ -228,7 +228,7 @@ export default function Teams() {
     });
 
     return result;
-  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterSeason, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user]);
+  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterSeason, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user, teamSearchTerm]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(b => b && typeof b === 'string'))];
