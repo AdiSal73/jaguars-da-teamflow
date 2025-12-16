@@ -103,6 +103,7 @@ export default function Layout({ children, currentPageName }) {
         { title: "Coaches Management", url: createPageUrl("CoachManagement") },
         { title: "User Management", url: createPageUrl("UserManagement") },
         { title: "Data Management", url: createPageUrl("AdminDataManagement") },
+        { title: "Email Templates", url: createPageUrl("EmailTemplates") },
         { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") }
       ]
     },
