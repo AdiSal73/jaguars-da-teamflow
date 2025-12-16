@@ -182,7 +182,7 @@ export default function Teams() {
   };
 
   // Filter out coaches from teams - only show actual teams
-  const actualTeams = teams.filter(team => team.name && team.age_group);
+  const actualTeams = teams.filter(team => team.name && typeof team.name === 'string' && team.age_group);
 
   const filteredTeams = useMemo(() => {
     let teamList = actualTeams;

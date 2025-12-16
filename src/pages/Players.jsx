@@ -214,8 +214,8 @@ export default function Players() {
     }
   };
 
-  const uniqueLeagues = useMemo(() => [...new Set(teams.map(t => t.league).filter(Boolean))], [teams]);
-  const uniqueBranches = useMemo(() => [...new Set([...teams.map(t => t.branch), ...players.map(p => p.branch)].filter(Boolean))], [teams, players]);
+  const uniqueLeagues = useMemo(() => [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))], [teams]);
+  const uniqueBranches = useMemo(() => [...new Set([...teams.map(t => t.branch), ...players.map(p => p.branch)].filter(b => b && typeof b === 'string'))], [teams, players]);
 
   const resetForm = () => {
     setPlayerForm({
