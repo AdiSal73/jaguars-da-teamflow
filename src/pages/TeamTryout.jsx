@@ -101,14 +101,15 @@ export default function TeamTryout() {
   const nextYearTeams = useMemo(() => {
     const seen = new Set();
     return teams.filter(t => {
-      const is2627 = t.name?.includes('26/27') || t.season?.includes('26/27');
+      if (!t.name || typeof t.name !== 'string') return false;
+      const is2627 = t.name.includes('26/27') || (t.season && typeof t.season === 'string' && t.season.includes('26/27'));
       if (!is2627) return false;
       
       // Remove duplicates
       if (seen.has(t.name)) return false;
       seen.add(t.name);
       
-      const matchesSearch = t.name?.toLowerCase().includes(teamSearchTerm.toLowerCase());
+      const matchesSearch = t.name.toLowerCase().includes(teamSearchTerm.toLowerCase());
       const matchesGender = teamFilterGender === 'all' || t.gender === teamFilterGender;
       const matchesBranch = teamFilterBranch === 'all' || t.branch === teamFilterBranch;
       const matchesAgeGroup = teamFilterAgeGroup === 'all' || t.age_group === teamFilterAgeGroup;
