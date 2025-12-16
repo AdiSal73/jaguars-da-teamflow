@@ -197,6 +197,7 @@ export default function Teams() {
       if (filterAgeGroup !== 'all' && team.age_group !== filterAgeGroup) return false;
       if (filterLeague !== 'all' && team.league !== filterLeague) return false;
       if (filterBranch !== 'all' && team.branch !== filterBranch) return false;
+      if (filterSeason !== 'all' && team.season !== filterSeason) return false;
       if (filterGender !== 'all') {
         if (filterGender === 'Boys' && team.gender !== 'Male') return false;
         if (filterGender === 'Girls' && team.gender !== 'Female') return false;
@@ -224,7 +225,7 @@ export default function Teams() {
     });
 
     return result;
-  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user]);
+  }, [actualTeams, filterAgeGroup, filterLeague, filterBranch, filterSeason, filterGender, filterCoach, coaches, sortField, sortDirection, players, currentCoach, user]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))];
@@ -250,7 +251,7 @@ export default function Teams() {
       <Card className="mb-6 border-none shadow-lg">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 flex-1">
               <div>
                 <Label className="mb-2 block text-xs">Age Group</Label>
                 <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
@@ -316,6 +317,20 @@ export default function Teams() {
                     <SelectItem value="all">All Coaches</SelectItem>
                     {coaches.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block text-xs">Season</Label>
+                <Select value={filterSeason} onValueChange={setFilterSeason}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Seasons</SelectItem>
+                    {[...new Set(teams.map(t => t.season).filter(Boolean))].map(season => (
+                      <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
