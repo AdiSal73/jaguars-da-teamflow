@@ -102,20 +102,33 @@ export default function PlayerDashboard() {
   });
 
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
+  
+  // Check if user is authorized to view this player
+  const isAuthorized = React.useMemo(() => {
+    if (!currentUser || !player) return false;
+    
+    // Admin and coaches can view all players
+    if (currentUser.role === 'admin' || coaches.some(c => c.email === currentUser.email)) {
+      return true;
+    }
+    
+    // Parent can view if player_ids includes this player
+    if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) {
+      return true;
+    }
+    
+    // Player can view their own profile
+    if (player.email && player.email === currentUser.email) {
+      return true;
+    }
+    
+    return false;
+  }, [currentUser, player, playerId, coaches]);
 
   const { data: player, isLoading: playerLoading, isError: playerError } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
-      if (!currentUser || !playerId) return null;
-
-      // Check authorization: admin, coach, or parent with player_ids containing this playerId
-      const isAdmin = currentUser.role === 'admin';
-      const isCoach = coaches.some(c => c.email === currentUser.email);
-      const isParentOfPlayer = (currentUser.player_ids || []).includes(playerId);
-
-      if (!isAdmin && !isCoach && !isParentOfPlayer) {
-        throw new Error('Unauthorized access');
-      }
+      if (!playerId) return null;
 
       // Fetch the specific player
       const players = await base44.entities.Player.filter({ id: playerId });
@@ -124,7 +137,7 @@ export default function PlayerDashboard() {
       }
       return players[0];
     },
-    enabled: !!playerId && !!currentUser && coaches.length >= 0,
+    enabled: !!playerId,
     retry: 1
   });
 
@@ -623,7 +636,16 @@ export default function PlayerDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-slate-500">Player not found</p>
-        <Button onClick={() => navigate(createPageUrl('Players'))}>Go to Players</Button>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
+  
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-slate-500">You do not have permission to view this player</p>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
       </div>
     );
   }

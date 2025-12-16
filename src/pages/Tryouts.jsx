@@ -370,9 +370,9 @@ export default function Tryouts() {
   };
 
   const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
-    <div className="flex-1 min-w-[280px] md:min-w-[420px]">
+    <div className="flex-1">
       <Card className="border-none shadow-2xl h-full overflow-hidden backdrop-blur-sm">
-        <CardHeader className="bg-slate-300 p-4 md:p-6 flex flex-col space-y-1.5 border-b shadow-lg">
+        <CardHeader className={`${bgColor} p-4 md:p-6 flex flex-col space-y-1.5 border-b shadow-lg`}>
           <div className="flex justify-center mb-3 md:mb-4 h-24 md:h-32">
             {logoUrl ? (
               <img src={logoUrl} alt={title} className="w-20 h-20 md:w-32 md:h-32 object-contain" />
@@ -541,7 +541,7 @@ export default function Tryouts() {
 
         <Card className="border-none shadow-xl mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Scope</label>
                 <Select value={showAllPlayers ? 'all' : 'filtered'} onValueChange={(val) => setShowAllPlayers(val === 'all')}>
@@ -653,27 +653,22 @@ export default function Tryouts() {
 
         <Tabs value="columns" className="text-slate-800 w-full">
           <TabsList className="mb-4 md:mb-6 grid grid-cols-3 w-full md:w-auto">
-            <TabsTrigger value="columns" className="text-xs md:text-sm">3-Column</TabsTrigger>
+            <TabsTrigger value="columns" className="text-xs md:text-sm">2-Column</TabsTrigger>
           </TabsList>
 
           <TabsContent value="columns">
-            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-4">
               <TeamColumn
                 title="Girls Academy"
                 teams={gaTeams}
-                bgColor="bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600"
+                bgColor="bg-gradient-to-r from-green-600 via-green-700 to-emerald-600"
                 logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/688b1cb43_girls-academy-logo-1024x1024-2898394893.png" />
 
               <TeamColumn
-                title="Aspire League"
-                teams={aspireTeams}
-                bgColor="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600"
+                title="Aspire & Other Leagues"
+                teams={[...aspireTeams, ...otherTeams]}
+                bgColor="bg-gradient-to-r from-green-600 via-green-700 to-emerald-600"
                 logoUrl="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3a4b138c7_girls-academy-aspire-logo-1024x1024-2549474488.png" />
-
-              <TeamColumn
-                title="Other Leagues"
-                teams={otherTeams}
-                bgColor="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600" />
             </div>
           </TabsContent>
 
