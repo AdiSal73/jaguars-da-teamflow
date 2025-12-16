@@ -40,6 +40,8 @@ export default function EvaluationsNew() {
   const [search, setSearch] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterPosition, setFilterPosition] = useState('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [expandedCards, setExpandedCards] = useState(new Set());
   const [generatingNotes, setGeneratingNotes] = useState(false);
   
@@ -317,10 +319,19 @@ export default function EvaluationsNew() {
 
   const filteredEvaluations = evaluations.filter(e => {
     const matchesSearch = e.player_name?.toLowerCase().includes(search.toLowerCase()) ||
-      e.team_name?.toLowerCase().includes(search.toLowerCase());
+      e.team_name?.toLowerCase().includes(search.toLowerCase()) ||
+      e.primary_position?.toLowerCase().includes(search.toLowerCase());
     const matchesTeam = filterTeam === 'all' || e.team_name === filterTeam;
     const matchesPosition = filterPosition === 'all' || e.primary_position === filterPosition;
-    return matchesSearch && matchesTeam && matchesPosition;
+    
+    let matchesDate = true;
+    if (filterDateFrom || filterDateTo) {
+      const evalDate = new Date(e.created_date);
+      if (filterDateFrom) matchesDate = matchesDate && evalDate >= new Date(filterDateFrom);
+      if (filterDateTo) matchesDate = matchesDate && evalDate <= new Date(filterDateTo);
+    }
+    
+    return matchesSearch && matchesTeam && matchesPosition && matchesDate;
   });
 
   const toggleCard = (id) => {
@@ -421,19 +432,19 @@ Be specific and actionable. Focus on the position and ratings provided.`;
 
       <Card className="border-none shadow-lg mb-6">
         <CardContent className="p-4">
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-6 gap-3">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <Input
-                placeholder="Search by player name or team..."
+                placeholder="Search by player, team, or position..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 border-2 h-12"
+                className="pl-10 border-2 h-11"
               />
             </div>
             <div>
               <Select value={filterTeam} onValueChange={setFilterTeam}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="All Teams" />
                 </SelectTrigger>
                 <SelectContent>
@@ -446,7 +457,7 @@ Be specific and actionable. Focus on the position and ratings provided.`;
             </div>
             <div>
               <Select value={filterPosition} onValueChange={setFilterPosition}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-11">
                   <SelectValue placeholder="All Positions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -456,6 +467,24 @@ Be specific and actionable. Focus on the position and ratings provided.`;
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Input
+                type="date"
+                placeholder="From Date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="h-11 text-xs"
+              />
+            </div>
+            <div>
+              <Input
+                type="date"
+                placeholder="To Date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="h-11 text-xs"
+              />
             </div>
           </div>
         </CardContent>

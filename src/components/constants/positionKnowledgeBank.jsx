@@ -18,746 +18,435 @@ export const PHYSICAL_ASSESSMENTS = {
   }
 };
 
-export const POSITION_KNOWLEDGE = {
-  'GK': {
+export const POSITION_KNOWLEDGE_BANK = {
+  GK: {
     title: 'Goalkeeper',
-    description: 'Command the box, organize the defense, and initiate the build-up',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Shot Stopping - Long, central, angled, close',
-          'Controlling the Box - Crosses, long passes, 1v1 situations',
-          'Distribution - Range of passing (short and long)',
-          'Accurate throwing distribution (long and short)',
-          'Positioning and anticipation',
-          'Safe hands on flighted service',
-          'Controlled shot stopping'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Organization - Directing and organizing team shape',
-          'Reading Pressure - Anticipate threats and through balls',
-          'Managing Space - Protect space behind back line',
-          'Helping Defensive Organization',
-          'Initiate build up and possession forward',
-          'Good positional sense relating to opposition attacks',
-          'Knows when to play out vs. safety'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Strength & Power - Explosive and agile',
-          'Mobility and agility (can get up and down)',
-          'Explosive pace over short distances',
-          'Good jumping ability and timing',
-          'Strong upper body to deal with contact',
-          'Balance and coordination'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Composed under pressure',
-          'Brave and courageous',
-          'Communication - Clear and commanding',
-          'Maintains focus and concentration',
-          'Confident presence',
-          'Recovers from setback quickly',
-          'Ability to multitask (observe and organize)'
-        ]
-      }
+    icon: '🧤',
+    role: ['Shot Stopping', 'Controlling the box', 'Distribution', 'Organization'],
+    traits: [
+      'Strength & Power – Explosive, Agility, & Balance',
+      'Composed',
+      'Communication - Directing & Organizing',
+      'Shot stopping, Service (wide or central), Breakaways and Entry passes',
+      'Distribution - range of passing',
+      'Reading Pressure',
+      'Managing Space'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Helping Defensive Organization', points: ['Recognizing Threats - Space or Players', 'Organizing Team Shape to dictate play'] },
+        { title: 'Management of Space', points: ['Protect the Space behind our back line - drop, step, hold', 'Space between lines - connected and compact', 'Read Pressure'] },
+        { title: 'Adjusting Starting Position', points: ['Anticipate and intercept through balls', 'Continuously adjusting position'] }
+      ],
+      finalThird: [
+        { title: 'Controlling the Box', points: ['Defending Crosses, long passes and 1v1 Situations', 'Intercept, catch, punch, deflect'] },
+        { title: 'Protecting the Goal', points: ['Making Saves - long, central, angled, close', 'React immediately to recover'] }
+      ],
+      transition: [
+        { title: 'Direct teammates', points: ['Counter Measures', 'Protect dangerous Space', 'Identify Threats'] },
+        { title: 'Adjust positioning', points: ['Protect the Goal and Defend Space'] }
+      ]
     },
-    trainingFocus: [
-      'Shot stopping from various angles and distances',
-      'Distribution technique - both feet and throws',
-      'Positioning and angle play',
-      'Communication and organizing the defense',
-      '1v1 situations and breakaways',
-      'Dealing with crosses and set pieces'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Initiate build up', points: ['Help break initial lines', 'Adjust body position to receive and play quickly'] },
+        { title: 'Providing support', points: ['Connected to back line', 'Help organize Countermeasures'] }
+      ],
+      finalThird: [
+        { title: 'Keep ball in attacking half', points: ['Move and support behind the ball', 'Plus 1 Defensively'] }
+      ],
+      transition: [
+        { title: 'Initiate Counter Attack', points: ['Break out and find highest option', 'Throw or kick'] },
+        { title: 'Initiate Build-up', points: ['Maintain possession – allow team to regain shape', 'Push up defensive line'] }
+      ]
+    }
   },
-
   'Right Centerback': {
-    title: 'Right Center Back',
-    description: 'Anchor the defense, win duels, and initiate the build-up',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          '1v1 defending - Tackle, intercept, heading',
-          'Heading ability - Defensive and offensive',
-          'Range of Passing - Initiate build',
-          'Safe and range passing',
-          'First touch (possession/interception)',
-          'Ball winner - Tackling, heading, intercepting, & clearances'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Organization - Verbal Communication to direct team shape',
-          'Management of Space and Threats',
-          'Line Management - drop, step, hold',
-          'Body Shape & positioning - side on/ ball side-goal side',
-          'Reading Pressure and opponent shape',
-          'Understanding of passing options',
-          'Protect the space behind and in front of line'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Strength & Power, Speed & Agility',
-          'Strength for 1v1 duels',
-          'Size and presence',
-          'Good jumping ability and timing',
-          'Powerful in challenges'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Calm, Decisive, Relentless',
-          'Communication - Directing & Organizing',
-          'Brave and courageous',
-          'Leadership and Consistency',
-          'Maintains focus and concentration',
-          'Ability to multitask (play and organize)'
-        ]
-      }
+    title: 'Center Back',
+    icon: '🛡️',
+    role: ['Master 1v1 duels', 'Dominate aerial challenges', 'Build out of the back', 'Organize and communicate'],
+    traits: [
+      'Strength & Power, Speed & Agility',
+      'Calm, Decisive, Relentless',
+      'Communication - Directing & Organizing',
+      'Dominate in 1v1 Situations',
+      'Ball winner',
+      'Range of Passing'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Organization', points: ['Team Shape to Dictate Play', 'Recognize opponent shape'] },
+        { title: 'Management of Space', points: ['Compact and connected between lines', 'Line Management - drop, step, hold'] },
+        { title: 'Dominating 1v1', points: ['Challenge, intercept, tackle'] }
+      ],
+      finalThird: [
+        { title: 'Defending in the Box', points: ['Recovery runs', 'Zonal and man marking', 'Attacking first ball'] },
+        { title: 'Win Every Duel', points: ['Every tackle', 'Every aerial challenge', 'Block every shot'] }
+      ],
+      transition: [
+        { title: 'Recovery', points: ['Recovery runs', 'Communicate and organize', 'Protect dangerous space'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 defending - Body position and timing',
-      'Aerial dominance - Attacking and defending',
-      'Passing range and accuracy under pressure',
-      'Reading the game and anticipation',
-      'Communication and organizing the defensive line',
-      'Recovery runs and positioning'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Initiate build up', points: ['First pass to break pressure', 'Range of passing'] },
+        { title: 'Providing Balance', points: ['Support behind the ball', 'Countermeasures'] }
+      ],
+      finalThird: [
+        { title: 'Attacking Set Pieces', points: ['Target for corners', 'Dominant in aerial battles'] }
+      ],
+      transition: [
+        { title: 'Quick Transition', points: ['Recognize counter-attack opportunity', 'Long pass to attackers'] }
+      ]
+    }
   },
-
   'Left Centerback': {
-    title: 'Left Center Back',
-    description: 'Anchor the defense, win duels, and initiate the build-up',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          '1v1 defending - Tackle, intercept, heading',
-          'Heading ability - Defensive and offensive',
-          'Range of Passing - Initiate build',
-          'Safe and range passing',
-          'First touch (possession/interception)',
-          'Ball winner - Tackling, heading, intercepting, & clearances'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Organization - Verbal Communication to direct team shape',
-          'Management of Space and Threats',
-          'Line Management - drop, step, hold',
-          'Body Shape & positioning - side on/ ball side-goal side',
-          'Reading Pressure and opponent shape',
-          'Understanding of passing options',
-          'Protect the space behind and in front of line'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Strength & Power, Speed & Agility',
-          'Strength for 1v1 duels',
-          'Size and presence',
-          'Good jumping ability and timing',
-          'Powerful in challenges'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Calm, Decisive, Relentless',
-          'Communication - Directing & Organizing',
-          'Brave and courageous',
-          'Leadership and Consistency',
-          'Maintains focus and concentration',
-          'Ability to multitask (play and organize)'
-        ]
-      }
+    title: 'Center Back',
+    icon: '🛡️',
+    role: ['Master 1v1 duels', 'Dominate aerial challenges', 'Build out of the back', 'Organize and communicate'],
+    traits: [
+      'Strength & Power, Speed & Agility',
+      'Calm, Decisive, Relentless',
+      'Communication - Directing & Organizing',
+      'Dominate in 1v1 Situations',
+      'Ball winner',
+      'Range of Passing'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Organization', points: ['Team Shape to Dictate Play', 'Recognize opponent shape'] },
+        { title: 'Management of Space', points: ['Compact and connected between lines', 'Line Management - drop, step, hold'] },
+        { title: 'Dominating 1v1', points: ['Challenge, intercept, tackle'] }
+      ],
+      finalThird: [
+        { title: 'Defending in the Box', points: ['Recovery runs', 'Zonal and man marking', 'Attacking first ball'] },
+        { title: 'Win Every Duel', points: ['Every tackle', 'Every aerial challenge', 'Block every shot'] }
+      ],
+      transition: [
+        { title: 'Recovery', points: ['Recovery runs', 'Communicate and organize', 'Protect dangerous space'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 defending - Body position and timing',
-      'Aerial dominance - Attacking and defending',
-      'Passing range and accuracy under pressure',
-      'Reading the game and anticipation',
-      'Communication and organizing the defensive line',
-      'Recovery runs and positioning'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Initiate build up', points: ['First pass to break pressure', 'Range of passing'] },
+        { title: 'Providing Balance', points: ['Support behind the ball', 'Countermeasures'] }
+      ],
+      finalThird: [
+        { title: 'Attacking Set Pieces', points: ['Target for corners', 'Dominant in aerial battles'] }
+      ],
+      transition: [
+        { title: 'Quick Transition', points: ['Recognize counter-attack opportunity', 'Long pass to attackers'] }
+      ]
+    }
   },
-
   'Right Outside Back': {
-    title: 'Right Outside Back',
-    description: 'Defend the flank, support attacks, and create overloads',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Positive first touch',
-          'Strong crossing - Various deliveries',
-          'Ability running with the ball',
-          'Quality angled passing',
-          'Dominate in 1v1 Situations (tackling, intercepting, taking on)',
-          'Combination Play'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Reading and Positioning',
-          'Delay-Deny-Dictate approach',
-          'Screen Middle and Press Wide',
-          'Partnership with CB and Winger',
-          'Provide width and attacking support',
-          'Create overloads in wide areas',
-          'Anticipating and Preventing Threats'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Fast & Agile, Quick, and Fit',
-          'Great agility for 1v1 situations',
-          'Pace to expose and recover space',
-          'Good jumping ability and timing',
-          'Endurance to handle extended sprints',
-          'Mobility and strength for individual duels'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Energetic and Dynamic',
-          'Maintains focus and concentration',
-          'Brave and courageous',
-          'Controlled personality',
-          'Resilient and team first'
-        ]
-      }
+    title: 'Outside Back',
+    icon: '⚡',
+    role: ['Master 1v1 duels', 'Build out of the back', 'Join attack', 'Cover weak side'],
+    traits: [
+      'Fast & Agile, Quick, and Fit',
+      'Energetic and Dynamic',
+      'Dominate in 1v1 Situations',
+      'Support - width and balance',
+      'Create Chances'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Reading and Positioning', points: ['Delay-Deny-Dictate', 'Screen Middle and Press Wide', 'Partnership with CB'] },
+        { title: 'Preventing Threats', points: ['Protect Space Behind', 'Track runners', 'Body Shape'] },
+        { title: 'Dominating 1v1', points: ['Challenge, intercept, tackle', 'Flank Defending'] }
+      ],
+      finalThird: [
+        { title: 'Defending the Box', points: ['Recovery runs', 'Defensive positioning', 'Clear crosses'] }
+      ],
+      transition: [
+        { title: 'Recovery', points: ['Sprint back', 'Communicate with CBs', 'Protect space'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 defending - Jockeying and tackling',
-      'Overlapping runs and timing',
-      'Crossing technique - Variety of deliveries',
-      'Recovery defending and transition',
-      'Combination play with wingers',
-      'Defensive positioning and awareness'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Provide width', points: ['Overlapping runs', 'Stretching defense'] },
+        { title: 'Build-up Play', points: ['Receive under pressure', 'Combination play'] }
+      ],
+      finalThird: [
+        { title: 'Create overloads', points: ['Crossing positions', '2v1 situations'] },
+        { title: 'Crossing and Finishing', points: ['Quality crosses', 'Cut inside and shoot'] }
+      ],
+      transition: [
+        { title: 'Join Counter', points: ['Sprint forward', 'Provide width'] }
+      ]
+    }
   },
-
   'Left Outside Back': {
-    title: 'Left Outside Back',
-    description: 'Defend the flank, support attacks, and create overloads',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Positive first touch',
-          'Strong crossing - Various deliveries',
-          'Ability running with the ball',
-          'Quality angled passing',
-          'Dominate in 1v1 Situations (tackling, intercepting, taking on)',
-          'Combination Play'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Reading and Positioning',
-          'Delay-Deny-Dictate approach',
-          'Screen Middle and Press Wide',
-          'Partnership with CB and Winger',
-          'Provide width and attacking support',
-          'Create overloads in wide areas',
-          'Anticipating and Preventing Threats'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Fast & Agile, Quick, and Fit',
-          'Great agility for 1v1 situations',
-          'Pace to expose and recover space',
-          'Good jumping ability and timing',
-          'Endurance to handle extended sprints',
-          'Mobility and strength for individual duels'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Energetic and Dynamic',
-          'Maintains focus and concentration',
-          'Brave and courageous',
-          'Controlled personality',
-          'Resilient and team first'
-        ]
-      }
+    title: 'Outside Back',
+    icon: '⚡',
+    role: ['Master 1v1 duels', 'Build out of the back', 'Join attack', 'Cover weak side'],
+    traits: [
+      'Fast & Agile, Quick, and Fit',
+      'Energetic and Dynamic',
+      'Dominate in 1v1 Situations',
+      'Support - width and balance',
+      'Create Chances'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Reading and Positioning', points: ['Delay-Deny-Dictate', 'Screen Middle and Press Wide', 'Partnership with CB'] },
+        { title: 'Preventing Threats', points: ['Protect Space Behind', 'Track runners', 'Body Shape'] },
+        { title: 'Dominating 1v1', points: ['Challenge, intercept, tackle', 'Flank Defending'] }
+      ],
+      finalThird: [
+        { title: 'Defending the Box', points: ['Recovery runs', 'Defensive positioning', 'Clear crosses'] }
+      ],
+      transition: [
+        { title: 'Recovery', points: ['Sprint back', 'Communicate with CBs', 'Protect space'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 defending - Jockeying and tackling',
-      'Overlapping runs and timing',
-      'Crossing technique - Variety of deliveries',
-      'Recovery defending and transition',
-      'Combination play with wingers',
-      'Defensive positioning and awareness'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Provide width', points: ['Overlapping runs', 'Stretching defense'] },
+        { title: 'Build-up Play', points: ['Receive under pressure', 'Combination play'] }
+      ],
+      finalThird: [
+        { title: 'Create overloads', points: ['Crossing positions', '2v1 situations'] },
+        { title: 'Crossing and Finishing', points: ['Quality crosses', 'Cut inside and shoot'] }
+      ],
+      transition: [
+        { title: 'Join Counter', points: ['Sprint forward', 'Provide width'] }
+      ]
+    }
   },
-
   'Defensive Midfielder': {
     title: 'Defensive Midfielder',
-    description: 'Shield the backline, win duels, and distribute the ball',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          '1v1 defending (set and transition)',
-          '360° range of passing',
-          'First touch (possession/interception)',
-          'Tight receiving skills',
-          'Heading - Win aerial battles',
-          'Ability to Break Pressure - Dribble & passing',
-          'Tackling and intercepting'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Organizing Team Defensive Shape',
-          'Spatial Awareness (360º) - Constant scanning',
-          'Shielding of backline',
-          'Support play (receiving angles)',
-          'Building and Initiating Pressure',
-          'Awareness of opponents/situation (end transition)',
-          'Providing offensive & defensive balance',
-          'Space creation'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Strong, quick, fit',
-          'Agility and quickness',
-          'Endurance for box-to-box play',
-          'Strength and Mobility for 1v1 duel',
-          'Powerful in challenges'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Controlled, insightful, and disciplined',
-          'Leader on the field',
-          'Leadership and Concentration',
-          'Bravery on the ball',
-          'Ability to multitask (play and organize)',
-          'Communication and directing',
-          'Consistency in performance'
-        ]
-      }
+    icon: '🔒',
+    role: ['Master 1v1 duels', 'Advance and switch', 'Win aerial challenges', 'Organize press'],
+    traits: [
+      'Strong, quick, fit',
+      'Controlled, insightful, disciplined',
+      'Leader',
+      'Spatial Awareness (360º)',
+      'Ball winner',
+      'Range of Passes'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Organizing Shape', points: ['Verbal Communication', 'Connection between lines', 'Screening Middle'] },
+        { title: 'Building Pressure', points: ['Regroup to Repress', 'Opportunity to Regain'] },
+        { title: 'Preventing Threats', points: ['Deny Forward Passes', 'Protect space in front', 'Defend Vertical Middle'] }
+      ],
+      finalThird: [
+        { title: 'Protect the Box', points: ['Position in front of defense', 'Screen passes', 'Win second balls'] }
+      ],
+      transition: [
+        { title: 'Organization', points: ['Drop and cover', 'Communicate threats', 'Protect space'] }
+      ]
     },
-    trainingFocus: [
-      'Intercepting passes and reading the game',
-      'Range of passing - Short and long distribution',
-      'Positioning to shield the backline',
-      'Tackling technique and timing',
-      'Transition play - Defensive to attacking',
-      'Scanning and 360° awareness'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Breaking pressure', points: ['Receive under pressure', 'Progressive passing'] },
+        { title: 'Range of passing', points: ['Switch play', 'Breaking lines'] },
+        { title: 'Balance', points: ['Safety outlet', 'Recycle possession'] }
+      ],
+      finalThird: [
+        { title: 'Support Attack', points: ['Late runs', 'Shots from distance'] }
+      ],
+      transition: [
+        { title: 'Quick Distribution', points: ['Fast forward pass', 'Start counter'] }
+      ]
+    }
   },
-
   'Center Midfielder': {
     title: 'Center Midfielder',
-    description: 'Link defense and attack, control tempo, create chances',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Quality with both feet',
-          'Forward passing - Breaking lines',
-          'Shooting from distance',
-          'Tight receiving skills',
-          'Tackling and ball winning',
-          'Range of passing'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Defensive support (cut passing lanes)',
-          'Support play (receiving angles)',
-          'Tracking runners',
-          'Creating space and vertical movement (late runs)',
-          'Connection between lines',
-          'Transition piece - Quick decision making'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Endurance (long distance)',
-          'Speed endurance',
-          'Strength for physical battles',
-          'Agility and quickness'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Concentration (reaction to turnovers)',
-          'Brave in possession',
-          'Reliability (two ways)',
-          'Consistency',
-          'Game intelligence'
-        ]
-      }
+    icon: '⚙️',
+    role: ['Link defense and attack', 'Control tempo', 'Create chances', 'Win duels'],
+    traits: [
+      'Quality with both feet',
+      'Forward passing',
+      'Shooting from distance',
+      'Tackling and ball winning',
+      'Range of passing'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Defensive support', points: ['Cut passing lanes', 'Tracking runners'] },
+        { title: 'Support play', points: ['Receiving angles', 'Connection between lines'] }
+      ],
+      finalThird: [
+        { title: 'Protect Box', points: ['Position defensively', 'Win second balls'] }
+      ],
+      transition: [
+        { title: 'Quick reaction', points: ['Counter-press', 'Delay opponent'] }
+      ]
     },
-    trainingFocus: [
-      'Passing range and accuracy',
-      'Receiving under pressure',
-      'Shooting technique from distance',
-      'Defensive positioning and tracking',
-      'Transition play - Both directions',
-      'Creating and using space'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Passing range', points: ['Breaking lines', 'Creating space'] },
+        { title: 'Transition piece', points: ['Quick decision making', 'Vertical movement'] }
+      ],
+      finalThird: [
+        { title: 'Support Attack', points: ['Late runs', 'Shooting'] }
+      ],
+      transition: [
+        { title: 'Link Play', points: ['Connect lines', 'Quick combination'] }
+      ]
+    }
   },
-
   'Attacking Midfielder': {
     title: 'Attacking Midfielder',
-    description: 'Create chances, break lines, and orchestrate the attack',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Quality with both feet',
-          'Forward passing - Incisive and creative',
-          'Shooting - Various techniques',
-          'Tight & Disguised receiving skills',
-          'Dribbling in tight spaces',
-          'Set piece specialist',
-          'Combination play'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Spatial Awareness - Body position to break lines',
-          'Connection to forward 3',
-          'Creative passing and through balls',
-          'Transition piece - Quick to attack',
-          'Creation and use of space',
-          'Make play predictable defensively',
-          'Dictating and Shaping Play'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Fast & agile, quick, and fit',
-          'Sharp movements',
-          'Speed endurance',
-          'Balance (ride challenges)',
-          'Explosive acceleration'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Creative and Dangerous',
-          'Confidence on the ball',
-          'Brave - Risk Taker',
-          'Extrovert personality',
-          'Quick Minded - Fast decision making'
-        ]
-      }
+    icon: '⭐',
+    role: ['Create chances', 'Advance ball', 'Finish chances', 'Press and win back'],
+    traits: [
+      'Fast & agile, quick, and fit',
+      'Creative and Dangerous',
+      'Spatial Awareness',
+      'Precise - receiving, dribbling, passing',
+      'Play Maker'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Dictating Play', points: ['Make Play Predictable', 'Delay-Deny-Dictate', 'Screen Middle'] },
+        { title: 'Building Pressure', points: ['Press vs. Regroup', 'Opportunity to Regain'] },
+        { title: 'Deny passes', points: ['Player responsibility', 'Protect dangerous space'] }
+      ],
+      finalThird: [
+        { title: 'High Press', points: ['Force mistakes', 'Win ball in dangerous areas'] }
+      ],
+      transition: [
+        { title: 'Immediate Pressure', points: ['Counter-press', 'Delay opponent'] }
+      ]
     },
-    trainingFocus: [
-      'Receiving in tight spaces',
-      'Through balls and creative passing',
-      'Shooting technique and finishing',
-      'Movement to find pockets of space',
-      '1v2 situations and dribbling',
-      'Transition moments - Creating chances quickly'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Create chances', points: ['Through balls', 'Key passes'] },
+        { title: 'Break lines', points: ['Progressive carries', 'Take on defenders'] },
+        { title: 'Combination play', points: ['Quick interchanges', 'One-twos'] }
+      ],
+      finalThird: [
+        { title: 'Final Pass', points: ['Assist creation', 'Unlock defenses'] },
+        { title: 'Finishing', points: ['Score from edge', 'Late runs'] }
+      ],
+      transition: [
+        { title: 'Quick Attack', points: ['Receive and turn', 'Drive at defense'] }
+      ]
+    }
   },
-
   'Right Winger': {
-    title: 'Right Winger',
-    description: 'Beat defenders 1v1, create chances, and finish opportunities',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Combination play',
-          'Turning and protecting the ball',
-          'Finishing off the dribble',
-          'Receiving skills (in front/in behind)',
-          'Dribbling - Taking on defenders',
-          'Crossing - Various techniques',
-          '1v1 attacking skills'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Movement and interchange to break lines',
-          'Unlocking the final 1/3',
-          'Transition piece - Quick to attack',
-          'Understanding of space (in front/in behind)',
-          'Support and communication with outside back',
-          'Creating wide overloads',
-          'Shaping and Dictating Play when defending'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Quick, explosive, and agile',
-          'Pace to beat defenders',
-          'Speed endurance',
-          'Balance (ride challenges)',
-          'Agility for 1v1 situations'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Creative and Energetic',
-          'Confidence to take on defenders',
-          'Bravery in duels',
-          'Patience to wait for the right moment',
-          'Resilient after failed attempts'
-        ]
-      }
+    title: 'Wide Forward',
+    icon: '🔥',
+    role: ['Finish chances', 'Create chances', 'Wide overloads', 'Press and win back'],
+    traits: [
+      'Quick, explosive, agile',
+      'Creative and Energetic',
+      'Movement to break lines',
+      'Dominate in 1v1',
+      'Creating Chances'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Shaping Play', points: ['Screen Middle', 'Press Forward and Wide', 'Recognizing build up'] },
+        { title: 'Building Pressure', points: ['Press vs. Re-group', 'Opportunity to Regain'] },
+        { title: 'Deny passes', points: ['Take away time, space', 'Flank Defending'] }
+      ],
+      finalThird: [
+        { title: 'High Press', points: ['Force play wide', 'Win ball back'] }
+      ],
+      transition: [
+        { title: 'Track Back', points: ['Sprint back', 'Support fullback'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 attacking - Beating defenders',
-      'Crossing technique - Various situations',
-      'Finishing from wide positions',
-      'Movement off the ball',
-      'Combination play with fullback',
-      'Defensive tracking and pressing'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Wide Play', points: ['Stretch defense', 'Create 1v1'] },
+        { title: 'Cut Inside', points: ['Attack central', 'Shoot on goal'] }
+      ],
+      finalThird: [
+        { title: 'Finish chances', points: ['Clinical finishing', 'Various techniques'] },
+        { title: 'Create chances', points: ['Quality crosses', 'Cut backs', 'Take on defenders'] },
+        { title: 'Movement', points: ['Runs in behind', 'Diagonal runs'] }
+      ],
+      transition: [
+        { title: 'Counter-Attack', points: ['Sprint in behind', 'Stretch defense'] }
+      ]
+    }
   },
-
   'Left Winger': {
-    title: 'Left Winger',
-    description: 'Beat defenders 1v1, create chances, and finish opportunities',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Combination play',
-          'Turning and protecting the ball',
-          'Finishing off the dribble',
-          'Receiving skills (in front/in behind)',
-          'Dribbling - Taking on defenders',
-          'Crossing - Various techniques',
-          '1v1 attacking skills'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Movement and interchange to break lines',
-          'Unlocking the final 1/3',
-          'Transition piece - Quick to attack',
-          'Understanding of space (in front/in behind)',
-          'Support and communication with outside back',
-          'Creating wide overloads',
-          'Shaping and Dictating Play when defending'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Quick, explosive, and agile',
-          'Pace to beat defenders',
-          'Speed endurance',
-          'Balance (ride challenges)',
-          'Agility for 1v1 situations'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Creative and Energetic',
-          'Confidence to take on defenders',
-          'Bravery in duels',
-          'Patience to wait for the right moment',
-          'Resilient after failed attempts'
-        ]
-      }
+    title: 'Wide Forward',
+    icon: '🔥',
+    role: ['Finish chances', 'Create chances', 'Wide overloads', 'Press and win back'],
+    traits: [
+      'Quick, explosive, agile',
+      'Creative and Energetic',
+      'Movement to break lines',
+      'Dominate in 1v1',
+      'Creating Chances'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Shaping Play', points: ['Screen Middle', 'Press Forward and Wide', 'Recognizing build up'] },
+        { title: 'Building Pressure', points: ['Press vs. Re-group', 'Opportunity to Regain'] },
+        { title: 'Deny passes', points: ['Take away time, space', 'Flank Defending'] }
+      ],
+      finalThird: [
+        { title: 'High Press', points: ['Force play wide', 'Win ball back'] }
+      ],
+      transition: [
+        { title: 'Track Back', points: ['Sprint back', 'Support fullback'] }
+      ]
     },
-    trainingFocus: [
-      '1v1 attacking - Beating defenders',
-      'Crossing technique - Various situations',
-      'Finishing from wide positions',
-      'Movement off the ball',
-      'Combination play with fullback',
-      'Defensive tracking and pressing'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Wide Play', points: ['Stretch defense', 'Create 1v1'] },
+        { title: 'Cut Inside', points: ['Attack central', 'Shoot on goal'] }
+      ],
+      finalThird: [
+        { title: 'Finish chances', points: ['Clinical finishing', 'Various techniques'] },
+        { title: 'Create chances', points: ['Quality crosses', 'Cut backs', 'Take on defenders'] },
+        { title: 'Movement', points: ['Runs in behind', 'Diagonal runs'] }
+      ],
+      transition: [
+        { title: 'Counter-Attack', points: ['Sprint in behind', 'Stretch defense'] }
+      ]
+    }
   },
-
-  'Forward': {
+  Forward: {
     title: 'Center Forward',
-    description: 'Score goals, hold up play, and lead the press',
-    categories: {
-      technical: {
-        title: 'Technical Skills',
-        icon: '⚽',
-        color: 'from-emerald-600 to-green-600',
-        points: [
-          'Goal Scoring - Various techniques',
-          'Turning with the ball',
-          'Heading - Attacking and holding up',
-          'Receiving skills (back to goal/ in behind)',
-          'Dribbling in tight spaces',
-          'Hold up play',
-          'Finishing with both feet'
-        ]
-      },
-      tactical: {
-        title: 'Tactical Awareness',
-        icon: '🧠',
-        color: 'from-blue-600 to-emerald-600',
-        points: [
-          'Creating Chances & Scoring Goals',
-          'Space creation In & Out of Box',
-          'Transition piece - Target for counters',
-          'Understanding of space (in front/in behind)',
-          'Making play predictable defensively',
-          'Shaping and Dictating Play when pressing',
-          'Threatening - Movement and combination play'
-        ]
-      },
-      physical: {
-        title: 'Physical Attributes',
-        icon: '💪',
-        color: 'from-red-600 to-orange-600',
-        points: [
-          'Strong, explosive, quick',
-          'Pace to run in behind',
-          'Speed endurance',
-          'Powerful in duels',
-          'Strong runner',
-          'Aerial presence'
-        ]
-      },
-      mental: {
-        title: 'Mental Qualities',
-        icon: '🎯',
-        color: 'from-purple-600 to-pink-600',
-        points: [
-          'Dynamic and Dangerous',
-          'Confidence in front of goal',
-          'Bravery in physical battles',
-          'Patience to wait for chances',
-          'Resilient after missed opportunities',
-          'Killer instinct'
-        ]
-      }
+    icon: '⚽',
+    role: ['Finish chances', 'Create chances', 'Hold up and link', 'Press and win back'],
+    traits: [
+      'Strong, explosive, quick',
+      'Dynamic and Dangerous',
+      'Creating Chances & Scoring Goals',
+      'Back to Pressure',
+      'Strength on ball'
+    ],
+    defending: {
+      balanced: [
+        { title: 'Shaping Play', points: ['Make play predictable', 'Delay-Deny-Dictate'] },
+        { title: 'Building Pressure', points: ['Press to initiate', 'Force play'] },
+        { title: 'Win duels', points: ['Physical battles', 'Compete for everything'] }
+      ],
+      finalThird: [
+        { title: 'High Press', points: ['Pressure center backs', 'Force mistakes'] }
+      ],
+      transition: [
+        { title: 'Immediate Press', points: ['Counter-press', 'Prevent counter'] }
+      ]
     },
-    trainingFocus: [
-      'Finishing - Various angles and techniques',
-      'Hold up play and shielding',
-      'Movement in the box',
-      'Heading technique',
-      'Running in behind defenses',
-      'Pressing and leading the defensive effort'
-    ]
+    attacking: {
+      balanced: [
+        { title: 'Target Play', points: ['Hold up ball', 'Link with teammates'] },
+        { title: 'Movement', points: ['Create space', 'Pin defenders'] }
+      ],
+      finalThird: [
+        { title: 'Finish chances', points: ['Clinical finishing', 'Various techniques', 'Aerial goals'] },
+        { title: 'Hold up and link', points: ['Back to goal', 'Lay offs', 'Flicks'] },
+        { title: 'Create space', points: ['Drag defenders', 'Movement off ball'] }
+      ],
+      transition: [
+        { title: 'Target for Counter', points: ['Run in behind', 'Hold up play'] }
+      ]
+    }
   }
 };
+
+// For backward compatibility
+export const POSITION_KNOWLEDGE = POSITION_KNOWLEDGE_BANK;
