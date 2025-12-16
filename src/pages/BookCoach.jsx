@@ -24,6 +24,8 @@ export default function BookCoach() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [sendingEmails, setSendingEmails] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -86,15 +88,82 @@ export default function BookCoach() {
   }, [coaches, myTeamIds]);
 
   const createBookingMutation = useMutation({
-    mutationFn: (data) => base44.entities.Booking.create(data),
-    onSuccess: () => {
+    mutationFn: async (data) => {
+      const booking = await base44.entities.Booking.create(data);
+      return booking;
+    },
+    onSuccess: async (booking) => {
       queryClient.invalidateQueries(['bookings']);
+      
+      // Send email confirmations
+      setSendingEmails(true);
+      try {
+        const location = locations.find(l => l.id === booking.location_id);
+        const locationInfo = location ? `${location.name}\n${location.address}` : 'Location TBD';
+        
+        // Email to client
+        await base44.functions.invoke('sendEmail', {
+          to: user.email,
+          subject: `Booking Confirmation - ${booking.service_name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc; border-radius: 10px;">
+              <h2 style="color: #059669; margin-bottom: 20px;">✓ Booking Confirmed</h2>
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #334155; margin-bottom: 15px;">Session Details:</h3>
+                <p style="margin: 8px 0;"><strong>Coach:</strong> ${booking.coach_name}</p>
+                <p style="margin: 8px 0;"><strong>Player:</strong> ${booking.player_name}</p>
+                <p style="margin: 8px 0;"><strong>Service:</strong> ${booking.service_name}</p>
+                <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p style="margin: 8px 0;"><strong>Time:</strong> ${formatTimeDisplay(booking.start_time)} - ${formatTimeDisplay(booking.end_time)}</p>
+                <p style="margin: 8px 0;"><strong>Duration:</strong> ${booking.duration} minutes</p>
+                <p style="margin: 8px 0;"><strong>Location:</strong><br>${locationInfo}</p>
+                ${booking.notes ? `<p style="margin: 8px 0;"><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+              </div>
+              <p style="color: #64748b; font-size: 14px;">If you need to reschedule or cancel, please contact your coach directly.</p>
+            </div>
+          `,
+          text: `Booking Confirmed\n\nCoach: ${booking.coach_name}\nPlayer: ${booking.player_name}\nService: ${booking.service_name}\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nLocation: ${locationInfo}${booking.notes ? '\nNotes: ' + booking.notes : ''}`
+        });
+
+        // Email to coach
+        const coach = coaches.find(c => c.id === booking.coach_id);
+        if (coach?.email) {
+          await base44.functions.invoke('sendEmail', {
+            to: coach.email,
+            subject: `New Booking - ${booking.player_name}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc; border-radius: 10px;">
+                <h2 style="color: #059669; margin-bottom: 20px;">New Session Booked</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                  <h3 style="color: #334155; margin-bottom: 15px;">Session Details:</h3>
+                  <p style="margin: 8px 0;"><strong>Player:</strong> ${booking.player_name}</p>
+                  <p style="margin: 8px 0;"><strong>Booked by:</strong> ${user.full_name} (${user.email})</p>
+                  <p style="margin: 8px 0;"><strong>Service:</strong> ${booking.service_name}</p>
+                  <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p style="margin: 8px 0;"><strong>Time:</strong> ${formatTimeDisplay(booking.start_time)} - ${formatTimeDisplay(booking.end_time)}</p>
+                  <p style="margin: 8px 0;"><strong>Duration:</strong> ${booking.duration} minutes</p>
+                  <p style="margin: 8px 0;"><strong>Location:</strong><br>${locationInfo}</p>
+                  ${booking.notes ? `<p style="margin: 8px 0;"><strong>Client Notes:</strong> ${booking.notes}</p>` : ''}
+                </div>
+              </div>
+            `,
+            text: `New Session Booked\n\nPlayer: ${booking.player_name}\nBooked by: ${user.full_name} (${user.email})\nService: ${booking.service_name}\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nLocation: ${locationInfo}${booking.notes ? '\nNotes: ' + booking.notes : ''}`
+          });
+        }
+      } catch (error) {
+        console.error('Email send error:', error);
+      } finally {
+        setSendingEmails(false);
+      }
+
       setBookingSuccess(true);
       setTimeout(() => {
         setShowBookingDialog(false);
+        setShowConfirmDialog(false);
         setBookingSuccess(false);
         setSelectedSlot(null);
         setBookingNotes('');
+        setSelectedPlayerId('');
       }, 2000);
     }
   });
@@ -215,7 +284,12 @@ export default function BookCoach() {
     return dates;
   }, [selectedCoach, calendarDays, bookings]);
 
-  const handleBookSlot = () => {
+  const handleProceedToConfirm = () => {
+    setShowBookingDialog(false);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmBooking = () => {
     const player = myPlayers.find(p => p.id === selectedPlayerId) || myPlayers[0];
     createBookingMutation.mutate({
       coach_id: selectedCoach.id,
@@ -486,74 +560,150 @@ export default function BookCoach() {
           </DialogContent>
         </Dialog>
 
-        {/* Booking Confirmation Dialog */}
+        {/* Booking Details Dialog */}
         <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
           <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Booking Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              {myPlayers.length > 1 && (
+                <div>
+                  <Label className="mb-2 block">Select Player</Label>
+                  <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
+                    <SelectTrigger><SelectValue placeholder="Select player" /></SelectTrigger>
+                    <SelectContent>
+                      {myPlayers.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div>
+                <Label className="mb-2 block">Notes (optional)</Label>
+                <Textarea
+                  value={bookingNotes}
+                  onChange={(e) => setBookingNotes(e.target.value)}
+                  placeholder="Any notes for the coach..."
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleProceedToConfirm} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                  Continue
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Booking Confirmation Dialog */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent className="max-w-lg">
             {bookingSuccess ? (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Booking Confirmed!</h2>
-                <p className="text-slate-600">Your session has been scheduled successfully.</p>
+                <p className="text-slate-600 mb-4">Your session has been scheduled successfully.</p>
+                {sendingEmails && (
+                  <p className="text-xs text-slate-500">Sending confirmation emails...</p>
+                )}
               </div>
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle className="text-xl">Confirm Booking</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                    <CheckCircle className="w-6 h-6 text-emerald-600" />
+                    Confirm Your Booking
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div className="bg-gradient-to-br from-emerald-50 to-blue-50 p-4 rounded-xl space-y-3 border border-emerald-100">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 text-sm">Coach</span>
-                      <span className="font-semibold text-slate-900">{selectedCoach?.full_name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 text-sm">Service</span>
-                      <span className="font-semibold text-slate-900">{selectedSlot?.service_name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 text-sm">Date</span>
-                      <span className="font-semibold text-slate-900">{selectedDate?.toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 text-sm">Time</span>
-                      <span className="font-semibold text-slate-900">{selectedSlot && formatTimeDisplay(selectedSlot.start_time)}</span>
-                    </div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-slate-600 text-sm">Location</span>
-                      <span className="font-semibold text-slate-900 text-right text-xs">{selectedSlot && getLocationName(selectedSlot.location_id)}</span>
+                <div className="mt-6">
+                  <div className="bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 p-6 rounded-2xl border-2 border-emerald-200 space-y-4">
+                    <h3 className="font-bold text-slate-900 text-lg mb-4">Session Details</h3>
+                    
+                    <div className="grid gap-3">
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Coach</span>
+                        <span className="font-bold text-slate-900">{selectedCoach?.full_name}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Player</span>
+                        <span className="font-bold text-slate-900">
+                          {myPlayers.find(p => p.id === selectedPlayerId)?.full_name || myPlayers[0]?.full_name}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Service</span>
+                        <span className="font-bold text-slate-900">{selectedSlot?.service_name}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Date</span>
+                        <span className="font-bold text-slate-900">
+                          {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Time</span>
+                        <span className="font-bold text-slate-900">
+                          {selectedSlot && `${formatTimeDisplay(selectedSlot.start_time)} - ${formatTimeDisplay(selectedSlot.end_time)}`}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                        <span className="text-slate-600 font-medium">Duration</span>
+                        <span className="font-bold text-slate-900">{selectedSlot?.duration} minutes</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-start pb-2">
+                        <span className="text-slate-600 font-medium">Location</span>
+                        <span className="font-bold text-slate-900 text-right max-w-[60%]">
+                          {selectedSlot && getLocationName(selectedSlot.location_id)}
+                        </span>
+                      </div>
+                      
+                      {bookingNotes && (
+                        <div className="pt-2 border-t border-slate-200">
+                          <span className="text-slate-600 font-medium block mb-2">Notes</span>
+                          <p className="text-sm text-slate-700 bg-white/50 p-3 rounded-lg">{bookingNotes}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
-                  {myPlayers.length > 1 && (
-                    <div>
-                      <Label className="mb-2 block">Select Player</Label>
-                      <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                        <SelectTrigger><SelectValue placeholder="Select player" /></SelectTrigger>
-                        <SelectContent>
-                          {myPlayers.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <Label className="mb-2 block">Notes (optional)</Label>
-                    <Textarea
-                      value={bookingNotes}
-                      onChange={(e) => setBookingNotes(e.target.value)}
-                      placeholder="Any notes for the coach..."
-                      rows={3}
-                    />
+
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-900 flex items-start gap-2">
+                      <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>Confirmation emails will be sent to you and your coach.</span>
+                    </p>
                   </div>
                   
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">Cancel</Button>
-                    <Button onClick={handleBookSlot} className="flex-1 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700">
-                      Confirm Booking
+                  <div className="flex gap-3 mt-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowConfirmDialog(false);
+                        setShowBookingDialog(true);
+                      }} 
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleConfirmBooking} 
+                      disabled={createBookingMutation.isPending}
+                      className="flex-1 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 font-semibold"
+                    >
+                      {createBookingMutation.isPending ? 'Confirming...' : 'Confirm Booking'}
                     </Button>
                   </div>
                 </div>

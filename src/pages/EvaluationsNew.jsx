@@ -41,6 +41,7 @@ export default function EvaluationsNew() {
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterPosition, setFilterPosition] = useState('all');
   const [expandedCards, setExpandedCards] = useState(new Set());
+  const [generatingNotes, setGeneratingNotes] = useState(false);
   
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
@@ -314,6 +315,75 @@ export default function EvaluationsNew() {
   };
 
   const uniqueTeams = [...new Set(evaluations.map(e => e.team_name).filter(Boolean))];
+
+  const handleGenerateNotes = async () => {
+    if (!formData.player_id) return;
+    
+    setGeneratingNotes(true);
+    try {
+      const player = players.find(p => p.id === formData.player_id);
+      
+      const prompt = `You are Adil, an expert soccer coach analyzing a player's evaluation data. Generate development notes for ${formData.player_name}.
+
+Position: ${formData.primary_position}
+Team: ${formData.team_name}
+
+Current Ratings (1-10 scale):
+Mental & Physical:
+- Growth Mindset: ${formData.growth_mindset}/10
+- Resilience: ${formData.resilience}/10
+- Efficiency: ${formData.efficiency_in_execution}/10
+- Athleticism: ${formData.athleticism}/10
+- Team Focus: ${formData.team_focus}/10
+
+Defending:
+- Organized: ${formData.defending_organized}/10
+- Final Third: ${formData.defending_final_third}/10
+- Transition: ${formData.defending_transition}/10
+- Pressing: ${formData.pressing}/10
+- Set-Pieces: ${formData.defending_set_pieces}/10
+
+Attacking:
+- Organized: ${formData.attacking_organized}/10
+- Final Third: ${formData.attacking_final_third}/10
+- Transition: ${formData.attacking_in_transition}/10
+- Building Out: ${formData.building_out}/10
+- Set-Pieces: ${formData.attacking_set_pieces}/10
+
+${formData.my_goals ? `Player's Goals: ${formData.my_goals}` : ''}
+
+Generate concise, actionable development notes with 3-4 bullet points each for:
+1. Strengths (what the player excels at)
+2. Areas of Growth (what needs improvement)
+3. Training Focus (specific training recommendations)
+
+Be specific and actionable. Focus on the position and ratings provided.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            strengths: { type: 'string' },
+            areas_of_growth: { type: 'string' },
+            training_focus: { type: 'string' }
+          }
+        }
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        player_strengths: response.strengths,
+        areas_of_growth: response.areas_of_growth,
+        training_focus: response.training_focus
+      }));
+
+    } catch (error) {
+      console.error('Error generating notes:', error);
+    } finally {
+      setGeneratingNotes(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
