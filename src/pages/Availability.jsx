@@ -107,7 +107,15 @@ export default function Availability() {
 
 
   const handleSaveSlot = async (slotData) => {
-    let updatedSlots = [...availabilitySlots];
+    // If editing, get the original coach this slot belongs to
+    const targetCoach = editingSlot?.coach_id 
+      ? coaches.find(c => c.id === editingSlot.coach_id) 
+      : currentCoach;
+    
+    if (!targetCoach) return;
+
+    const coachSlots = targetCoach.availability_slots || [];
+    let updatedSlots = [...coachSlots];
    
     if (editingSlot) {
       updatedSlots = updatedSlots.map(s => s.id === slotData.id ? slotData : s);
@@ -115,12 +123,14 @@ export default function Availability() {
       updatedSlots.push(slotData);
     }
 
-
     await updateCoachMutation.mutateAsync({
-      id: currentCoach?.id,
-      data: { availability_slots: updatedSlots, services, blackout_dates: blackoutDates }
+      id: targetCoach.id,
+      data: { 
+        availability_slots: updatedSlots, 
+        services: targetCoach.services || services, 
+        blackout_dates: targetCoach.blackout_dates || blackoutDates 
+      }
     });
-
 
     setShowSlotDialog(false);
     setEditingSlot(null);
@@ -128,10 +138,20 @@ export default function Availability() {
 
 
   const handleDeleteSlot = async (slotId) => {
-    const updatedSlots = availabilitySlots.filter(s => s.id !== slotId);
+    // Find which coach owns this slot
+    const slotToDelete = availabilitySlots.find(s => s.id === slotId);
+    const targetCoach = coaches.find(c => c.id === slotToDelete?.coach_id);
+    
+    if (!targetCoach) return;
+
+    const updatedSlots = (targetCoach.availability_slots || []).filter(s => s.id !== slotId);
     await updateCoachMutation.mutateAsync({
-      id: currentCoach?.id,
-      data: { availability_slots: updatedSlots, services, blackout_dates: blackoutDates }
+      id: targetCoach.id,
+      data: { 
+        availability_slots: updatedSlots, 
+        services: targetCoach.services || services, 
+        blackout_dates: targetCoach.blackout_dates || blackoutDates 
+      }
     });
   };
 
@@ -201,7 +221,11 @@ export default function Availability() {
     const grouped = {};
    
     days.forEach((day, idx) => {
-      grouped[day] = availabilitySlots.filter(slot => slot.day_of_week === idx);
+      grouped[day] = availabilitySlots.filter(slot => slot.day_of_week === idx).sort((a, b) => {
+        const aTime = a.start_time || '';
+        const bTime = b.start_time || '';
+        return aTime.localeCompare(bTime);
+      });
     });
    
     return grouped;
@@ -378,6 +402,11 @@ export default function Availability() {
                                       {slot.location_id && (
                                         <Badge className="bg-blue-100 text-blue-800 text-xs">
                                           {getLocationName(slot.location_id)}
+                                        </Badge>
+                                      )}
+                                      {isAdmin && viewingCoaches.length > 1 && (
+                                        <Badge className="bg-purple-100 text-purple-800 text-xs">
+                                          {slot.coach_name}
                                         </Badge>
                                       )}
                                     </div>
