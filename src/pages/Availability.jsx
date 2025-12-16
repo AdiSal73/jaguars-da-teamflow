@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle, CalendarDays, List } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ export default function Availability() {
   const [services, setServices] = useState([]);
   const [newService, setNewService] = useState({ name: '', duration: 60, color: '#22c55e' });
   const [blackoutDates, setBlackoutDates] = useState([]);
+  const [selectedCoachIds, setSelectedCoachIds] = useState([]);
 
 
   const queryClient = useQueryClient();
@@ -51,9 +53,14 @@ export default function Availability() {
   const currentCoach = coaches.find(c => c.email === user?.email);
   const isAdmin = user?.role === 'admin';
   
+  // For admins viewing multiple coaches or specific coach, otherwise show current coach
+  const viewingCoaches = isAdmin && selectedCoachIds.length > 0 
+    ? coaches.filter(c => selectedCoachIds.includes(c.id))
+    : currentCoach ? [currentCoach] : [];
+  
   // Filter bookings for coaches
   const relevantBookings = isAdmin 
-    ? bookings 
+    ? bookings.filter(b => selectedCoachIds.length > 0 ? selectedCoachIds.includes(b.coach_id) : true)
     : bookings.filter(b => b.coach_id === currentCoach?.id);
 
 
@@ -94,7 +101,9 @@ export default function Availability() {
   });
 
 
-  const availabilitySlots = currentCoach?.availability_slots || [];
+  const availabilitySlots = viewingCoaches.flatMap(c => 
+    (c?.availability_slots || []).map(slot => ({ ...slot, coach_id: c.id, coach_name: c.full_name }))
+  );
 
 
   const handleSaveSlot = async (slotData) => {
@@ -213,11 +222,69 @@ export default function Availability() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Calendar className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
-          Manage Availability
-        </h1>
-        <p className="text-sm md:text-base text-slate-600 mt-1">Configure your booking schedule and services</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+              <Calendar className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
+              Manage Availability
+            </h1>
+            <p className="text-sm md:text-base text-slate-600 mt-1">Configure your booking schedule and services</p>
+          </div>
+          {isAdmin && (
+            <div className="flex-1 max-w-md">
+              <Label className="text-xs text-slate-600 mb-2 block">View Coach(es)</Label>
+              <Select 
+                value={selectedCoachIds.length === 1 ? selectedCoachIds[0] : 'multiple'} 
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setSelectedCoachIds([]);
+                  } else if (value === 'multiple') {
+                    // Keep current selection
+                  } else {
+                    setSelectedCoachIds([value]);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={selectedCoachIds.length === 0 ? "My Availability" : selectedCoachIds.length === 1 ? coaches.find(c => c.id === selectedCoachIds[0])?.full_name : `${selectedCoachIds.length} Coaches`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">My Availability</SelectItem>
+                  {coaches.filter(c => c.id !== currentCoach?.id).map(coach => (
+                    <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCoachIds.length > 1 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {selectedCoachIds.map(id => {
+                    const coach = coaches.find(c => c.id === id);
+                    return (
+                      <Badge key={id} className="bg-emerald-100 text-emerald-800">
+                        {coach?.full_name}
+                        <button onClick={() => setSelectedCoachIds(prev => prev.filter(cid => cid !== id))} className="ml-1">×</button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="mt-2">
+                <Label className="text-xs text-slate-500">Add more coaches:</Label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {coaches.filter(c => !selectedCoachIds.includes(c.id)).map(coach => (
+                    <Badge 
+                      key={coach.id} 
+                      className="bg-slate-100 text-slate-700 cursor-pointer hover:bg-emerald-100 hover:text-emerald-800"
+                      onClick={() => setSelectedCoachIds(prev => [...prev, coach.id])}
+                    >
+                      + {coach.full_name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
 
