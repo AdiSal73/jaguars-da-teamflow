@@ -29,6 +29,7 @@ import PlayerProgressDashboard from './pages/PlayerProgressDashboard';
 import Communications from './pages/Communications';
 import TeamRoster from './pages/TeamRoster';
 import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
+import CoachingResources from './pages/CoachingResources';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "Communications": Communications,
     "TeamRoster": TeamRoster,
     "AITrainingPlanGenerator": AITrainingPlanGenerator,
+    "CoachingResources": CoachingResources,
 }
 
 export const pagesConfig = {
