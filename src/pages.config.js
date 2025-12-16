@@ -30,6 +30,8 @@ import Communications from './pages/Communications';
 import TeamRoster from './pages/TeamRoster';
 import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
 import CoachingResources from './pages/CoachingResources';
+import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
+import PDPViewer from './pages/PDPViewer';
 import __Layout from './Layout.jsx';
 
 
@@ -66,6 +68,8 @@ export const PAGES = {
     "TeamRoster": TeamRoster,
     "AITrainingPlanGenerator": AITrainingPlanGenerator,
     "CoachingResources": CoachingResources,
+    "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
+    "PDPViewer": PDPViewer,
 }
 
 export const pagesConfig = {
