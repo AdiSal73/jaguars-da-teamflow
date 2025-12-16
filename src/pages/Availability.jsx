@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle, CalendarDays, List } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle, CalendarDays, List, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,16 +22,14 @@ export default function Availability() {
   const [newService, setNewService] = useState({ name: '', duration: 60, color: '#22c55e' });
   const [blackoutDates, setBlackoutDates] = useState([]);
   const [selectedCoachIds, setSelectedCoachIds] = useState([]);
-
+  const [coachSearchTerm, setCoachSearchTerm] = useState('');
 
   const queryClient = useQueryClient();
-
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
-
 
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
@@ -49,20 +46,24 @@ export default function Availability() {
     queryFn: () => base44.entities.Booking.list()
   });
 
-
   const currentCoach = coaches.find(c => c.email === user?.email);
   const isAdmin = user?.role === 'admin';
   
-  // For admins viewing multiple coaches or specific coach, otherwise show current coach
+  // For admins, show only selected coaches. For regular coaches, show themselves.
   const viewingCoaches = isAdmin && selectedCoachIds.length > 0 
     ? coaches.filter(c => selectedCoachIds.includes(c.id))
     : currentCoach ? [currentCoach] : [];
   
-  // Filter bookings for coaches
-  const relevantBookings = isAdmin 
-    ? bookings.filter(b => selectedCoachIds.length > 0 ? selectedCoachIds.includes(b.coach_id) : true)
+  // Filter bookings based on selected coaches
+  const relevantBookings = isAdmin && selectedCoachIds.length > 0
+    ? bookings.filter(b => selectedCoachIds.includes(b.coach_id))
     : bookings.filter(b => b.coach_id === currentCoach?.id);
 
+  // Filter coaches based on search
+  const filteredCoaches = coaches.filter(c => 
+    c.full_name?.toLowerCase().includes(coachSearchTerm.toLowerCase()) ||
+    c.email?.toLowerCase().includes(coachSearchTerm.toLowerCase())
+  );
 
   React.useEffect(() => {
     if (currentCoach?.services) {
@@ -78,7 +79,6 @@ export default function Availability() {
       setBlackoutDates(currentCoach.blackout_dates);
     }
   }, [currentCoach]);
-
 
   const updateCoachMutation = useMutation({
     mutationFn: async ({ id, data }) => {
@@ -100,35 +100,29 @@ export default function Availability() {
     }
   });
 
-
   const availabilitySlots = viewingCoaches.flatMap(c => 
     (c?.availability_slots || []).map(slot => ({ ...slot, coach_id: c.id, coach_name: c.full_name }))
   );
 
-
   const handleSaveSlot = async (slotData) => {
-    // If editing, get the original coach this slot belongs to
-    const targetCoach = editingSlot?.coach_id 
-      ? coaches.find(c => c.id === editingSlot.coach_id) 
-      : currentCoach;
+    const targetCoachId = editingSlot?.coach_id || currentCoach?.id;
+    const targetCoach = coaches.find(c => c.id === targetCoachId);
     
     if (!targetCoach) return;
 
     const coachSlots = targetCoach.availability_slots || [];
-    let updatedSlots = [...coachSlots];
-   
+    let updatedSlots;
+
     if (editingSlot) {
-      updatedSlots = updatedSlots.map(s => s.id === slotData.id ? slotData : s);
+      updatedSlots = coachSlots.map(s => s.id === slotData.id ? slotData : s);
     } else {
-      updatedSlots.push(slotData);
+      updatedSlots = [...coachSlots, slotData];
     }
 
     await updateCoachMutation.mutateAsync({
       id: targetCoach.id,
       data: { 
-        availability_slots: updatedSlots, 
-        services: targetCoach.services || services, 
-        blackout_dates: targetCoach.blackout_dates || blackoutDates 
+        availability_slots: updatedSlots
       }
     });
 
@@ -136,9 +130,7 @@ export default function Availability() {
     setEditingSlot(null);
   };
 
-
   const handleDeleteSlot = async (slotId) => {
-    // Find which coach owns this slot
     const slotToDelete = availabilitySlots.find(s => s.id === slotId);
     const targetCoach = coaches.find(c => c.id === slotToDelete?.coach_id);
     
@@ -148,44 +140,43 @@ export default function Availability() {
     await updateCoachMutation.mutateAsync({
       id: targetCoach.id,
       data: { 
-        availability_slots: updatedSlots, 
-        services: targetCoach.services || services, 
-        blackout_dates: targetCoach.blackout_dates || blackoutDates 
+        availability_slots: updatedSlots
       }
     });
   };
 
-
   const handleDeleteRecurringSlots = async (slot) => {
-    const updatedSlots = availabilitySlots.filter(s =>
-      !(s.day_of_week === slot.day_of_week && s.start_time === slot.start_time && s.end_time === slot.end_time)
+    const targetCoach = coaches.find(c => c.id === slot.coach_id);
+    if (!targetCoach) return;
+
+    const updatedSlots = (targetCoach.availability_slots || []).filter(s =>
+      !(s.day_of_week === slot.day_of_week && s.start_time === slot.start_time && s.end_time === slot.end_time && s.is_recurring)
     );
     await updateCoachMutation.mutateAsync({
-      id: currentCoach?.id,
-      data: { availability_slots: updatedSlots, services, blackout_dates: blackoutDates }
+      id: targetCoach.id,
+      data: { 
+        availability_slots: updatedSlots
+      }
     });
   };
-
 
   const handleAddBlackout = async (date) => {
     const updatedBlackouts = [...blackoutDates, date];
     setBlackoutDates(updatedBlackouts);
     await updateCoachMutation.mutateAsync({
       id: currentCoach?.id,
-      data: { availability_slots: availabilitySlots, services, blackout_dates: updatedBlackouts }
+      data: { blackout_dates: updatedBlackouts }
     });
   };
-
 
   const handleRemoveBlackout = async (date) => {
     const updatedBlackouts = blackoutDates.filter(d => d !== date);
     setBlackoutDates(updatedBlackouts);
     await updateCoachMutation.mutateAsync({
       id: currentCoach?.id,
-      data: { availability_slots: availabilitySlots, services, blackout_dates: updatedBlackouts }
+      data: { blackout_dates: updatedBlackouts }
     });
   };
-
 
   const handleSaveServices = async () => {
     if (!newService.name) return;
@@ -195,13 +186,12 @@ export default function Availability() {
    
     await updateCoachMutation.mutateAsync({
       id: currentCoach?.id,
-      data: { services: updatedServices, availability_slots: availabilitySlots, blackout_dates: blackoutDates }
+      data: { services: updatedServices }
     });
    
     setNewService({ name: '', duration: 60, color: '#22c55e' });
     setShowServiceDialog(false);
   };
-
 
   const handleDeleteService = async (serviceName) => {
     if (!window.confirm('Delete this service?')) return;
@@ -211,10 +201,9 @@ export default function Availability() {
    
     await updateCoachMutation.mutateAsync({
       id: currentCoach?.id,
-      data: { services: updatedServices, availability_slots: availabilitySlots, blackout_dates: blackoutDates }
+      data: { services: updatedServices }
     });
   };
-
 
   const groupSlotsByDay = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -231,7 +220,6 @@ export default function Availability() {
     return grouped;
   };
 
-
   const slotsByDay = groupSlotsByDay();
 
   const getLocationName = (locationId) => {
@@ -239,9 +227,7 @@ export default function Availability() {
     return location ? `${location.name}` : 'No location';
   };
 
-
   if (!user) return null;
-
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -256,31 +242,18 @@ export default function Availability() {
           </div>
           {isAdmin && (
             <div className="flex-1 max-w-md">
-              <Label className="text-xs text-slate-600 mb-2 block">View Coach(es)</Label>
-              <Select 
-                value={selectedCoachIds.length === 1 ? selectedCoachIds[0] : 'multiple'} 
-                onValueChange={(value) => {
-                  if (value === 'all') {
-                    setSelectedCoachIds([]);
-                  } else if (value === 'multiple') {
-                    // Keep current selection
-                  } else {
-                    setSelectedCoachIds([value]);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={selectedCoachIds.length === 0 ? "My Availability" : selectedCoachIds.length === 1 ? coaches.find(c => c.id === selectedCoachIds[0])?.full_name : `${selectedCoachIds.length} Coaches`} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">My Availability</SelectItem>
-                  {coaches.filter(c => c.id !== currentCoach?.id).map(coach => (
-                    <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedCoachIds.length > 1 && (
-                <div className="mt-2 flex flex-wrap gap-1">
+              <Label className="text-xs text-slate-600 mb-2 block">Search & Select Coaches</Label>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="Search coaches..." 
+                  value={coachSearchTerm}
+                  onChange={(e) => setCoachSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              {selectedCoachIds.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1">
                   {selectedCoachIds.map(id => {
                     const coach = coaches.find(c => c.id === id);
                     return (
@@ -292,25 +265,36 @@ export default function Availability() {
                   })}
                 </div>
               )}
-              <div className="mt-2">
-                <Label className="text-xs text-slate-500">Add more coaches:</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {coaches.filter(c => !selectedCoachIds.includes(c.id)).map(coach => (
+              <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 bg-slate-50 rounded-lg">
+                {filteredCoaches.length === 0 ? (
+                  <p className="text-xs text-slate-500">No coaches found</p>
+                ) : (
+                  filteredCoaches.map(coach => (
                     <Badge 
                       key={coach.id} 
-                      className="bg-slate-100 text-slate-700 cursor-pointer hover:bg-emerald-100 hover:text-emerald-800"
-                      onClick={() => setSelectedCoachIds(prev => [...prev, coach.id])}
+                      className={`cursor-pointer ${
+                        selectedCoachIds.includes(coach.id)
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                      onClick={() => {
+                        if (selectedCoachIds.includes(coach.id)) {
+                          setSelectedCoachIds(prev => prev.filter(id => id !== coach.id));
+                        } else {
+                          setSelectedCoachIds(prev => [...prev, coach.id]);
+                        }
+                      }}
                     >
-                      + {coach.full_name}
+                      {selectedCoachIds.includes(coach.id) ? '✓ ' : '+ '}
+                      {coach.full_name}
                     </Badge>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-
 
       <Tabs defaultValue="calendar" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
@@ -325,7 +309,6 @@ export default function Availability() {
           <TabsTrigger value="services">Services</TabsTrigger>
         </TabsList>
 
-
         <TabsContent value="calendar" className="space-y-6">
           <AvailabilityCalendarView
             slots={availabilitySlots}
@@ -333,14 +316,13 @@ export default function Availability() {
             blackoutDates={blackoutDates}
             bookings={relevantBookings}
             onAddSlot={handleSaveSlot}
-            onEditSlot={handleSaveSlot}
+            onEditSlot={(slotData) => handleSaveSlot({ ...slotData, coach_id: slotData.coach_id || currentCoach?.id })}
             onDeleteSlot={handleDeleteSlot}
             onDeleteRecurringSlots={handleDeleteRecurringSlots}
             onAddBlackout={handleAddBlackout}
             onRemoveBlackout={handleRemoveBlackout}
           />
         </TabsContent>
-
 
         <TabsContent value="schedule" className="space-y-6">
           <Card className="border-none shadow-lg">
@@ -350,13 +332,15 @@ export default function Availability() {
                   <Clock className="w-5 h-5 text-emerald-600" />
                   Availability Time Slots
                 </CardTitle>
-                <Button
-                  onClick={() => { setEditingSlot(null); setShowSlotDialog(true); }}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Time Slot
-                </Button>
+                {!isAdmin || selectedCoachIds.length === 0 ? (
+                  <Button
+                    onClick={() => { setEditingSlot(null); setShowSlotDialog(true); }}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Time Slot
+                  </Button>
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
@@ -364,14 +348,20 @@ export default function Availability() {
                 <div className="text-center py-12">
                   <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No Availability Set</h3>
-                  <p className="text-slate-600 mb-4">Add time slots to allow bookings</p>
-                  <Button
-                    onClick={() => setShowSlotDialog(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create First Slot
-                  </Button>
+                  <p className="text-slate-600 mb-4">
+                    {isAdmin && selectedCoachIds.length > 0 
+                      ? 'Selected coaches have no availability configured'
+                      : 'Add time slots to allow bookings'}
+                  </p>
+                  {(!isAdmin || selectedCoachIds.length === 0) && (
+                    <Button
+                      onClick={() => setShowSlotDialog(true)}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create First Slot
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -431,24 +421,26 @@ export default function Availability() {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => { setEditingSlot(slot); setShowSlotDialog(true); }}
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                                      onClick={() => handleDeleteSlot(slot.id)}
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
+                                  {(!isAdmin || slot.coach_id === currentCoach?.id) && (
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => { setEditingSlot(slot); setShowSlotDialog(true); }}
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                                        onClick={() => handleDeleteSlot(slot.id)}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
@@ -461,7 +453,6 @@ export default function Availability() {
               )}
             </CardContent>
           </Card>
-
 
           <Card className="border-none shadow-lg bg-blue-50">
             <CardContent className="p-4 md:p-6">
@@ -482,7 +473,6 @@ export default function Availability() {
             </CardContent>
           </Card>
         </TabsContent>
-
 
         <TabsContent value="services" className="space-y-6">
           <Card className="border-none shadow-lg">
@@ -533,7 +523,6 @@ export default function Availability() {
         </TabsContent>
       </Tabs>
 
-
       <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <SlotEditor
@@ -545,7 +534,6 @@ export default function Availability() {
           />
         </DialogContent>
       </Dialog>
-
 
       <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
         <DialogContent>

@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import LocationSelector from './LocationSelector';
 
-export default function SlotEditor({ slot, services = [], onSave, onCancel }) {
+export default function SlotEditor({ slot, services = [], locations = [], onSave, onCancel }) {
   const [formData, setFormData] = useState(slot || {
     id: Date.now().toString(),
     day_of_week: 1,
