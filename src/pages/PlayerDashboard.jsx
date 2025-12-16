@@ -101,36 +101,10 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.Coach.list()
   });
 
-  const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
-  
-  // Check if user is authorized to view this player
-  const isAuthorized = React.useMemo(() => {
-    if (!currentUser || !player) return false;
-    
-    // Admin and coaches can view all players
-    if (currentUser.role === 'admin' || coaches.some(c => c.email === currentUser.email)) {
-      return true;
-    }
-    
-    // Parent can view if player_ids includes this player
-    if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) {
-      return true;
-    }
-    
-    // Player can view their own profile
-    if (player.email && player.email === currentUser.email) {
-      return true;
-    }
-    
-    return false;
-  }, [currentUser, player, playerId, coaches]);
-
   const { data: player, isLoading: playerLoading, isError: playerError } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
       if (!playerId) return null;
-
-      // Fetch the specific player
       const players = await base44.entities.Player.filter({ id: playerId });
       if (players.length === 0) {
         throw new Error('Player not found');
@@ -140,6 +114,22 @@ export default function PlayerDashboard() {
     enabled: !!playerId,
     retry: 1
   });
+
+  const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
+  
+  const isAuthorized = React.useMemo(() => {
+    if (!currentUser || !player) return false;
+    if (currentUser.role === 'admin' || coaches.some(c => c.email === currentUser.email)) {
+      return true;
+    }
+    if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) {
+      return true;
+    }
+    if (player.email && player.email === currentUser.email) {
+      return true;
+    }
+    return false;
+  }, [currentUser, player, playerId, coaches]);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
