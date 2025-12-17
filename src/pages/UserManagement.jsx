@@ -150,20 +150,21 @@ export default function UserManagement() {
 
   const inviteUserMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.functions.invoke('sendInviteEmail', {
+      const response = await base44.functions.invoke('sendInviteEmail', {
         email: data.email,
         full_name: data.full_name,
         role: data.role,
         app_url: window.location.origin
       });
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setShowInviteDialog(false);
       setInviteForm({ email: '', full_name: '', role: 'user', player_ids: [] });
-      toast.success('Invitation sent successfully');
+      toast.success(`✅ Invitation sent to ${inviteForm.email}`);
     },
     onError: (error) => {
-      toast.error('Failed to send invitation');
+      toast.error('Failed to send invitation: ' + (error.response?.data?.error || error.message));
     }
   });
 
@@ -595,12 +596,16 @@ export default function UserManagement() {
             <div className="flex gap-2 justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
               <Button 
-                onClick={() => inviteUserMutation.mutate(inviteForm)} 
-                disabled={!inviteForm.email}
+                onClick={() => {
+                  if (confirm(`Send invitation email to ${inviteForm.email}?`)) {
+                    inviteUserMutation.mutate(inviteForm);
+                  }
+                }}
+                disabled={!inviteForm.email || inviteUserMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <Mail className="w-4 h-4 mr-2" />
-                Send Invite
+                {inviteUserMutation.isPending ? 'Sending...' : 'Send Invite'}
               </Button>
             </div>
           </div>

@@ -228,19 +228,21 @@ export default function EvaluationsNew() {
                     {player.jersey_number || player.full_name?.charAt(0)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingEvaluation(latestEval);
-                        setSelectedPlayer(player);
-                        setShowEditDialog(true);
-                      }}
-                      className="h-8 w-8 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
+                    {latestEval && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingEvaluation(latestEval);
+                          setSelectedPlayer(player);
+                          setShowEditDialog(true);
+                        }}
+                        className="h-8 w-8 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    )}
                     {latestEval?.overall_score && (
                       <Badge className="bg-white/90 text-emerald-700 text-xs font-bold">
                         {latestEval.overall_score}/10

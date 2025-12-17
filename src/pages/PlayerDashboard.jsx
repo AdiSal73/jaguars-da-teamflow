@@ -1168,10 +1168,7 @@ export default function PlayerDashboard() {
 
       {/* Analytics Row */}
       {(assessments.length > 1 || evaluations.length > 1 || currentEvaluation) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {currentEvaluation && (
-            <EvaluationRadarChart evaluation={currentEvaluation} />
-          )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {assessments.length > 1 && (
             <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
               <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
@@ -1243,9 +1240,13 @@ export default function PlayerDashboard() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          )}
-        </div>
-      )}
+            )}
+
+            {currentEvaluation && (
+            <EvaluationRadarChart evaluation={currentEvaluation} />
+            )}
+            </div>
+            )}
 
       {/* Player Development Pathway & Training Modules */}
       <div className="mt-6">

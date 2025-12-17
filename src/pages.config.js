@@ -31,6 +31,7 @@ import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import PDPViewer from './pages/PDPViewer';
 import EmailTemplates from './pages/EmailTemplates';
 import CommunicationPreferences from './pages/CommunicationPreferences';
+import TeamDashboard from './pages/TeamDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -68,6 +69,7 @@ export const PAGES = {
     "PDPViewer": PDPViewer,
     "EmailTemplates": EmailTemplates,
     "CommunicationPreferences": CommunicationPreferences,
+    "TeamDashboard": TeamDashboard,
 }
 
 export const pagesConfig = {

@@ -79,20 +79,21 @@ export default function CoachManagement() {
 
   const sendInviteMutation = useMutation({
     mutationFn: async (coach) => {
-      return base44.functions.invoke('sendInviteEmail', {
+      const response = await base44.functions.invoke('sendInviteEmail', {
         email: coach.email,
         full_name: coach.full_name,
         role: 'coach',
         app_url: window.location.origin
       });
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (result, coach) => {
       setSendingInvite(null);
-      toast.success('Invitation sent');
+      toast.success(`✅ Invitation sent to ${coach.email}`);
     },
-    onError: () => {
+    onError: (error) => {
       setSendingInvite(null);
-      toast.error('Failed to send invitation');
+      toast.error('Failed to send invitation: ' + (error.response?.data?.error || error.message));
     }
   });
 
@@ -296,8 +297,10 @@ export default function CoachManagement() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSendingInvite(coach.id);
-                            sendInviteMutation.mutate(coach);
+                            if (confirm(`Send invitation email to ${coach.email}?`)) {
+                              setSendingInvite(coach.id);
+                              sendInviteMutation.mutate(coach);
+                            }
                           }}
                           disabled={sendingInvite === coach.id}
                           className="text-blue-600 hover:bg-blue-50"
