@@ -59,7 +59,13 @@ Deno.serve(async (req) => {
       })
     });
 
-    return Response.json({ success: true });
+    const resendResult = await resendResponse.json();
+
+    if (!resendResponse.ok) {
+      return Response.json({ error: 'Failed to send email via Resend', details: resendResult }, { status: resendResponse.status });
+    }
+
+    return Response.json({ success: true, email_id: resendResult.id });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -278,7 +278,7 @@ export default function CoachManagement() {
                                 className="h-6 px-2 text-xs hover:bg-emerald-50 hover:border-emerald-500"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(createPageUrl('TeamDashboard', `teamId=${t.id}`));
+                                  navigate(`${createPageUrl('TeamRoster')}?teamId=${t.id}`);
                                 }}
                               >
                                 {t.name}
