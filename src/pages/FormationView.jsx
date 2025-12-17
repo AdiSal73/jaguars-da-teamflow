@@ -1034,7 +1034,6 @@ export default function FormationView() {
             }
           </DialogContent>
         </Dialog>
-      </DragDropContext>
-    </div>
+    </DragDropContext>
   );
 }
