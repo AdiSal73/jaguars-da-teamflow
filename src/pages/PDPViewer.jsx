@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Download, ExternalLink } from 'lucide-react';
+import { FileText, Download, ExternalLink, Target, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PDPViewer() {
