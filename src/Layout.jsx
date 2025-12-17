@@ -110,14 +110,11 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Teams",
       icon: Users,
-      url: createPageUrl("Teams"),
-      roles: ["admin", "coach"]
-    },
-    {
-      title: "All Players",
-      icon: Users,
-      url: createPageUrl("Players"),
-      roles: ["admin"]
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "All Teams", url: createPageUrl("Teams") },
+        { title: "All Players", url: createPageUrl("Players") }
+      ]
     },
     {
       title: "Tryouts",
@@ -176,15 +173,12 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       title: "Communications",
-      url: createPageUrl("Communications"),
       icon: MessageSquare,
-      roles: ["admin", "coach", "user", "parent"]
-    },
-    {
-      title: "Preferences",
-      url: createPageUrl("CommunicationPreferences"),
-      icon: Settings,
-      roles: ["admin", "coach", "user", "parent"]
+      roles: ["admin", "coach", "user", "parent"],
+      submenu: [
+        { title: "Messages", url: createPageUrl("Communications") },
+        { title: "Preferences", url: createPageUrl("CommunicationPreferences") }
+      ]
     },
     {
       title: "FAQ",

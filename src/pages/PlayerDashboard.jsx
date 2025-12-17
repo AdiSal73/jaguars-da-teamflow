@@ -220,12 +220,14 @@ export default function PlayerDashboard() {
         full_name: player.full_name || '',
         email: player.email || '',
         phone: player.phone || '',
+        player_email: player.player_email || '',
+        player_phone: player.player_phone || '',
         date_of_birth: player.date_of_birth || '',
         jersey_number: player.jersey_number || '',
         primary_position: player.primary_position || '',
         secondary_position: player.secondary_position || '',
         parent_name: player.parent_name || '',
-        parent_emails: player.parent_emails || [], // Initialize parent_emails
+        parent_emails: player.parent_emails || [],
         status: player.status || 'Active',
         team_id: player.team_id || '',
         profile_password: player.profile_password || ''
@@ -827,21 +829,43 @@ export default function PlayerDashboard() {
               </div> */}
               </div>
             <div className="border-t pt-2 space-y-2">
-              <div className="flex items-center gap-2">
-                <Mail className="w-3 h-3 text-slate-400" />
-                {isEditing ? (
-                  <Input type="email" value={playerForm.email} onChange={e => setPlayerForm({...playerForm, email: e.target.value})} className="h-7 text-xs flex-1" />
-                ) : (
-                  <span className="text-xs text-slate-600">{player.email || 'N/A'}</span>
-                )}
+              <div>
+                <Label className="text-[9px] text-slate-500">Player Contact</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  {isEditing ? (
+                    <Input type="email" value={playerForm.player_email} onChange={e => setPlayerForm({...playerForm, player_email: e.target.value})} className="h-7 text-xs flex-1" placeholder="Player email" />
+                  ) : (
+                    <span className="text-xs text-slate-600">{player.player_email || 'N/A'}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Phone className="w-3 h-3 text-slate-400" />
+                  {isEditing ? (
+                    <Input value={playerForm.player_phone} onChange={e => setPlayerForm({...playerForm, player_phone: e.target.value})} className="h-7 text-xs flex-1" placeholder="Player phone" />
+                  ) : (
+                    <span className="text-xs text-slate-600">{player.player_phone || 'N/A'}</span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3 h-3 text-slate-400" />
-                {isEditing ? (
-                  <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" />
-                ) : (
-                  <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
-                )}
+              <div className="pt-2 border-t">
+                <Label className="text-[9px] text-slate-500">Parent Contact</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  {isEditing ? (
+                    <Input type="email" value={playerForm.email} onChange={e => setPlayerForm({...playerForm, email: e.target.value})} className="h-7 text-xs flex-1" placeholder="Parent email" />
+                  ) : (
+                    <span className="text-xs text-slate-600">{player.email || 'N/A'}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Phone className="w-3 h-3 text-slate-400" />
+                  {isEditing ? (
+                    <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" placeholder="Parent phone" />
+                  ) : (
+                    <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
+                  )}
+                </div>
               </div>
             </div>
             

@@ -33,6 +33,7 @@ import EmailTemplates from './pages/EmailTemplates';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import TeamDashboard from './pages/TeamDashboard';
 import EmailTest from './pages/EmailTest';
+import EmailTestPage from './pages/EmailTestPage';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "CommunicationPreferences": CommunicationPreferences,
     "TeamDashboard": TeamDashboard,
     "EmailTest": EmailTest,
+    "EmailTestPage": EmailTestPage,
 }
 
 export const pagesConfig = {
