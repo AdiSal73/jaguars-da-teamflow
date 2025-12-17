@@ -30,19 +30,19 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: 'Soccer Club <onboarding@resend.dev>',
         to: [targetEmail],
-        subject: 'Welcome to Soccer Club Management System',
+        subject: 'Welcome to Michigan Jaguars Management System',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <div style="display: inline-block; width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; margin-bottom: 20px;"></div>
-              <h1 style="color: #10b981; margin: 0;">Welcome to Soccer Club!</h1>
+              <h1 style="color: #10b981; margin: 0;">Welcome to Michigan Jaguars!</h1>
             </div>
             <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
               <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
                 Hi ${full_name || 'there'},
               </p>
               <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
-                You've been invited to join our Soccer Club Management System as a ${roleText}.
+                You've been invited to join the Michigan Jaguars Player Development System as a ${roleText}.
               </p>
               <p style="font-size: 16px; color: #334155; margin-bottom: 30px;">
                 Click the button below to set up your account and get started:
