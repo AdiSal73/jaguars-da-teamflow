@@ -892,7 +892,7 @@ export default function FormationView() {
       </div>
 
       {/* Save Formation Dialog */}
-        <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
+      <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Save Formation</DialogTitle>
