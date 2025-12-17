@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { isTrappedPlayer } from '../components/utils/trappedPlayer';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { RotateCcw } from 'lucide-react';
 
 export default function Tryouts() {
   const navigate = useNavigate();
@@ -513,18 +515,7 @@ export default function Tryouts() {
                                          </Badge>
                                        )}
                                        {player.tryout?.team_role && (
-                                         <Button size="sm" className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
-                                           player.tryout.team_role === 'Indispensable Player' ? 'bg-purple-600 hover:bg-purple-700' :
-                                           player.tryout.team_role === 'GA Starter' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                           player.tryout.team_role === 'GA Rotation' ? 'bg-teal-600 hover:bg-teal-700' :
-                                           player.tryout.team_role === 'Aspire Starter' ? 'bg-blue-600 hover:bg-blue-700' :
-                                           player.tryout.team_role === 'Aspire Rotation' ? 'bg-cyan-600 hover:bg-cyan-700' :
-                                           player.tryout.team_role === 'United Starter' ? 'bg-orange-600 hover:bg-orange-700' :
-                                           player.tryout.team_role === 'United Rotation' ? 'bg-amber-600 hover:bg-amber-700' :
-                                           'bg-blue-500 hover:bg-blue-600'
-                                         }`}>
-                                           {player.tryout.team_role}
-                                         </Button>
+                                         <TeamRoleBadge role={player.tryout.team_role} size="small" />
                                        )}
                                        {player.tryout?.recommendation && (
                                          <Button 
@@ -690,6 +681,27 @@ export default function Tryouts() {
                     <SelectItem value="trapped">Trapped Only</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">&nbsp;</label>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedAgeGroup('all');
+                    setSelectedLeague('all');
+                    setSelectedCoach('all');
+                    setSelectedGender('all');
+                    setBirthdayFrom('');
+                    setBirthdayTo('');
+                    setSelectedSeason('all');
+                    setShowTrappedOnly(false);
+                    setShowAllPlayers(false);
+                  }}
+                  className="w-full h-10 md:h-12"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset
+                </Button>
               </div>
             </div>
           </CardContent>

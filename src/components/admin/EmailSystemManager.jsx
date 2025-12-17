@@ -142,6 +142,10 @@ export default function EmailSystemManager() {
   };
 
   const handleInviteUser = (email, name, role) => {
+    if (!email || !name) {
+      toast.error('Email and name are required');
+      return;
+    }
     inviteUserMutation.mutate({ email, full_name: name, role });
   };
 
