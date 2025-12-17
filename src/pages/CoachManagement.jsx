@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Shield, ShieldOff, Edit, Search, Trash2, Table, Grid } from 'lucide-react';
+import { Plus, Shield, ShieldOff, Edit, Search, Trash2, Table, Grid, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import TeamAssignmentSelector from '../components/coach/TeamAssignmentSelector';
+import { toast } from 'sonner';
 
 export default function CoachManagement() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function CoachManagement() {
   const [viewMode, setViewMode] = useState('cards');
   const [selectedCoaches, setSelectedCoaches] = useState([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(null);
   const [coachForm, setCoachForm] = useState({
     full_name: '',
     email: '',
@@ -289,14 +291,28 @@ export default function CoachManagement() {
                         {coach.is_admin && <Badge className="bg-emerald-100 text-emerald-800"><Shield className="w-3 h-3 mr-1" />Admin</Badge>}
                         {coach.booking_enabled && <Badge variant="outline">Bookings</Badge>}
                       </div>
-                      <Button
-                        variant={coach.is_admin ? "destructive" : "default"}
-                        size="sm"
-                        className="w-full mt-3"
-                        onClick={() => toggleAdminStatus(coach)}
-                      >
-                        {coach.is_admin ? <><ShieldOff className="w-4 h-4 mr-2" />Remove Admin</> : <><Shield className="w-4 h-4 mr-2" />Make Admin</>}
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSendingInvite(coach.id);
+                            sendInviteMutation.mutate(coach);
+                          }}
+                          disabled={sendingInvite === coach.id}
+                          className="text-blue-600 hover:bg-blue-50"
+                        >
+                          <Mail className="w-4 h-4 mr-1" />
+                          {sendingInvite === coach.id ? 'Sending...' : 'Invite'}
+                        </Button>
+                        <Button
+                          variant={coach.is_admin ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => toggleAdminStatus(coach)}
+                        >
+                          {coach.is_admin ? <><ShieldOff className="w-4 h-4 mr-1" />Remove Admin</> : <><Shield className="w-4 h-4 mr-1" />Make Admin</>}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
