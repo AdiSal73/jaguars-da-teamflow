@@ -159,6 +159,9 @@ export default function FormationView() {
   const [unassignedSearch, setUnassignedSearch] = useState('');
   const [unassignedSortBy, setUnassignedSortBy] = useState('name');
   const [unassignedFilterLeague, setUnassignedFilterLeague] = useState('all');
+  const [unassignedFilterTeam, setUnassignedFilterTeam] = useState('all');
+  const [unassignedFilterAgeGroup, setUnassignedFilterAgeGroup] = useState('all');
+  const [unassignedFilterBirthYear, setUnassignedFilterBirthYear] = useState('all');
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
   
@@ -465,6 +468,24 @@ export default function FormationView() {
         return playerTeam?.league === unassignedFilterLeague;
       });
     }
+
+    if (unassignedFilterTeam !== 'all') {
+      filtered = filtered.filter(p => p.team_id === unassignedFilterTeam);
+    }
+
+    if (unassignedFilterAgeGroup !== 'all') {
+      filtered = filtered.filter(p => {
+        const playerTeam = teams.find(t => t.id === p.team_id);
+        return playerTeam?.age_group === unassignedFilterAgeGroup;
+      });
+    }
+
+    if (unassignedFilterBirthYear !== 'all') {
+      filtered = filtered.filter(p => {
+        const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null;
+        return birthYear?.toString() === unassignedFilterBirthYear;
+      });
+    }
     
     if (showTrappedOnly) {
       filtered = filtered.filter(p => isTrappedPlayer(p.date_of_birth));
@@ -488,9 +509,11 @@ export default function FormationView() {
       }
       return 0;
     });
-  }, [allPlayers, teams, unassignedSearch, unassignedSortBy, unassignedFilterLeague, showTrappedOnly]);
+  }, [allPlayers, teams, unassignedSearch, unassignedSortBy, unassignedFilterLeague, unassignedFilterTeam, unassignedFilterAgeGroup, unassignedFilterBirthYear, showTrappedOnly]);
 
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))];
+  const uniqueBirthYears = [...new Set(allPlayers.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null).filter(Boolean))].sort((a, b) => b - a);
 
   const handleEditClick = (player, e) => {
     e.stopPropagation();
@@ -801,6 +824,39 @@ export default function FormationView() {
                         <SelectItem value="name">Name</SelectItem>
                         <SelectItem value="birthYear">Birth Year</SelectItem>
                         <SelectItem value="team">Team</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={unassignedFilterTeam} onValueChange={setUnassignedFilterTeam}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue placeholder="Team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Teams</SelectItem>
+                        {teams.filter(t => t.name).map(team => (
+                          <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={unassignedFilterAgeGroup} onValueChange={setUnassignedFilterAgeGroup}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue placeholder="Age" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Ages</SelectItem>
+                        {uniqueAgeGroups.map(ag => (
+                          <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={unassignedFilterBirthYear} onValueChange={setUnassignedFilterBirthYear}>
+                      <SelectTrigger className="h-8 w-28 text-xs">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Years</SelectItem>
+                        {uniqueBirthYears.map(year => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <Select value={unassignedFilterLeague} onValueChange={setUnassignedFilterLeague}>

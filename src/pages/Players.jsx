@@ -701,6 +701,20 @@ export default function Players() {
                              {team?.league && <span> • {team.league}</span>}
                            </div>
                            <div className="flex flex-wrap gap-1">
+                             {(() => {
+                               const latestEval = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+                               const latestAssess = assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+                               return (
+                                 <>
+                                   {latestEval?.overall_score && (
+                                     <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold">Eval: {latestEval.overall_score}/10</Badge>
+                                   )}
+                                   {latestAssess?.overall_score && (
+                                     <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">Physical: {latestAssess.overall_score}</Badge>
+                                   )}
+                                 </>
+                               );
+                             })()}
                              {player.status === 'Injured' && (
                                <Badge className="bg-red-500 text-white text-[10px]">Injured</Badge>
                              )}

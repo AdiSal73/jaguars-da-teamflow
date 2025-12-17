@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import ParentEmailsManager from '../components/player/ParentEmailsManager';
+import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,7 @@ export default function PlayerDashboard() {
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackGoal, setFeedbackGoal] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [showCreateEvalDialog, setShowCreateEvalDialog] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -1073,7 +1075,7 @@ export default function PlayerDashboard() {
                     </button>
                   </>
                 )}
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}?playerId=${playerId}`)}>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowCreateEvalDialog(true)}>
                   <Plus className="w-3 h-3 mr-1" />New
                 </Button>
               </div>
@@ -1115,7 +1117,7 @@ export default function PlayerDashboard() {
             ) : (
               <div className="text-center py-4">
                 <p className="text-slate-500 text-sm mb-2">No evaluations yet</p>
-                <Button size="sm" onClick={() => navigate(`${createPageUrl('EvaluationsNew')}?playerId=${playerId}`)} className="bg-emerald-600 hover:bg-emerald-700">
+                <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
                   <Plus className="w-4 h-4 mr-1" />Create Evaluation
                 </Button>
               </div>
@@ -1608,6 +1610,12 @@ export default function PlayerDashboard() {
         goal={feedbackGoal}
         player={player}
         onSendFeedback={handleSendGoalFeedback}
+      />
+
+      <CreateEvaluationDialog
+        open={showCreateEvalDialog}
+        onClose={() => setShowCreateEvalDialog(false)}
+        player={player}
       />
       </div>
       </div>

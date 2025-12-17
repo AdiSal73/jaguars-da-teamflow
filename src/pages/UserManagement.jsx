@@ -146,14 +146,18 @@ export default function UserManagement() {
   };
 
   const handleSaveUser = async () => {
-    await updateUserMutation.mutateAsync({
-      userId: editingUser.id,
-      data: {
-        full_name: editUserForm.full_name,
-        role: editUserForm.role,
-        player_ids: editUserForm.player_ids
-      }
-    });
+    try {
+      await updateUserMutation.mutateAsync({
+        userId: editingUser.id,
+        data: {
+          full_name: editUserForm.full_name,
+          role: editUserForm.role,
+          player_ids: editUserForm.player_ids
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save user:', error);
+    }
   };
 
   const toggleCoachRole = async (user) => {
