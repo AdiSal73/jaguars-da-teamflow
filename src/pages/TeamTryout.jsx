@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Search, Users, User, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
 
 export default function TeamTryout() {
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ export default function TeamTryout() {
   const [playerFilterTeamRole, setPlayerFilterTeamRole] = useState('all');
   const [playerFilterBirthYear, setPlayerFilterBirthYear] = useState('all');
   const [playerFilterCurrentTeam, setPlayerFilterCurrentTeam] = useState('all');
+  const [birthdayFrom, setBirthdayFrom] = useState('');
+  const [birthdayTo, setBirthdayTo] = useState('');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [bulkAssignTeam, setBulkAssignTeam] = useState('');
   
@@ -190,7 +193,15 @@ export default function TeamTryout() {
       const matchesTeamRole = playerFilterTeamRole === 'all' || 
         (playerFilterTeamRole === 'none' ? !p.tryout?.team_role : p.tryout?.team_role === playerFilterTeamRole);
       
-      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesCurrentTeam;
+      let matchesBirthdayRange = true;
+      if (birthdayFrom && p.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) >= new Date(birthdayFrom);
+      }
+      if (birthdayTo && p.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) <= new Date(birthdayTo);
+      }
+      
+      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesCurrentTeam && matchesBirthdayRange;
     }).sort((a, b) => {
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
@@ -257,7 +268,7 @@ export default function TeamTryout() {
               {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
               {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
               {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
-              {player.tryout?.team_role && <Badge className="text-[8px] px-1.5 py-0.5 bg-purple-100 text-purple-800 font-semibold">{player.tryout.team_role.replace('Indispensable Player', 'IND').replace(' Starter', '').replace(' Rotation', ' R')}</Badge>}
+              {player.tryout?.team_role && <TeamRoleBadge role={player.tryout.team_role} size="small" />}
               {player.tryout?.recommendation && (
                 <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
                   player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
@@ -480,6 +491,41 @@ export default function TeamTryout() {
                   ))}
                 </SelectContent>
               </Select>
+              <div>
+                <Label className="text-[9px] text-slate-600">Birthday From</Label>
+                <Input
+                  type="date"
+                  value={birthdayFrom}
+                  onChange={(e) => setBirthdayFrom(e.target.value)}
+                  className="h-8 text-xs mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-[9px] text-slate-600">Birthday To</Label>
+                <Input
+                  type="date"
+                  value={birthdayTo}
+                  onChange={(e) => setBirthdayTo(e.target.value)}
+                  className="h-8 text-xs mt-1"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPlayerSearchTerm('');
+                  setPlayerFilterBranch('all');
+                  setPlayerFilterAgeGroup('all');
+                  setPlayerFilterBirthYear('all');
+                  setPlayerFilterTeamRole('all');
+                  setPlayerFilterCurrentTeam('all');
+                  setBirthdayFrom('');
+                  setBirthdayTo('');
+                }}
+                className="h-8 text-xs mt-4"
+              >
+                Reset Filters
+              </Button>
             </div>
             
             {selectedPlayers.length > 0 && (
