@@ -923,9 +923,9 @@ export default function FormationView() {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+      </Dialog>
 
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Player - {editForm.full_name}</DialogTitle>
