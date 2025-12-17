@@ -218,8 +218,8 @@ export default function Layout({ children, currentPageName }) {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-bold text-slate-900 text-lg">Soccer Club</h1>
-                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Management System</p>
+                <h1 className="font-bold text-slate-900 text-lg">Michigan Jaguars</h1>
+                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development </p>
               </div>
             </Link>
 
