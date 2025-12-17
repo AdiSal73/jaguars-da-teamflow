@@ -555,7 +555,8 @@ export default function FormationView() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 mx-auto flex gap-4">
+        <div className="flex-1 max-w-5xl">
         <div className="mb-4 md:mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
@@ -794,41 +795,43 @@ export default function FormationView() {
           </CardContent>
         </Card>
 
+        </div>
+
+        {/* Unassigned Players Side Panel */}
         <Droppable droppableId="position-unassigned">
           {(provided, snapshot) => (
           <Card
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`mt-4 md:mt-6 border-none shadow-lg transition-all ${
+            className={`sticky top-4 h-fit w-80 border-none shadow-2xl transition-all ${
             snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''}`
             }>
-              <CardHeader className="pb-3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <CardTitle className="text-sm md:text-lg">Unassigned Players ({unassignedPlayers.length})</CardTitle>
-                  <div className="flex flex-wrap gap-2">
+              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white">
+                <div className="flex flex-col gap-3">
+                  <CardTitle className="text-sm font-bold">Unassigned Players ({unassignedPlayers.length})</CardTitle>
+                  <div className="flex flex-col gap-2">
                     <div className="relative">
-                      <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-white/60" />
                       <Input
                         placeholder="Search..."
                         value={unassignedSearch}
                         onChange={e => setUnassignedSearch(e.target.value)}
-                        className="h-8 pl-8 w-32 md:w-40 text-xs"
+                        className="h-8 pl-8 w-full text-xs bg-white/20 text-white placeholder:text-white/60 border-white/30"
                       />
                     </div>
                     <Select value={unassignedSortBy} onValueChange={setUnassignedSortBy}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
-                        <ArrowUpDown className="w-3 h-3 mr-1" />
+                      <SelectTrigger className="h-8 text-xs bg-white/20 text-white border-white/30">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="name">Name</SelectItem>
-                        <SelectItem value="birthYear">Birth Year</SelectItem>
-                        <SelectItem value="team">Team</SelectItem>
+                        <SelectItem value="name">Sort: Name</SelectItem>
+                        <SelectItem value="birthYear">Sort: Birth Year</SelectItem>
+                        <SelectItem value="team">Sort: Team</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={unassignedFilterTeam} onValueChange={setUnassignedFilterTeam}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
-                        <SelectValue placeholder="Team" />
+                      <SelectTrigger className="h-8 text-xs bg-white/20 text-white border-white/30">
+                        <SelectValue placeholder="All Teams" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Teams</SelectItem>
@@ -837,53 +840,20 @@ export default function FormationView() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={unassignedFilterAgeGroup} onValueChange={setUnassignedFilterAgeGroup}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
-                        <SelectValue placeholder="Age" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Ages</SelectItem>
-                        {uniqueAgeGroups.map(ag => (
-                          <SelectItem key={ag} value={ag}>{ag}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={unassignedFilterBirthYear} onValueChange={setUnassignedFilterBirthYear}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
-                        <SelectValue placeholder="Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Years</SelectItem>
-                        {uniqueBirthYears.map(year => (
-                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={unassignedFilterLeague} onValueChange={setUnassignedFilterLeague}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
-                        <SelectValue placeholder="Club" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Clubs</SelectItem>
-                        {uniqueLeagues.map(league => (
-                          <SelectItem key={league} value={league}>{league}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <Select value={showTrappedOnly ? 'trapped' : 'all'} onValueChange={(val) => setShowTrappedOnly(val === 'trapped')}>
-                      <SelectTrigger className="h-8 w-28 text-xs">
+                      <SelectTrigger className="h-8 text-xs bg-white/20 text-white border-white/30">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="all">All Players</SelectItem>
                         <SelectItem value="trapped">Trapped Only</SelectItem>
                       </SelectContent>
                     </Select>
                     </div>
                     </div>
                     </CardHeader>
-              <CardContent className="max-h-[400px] overflow-y-auto">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+              <CardContent className="max-h-[calc(100vh-280px)] overflow-y-auto">
+                <div className="grid grid-cols-1 gap-2">
                   {unassignedPlayers.map((player, index) => {
                   const playerTryout = tryouts.find(t => t.player_id === player.id);
                   const playerTeam = teams.find(t => t.id === player.team_id);
@@ -894,17 +864,15 @@ export default function FormationView() {
                           ref={dragProvided.innerRef}
                           {...dragProvided.draggableProps}
                           {...dragProvided.dragHandleProps}
-                          className={`transition-all ${dragSnapshot.isDragging ? 'scale-110' : ''}`}>
-                          <div className="space-y-1">
-                            <EditablePlayerCard
-                              player={player}
-                              tryout={playerTryout}
-                              team={playerTeam}
-                              teams={teams}
-                              clubSettings={clubSettings}
-                              className="cursor-grab active:cursor-grabbing"
-                            />
-                          </div>
+                          className={`transition-all ${dragSnapshot.isDragging ? 'scale-105 rotate-1' : ''}`}>
+                          <EditablePlayerCard
+                            player={player}
+                            tryout={playerTryout}
+                            team={playerTeam}
+                            teams={teams}
+                            clubSettings={clubSettings}
+                            className="cursor-grab active:cursor-grabbing"
+                          />
                         </div>
                       )}
                     </Draggable>
@@ -913,14 +881,15 @@ export default function FormationView() {
                   {provided.placeholder}
                 </div>
                 {unassignedPlayers.length === 0 &&
-                  <p className="text-center text-slate-500 py-3 md:py-4 text-xs md:text-sm">
-                    {unassignedSearch || unassignedFilterLeague !== 'all' ? 'No matching players found' : 'All players assigned to positions'}
+                  <p className="text-center text-white/70 py-3 md:py-4 text-xs md:text-sm">
+                    {unassignedSearch || unassignedFilterLeague !== 'all' ? 'No matching players found' : 'All players assigned'}
                   </p>
                 }
               </CardContent>
             </Card>
           )}
         </Droppable>
+        </div>
 
         {/* Save Formation Dialog */}
         <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
