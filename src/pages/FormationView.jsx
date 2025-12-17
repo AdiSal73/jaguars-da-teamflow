@@ -889,9 +889,9 @@ export default function FormationView() {
             </Card>
           )}
         </Droppable>
-        </div>
+      </div>
 
-        {/* Save Formation Dialog */}
+      {/* Save Formation Dialog */}
         <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
