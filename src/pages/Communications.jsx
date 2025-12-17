@@ -545,12 +545,16 @@ export default function Communications() {
               Cancel
             </Button>
             <Button
-              onClick={handleCreateAnnouncement}
-              disabled={!announcementForm.title || !announcementForm.content}
+              onClick={() => {
+                if (confirm(`Send announcement "${announcementForm.title}" to selected recipients?`)) {
+                  handleCreateAnnouncement();
+                }
+              }}
+              disabled={!announcementForm.title || !announcementForm.content || createAnnouncementMutation.isPending}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
               <Send className="w-4 h-4 mr-2" />
-              Send Announcement
+              {createAnnouncementMutation.isPending ? 'Sending...' : 'Send Announcement'}
             </Button>
           </div>
         </DialogContent>
