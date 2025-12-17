@@ -65,18 +65,18 @@ export default function Layout({ children, currentPageName }) {
   // For parents, ensure players are loaded before creating menu
   const parentPlayerMenuItems = React.useMemo(() => {
     if (roleType !== 'parent' || !user?.player_ids || players.length === 0) return [];
-    return user.player_ids.
-    map((playerId) => {
-      const player = players.find((p) => p.id === playerId);
-      if (!player) return null;
-      return {
-        title: player.full_name,
-        url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
-        icon: Activity,
-        roles: ["parent"]
-      };
-    }).
-    filter(Boolean);
+    return user.player_ids
+      .map(playerId => {
+        const player = players.find(p => p.id === playerId);
+        if (!player) return null;
+        return {
+          title: player.full_name,
+          url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
+          icon: Activity,
+          roles: ["parent"]
+        };
+      })
+      .filter(Boolean);
   }, [roleType, user, players]);
 
   React.useEffect(() => {
@@ -93,103 +93,105 @@ export default function Layout({ children, currentPageName }) {
   const coachTeamIds = getCoachTeamIds();
 
   const navigationItems = [
-  {
-    title: "Club",
-    icon: Shield,
-    roles: ["admin"],
-    submenu: [
-    { title: "Overview", url: createPageUrl("ClubManagement") },
-    { title: "Analytics", url: createPageUrl("Analytics") },
-    { title: "Coaches Management", url: createPageUrl("CoachManagement") },
-    { title: "User Management", url: createPageUrl("UserManagement") },
-    { title: "Data Management", url: createPageUrl("AdminDataManagement") },
-    { title: "Email Templates", url: createPageUrl("EmailTemplates") },
-    { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") }]
-
-  },
-  {
-    title: "Teams",
-    icon: Users,
-    roles: ["admin", "coach"],
-    submenu: [
-    { title: "All Teams", url: createPageUrl("Teams") },
-    { title: "All Players", url: createPageUrl("Players") }]
-
-  },
-  {
-    title: "Tryouts",
-    icon: TrendingUp,
-    roles: ["admin"],
-    submenu: [
-    { title: "Tryout Board", url: createPageUrl("Tryouts") },
-    { title: "Team Assignments", url: createPageUrl("TeamTryout") },
-    { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
-    { title: "Depth Chart", url: createPageUrl("FormationView") },
-    { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
-    { title: "Advanced Analytics", url: createPageUrl("AdvancedAnalytics") }]
-
-  },
-  {
-    title: "Coaching Tools",
-    icon: Calendar,
-    roles: ["admin", "coach"],
-    submenu: [
-    { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
-    { title: "All Bookings", url: createPageUrl("BookingsTable") },
-    { title: "My Availability", url: createPageUrl("Availability") },
-    { title: "Team Reports", url: createPageUrl("TeamReports") },
-    { title: "Assessments", url: createPageUrl("Assessments") },
-    { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
-    { title: "Formation View", url: createPageUrl("FormationView") },
-    { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
-    { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },
-    { title: "Fitness Resources", url: createPageUrl("FitnessResources") },
-    { title: "PDP 2025", url: createPageUrl("PDPViewer") }]
-
-  },
-  {
-    title: "Player Profile",
-    icon: Activity,
-    roles: ["user"],
-    onClick: () => {
-      const currentPlayer = players.find((p) => p.email === user.email);
-      if (currentPlayer) {
-        navigate(`${createPageUrl('PlayerDashboard')}?id=${currentPlayer.id}`);
+    {
+      title: "Club",
+      icon: Shield,
+      roles: ["admin"],
+      submenu: [
+        { title: "Overview", url: createPageUrl("ClubManagement") },
+        { title: "Analytics", url: createPageUrl("Analytics") },
+        { title: "Coaches Management", url: createPageUrl("CoachManagement") },
+        { title: "User Management", url: createPageUrl("UserManagement") },
+        { title: "Data Management", url: createPageUrl("AdminDataManagement") },
+        { title: "Email Templates", url: createPageUrl("EmailTemplates") },
+        { title: "Email System", url: createPageUrl("EmailTestPage") },
+        { title: "Contacts Manager", url: createPageUrl("ContactsManager") },
+        { title: "Club Settings", url: createPageUrl("ClubSettingsAdmin") }
+      ]
+    },
+    {
+      title: "Teams",
+      icon: Users,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "All Teams", url: createPageUrl("Teams") },
+        { title: "All Players", url: createPageUrl("Players") }
+      ]
+    },
+    {
+      title: "Tryouts",
+      icon: TrendingUp,
+      roles: ["admin"],
+      submenu: [
+        { title: "Tryout Board", url: createPageUrl("Tryouts") },
+        { title: "Team Assignments", url: createPageUrl("TeamTryout") },
+        { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
+        { title: "Depth Chart", url: createPageUrl("FormationView") },
+        { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
+        { title: "Advanced Analytics", url: createPageUrl("AdvancedAnalytics") }
+      ]
+    },
+    {
+      title: "Coaching Tools",
+      icon: Calendar,
+      roles: ["admin", "coach"],
+      submenu: [
+        { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
+        { title: "All Bookings", url: createPageUrl("BookingsTable") },
+        { title: "My Availability", url: createPageUrl("Availability") },
+        { title: "Team Reports", url: createPageUrl("TeamReports") },
+        { title: "Assessments", url: createPageUrl("Assessments") },
+        { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+        { title: "Formation View", url: createPageUrl("FormationView") },
+        { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
+        { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },
+        { title: "Fitness Resources", url: createPageUrl("FitnessResources") },
+        { title: "PDP 2025", url: createPageUrl("PDPViewer") }
+      ]
+    },
+    {
+      title: "Player Profile",
+      icon: Activity,
+      roles: ["user"],
+      onClick: () => {
+        const currentPlayer = players.find((p) => p.email === user.email);
+        if (currentPlayer) {
+          navigate(`${createPageUrl('PlayerDashboard')}?id=${currentPlayer.id}`);
+        }
       }
+    },
+    ...parentPlayerMenuItems,
+    {
+      title: "Book Session",
+      url: createPageUrl("BookCoach"),
+      icon: Calendar,
+      roles: ["user", "parent"]
+    },
+    {
+      title: "My Bookings",
+      url: createPageUrl("MyBookings"),
+      icon: Clock,
+      roles: ["user", "parent", "coach"]
+    },
+    {
+      title: "Communications",
+      icon: MessageSquare,
+      roles: ["admin", "coach", "user", "parent"],
+      submenu: [
+        { title: "Messages", url: createPageUrl("Communications") },
+        { title: "Preferences", url: createPageUrl("CommunicationPreferences") }
+      ]
+    },
+    {
+      title: "FAQ",
+      url: createPageUrl("FAQ"),
+      icon: HelpCircle,
+      roles: ["admin", "coach", "user", "parent"]
     }
-  },
-  ...parentPlayerMenuItems,
-  {
-    title: "Book Session",
-    url: createPageUrl("BookCoach"),
-    icon: Calendar,
-    roles: ["user", "parent"]
-  },
-  {
-    title: "My Bookings",
-    url: createPageUrl("MyBookings"),
-    icon: Clock,
-    roles: ["user", "parent", "coach"]
-  },
-  {
-    title: "Communications",
-    icon: MessageSquare,
-    roles: ["admin", "coach", "user", "parent"],
-    submenu: [
-    { title: "Messages", url: createPageUrl("Communications") },
-    { title: "Preferences", url: createPageUrl("CommunicationPreferences") }]
-
-  },
-  {
-    title: "FAQ",
-    url: createPageUrl("FAQ"),
-    icon: HelpCircle,
-    roles: ["admin", "coach", "user", "parent"]
-  }];
-
+  ];
 
   const filteredNavItems = navigationItems.filter((item) =>
-  roleType && item.roles.includes(roleType)
+    roleType && item.roles.includes(roleType)
   );
 
   const isActive = (url) => location.pathname === url;
@@ -202,8 +204,8 @@ export default function Layout({ children, currentPageName }) {
           <div className="w-8 h-8 bg-emerald-500 rounded-lg"></div>
           <span className="text-slate-600">Loading...</span>
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   return (
@@ -217,66 +219,66 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <div className="hidden sm:block">
                 <h1 className="font-bold text-slate-900 text-lg">Soccer Club</h1>
-                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development</p>
+                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Management System</p>
               </div>
             </Link>
 
             <nav className="hidden lg:flex items-center gap-1">
               {filteredNavItems.map((item) =>
-              item.submenu ?
-              <DropdownMenu key={item.title}>
+                item.submenu ? (
+                  <DropdownMenu key={item.title}>
                     <DropdownMenuTrigger asChild>
                       <Button
-                    variant="ghost"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                    isSubmenuActive(item.submenu) ?
-                    'bg-emerald-50 text-emerald-700' :
-                    'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
-                    }>
-
+                        variant="ghost"
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                          isSubmenuActive(item.submenu)
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
                         <item.icon className="w-4 h-4" />
                         <span className="font-medium text-sm">{item.title}</span>
                         <ChevronDown className="w-3 h-3 ml-1" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
-                      {item.submenu.map((subItem) =>
-                  <DropdownMenuItem key={subItem.title} asChild>
+                      {item.submenu.map((subItem) => (
+                        <DropdownMenuItem key={subItem.title} asChild>
                           <Link
-                      to={subItem.url}
-                      className={`w-full ${isActive(subItem.url) ? 'bg-emerald-50 text-emerald-700' : ''}`}>
-
+                            to={subItem.url}
+                            className={`w-full ${isActive(subItem.url) ? 'bg-emerald-50 text-emerald-700' : ''}`}
+                          >
                             {subItem.title}
                           </Link>
                         </DropdownMenuItem>
-                  )}
+                      ))}
                     </DropdownMenuContent>
-                  </DropdownMenu> :
-              item.onClick ?
-              <Button
-                key={item.title}
-                variant="ghost"
-                onClick={item.onClick}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-
+                  </DropdownMenu>
+                ) : item.onClick ? (
+                  <Button
+                    key={item.title}
+                    variant="ghost"
+                    onClick={item.onClick}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  >
                     <item.icon className="w-4 h-4" />
                     <span className="font-medium text-sm">{item.title}</span>
-                  </Button> :
-
-              <Link key={item.title} to={item.url}>
+                  </Button>
+                ) : (
+                  <Link key={item.title} to={item.url}>
                     <Button
-                  variant="ghost"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                  isActive(item.url) ?
-                  'bg-emerald-50 text-emerald-700' :
-                  'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
-                  }>
-
+                      variant="ghost"
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                        isActive(item.url)
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
                       <item.icon className="w-4 h-4" />
                       <span className="font-medium text-sm">{item.title}</span>
                     </Button>
                   </Link>
-
+                )
               )}
             </nav>
 
@@ -297,20 +299,20 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {roleType === 'admin' &&
-                  <DropdownMenuItem
-                    onClick={() => navigate(createPageUrl('UserManagement'))}
-                    className="text-slate-600">
-
+                  {roleType === 'admin' && (
+                    <DropdownMenuItem
+                      onClick={() => navigate(createPageUrl('UserManagement'))}
+                      className="text-slate-600"
+                    >
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
-                  }
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => base44.auth.logout()}
-                    className="text-red-600 focus:text-red-700 focus:bg-red-50">
-
+                    className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                  >
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -321,82 +323,82 @@ export default function Layout({ children, currentPageName }) {
                 variant="ghost"
                 size="icon"
                 className="lg:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
           </div>
         </div>
 
-        {mobileMenuOpen &&
-        <div className="lg:hidden border-t border-slate-200 bg-white py-4 px-4 max-h-[calc(100vh-64px)] overflow-y-auto">
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 bg-white py-4 px-4 max-h-[calc(100vh-64px)] overflow-y-auto">
             <nav className="space-y-1">
               {filteredNavItems.map((item) =>
-            item.submenu ?
-            <div key={item.title} className="border-b border-slate-100">
+                item.submenu ? (
+                  <div key={item.title} className="border-b border-slate-100">
                     <button
-                onClick={() => setExpandedMobileMenus((prev) => ({ ...prev, [item.title]: !prev[item.title] }))}
-                className="w-full px-3 py-3 text-sm font-semibold text-slate-900 flex items-center justify-between hover:bg-slate-50 rounded-lg">
-
+                      onClick={() => setExpandedMobileMenus(prev => ({...prev, [item.title]: !prev[item.title]}))}
+                      className="w-full px-3 py-3 text-sm font-semibold text-slate-900 flex items-center justify-between hover:bg-slate-50 rounded-lg"
+                    >
                       <div className="flex items-center gap-2">
                         <item.icon className="w-4 h-4" />
                         {item.title}
                       </div>
                       {expandedMobileMenus[item.title] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
-                    {expandedMobileMenus[item.title] &&
-              <div className="ml-6 pb-2 space-y-1">
-                        {item.submenu.map((subItem) =>
-                <Link
-                  key={subItem.title || subItem.url}
-                  to={subItem.url}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive(subItem.url) ?
-                  'bg-emerald-50 text-emerald-700 font-medium' :
-                  'text-slate-600 hover:bg-slate-100'}`
-                  }>
-
+                    {expandedMobileMenus[item.title] && (
+                      <div className="ml-6 pb-2 space-y-1">
+                        {item.submenu.map((subItem) => (
+                          <Link
+                            key={subItem.title || subItem.url}
+                            to={subItem.url}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                              isActive(subItem.url)
+                                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
                             {subItem.title}
                           </Link>
-                )}
+                        ))}
                       </div>
-              }
-                  </div> :
-            item.onClick ?
-            <button
-              key={item.title}
-              onClick={() => {item.onClick();setMobileMenuOpen(false);}}
-              className="w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
-
+                    )}
+                  </div>
+                ) : item.onClick ? (
+                  <button
+                    key={item.title}
+                    onClick={() => { item.onClick(); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100"
+                  >
                     <item.icon className="w-4 h-4" />
                     {item.title}
-                  </button> :
-
-            <Link
-              key={item.title}
-              to={item.url}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors ${
-              isActive(item.url) ?
-              'bg-emerald-50 text-emerald-700 font-medium' :
-              'text-slate-600 hover:bg-slate-100'}`
-              }>
-
+                  </button>
+                ) : (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm transition-colors ${
+                      isActive(item.url)
+                        ? 'bg-emerald-50 text-emerald-700 font-medium'
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
                     <item.icon className="w-4 h-4" />
                     {item.title}
                   </Link>
-
-            )}
+                )
+              )}
             </nav>
           </div>
-        }
+        )}
       </header>
 
       <main className="min-h-[calc(100vh-64px)]">
         {children}
       </main>
-    </div>);
-
+    </div>
+  );
 }

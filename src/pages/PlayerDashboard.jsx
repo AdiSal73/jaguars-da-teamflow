@@ -130,6 +130,7 @@ export default function PlayerDashboard() {
   });
 
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
+  const canEdit = isAdminOrCoach; // Only admins and coaches can edit
   
   const isAuthorized = React.useMemo(() => {
     if (!currentUser) return false;
@@ -710,9 +711,11 @@ export default function PlayerDashboard() {
                 <FileDown className="w-4 h-4 mr-1" />
                 Export Data
               </Button>
-              <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-white text-emerald-600 hover:bg-white/90 shadow-lg">
-                {isEditing ? <><Save className="w-4 h-4 mr-2" />Save</> : 'Edit'}
-              </Button>
+              {canEdit && (
+                <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-white text-emerald-600 hover:bg-white/90 shadow-lg">
+                  {isEditing ? <><Save className="w-4 h-4 mr-2" />Save</> : 'Edit'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1106,7 +1109,7 @@ export default function PlayerDashboard() {
                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowCreateEvalDialog(true)}>
                     <Plus className="w-3 h-3 mr-1" />New
                   </Button>
-                  {currentEvaluation && (
+                  {currentEvaluation && isAdminOrCoach && (
                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowEditEvalDialog(true)}>
                       Edit
                     </Button>
@@ -1151,9 +1154,11 @@ export default function PlayerDashboard() {
             ) : (
               <div className="text-center py-4">
                 <p className="text-slate-500 text-sm mb-2">No evaluations yet</p>
-                <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                  <Plus className="w-4 h-4 mr-1" />Create Evaluation
-                </Button>
+                {isAdminOrCoach && (
+                  <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="w-4 h-4 mr-1" />Create Evaluation
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

@@ -9,9 +9,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { email, full_name, role, app_url } = await req.json();
+    const { email, full_name, role, app_url, recipient_email } = await req.json();
 
-    if (!email) {
+    const targetEmail = recipient_email || email;
+    
+    if (!targetEmail) {
       return Response.json({ error: 'Missing email' }, { status: 400 });
     }
 
@@ -27,7 +29,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: 'Soccer Club <onboarding@resend.dev>',
-        to: [email],
+        to: [targetEmail],
         subject: 'Welcome to Soccer Club Management System',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">

@@ -34,6 +34,7 @@ import CommunicationPreferences from './pages/CommunicationPreferences';
 import TeamDashboard from './pages/TeamDashboard';
 import EmailTest from './pages/EmailTest';
 import EmailTestPage from './pages/EmailTestPage';
+import ContactsManager from './pages/ContactsManager';
 import __Layout from './Layout.jsx';
 
 
@@ -74,10 +75,11 @@ export const PAGES = {
     "TeamDashboard": TeamDashboard,
     "EmailTest": EmailTest,
     "EmailTestPage": EmailTestPage,
+    "ContactsManager": ContactsManager,
 }
 
 export const pagesConfig = {
-    mainPage: "Communications",
+    mainPage: "Players",
     Pages: PAGES,
     Layout: __Layout,
 };
