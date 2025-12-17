@@ -29,6 +29,8 @@ export default function TeamDashboard() {
   const [generatingTraining, setGeneratingSessions] = useState(false);
   const [teamGoals, setTeamGoals] = useState('');
   const [trainingSessions, setTrainingSessions] = useState('');
+  const [editingGoals, setEditingGoals] = useState(false);
+  const [editingTraining, setEditingTraining] = useState(false);
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -161,6 +163,28 @@ export default function TeamDashboard() {
       return rankA - rankB;
     });
   });
+
+  const handleDepthChartDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    
+    if (source.droppableId === destination.droppableId) {
+      const position = source.droppableId;
+      const items = Array.from(depthChartByPosition[position]);
+      const [removed] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, removed);
+      
+      items.forEach((player, idx) => {
+        const tryout = tryouts.find(t => t.player_id === player.id);
+        if (tryout) {
+          base44.entities.PlayerTryout.update(tryout.id, { team_ranking: idx + 1 });
+        }
+      });
+      
+      queryClient.invalidateQueries(['tryouts']);
+      toast.success('Depth chart updated');
+    }
+  };
 
   const generateTeamGoals = async () => {
     setGeneratingGoals(true);
@@ -424,12 +448,32 @@ Format with clear headers and structure.`;
             </CardHeader>
             <CardContent className="p-4">
               {teamGoals ? (
-                <div className="prose prose-sm max-w-none">
-                  <div className="text-sm text-slate-700 whitespace-pre-wrap">{teamGoals}</div>
-                </div>
+                editingGoals ? (
+                  <Textarea 
+                    value={teamGoals} 
+                    onChange={(e) => setTeamGoals(e.target.value)}
+                    rows={12}
+                    className="text-sm"
+                  />
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <div className="text-sm text-slate-700 whitespace-pre-wrap">{teamGoals}</div>
+                  </div>
+                )
               ) : (
                 <div className="text-center py-8 text-slate-500 text-sm">
                   Click Generate to create AI-powered team goals
+                </div>
+              )}
+              {teamGoals && (
+                <div className="flex justify-end mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setEditingGoals(!editingGoals)}
+                  >
+                    {editingGoals ? 'Done' : 'Edit'}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -449,12 +493,32 @@ Format with clear headers and structure.`;
             </CardHeader>
             <CardContent className="p-4">
               {trainingSessions ? (
-                <div className="prose prose-sm max-w-none">
-                  <div className="text-sm text-slate-700 whitespace-pre-wrap">{trainingSessions}</div>
-                </div>
+                editingTraining ? (
+                  <Textarea 
+                    value={trainingSessions} 
+                    onChange={(e) => setTrainingSessions(e.target.value)}
+                    rows={12}
+                    className="text-sm"
+                  />
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <div className="text-sm text-slate-700 whitespace-pre-wrap">{trainingSessions}</div>
+                  </div>
+                )
               ) : (
                 <div className="text-center py-8 text-slate-500 text-sm">
                   Click Generate to create AI-powered training plans
+                </div>
+              )}
+              {trainingSessions && (
+                <div className="flex justify-end mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => setEditingTraining(!editingTraining)}
+                  >
+                    {editingTraining ? 'Done' : 'Edit'}
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -464,31 +528,53 @@ Format with clear headers and structure.`;
         {/* Depth Chart */}
         <Card className="border-none shadow-2xl mb-6 bg-gradient-to-br from-white to-slate-50">
           <CardHeader className="bg-gradient-to-r from-slate-800 to-slate-900 text-white border-b">
-            <CardTitle className="text-lg">📋 Depth Chart by Position</CardTitle>
+            <CardTitle className="text-lg">📋 Depth Chart by Position - Drag to Reorder</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.keys(depthChartByPosition).map(position => (
-                <div key={position} className="bg-white rounded-xl border-2 border-slate-200 p-3">
-                  <div className="text-sm font-bold text-slate-900 mb-2 pb-2 border-b">{position}</div>
-                  <div className="space-y-2">
-                    {depthChartByPosition[position].map((player, idx) => (
-                      <div key={player.id} className="flex items-center gap-2 text-xs">
-                        <span className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-[9px]">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1 truncate font-medium">{player.full_name}</span>
-                        {player.tryout?.team_role && (
-                          <Badge className="bg-purple-100 text-purple-800 text-[8px] px-1">
-                            {player.tryout.team_role.split(' ').pop()}
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
+            <DragDropContext onDragEnd={handleDepthChartDragEnd}>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.keys(depthChartByPosition).map(position => (
+                  <div key={position} className="bg-white rounded-xl border-2 border-slate-200 p-3">
+                    <div className="text-sm font-bold text-slate-900 mb-2 pb-2 border-b">{position}</div>
+                    <Droppable droppableId={position}>
+                      {(provided, snapshot) => (
+                        <div 
+                          {...provided.droppableProps} 
+                          ref={provided.innerRef}
+                          className={`space-y-2 min-h-[40px] ${snapshot.isDraggingOver ? 'bg-emerald-50 rounded-lg p-2' : ''}`}
+                        >
+                          {depthChartByPosition[position].map((player, idx) => (
+                            <Draggable key={player.id} draggableId={player.id} index={idx}>
+                              {(provided, snapshot) => (
+                                <div 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`flex items-center gap-2 text-xs p-2 rounded-lg transition-all cursor-grab active:cursor-grabbing ${
+                                    snapshot.isDragging ? 'bg-emerald-100 shadow-lg scale-105' : 'bg-slate-50 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <span className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-white font-bold text-[9px]">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="flex-1 truncate font-medium">{player.full_name}</span>
+                                  {player.tryout?.team_role && (
+                                    <Badge className="bg-purple-100 text-purple-800 text-[8px] px-1">
+                                      {player.tryout.team_role.split(' ').pop()}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </DragDropContext>
           </CardContent>
         </Card>
 
