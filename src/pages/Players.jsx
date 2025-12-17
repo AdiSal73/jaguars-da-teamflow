@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { isTrappedPlayer } from '../components/utils/trappedPlayer';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,8 @@ export default function Players() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterOverall, setFilterOverall] = useState('all');
   const [filterTeamRole, setFilterTeamRole] = useState('all');
+  const [birthdayFrom, setBirthdayFrom] = useState('');
+  const [birthdayTo, setBirthdayTo] = useState('');
   const [sortBy, setSortBy] = useState('full_name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [viewMode, setViewMode] = useState('cards');
@@ -406,7 +409,16 @@ export default function Players() {
       })();
 
       const trappedMatch = !showTrappedOnly || isTrappedPlayer(player.date_of_birth);
-      return trappedMatch && matchesPosition && matchesStatus && matchesOverall && matchesTeamRole;
+      
+      let matchesBirthdayRange = true;
+      if (birthdayFrom && player.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(player.date_of_birth) >= new Date(birthdayFrom);
+      }
+      if (birthdayTo && player.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(player.date_of_birth) <= new Date(birthdayTo);
+      }
+      
+      return trappedMatch && matchesPosition && matchesStatus && matchesOverall && matchesTeamRole && matchesBirthdayRange;
     })
     .sort((a, b) => {
       let aVal, bVal;
@@ -657,7 +669,47 @@ export default function Players() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="mb-2 block text-xs">Birthday From</Label>
+            <Input
+              type="date"
+              value={birthdayFrom}
+              onChange={(e) => setBirthdayFrom(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+          <div>
+            <Label className="mb-2 block text-xs">Birthday To</Label>
+            <Input
+              type="date"
+              value={birthdayTo}
+              onChange={(e) => setBirthdayTo(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
           <div className="flex items-end gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setSearchTerm('');
+                setFilterTeam('all');
+                setFilterAgeGroup('all');
+                setFilterGender('all');
+                setFilterLeague('all');
+                setFilterBranch('all');
+                setFilterPosition('all');
+                setFilterStatus('all');
+                setFilterOverall('all');
+                setFilterTeamRole('all');
+                setBirthdayFrom('');
+                setBirthdayTo('');
+                setShowTrappedOnly(false);
+              }}
+              className="h-9"
+            >
+              Reset
+            </Button>
             <Button 
               variant="outline" 
               size="sm"
@@ -719,7 +771,7 @@ export default function Players() {
                                <Badge className="bg-red-500 text-white text-[10px]">Injured</Badge>
                              )}
                              {tryout?.team_role && (
-                               <Badge className="bg-purple-100 text-purple-800 text-[10px]">{tryout.team_role}</Badge>
+                               <TeamRoleBadge role={tryout.team_role} size="small" />
                              )}
                              {tryout?.recommendation && (
                                <Badge className={`text-[10px] ${
