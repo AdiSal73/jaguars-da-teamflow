@@ -63,7 +63,11 @@ export default function SharePlayerDialog({
                 className="flex-1"
               />
               <Button 
-                onClick={handleInvite}
+                onClick={() => {
+                  if (confirm(`Send invitation to ${email}?`)) {
+                    handleInvite();
+                  }
+                }}
                 disabled={!email.trim() || inviting}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
