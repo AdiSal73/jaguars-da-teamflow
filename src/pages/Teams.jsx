@@ -375,7 +375,7 @@ export default function Teams() {
               <Card 
                 key={team.id} 
                 className={`shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer relative border-l-4 ${borderColorClass} ${isMaleTeam ? 'bg-slate-800' : 'bg-white'}`}
-                onClick={() => navigate(`${createPageUrl('TeamRoster')}?teamId=${team.id}`)}
+                onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
               >
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setViewAnalyticsTeam(team); }} className={`h-8 w-8 shadow-sm ${isMaleTeam ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-white'}`}>
@@ -535,7 +535,7 @@ export default function Teams() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`${createPageUrl('TeamRoster')}?teamId=${team.id}`)}><BarChart3 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}><BarChart3 className="w-3 h-3" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(team)}><Edit className="w-3 h-3" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-red-50 hover:text-red-600" onClick={() => setDeleteTeamId(team.id)}><Trash2 className="w-3 h-3" /></Button>
                           </div>

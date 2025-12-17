@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
 
     const roleText = role === 'coach' ? 'Coach' : role === 'parent' ? 'Parent' : 'User';
 
-    await fetch('https://api.resend.com/emails', {
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${resendApiKey}`,
