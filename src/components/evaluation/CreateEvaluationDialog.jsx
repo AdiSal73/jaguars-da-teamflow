@@ -282,7 +282,7 @@ Keep it concise, specific, and actionable.`;
                     className="h-7 text-xs bg-gradient-to-r from-emerald-500 to-green-500 text-white border-none hover:from-emerald-600 hover:to-green-600"
                   >
                     {generatingAI.strengths ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                    AI Generate
+                    Adil's Suggestions
                   </Button>
                 </div>
                 <Textarea 
@@ -304,7 +304,7 @@ Keep it concise, specific, and actionable.`;
                     className="h-7 text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-none hover:from-orange-600 hover:to-red-600"
                   >
                     {generatingAI.growth ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                    AI Generate
+                    Adil's Suggestions
                   </Button>
                 </div>
                 <Textarea 
@@ -326,7 +326,7 @@ Keep it concise, specific, and actionable.`;
                     className="h-7 text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-none hover:from-blue-600 hover:to-cyan-600"
                   >
                     {generatingAI.focus ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                    AI Generate
+                    Adil's Suggestions
                   </Button>
                 </div>
                 <Textarea 
