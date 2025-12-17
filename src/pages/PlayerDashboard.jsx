@@ -11,6 +11,8 @@ import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import ParentEmailsManager from '../components/player/ParentEmailsManager';
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
+import EditEvaluationDialog from '../components/evaluation/EditEvaluationDialog';
+import EvaluationRadarChart from '../components/evaluation/EvaluationRadarChart';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ComboboxInput from '../components/ui/ComboboxInput';
 import { Button } from '@/components/ui/button';
@@ -101,6 +103,7 @@ export default function PlayerDashboard() {
   const [feedbackGoal, setFeedbackGoal] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [showCreateEvalDialog, setShowCreateEvalDialog] = useState(false);
+  const [showEditEvalDialog, setShowEditEvalDialog] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -1075,9 +1078,16 @@ export default function PlayerDashboard() {
                     </button>
                   </>
                 )}
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowCreateEvalDialog(true)}>
-                  <Plus className="w-3 h-3 mr-1" />New
-                </Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowCreateEvalDialog(true)}>
+                    <Plus className="w-3 h-3 mr-1" />New
+                  </Button>
+                  {currentEvaluation && (
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowEditEvalDialog(true)}>
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
               </div>
               <p className="text-[10px] text-white/90 italic mt-1">Ratings are 1-10. 10 is what a national team starter would get.</p>
@@ -1157,8 +1167,11 @@ export default function PlayerDashboard() {
       )}
 
       {/* Analytics Row */}
-      {(assessments.length > 1 || evaluations.length > 1) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      {(assessments.length > 1 || evaluations.length > 1 || currentEvaluation) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          {currentEvaluation && (
+            <EvaluationRadarChart evaluation={currentEvaluation} />
+          )}
           {assessments.length > 1 && (
             <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
               <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
@@ -1615,6 +1628,13 @@ export default function PlayerDashboard() {
       <CreateEvaluationDialog
         open={showCreateEvalDialog}
         onClose={() => setShowCreateEvalDialog(false)}
+        player={player}
+      />
+
+      <EditEvaluationDialog
+        open={showEditEvalDialog}
+        onClose={() => setShowEditEvalDialog(false)}
+        evaluation={currentEvaluation}
         player={player}
       />
       </div>

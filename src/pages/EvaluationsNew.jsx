@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { createPageUrl } from '@/utils';
 import { sortPlayers, getBirthYear } from '../components/utils/playerSorting';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
+import EditEvaluationDialog from '../components/evaluation/EditEvaluationDialog';
 import { Label } from '@/components/ui/label';
 
 export default function EvaluationsNew() {
@@ -28,6 +29,8 @@ export default function EvaluationsNew() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerSearch, setPlayerSearch] = useState('');
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingEvaluation, setEditingEvaluation] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -217,26 +220,40 @@ export default function EvaluationsNew() {
           return (
             <Card 
               key={player.id}
-              className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer bg-gradient-to-br from-white to-emerald-50"
-              onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+              className="border-none shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-white to-emerald-50 group"
             >
               <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-lg font-bold">
                     {player.jersey_number || player.full_name?.charAt(0)}
                   </div>
-                  {latestEval?.overall_score && (
-                    <Badge className="bg-white/90 text-emerald-700 text-xs font-bold">
-                      {latestEval.overall_score}/10
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingEvaluation(latestEval);
+                        setSelectedPlayer(player);
+                        setShowEditDialog(true);
+                      }}
+                      className="h-8 w-8 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    {latestEval?.overall_score && (
+                      <Badge className="bg-white/90 text-emerald-700 text-xs font-bold">
+                        {latestEval.overall_score}/10
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-2">
                   <h3 className="font-bold text-base truncate">{player.full_name}</h3>
                   <p className="text-xs text-white/80 truncate">{player.primary_position}</p>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 space-y-2">
+              <CardContent className="p-3 space-y-2" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}>
                 <div className="space-y-1">
                   {team && (
                     <div className="flex items-center justify-between text-xs">
@@ -355,8 +372,19 @@ export default function EvaluationsNew() {
       </Dialog>
 
       <CreateEvaluationDialog
-        open={!!selectedPlayer}
+        open={!!selectedPlayer && !showEditDialog}
         onClose={() => setSelectedPlayer(null)}
+        player={selectedPlayer}
+      />
+
+      <EditEvaluationDialog
+        open={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setEditingEvaluation(null);
+          setSelectedPlayer(null);
+        }}
+        evaluation={editingEvaluation}
         player={selectedPlayer}
       />
     </div>
