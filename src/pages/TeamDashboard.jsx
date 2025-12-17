@@ -15,6 +15,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import EditablePlayerCard from '../components/player/EditablePlayerCard';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -559,9 +560,7 @@ Format with clear headers and structure.`;
                                   </span>
                                   <span className="flex-1 truncate font-medium">{player.full_name}</span>
                                   {player.tryout?.team_role && (
-                                    <Badge className="bg-purple-100 text-purple-800 text-[8px] px-1">
-                                      {player.tryout.team_role.split(' ').pop()}
-                                    </Badge>
+                                   <TeamRoleBadge role={player.tryout.team_role} size="small" />
                                   )}
                                 </div>
                               )}

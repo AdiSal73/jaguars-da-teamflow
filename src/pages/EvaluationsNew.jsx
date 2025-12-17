@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
 import EditEvaluationDialog from '../components/evaluation/EditEvaluationDialog';
 import { Label } from '@/components/ui/label';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { RotateCcw } from 'lucide-react';
 
 export default function EvaluationsNew() {
   const navigate = useNavigate();
@@ -26,6 +28,8 @@ export default function EvaluationsNew() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterBirthYear, setFilterBirthYear] = useState('all');
   const [filterTeamRole, setFilterTeamRole] = useState('all');
+  const [birthdayFrom, setBirthdayFrom] = useState('');
+  const [birthdayTo, setBirthdayTo] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [playerSearch, setPlayerSearch] = useState('');
@@ -102,8 +106,16 @@ export default function EvaluationsNew() {
       const matchesTeamRole = filterTeamRole === 'all' || 
         (filterTeamRole === 'none' ? !tryout?.team_role : tryout?.team_role === filterTeamRole);
       
+      let matchesBirthdayRange = true;
+      if (birthdayFrom && p.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) >= new Date(birthdayFrom);
+      }
+      if (birthdayTo && p.date_of_birth) {
+        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) <= new Date(birthdayTo);
+      }
+      
       return matchesSearch && matchesTeam && matchesPosition && matchesLeague && 
-             matchesAgeGroup && matchesBirthYear && matchesTeamRole;
+             matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesBirthdayRange;
     }),
     teams
   );
@@ -205,6 +217,43 @@ export default function EvaluationsNew() {
                 <SelectItem value="none">No Role</SelectItem>
               </SelectContent>
             </Select>
+            <div>
+              <Label className="text-xs mb-1 block">Birthday From</Label>
+              <Input
+                type="date"
+                value={birthdayFrom}
+                onChange={(e) => setBirthdayFrom(e.target.value)}
+                className="h-10 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1 block">Birthday To</Label>
+              <Input
+                type="date"
+                value={birthdayTo}
+                onChange={(e) => setBirthdayTo(e.target.value)}
+                className="h-10 text-xs"
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setSearch('');
+                setFilterTeam('all');
+                setFilterPosition('all');
+                setFilterLeague('all');
+                setFilterAgeGroup('all');
+                setFilterBirthYear('all');
+                setFilterTeamRole('all');
+                setBirthdayFrom('');
+                setBirthdayTo('');
+              }}
+              className="h-10 self-end"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -285,7 +334,7 @@ export default function EvaluationsNew() {
 
                 <div className="flex flex-wrap gap-1 pt-2 border-t">
                   {tryout?.team_role && (
-                    <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1.5">{tryout.team_role}</Badge>
+                    <TeamRoleBadge role={tryout.team_role} size="small" />
                   )}
                   {tryout?.recommendation && (
                     <Badge className={`text-[9px] px-1.5 ${
