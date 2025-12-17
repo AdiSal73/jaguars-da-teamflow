@@ -19,6 +19,7 @@ export default function ContactsManager() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingInvite, setPendingInvite] = useState(null);
   const [lastResult, setLastResult] = useState(null);
+  const [selectedContacts, setSelectedContacts] = useState([]);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -55,6 +56,37 @@ export default function ContactsManager() {
     }
   });
 
+  const bulkInviteMutation = useMutation({
+    mutationFn: async (contacts) => {
+      const results = [];
+      for (const contact of contacts) {
+        try {
+          const response = await base44.functions.invoke('sendInviteEmail', {
+            recipient_email: contact.email,
+            full_name: contact.name,
+            role: contact.type === 'Player' ? 'user' : 'parent',
+            app_url: window.location.origin
+          });
+          results.push({ success: true, email: contact.email });
+        } catch (error) {
+          results.push({ success: false, email: contact.email, error: error.message });
+        }
+      }
+      return results;
+    },
+    onSuccess: (results) => {
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+      if (successCount > 0) {
+        toast.success(`${successCount} invitation(s) sent successfully`);
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount} invitation(s) failed`);
+      }
+      setSelectedContacts([]);
+    }
+  });
+
   const handleInviteClick = (email, name, role) => {
     setPendingInvite({ email, name, role });
     setShowConfirmDialog(true);
@@ -74,6 +106,35 @@ export default function ContactsManager() {
     setFilterType('all');
     setBirthdayFrom('');
     setBirthdayTo('');
+  };
+
+  const handleBulkInvite = () => {
+    const contactsToInvite = filteredContacts.filter(c => selectedContacts.includes(c.id));
+    const contactsWithoutAccount = contactsToInvite.filter(c => !users.some(u => u.email === c.email));
+    
+    if (contactsWithoutAccount.length === 0) {
+      toast.error('All selected contacts already have accounts');
+      return;
+    }
+    
+    if (confirm(`Send invitations to ${contactsWithoutAccount.length} contact(s)?`)) {
+      bulkInviteMutation.mutate(contactsWithoutAccount);
+    }
+  };
+
+  const toggleContact = (contactId) => {
+    setSelectedContacts(prev => 
+      prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]
+    );
+  };
+
+  const toggleAll = () => {
+    const contactsWithoutAccount = filteredContacts.filter(c => !users.some(u => u.email === c.email));
+    if (selectedContacts.length === contactsWithoutAccount.length) {
+      setSelectedContacts([]);
+    } else {
+      setSelectedContacts(contactsWithoutAccount.map(c => c.id));
+    }
   };
 
   const contacts = players.flatMap(player => {
@@ -209,16 +270,37 @@ export default function ContactsManager() {
 
         <Card className="border-none shadow-lg">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              All Contacts ({filteredContacts.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                All Contacts ({filteredContacts.length})
+              </CardTitle>
+              {selectedContacts.length > 0 && (
+                <Button
+                  onClick={handleBulkInvite}
+                  disabled={bulkInviteMutation.isPending}
+                  className="bg-white text-blue-600 hover:bg-blue-50"
+                  size="sm"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Invite {selectedContacts.length} Selected
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b">
                   <tr>
+                    <th className="px-4 py-3 text-left w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedContacts.length > 0 && selectedContacts.length === filteredContacts.filter(c => !users.some(u => u.email === c.email)).length}
+                        onChange={toggleAll}
+                        className="w-4 h-4 rounded border-slate-300"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Name</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Email</th>
@@ -233,6 +315,16 @@ export default function ContactsManager() {
                     const hasAccount = users.some(u => u.email === contact.email);
                     return (
                       <tr key={contact.id} className="border-b hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          {!hasAccount && (
+                            <input
+                              type="checkbox"
+                              checked={selectedContacts.includes(contact.id)}
+                              onChange={() => toggleContact(contact.id)}
+                              className="w-4 h-4 rounded border-slate-300"
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <Badge className={contact.type === 'Player' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
                             {contact.type}
@@ -251,18 +343,16 @@ export default function ContactsManager() {
                             </Badge>
                           ) : (
                             <Button
-                              size="sm"
+                              size="icon"
+                              variant="ghost"
                               onClick={() => handleInviteClick(contact.email, contact.name, contact.type === 'Player' ? 'user' : 'parent')}
                               disabled={inviteMutation.isPending}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className="h-8 w-8 hover:bg-blue-50"
                             >
                               {inviteMutation.isPending ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <>
-                                  <Mail className="w-3 h-3 mr-1" />
-                                  Invite
-                                </>
+                                <Mail className="w-4 h-4 text-blue-600" />
                               )}
                             </Button>
                           )}

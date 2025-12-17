@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Users, User, Plus, Trash2 } from 'lucide-react';
+import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function TeamTryout() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function TeamTryout() {
   const [birthdayTo, setBirthdayTo] = useState('');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [bulkAssignTeam, setBulkAssignTeam] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
   const [teamForm, setTeamForm] = useState({

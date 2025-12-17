@@ -5,7 +5,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { User, Edit2, Save, Plus, Search, ArrowUpDown, Trash2 } from 'lucide-react';
+import { User, Edit2, Save, Plus, Search, ArrowUpDown, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -164,6 +165,7 @@ export default function FormationView() {
   const [unassignedFilterBirthYear, setUnassignedFilterBirthYear] = useState('all');
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
+  const [unassignedFiltersOpen, setUnassignedFiltersOpen] = useState(false);
   
 
   const { data: user } = useQuery({
@@ -808,7 +810,19 @@ export default function FormationView() {
             }>
               <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white">
                 <div className="flex flex-col gap-3">
-                  <CardTitle className="text-sm font-bold">Unassigned Players ({unassignedPlayers.length})</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold">Unassigned Players ({unassignedPlayers.length})</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUnassignedFiltersOpen(!unassignedFiltersOpen)}
+                      className="text-white hover:bg-white/20 h-7 px-2"
+                    >
+                      {unassignedFiltersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <Collapsible open={unassignedFiltersOpen}>
+                    <CollapsibleContent>
                   <div className="flex flex-col gap-2">
                     <div className="relative">
                       <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-white/60" />
@@ -850,6 +864,8 @@ export default function FormationView() {
                       </SelectContent>
                     </Select>
                     </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                     </div>
                     </CardHeader>
               <CardContent className="max-h-[calc(100vh-280px)] overflow-y-auto">
