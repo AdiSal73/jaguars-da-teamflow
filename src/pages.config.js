@@ -32,6 +32,7 @@ import PDPViewer from './pages/PDPViewer';
 import EmailTemplates from './pages/EmailTemplates';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import TeamDashboard from './pages/TeamDashboard';
+import EmailTest from './pages/EmailTest';
 import __Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "EmailTemplates": EmailTemplates,
     "CommunicationPreferences": CommunicationPreferences,
     "TeamDashboard": TeamDashboard,
+    "EmailTest": EmailTest,
 }
 
 export const pagesConfig = {
