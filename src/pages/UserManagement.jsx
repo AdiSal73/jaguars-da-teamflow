@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save, Users as UsersIcon, Plus, Edit2 } from 'lucide-react';
+import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -41,7 +41,9 @@ export default function UserManagement() {
 
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ full_name: '', email: '', role: '', player_ids: [] });
+  const [editUserForm, setEditUserForm] = useState({ full_name: '', display_name: '', email: '', role: '', player_ids: [] });
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'user', player_ids: [] });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -138,6 +140,7 @@ export default function UserManagement() {
     setEditingUser(user);
     setEditUserForm({
       full_name: user.full_name || '',
+      display_name: user.display_name || '',
       email: user.email || '',
       role: user.role || 'user',
       player_ids: user.player_ids || []
@@ -145,12 +148,31 @@ export default function UserManagement() {
     setShowEditUserDialog(true);
   };
 
+  const inviteUserMutation = useMutation({
+    mutationFn: async (data) => {
+      await base44.functions.invoke('sendInviteEmail', {
+        email: data.email,
+        full_name: data.full_name,
+        role: data.role,
+        app_url: window.location.origin
+      });
+    },
+    onSuccess: () => {
+      setShowInviteDialog(false);
+      setInviteForm({ email: '', full_name: '', role: 'user', player_ids: [] });
+      toast.success('Invitation sent successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to send invitation');
+    }
+  });
+
   const handleSaveUser = async () => {
     try {
       await updateUserMutation.mutateAsync({
         userId: editingUser.id,
         data: {
-          full_name: editUserForm.full_name,
+          display_name: editUserForm.display_name,
           role: editUserForm.role,
           player_ids: editUserForm.player_ids
         }
@@ -293,12 +315,18 @@ export default function UserManagement() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-          <Shield className="w-8 h-8 text-emerald-600" />
-          User Management & RBAC
-        </h1>
-        <p className="text-slate-600 mt-1">Manage users and customize role-based access control</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <Shield className="w-8 h-8 text-emerald-600" />
+            User Management & RBAC
+          </h1>
+          <p className="text-slate-600 mt-1">Manage users and customize role-based access control</p>
+        </div>
+        <Button onClick={() => setShowInviteDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Mail className="w-4 h-4 mr-2" />
+          Invite User
+        </Button>
       </div>
 
       <Tabs defaultValue="users" className="w-full">
@@ -333,7 +361,7 @@ export default function UserManagement() {
                     const userRole = getUserRole(user);
                     return (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                        <TableCell className="font-medium">{user.display_name || user.full_name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge className={
@@ -423,11 +451,20 @@ export default function UserManagement() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label className="mb-2 block">Full Name</Label>
+              <Label className="mb-2 block">Display Name</Label>
+              <Input
+                value={editUserForm.display_name}
+                onChange={(e) => setEditUserForm({ ...editUserForm, display_name: e.target.value })}
+                placeholder="Display Name"
+              />
+              <p className="text-xs text-slate-500 mt-1">This is the name shown throughout the app</p>
+            </div>
+            <div>
+              <Label className="mb-2 block">Account Name (Read-only)</Label>
               <Input
                 value={editUserForm.full_name}
-                onChange={(e) => setEditUserForm({ ...editUserForm, full_name: e.target.value })}
-                placeholder="Full Name"
+                readOnly
+                className="bg-slate-100"
               />
             </div>
             <div>
@@ -491,6 +528,84 @@ export default function UserManagement() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+
+      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite New User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label className="mb-2 block">Full Name</Label>
+              <Input
+                value={inviteForm.full_name}
+                onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <Label className="mb-2 block">Email *</Label>
+              <Input
+                type="email"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                placeholder="user@example.com"
+              />
+            </div>
+            <div>
+              <Label className="mb-2 block">Role</Label>
+              <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Player</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {inviteForm.role === 'parent' && (
+              <div>
+                <Label className="mb-2 block">Assign to Players (Optional)</Label>
+                <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
+                  {players.map(player => (
+                    <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(inviteForm.player_ids || []).includes(player.id)}
+                        onChange={(e) => {
+                          const currentIds = inviteForm.player_ids || [];
+                          if (e.target.checked) {
+                            setInviteForm({ ...inviteForm, player_ids: [...currentIds, player.id] });
+                          } else {
+                            setInviteForm({ ...inviteForm, player_ids: currentIds.filter(id => id !== player.id) });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{player.full_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={() => inviteUserMutation.mutate(inviteForm)} 
+                disabled={!inviteForm.email}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Send Invite
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      </div>
+      );
+      }

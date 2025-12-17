@@ -75,6 +75,25 @@ export default function CoachManagement() {
     onSuccess: () => queryClient.invalidateQueries(['coaches'])
   });
 
+  const sendInviteMutation = useMutation({
+    mutationFn: async (coach) => {
+      return base44.functions.invoke('sendInviteEmail', {
+        email: coach.email,
+        full_name: coach.full_name,
+        role: 'coach',
+        app_url: window.location.origin
+      });
+    },
+    onSuccess: () => {
+      setSendingInvite(null);
+      toast.success('Invitation sent');
+    },
+    onError: () => {
+      setSendingInvite(null);
+      toast.error('Failed to send invitation');
+    }
+  });
+
   const bulkDeleteMutation = useMutation({
     mutationFn: async () => {
       for (const id of selectedCoaches) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Search, Filter, TrendingUp, Activity, Shield } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { sortPlayers, getBirthYear } from '../components/utils/playerSorting';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
+import { Label } from '@/components/ui/label';
 
 export default function EvaluationsNew() {
   const navigate = useNavigate();
@@ -22,6 +25,9 @@ export default function EvaluationsNew() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterBirthYear, setFilterBirthYear] = useState('all');
   const [filterTeamRole, setFilterTeamRole] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [playerSearch, setPlayerSearch] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -71,8 +77,13 @@ export default function EvaluationsNew() {
     return playerAssessments[0] || null;
   };
 
+  // Only show players who have evaluations
+  const playersWithEvaluations = players.filter(p => 
+    evaluations.some(e => e.player_id === p.id)
+  );
+
   const filteredPlayers = sortPlayers(
-    players.filter(p => {
+    playersWithEvaluations.filter(p => {
       const matchesSearch = p.full_name?.toLowerCase().includes(search.toLowerCase());
       const team = teams.find(t => t.id === p.team_id);
       const tryout = tryouts.find(t => t.player_id === p.id);
@@ -100,6 +111,11 @@ export default function EvaluationsNew() {
   const uniqueBirthYears = [...new Set(players.map(p => getBirthYear(p.date_of_birth)).filter(Boolean))].sort((a, b) => b - a);
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
+  const searchablePlayers = sortPlayers(
+    players.filter(p => p.full_name?.toLowerCase().includes(playerSearch.toLowerCase())),
+    teams
+  ).slice(0, 50);
+
   return (
     <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -107,6 +123,10 @@ export default function EvaluationsNew() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Player Evaluations</h1>
           <p className="text-slate-600 mt-1">View player performance and development data</p>
         </div>
+        <Button onClick={() => setShowCreateDialog(true)} className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-lg">
+          <Plus className="w-5 h-5 mr-2" />
+          Create Evaluation
+        </Button>
       </div>
 
       <Card className="border-none shadow-lg mb-6">
@@ -291,9 +311,54 @@ export default function EvaluationsNew() {
 
       {filteredPlayers.length === 0 && (
         <div className="text-center py-12 text-slate-500">
-          No players found matching your filters
+          No players with evaluations found
         </div>
       )}
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Player to Evaluate</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search players..."
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {searchablePlayers.map(p => {
+                const team = teams.find(t => t.id === p.team_id);
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => { setSelectedPlayer(p); setShowCreateDialog(false); }}
+                    className="p-3 bg-white border border-slate-200 rounded-lg hover:border-emerald-500 hover:shadow-md cursor-pointer transition-all"
+                  >
+                    <div className="font-medium text-sm">{p.full_name}</div>
+                    <div className="text-xs text-slate-500">
+                      {p.primary_position} • {team?.name || 'No team'}
+                    </div>
+                  </div>
+                );
+              })}
+              {searchablePlayers.length === 0 && (
+                <p className="text-center text-slate-500 py-4 text-sm">No players found</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <CreateEvaluationDialog
+        open={!!selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+        player={selectedPlayer}
+      />
     </div>
   );
 }
