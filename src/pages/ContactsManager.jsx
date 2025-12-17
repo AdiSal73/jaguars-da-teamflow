@@ -139,25 +139,11 @@ export default function ContactsManager() {
 
   const contacts = players.flatMap(player => {
     const team = teams.find(t => t.id === player.team_id);
-    const contacts = [];
+    const parentContacts = [];
 
-    // Player contact
-    if (player.player_email) {
-      contacts.push({
-        id: `player_${player.id}`,
-        type: 'Player',
-        name: player.full_name,
-        email: player.player_email,
-        phone: player.player_phone,
-        team: team?.name,
-        player_id: player.id,
-        date_of_birth: player.date_of_birth
-      });
-    }
-
-    // Parent contacts
+    // Parent contacts only
     (player.parent_emails || []).forEach((parentEmail, idx) => {
-      contacts.push({
+      parentContacts.push({
         id: `parent_${player.id}_${idx}`,
         type: 'Parent',
         name: player.parent_name || `Parent of ${player.full_name}`,
@@ -170,7 +156,7 @@ export default function ContactsManager() {
       });
     });
 
-    return contacts;
+    return parentContacts;
   });
 
   const filteredContacts = contacts.filter(c => {
@@ -178,7 +164,6 @@ export default function ContactsManager() {
                          c.email?.toLowerCase().includes(search.toLowerCase()) ||
                          c.player_name?.toLowerCase().includes(search.toLowerCase());
     const matchesTeam = filterTeam === 'all' || c.team === filterTeam;
-    const matchesType = filterType === 'all' || c.type === filterType;
     
     let matchesBirthday = true;
     if (birthdayFrom && c.date_of_birth) {
@@ -188,23 +173,12 @@ export default function ContactsManager() {
       matchesBirthday = matchesBirthday && new Date(c.date_of_birth) <= new Date(birthdayTo);
     }
     
-    return matchesSearch && matchesTeam && matchesType && matchesBirthday;
+    return matchesSearch && matchesTeam && matchesBirthday;
   });
 
   const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))];
 
   const filters = [
-    {
-      label: 'Type',
-      value: filterType,
-      onChange: setFilterType,
-      placeholder: 'All Types',
-      options: [
-        { value: 'all', label: 'All Types' },
-        { value: 'Player', label: 'Players' },
-        { value: 'Parent', label: 'Parents' }
-      ]
-    },
     {
       label: 'Team',
       value: filterTeam,
@@ -222,9 +196,9 @@ export default function ContactsManager() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Contacts Manager
+            Parent Contacts Manager
           </h1>
-          <p className="text-slate-600 mt-1">View all player and parent contacts, send invitations</p>
+          <p className="text-slate-600 mt-1">View all parent contacts and send invitations</p>
         </div>
 
         <Card className="border-none shadow-lg mb-6">
@@ -273,7 +247,7 @@ export default function ContactsManager() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                All Contacts ({filteredContacts.length})
+                Parent Contacts ({filteredContacts.length})
               </CardTitle>
               {selectedContacts.length > 0 && (
                 <Button
@@ -301,12 +275,11 @@ export default function ContactsManager() {
                         className="w-4 h-4 rounded border-slate-300"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Type</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Name</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Player(s)</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Team</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Related To</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Action</th>
                   </tr>
                 </thead>
@@ -325,16 +298,11 @@ export default function ContactsManager() {
                             />
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <Badge className={contact.type === 'Player' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
-                            {contact.type}
-                          </Badge>
-                        </td>
                         <td className="px-4 py-3 text-sm font-medium">{contact.name}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{contact.email}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{contact.phone || 'N/A'}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{contact.team || 'N/A'}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{contact.player_name || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{contact.team || 'N/A'}</td>
                         <td className="px-4 py-3">
                           {hasAccount ? (
                             <Badge className="bg-green-100 text-green-800">

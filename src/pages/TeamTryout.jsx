@@ -430,15 +430,25 @@ export default function TeamTryout() {
           {/* Unassigned Players Sidebar */}
           <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 text-white shadow-md">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="w-5 h-5" />
                 <span className="font-bold">Unassigned Players</span>
-              </div>
-              <Badge className="bg-white text-emerald-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
-            </CardTitle>
+                <Badge className="bg-white text-emerald-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className="text-white hover:bg-white/20 h-7 px-2"
+              >
+                {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-3">
+            <Collapsible open={filtersOpen}>
+              <CollapsibleContent>
             <div className="space-y-2 mb-3">
               <Label className="text-xs font-bold text-slate-700">Filter Players</Label>
               <Input
@@ -529,6 +539,8 @@ export default function TeamTryout() {
                 Reset Filters
               </Button>
             </div>
+              </CollapsibleContent>
+            </Collapsible>
             
             {selectedPlayers.length > 0 && (
               <div className="mt-3 p-3 bg-emerald-100 rounded-lg border-2 border-emerald-400">
