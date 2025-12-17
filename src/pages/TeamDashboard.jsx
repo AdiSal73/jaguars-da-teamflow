@@ -418,7 +418,7 @@ Format with clear headers and structure.`;
                   Team Goals
                 </CardTitle>
                 <Button size="sm" variant="ghost" onClick={generateTeamGoals} disabled={generatingGoals} className="text-white hover:bg-white/20">
-                  {generatingGoals ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />Generate</>}
+                  {generatingGoals ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />Adil's Suggestions</>}
                 </Button>
               </div>
             </CardHeader>
@@ -443,7 +443,7 @@ Format with clear headers and structure.`;
                   Training Sessions
                 </CardTitle>
                 <Button size="sm" variant="ghost" onClick={generateTrainingSessions} disabled={generatingTraining} className="text-white hover:bg-white/20">
-                  {generatingTraining ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />Generate</>}
+                  {generatingTraining ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Sparkles className="w-4 h-4 mr-1" />Adil's Suggestions</>}
                 </Button>
               </div>
             </CardHeader>
