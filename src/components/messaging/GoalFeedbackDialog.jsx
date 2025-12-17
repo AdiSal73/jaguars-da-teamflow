@@ -66,7 +66,11 @@ export default function GoalFeedbackDialog({
               Cancel
             </Button>
             <Button 
-              onClick={handleSend}
+              onClick={() => {
+                if (confirm(`Send feedback to ${player?.full_name}'s parents?`)) {
+                  handleSend();
+                }
+              }}
               disabled={!feedback.trim()}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
