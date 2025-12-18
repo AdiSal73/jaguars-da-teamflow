@@ -110,9 +110,17 @@ export default function FormationView() {
   const [formationPositions, setFormationPositions] = useState(formations['4-3-3'].positions);
   const [unassignedSearch, setUnassignedSearch] = useState('');
   const [unassignedFiltersOpen, setUnassignedFiltersOpen] = useState(false);
+  const [playerFilterBranch, setPlayerFilterBranch] = useState('all');
+  const [playerFilterAgeGroup, setPlayerFilterAgeGroup] = useState('all');
+  const [playerFilterTeamRole, setPlayerFilterTeamRole] = useState('all');
+  const [playerFilterBirthYear, setPlayerFilterBirthYear] = useState('all');
+  const [playerFilterCurrentTeam, setPlayerFilterCurrentTeam] = useState('all');
+  const [birthdayFrom, setBirthdayFrom] = useState('');
+  const [birthdayTo, setBirthdayTo] = useState('');
   const [showSaveFormationDialog, setShowSaveFormationDialog] = useState(false);
   const [newFormationName, setNewFormationName] = useState('');
   const [selectedSavedFormation, setSelectedSavedFormation] = useState(null);
+  const [draggingPosition, setDraggingPosition] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -242,20 +250,64 @@ export default function FormationView() {
     });
   }, [players, tryouts]);
 
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
+  const uniqueBirthYears = [...new Set(allPlayers.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
+  const uniqueCurrentTeams = [...new Set(allPlayers.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
+
+  const getPlayerWithTryoutData = (playerId) => {
+    const player = allPlayers.find(p => p.id === playerId);
+    if (!player) return null;
+    const tryout = tryouts.find(t => t.player_id === playerId);
+    return { ...player, tryout: tryout || {} };
+  };
+
   const unassignedPlayers = useMemo(() => {
-    let filtered = allPlayers.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position));
+    let filtered = allPlayers.filter(player => !player.primary_position || !Object.keys(positionMapping).includes(player.primary_position))
+      .map(p => getPlayerWithTryoutData(p.id))
+      .filter(p => p);
     
     if (unassignedSearch) {
       const search = unassignedSearch.toLowerCase();
       filtered = filtered.filter(p => p.full_name?.toLowerCase().includes(search));
     }
+
+    const matchesBranch = (p) => playerFilterBranch === 'all' || p.branch === playerFilterBranch;
+    const matchesAgeGroup = (p) => {
+      if (playerFilterAgeGroup === 'all') return true;
+      const playerTeam = teams.find(t => t.id === p.team_id);
+      return playerTeam?.age_group === playerFilterAgeGroup;
+    };
+    const matchesCurrentTeam = (p) => {
+      if (playerFilterCurrentTeam === 'all') return true;
+      const playerTeam = teams.find(t => t.id === p.team_id);
+      return playerTeam?.name === playerFilterCurrentTeam;
+    };
+    const matchesBirthYear = (p) => {
+      if (playerFilterBirthYear === 'all') return true;
+      const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null;
+      return birthYear === playerFilterBirthYear;
+    };
+    const matchesTeamRole = (p) => {
+      if (playerFilterTeamRole === 'all') return true;
+      if (playerFilterTeamRole === 'none') return !p.tryout?.team_role;
+      return p.tryout?.team_role === playerFilterTeamRole;
+    };
+    const matchesBirthdayRange = (p) => {
+      if (!p.date_of_birth) return true;
+      let matches = true;
+      if (birthdayFrom) matches = matches && new Date(p.date_of_birth) >= new Date(birthdayFrom);
+      if (birthdayTo) matches = matches && new Date(p.date_of_birth) <= new Date(birthdayTo);
+      return matches;
+    };
+
+    filtered = filtered.filter(p => matchesBranch(p) && matchesAgeGroup(p) && matchesCurrentTeam(p) && matchesBirthYear(p) && matchesTeamRole(p) && matchesBirthdayRange(p));
     
     return filtered.sort((a, b) => {
-      const lastNameA = a.full_name?.split(' ').pop() || '';
-      const lastNameB = b.full_name?.split(' ').pop() || '';
-      return lastNameA.localeCompare(lastNameB);
+      if (!a.date_of_birth) return 1;
+      if (!b.date_of_birth) return -1;
+      return new Date(a.date_of_birth) - new Date(b.date_of_birth);
     });
-  }, [allPlayers, unassignedSearch]);
+  }, [allPlayers, unassignedSearch, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam, birthdayFrom, birthdayTo, teams, tryouts]);
 
   const handleDragEnd = useCallback((result) => {
     if (!result.destination) return;
@@ -316,6 +368,25 @@ export default function FormationView() {
   React.useEffect(() => {
     setFormationPositions(formations[selectedFormation].positions);
   }, [selectedFormation]);
+
+  // Load default formation on mount
+  React.useEffect(() => {
+    const defaultFormation = savedFormations.find(f => f.is_default);
+    if (defaultFormation) {
+      handleLoadSavedFormation(defaultFormation);
+    }
+  }, [savedFormations.length]);
+
+  const handlePositionDrag = (e, position) => {
+    if (!fieldRef.current) return;
+    const rect = fieldRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    setFormationPositions(prev => prev.map(pos => 
+      pos.id === position.id ? { ...pos, x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)) } : pos
+    ));
+  };
 
   const formation = { name: formations[selectedFormation].name, positions: formationPositions };
 
@@ -423,7 +494,15 @@ export default function FormationView() {
                     return (
                       <div
                         key={position.id}
-                        className="absolute"
+                        draggable
+                        onDragStart={() => setDraggingPosition(position.id)}
+                        onDrag={(e) => {
+                          if (draggingPosition === position.id && e.clientX > 0 && e.clientY > 0) {
+                            handlePositionDrag(e, position);
+                          }
+                        }}
+                        onDragEnd={() => setDraggingPosition(null)}
+                        className={`absolute cursor-move ${draggingPosition === position.id ? 'opacity-70' : ''}`}
                         style={{
                           left: `${position.x}%`,
                           top: `${position.y}%`,
@@ -526,50 +605,156 @@ export default function FormationView() {
               <CardContent className="p-3">
                 <Collapsible open={unassignedFiltersOpen}>
                   <CollapsibleContent>
-                    <div className="mb-3">
+                    <div className="space-y-2 mb-3">
+                      <Label className="text-xs font-bold text-slate-700">Filter Players</Label>
                       <div className="relative">
                         <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
                         <Input
-                          placeholder="Search..."
+                          placeholder="Search players..."
                           value={unassignedSearch}
                           onChange={e => setUnassignedSearch(e.target.value)}
-                          className="h-7 pl-7 text-xs"
+                          className="h-8 pl-7 text-xs"
                         />
                       </div>
+                      <Select value={playerFilterAgeGroup} onValueChange={setPlayerFilterAgeGroup}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Age Groups</SelectItem>
+                          {uniqueAgeGroups.map(ag => (
+                            <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={playerFilterBirthYear} onValueChange={setPlayerFilterBirthYear}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Birth Year" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Birth Years</SelectItem>
+                          {uniqueBirthYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={playerFilterBranch} onValueChange={setPlayerFilterBranch}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Branches</SelectItem>
+                          {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map(branch => (
+                            <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={playerFilterTeamRole} onValueChange={setPlayerFilterTeamRole}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Team Role" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Roles</SelectItem>
+                          {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation'].map(role => (
+                            <SelectItem key={role} value={role}>{role}</SelectItem>
+                          ))}
+                          <SelectItem value="none">No Data</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={playerFilterCurrentTeam} onValueChange={setPlayerFilterCurrentTeam}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Current Team" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Teams</SelectItem>
+                          {uniqueCurrentTeams.map(teamName => (
+                            <SelectItem key={teamName} value={teamName}>{teamName}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div>
+                        <Label className="text-[9px] text-slate-600">Birthday From</Label>
+                        <Input
+                          type="date"
+                          value={birthdayFrom}
+                          onChange={(e) => setBirthdayFrom(e.target.value)}
+                          className="h-8 text-xs mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[9px] text-slate-600">Birthday To</Label>
+                        <Input
+                          type="date"
+                          value={birthdayTo}
+                          onChange={(e) => setBirthdayTo(e.target.value)}
+                          className="h-8 text-xs mt-1"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setUnassignedSearch('');
+                          setPlayerFilterBranch('all');
+                          setPlayerFilterAgeGroup('all');
+                          setPlayerFilterBirthYear('all');
+                          setPlayerFilterTeamRole('all');
+                          setPlayerFilterCurrentTeam('all');
+                          setBirthdayFrom('');
+                          setBirthdayTo('');
+                        }}
+                        className="h-8 text-xs mt-2"
+                      >
+                        Reset Filters
+                      </Button>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
-                <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
-                  {unassignedPlayers.map((player, index) => (
-                    <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
-                      {(dragProvided, dragSnapshot) => (
-                        <div
-                          ref={dragProvided.innerRef}
-                          {...dragProvided.draggableProps}
-                          {...dragProvided.dragHandleProps}
-                          onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                          className={`p-2.5 border-2 rounded-xl bg-white cursor-pointer transition-all ${
-                            dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'
-                          }`}
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
-                              {player.jersey_number || <User className="w-4 h-4" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
-                              <div className="text-[10px] text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
-                              {player.team_id && (
-                                <div className="text-[9px] text-slate-500 truncate">
-                                  {teams.find(t => t.id === player.team_id)?.name}
+                <div className="space-y-1.5 p-2.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'calc(100vh - 450px)' }}>
+                  {unassignedPlayers.map((player, index) => {
+                    const team = teams.find(t => t.id === player.team_id);
+                    const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
+                    const isTrapped = player.date_of_birth ? (() => {
+                      const dob = new Date(player.date_of_birth);
+                      const month = dob.getMonth();
+                      const day = dob.getDate();
+                      return (month === 7 && day >= 1) || (month >= 8 && month <= 11);
+                    })() : false;
+                    
+                    return (
+                      <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                        {(dragProvided, dragSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                            className={`p-2.5 border-2 rounded-xl transition-all cursor-pointer ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+                                {player.jersey_number || <User className="w-4 h-4" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
+                                <div className="text-[10px] text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
+                                {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
+                                <div className="flex flex-wrap gap-0.5 mt-1.5">
+                                  {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
+                                  {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
+                                  {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
+                                  {player.tryout?.team_role && (
+                                    <Badge className="text-[8px] px-1.5 py-0 bg-purple-100 text-purple-800">
+                                      {player.tryout.team_role}
+                                    </Badge>
+                                  )}
+                                  {player.tryout?.recommendation && (
+                                    <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
+                                      player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                                      player.tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                                      'bg-blue-500 text-white'
+                                    }`}>
+                                      {player.tryout.recommendation === 'Move up' ? '⬆️' : player.tryout.recommendation === 'Move down' ? '⬇️' : '➡️'}
+                                    </Badge>
+                                  )}
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                        )}
+                      </Draggable>
+                    );
+                  })}
                   {provided.placeholder}
                   {unassignedPlayers.length === 0 && (
                     <p className="text-center text-slate-400 py-4 text-xs">All players assigned</p>
