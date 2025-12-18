@@ -35,65 +35,65 @@ const formations = {
   '4-3-3': {
     name: '4-3-3',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK' },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB' },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB' },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB' },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB' },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM' },
-      { id: 'Defensive Midfielder', x: 50, y: 58, label: 'DM' },
-      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM' },
-      { id: 'Right Winger', x: 70, y: 25, label: 'RW' },
-      { id: 'Forward', x: 50, y: 18, label: 'ST' },
-      { id: 'Left Winger', x: 30, y: 25, label: 'LW' }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
+      { id: 'Defensive Midfielder', x: 50, y: 58, label: 'DM', width: 140 },
+      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 140 },
+      { id: 'Right Winger', x: 70, y: 25, label: 'RW', width: 140 },
+      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 140 },
+      { id: 'Left Winger', x: 30, y: 25, label: 'LW', width: 140 }
     ]
   },
   '4-2-3-1': {
     name: '4-2-3-1',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK' },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB' },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB' },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB' },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB' },
-      { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM' },
-      { id: 'Center Midfielder', x: 44, y: 55, label: 'CM' },
-      { id: 'Right Winger', x: 70, y: 35, label: 'RW' },
-      { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM' },
-      { id: 'Left Winger', x: 30, y: 35, label: 'LW' },
-      { id: 'Forward', x: 50, y: 18, label: 'ST' }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
+      { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM', width: 140 },
+      { id: 'Center Midfielder', x: 44, y: 55, label: 'CM', width: 140 },
+      { id: 'Right Winger', x: 70, y: 35, label: 'RW', width: 140 },
+      { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM', width: 140 },
+      { id: 'Left Winger', x: 30, y: 35, label: 'LW', width: 140 },
+      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 140 }
     ]
   },
   '4-4-2': {
     name: '4-4-2',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK' },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB' },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB' },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB' },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB' },
-      { id: 'Right Winger', x: 75, y: 45, label: 'RM' },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM' },
-      { id: 'Defensive Midfielder', x: 42, y: 50, label: 'DM' },
-      { id: 'Left Winger', x: 25, y: 45, label: 'LM' },
-      { id: 'Forward', x: 56, y: 20, label: 'ST' },
-      { id: 'Attacking Midfielder', x: 44, y: 20, label: 'ST' }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
+      { id: 'Right Winger', x: 75, y: 45, label: 'RM', width: 140 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
+      { id: 'Defensive Midfielder', x: 42, y: 50, label: 'DM', width: 140 },
+      { id: 'Left Winger', x: 25, y: 45, label: 'LM', width: 140 },
+      { id: 'Forward', x: 56, y: 20, label: 'ST', width: 140 },
+      { id: 'Attacking Midfielder', x: 44, y: 20, label: 'ST', width: 140 }
     ]
   },
   '3-5-2': {
     name: '3-5-2',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK' },
-      { id: 'Left Centerback', x: 60, y: 70, label: 'LCB' },
-      { id: 'Right Centerback', x: 50, y: 72, label: 'CB' },
-      { id: 'Left Outside Back', x: 40, y: 70, label: 'RCB' },
-      { id: 'Right Outside Back', x: 75, y: 50, label: 'RWB' },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM' },
-      { id: 'Defensive Midfielder', x: 50, y: 55, label: 'DM' },
-      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM' },
-      { id: 'Left Winger', x: 25, y: 50, label: 'LWB' },
-      { id: 'Forward', x: 56, y: 22, label: 'ST' },
-      { id: 'Right Winger', x: 44, y: 22, label: 'ST' }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
+      { id: 'Left Centerback', x: 60, y: 70, label: 'LCB', width: 140 },
+      { id: 'Right Centerback', x: 50, y: 72, label: 'CB', width: 140 },
+      { id: 'Left Outside Back', x: 40, y: 70, label: 'RCB', width: 140 },
+      { id: 'Right Outside Back', x: 75, y: 50, label: 'RWB', width: 140 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
+      { id: 'Defensive Midfielder', x: 50, y: 55, label: 'DM', width: 140 },
+      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 140 },
+      { id: 'Left Winger', x: 25, y: 50, label: 'LWB', width: 140 },
+      { id: 'Forward', x: 56, y: 22, label: 'ST', width: 140 },
+      { id: 'Right Winger', x: 44, y: 22, label: 'ST', width: 140 }
     ]
   }
 };
@@ -124,6 +124,7 @@ export default function FormationView() {
   const [selectedSavedFormation, setSelectedSavedFormation] = useState(null);
   const [draggingPosition, setDraggingPosition] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [resizingPosition, setResizingPosition] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -335,13 +336,11 @@ export default function FormationView() {
     const draggedPlayer = allPlayers.find(p => p.id === draggedPlayerId);
     const ageGroup = teams.find(t => t.id === draggedPlayer?.team_id)?.age_group || selectedAgeGroup;
     
-    // Get all players in the same age group and position
     const sameAgeGroupPlayers = allPlayers.filter(p => {
       const playerTeam = teams.find(t => t.id === p.team_id);
       return playerTeam?.age_group === ageGroup && p.primary_position === destPositionId && p.id !== draggedPlayerId;
     });
     
-    // Adjust rankings for other players
     const updates = [];
     for (const player of sameAgeGroupPlayers) {
       const playerTryout = tryouts.find(t => t.player_id === player.id);
@@ -407,7 +406,6 @@ export default function FormationView() {
     setFormationPositions(formations[selectedFormation].positions);
   }, [selectedFormation]);
 
-  // Load default formation on mount
   React.useEffect(() => {
     const defaultFormation = savedFormations.find(f => f.is_default);
     if (defaultFormation) {
@@ -426,6 +424,33 @@ export default function FormationView() {
     ));
   };
 
+  const handleResizeStart = (e, position) => {
+    e.stopPropagation();
+    setResizingPosition(position.id);
+  };
+
+  const handleResize = (e, position) => {
+    if (!fieldRef.current || resizingPosition !== position.id) return;
+    const rect = fieldRef.current.getBoundingClientRect();
+    const width = ((e.clientX - rect.left) / rect.width) * 100;
+    const scaledWidth = Math.max(10, Math.min(30, width)) * 5;
+    
+    setFormationPositions(prev => prev.map(pos => 
+      pos.id === position.id ? { ...pos, width: scaledWidth } : pos
+    ));
+  };
+
+  const handleResizeEnd = () => {
+    setResizingPosition(null);
+  };
+
+  React.useEffect(() => {
+    if (resizingPosition) {
+      window.addEventListener('mouseup', handleResizeEnd);
+      return () => window.removeEventListener('mouseup', handleResizeEnd);
+    }
+  }, [resizingPosition]);
+
   const handleExportFieldPDF = async () => {
     setExportingPDF(true);
     toast.info('Generating PDF...');
@@ -436,7 +461,7 @@ export default function FormationView() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#15803d'
+        backgroundColor: '#ffffff'
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -471,11 +496,11 @@ export default function FormationView() {
           <div className="mb-6 flex justify-between items-start">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
-              <p className="text-sm text-slate-600">Drag players to rank them within each position. Drag positions to customize formation.</p>
+              <p className="text-sm text-slate-600">Drag players to rank. Drag positions to move. Resize positions from bottom-right corner.</p>
             </div>
             <Button onClick={handleExportFieldPDF} disabled={exportingPDF} className="bg-emerald-600 hover:bg-emerald-700">
               <Download className="w-4 h-4 mr-2" />
-              {exportingPDF ? 'Exporting...' : 'Export Field PDF'}
+              {exportingPDF ? 'Exporting...' : 'Export PDF'}
             </Button>
           </div>
 
@@ -554,19 +579,18 @@ export default function FormationView() {
             <CardContent className="p-0">
               <div
                 ref={fieldRef}
-                className="relative w-full bg-gradient-to-b from-green-700 via-green-600 to-green-700"
+                className="relative w-full bg-white"
                 style={{ paddingBottom: '140%', maxHeight: '900px' }}
               >
-                <div className="absolute inset-0">
+                <div className="absolute inset-0 border-4 border-emerald-600">
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 140" preserveAspectRatio="none">
-                    <rect x="2" y="2" width="96" height="136" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <line x1="2" y1="70" x2="98" y2="70" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <circle cx="50" cy="70" r="8" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <circle cx="50" cy="70" r="0.5" fill="white" opacity="0.6" />
-                    <rect x="20" y="2" width="60" height="15" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <rect x="20" y="123" width="60" height="15" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <rect x="35" y="2" width="30" height="6" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
-                    <rect x="35" y="132" width="30" height="6" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
+                    <line x1="0" y1="70" x2="100" y2="70" stroke="#10b981" strokeWidth="0.4" />
+                    <circle cx="50" cy="70" r="8" fill="none" stroke="#10b981" strokeWidth="0.4" />
+                    <circle cx="50" cy="70" r="0.5" fill="#10b981" />
+                    <rect x="10" y="0" width="80" height="15" fill="none" stroke="#10b981" strokeWidth="0.4" />
+                    <rect x="10" y="125" width="80" height="15" fill="none" stroke="#10b981" strokeWidth="0.4" />
+                    <rect x="30" y="0" width="40" height="6" fill="none" stroke="#10b981" strokeWidth="0.4" />
+                    <rect x="30" y="134" width="40" height="6" fill="none" stroke="#10b981" strokeWidth="0.4" />
                   </svg>
 
                   {formation.positions.map((position) => {
@@ -582,12 +606,12 @@ export default function FormationView() {
                           }
                         }}
                         onDragEnd={() => setDraggingPosition(null)}
-                        className={`absolute cursor-move ${draggingPosition === position.id ? 'opacity-70' : ''}`}
+                        className={`absolute ${draggingPosition === position.id ? 'opacity-70' : ''}`}
                         style={{
                           left: `${position.x}%`,
                           top: `${position.y}%`,
                           transform: 'translate(-50%, -50%)',
-                          width: '140px',
+                          width: `${position.width || 140}px`,
                           maxWidth: '25vw',
                           zIndex: 10
                         }}
@@ -597,11 +621,11 @@ export default function FormationView() {
                             <div
                               ref={provided.innerRef}
                               {...provided.droppableProps}
-                              className={`bg-white/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg border-2 transition-all ${
-                                snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-slate-300'
+                              className={`bg-white/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg border-2 transition-all relative group ${
+                                snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-emerald-600'
                               }`}
                             >
-                              <div className="text-center text-[9px] font-bold text-slate-700 mb-1 pb-1 border-b">
+                              <div className="text-center text-[9px] font-bold text-emerald-700 mb-1 pb-1 border-b border-emerald-200 cursor-move">
                                 {position.label}
                               </div>
                               <div className="space-y-1 max-h-32 overflow-y-auto">
@@ -645,6 +669,11 @@ export default function FormationView() {
                                   <div className="text-center py-1 text-[8px] text-slate-400">Empty</div>
                                 )}
                               </div>
+                              <div 
+                                className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-600 rounded-tl cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                                onMouseDown={(e) => handleResizeStart(e, position)}
+                                onMouseMove={(e) => handleResize(e, position)}
+                              />
                             </div>
                           )}
                         </Droppable>
@@ -657,7 +686,6 @@ export default function FormationView() {
           </Card>
         </div>
 
-        {/* Unassigned Players Sidebar */}
         <Droppable droppableId="position-unassigned">
           {(provided, snapshot) => (
             <Card
@@ -846,7 +874,6 @@ export default function FormationView() {
         </Droppable>
       </div>
 
-      {/* Save Formation Dialog */}
       <Dialog open={showSaveFormationDialog} onOpenChange={setShowSaveFormationDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -881,7 +908,6 @@ export default function FormationView() {
         </DialogContent>
       </Dialog>
 
-      {/* Manage Saved Formations Dialog */}
       {selectedSavedFormation && (
         <Dialog open={!!selectedSavedFormation} onOpenChange={() => setSelectedSavedFormation(null)}>
           <DialogContent className="max-w-md">
