@@ -15,6 +15,41 @@ import { toast } from 'sonner';
 
 const DEFAULT_TEMPLATES = [
   {
+    template_name: 'user_invitation',
+    subject: 'Welcome to Michigan Jaguars Management System',
+    template_type: 'welcome',
+    html_content: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="display: inline-block; width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; margin-bottom: 20px;"></div>
+          <h1 style="color: #10b981; margin: 0;">Welcome to Michigan Jaguars!</h1>
+        </div>
+        <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
+          <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
+            Hi {{full_name}},
+          </p>
+          <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
+            You've been invited to join the Michigan Jaguars Player Development System.
+          </p>
+          <p style="font-size: 16px; color: #334155; margin-bottom: 30px;">
+            Click the button below to set up your account and get started:
+          </p>
+          <div style="text-align: center;">
+            <a href="{{app_url}}" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Get Started
+            </a>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+          If you have any questions, please contact your administrator.
+        </p>
+      </div>
+    `,
+    text_content: 'Hi {{full_name}}, You have been invited to join Michigan Jaguars. Visit: {{app_url}}',
+    variables: ['full_name', 'app_url'],
+    is_active: true
+  },
+  {
     template_name: 'login',
     subject: 'Login to Soccer Club Portal',
     template_type: 'login',

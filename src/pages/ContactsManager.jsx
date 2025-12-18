@@ -1,25 +1,21 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Mail, Search, Send, Loader2, CheckCircle2, XCircle, User, Users } from 'lucide-react';
-import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import FilterControls from '../components/filters/FilterControls';
+import { Users, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import ParentContactsTable from '../components/contacts/ParentContactsTable';
+import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 
 export default function ContactsManager() {
   const [search, setSearch] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [birthdayFrom, setBirthdayFrom] = useState('');
-  const [birthdayTo, setBirthdayTo] = useState('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [pendingInvite, setPendingInvite] = useState(null);
-  const [lastResult, setLastResult] = useState(null);
-  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [filterBranch, setFilterBranch] = useState('all');
+  const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterLeague, setFilterLeague] = useState('all');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -36,160 +32,50 @@ export default function ContactsManager() {
     queryFn: () => base44.entities.User.list()
   });
 
-  const inviteMutation = useMutation({
-    mutationFn: async ({ email, name, role }) => {
-      const response = await base44.functions.invoke('sendInviteEmail', {
-        recipient_email: email,
-        full_name: name,
-        role,
-        app_url: window.location.origin
+  const contacts = useMemo(() => {
+    return players.flatMap(player => {
+      const team = teams.find(t => t.id === player.team_id);
+      const parentContacts = [];
+
+      (player.parent_emails || []).forEach((parentEmail, idx) => {
+        parentContacts.push({
+          id: `parent_${player.id}_${idx}`,
+          type: 'Parent',
+          name: player.parent_name || `Parent of ${player.full_name}`,
+          email: parentEmail,
+          phone: player.phone,
+          team: team?.name,
+          branch: team?.branch,
+          age_group: team?.age_group,
+          league: team?.league,
+          player_name: player.full_name,
+          player_id: player.id,
+          date_of_birth: player.date_of_birth
+        });
       });
-      return response.data;
-    },
-    onSuccess: (data, variables) => {
-      setLastResult({ success: true, email: variables.email, name: variables.name });
-      toast.success(`Invitation sent to ${variables.email}`);
-    },
-    onError: (error, variables) => {
-      setLastResult({ success: false, email: variables.email, error: error.message });
-      toast.error(`Failed to send invitation: ${error.message}`);
-    }
-  });
 
-  const bulkInviteMutation = useMutation({
-    mutationFn: async (contacts) => {
-      const results = [];
-      for (const contact of contacts) {
-        try {
-          const response = await base44.functions.invoke('sendInviteEmail', {
-            recipient_email: contact.email,
-            full_name: contact.name,
-            role: contact.type === 'Player' ? 'user' : 'parent',
-            app_url: window.location.origin
-          });
-          results.push({ success: true, email: contact.email });
-        } catch (error) {
-          results.push({ success: false, email: contact.email, error: error.message });
-        }
-      }
-      return results;
-    },
-    onSuccess: (results) => {
-      const successCount = results.filter(r => r.success).length;
-      const failCount = results.filter(r => !r.success).length;
-      if (successCount > 0) {
-        toast.success(`${successCount} invitation(s) sent successfully`);
-      }
-      if (failCount > 0) {
-        toast.error(`${failCount} invitation(s) failed`);
-      }
-      setSelectedContacts([]);
-    }
-  });
-
-  const handleInviteClick = (email, name, role) => {
-    setPendingInvite({ email, name, role });
-    setShowConfirmDialog(true);
-  };
-
-  const confirmInvite = () => {
-    if (pendingInvite) {
-      inviteMutation.mutate(pendingInvite);
-    }
-    setShowConfirmDialog(false);
-    setPendingInvite(null);
-  };
-
-  const resetFilters = () => {
-    setSearch('');
-    setFilterTeam('all');
-    setFilterType('all');
-    setBirthdayFrom('');
-    setBirthdayTo('');
-  };
-
-  const handleBulkInvite = () => {
-    const contactsToInvite = filteredContacts.filter(c => selectedContacts.includes(c.id));
-    const contactsWithoutAccount = contactsToInvite.filter(c => !users.some(u => u.email === c.email));
-    
-    if (contactsWithoutAccount.length === 0) {
-      toast.error('All selected contacts already have accounts');
-      return;
-    }
-    
-    if (confirm(`Send invitations to ${contactsWithoutAccount.length} contact(s)?`)) {
-      bulkInviteMutation.mutate(contactsWithoutAccount);
-    }
-  };
-
-  const toggleContact = (contactId) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]
-    );
-  };
-
-  const toggleAll = () => {
-    const contactsWithoutAccount = filteredContacts.filter(c => !users.some(u => u.email === c.email));
-    if (selectedContacts.length === contactsWithoutAccount.length) {
-      setSelectedContacts([]);
-    } else {
-      setSelectedContacts(contactsWithoutAccount.map(c => c.id));
-    }
-  };
-
-  const contacts = players.flatMap(player => {
-    const team = teams.find(t => t.id === player.team_id);
-    const parentContacts = [];
-
-    // Parent contacts only
-    (player.parent_emails || []).forEach((parentEmail, idx) => {
-      parentContacts.push({
-        id: `parent_${player.id}_${idx}`,
-        type: 'Parent',
-        name: player.parent_name || `Parent of ${player.full_name}`,
-        email: parentEmail,
-        phone: player.phone,
-        team: team?.name,
-        player_name: player.full_name,
-        player_id: player.id,
-        date_of_birth: player.date_of_birth
-      });
+      return parentContacts;
     });
+  }, [players, teams]);
 
-    return parentContacts;
-  });
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(c => {
+      const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase()) || 
+                           c.email?.toLowerCase().includes(search.toLowerCase()) ||
+                           c.player_name?.toLowerCase().includes(search.toLowerCase());
+      const matchesTeam = filterTeam === 'all' || c.team === filterTeam;
+      const matchesBranch = filterBranch === 'all' || c.branch === filterBranch;
+      const matchesAgeGroup = filterAgeGroup === 'all' || c.age_group === filterAgeGroup;
+      const matchesLeague = filterLeague === 'all' || c.league === filterLeague;
+      
+      return matchesSearch && matchesTeam && matchesBranch && matchesAgeGroup && matchesLeague;
+    });
+  }, [contacts, search, filterTeam, filterBranch, filterAgeGroup, filterLeague]);
 
-  const filteredContacts = contacts.filter(c => {
-    const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase()) || 
-                         c.email?.toLowerCase().includes(search.toLowerCase()) ||
-                         c.player_name?.toLowerCase().includes(search.toLowerCase());
-    const matchesTeam = filterTeam === 'all' || c.team === filterTeam;
-    
-    let matchesBirthday = true;
-    if (birthdayFrom && c.date_of_birth) {
-      matchesBirthday = matchesBirthday && new Date(c.date_of_birth) >= new Date(birthdayFrom);
-    }
-    if (birthdayTo && c.date_of_birth) {
-      matchesBirthday = matchesBirthday && new Date(c.date_of_birth) <= new Date(birthdayTo);
-    }
-    
-    return matchesSearch && matchesTeam && matchesBirthday;
-  });
-
-  const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))];
-
-  const filters = [
-    {
-      label: 'Team',
-      value: filterTeam,
-      onChange: setFilterTeam,
-      placeholder: 'All Teams',
-      options: [
-        { value: 'all', label: 'All Teams' },
-        ...uniqueTeams.map(team => ({ value: team, label: team }))
-      ]
-    }
-  ];
+  const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))].sort();
+  const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))].sort();
+  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
+  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))].sort();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 p-4 md:p-8">
@@ -198,184 +84,79 @@ export default function ContactsManager() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Parent Contacts Manager
           </h1>
-          <p className="text-slate-600 mt-1">View all parent contacts and send invitations</p>
+          <p className="text-slate-600 mt-1">Manage all parent contacts, send invitations, and communicate</p>
         </div>
 
         <Card className="border-none shadow-lg mb-6">
           <CardContent className="p-4">
-            <FilterControls
-              search={search}
-              onSearchChange={setSearch}
-              filters={filters}
-              onResetFilters={resetFilters}
-              showBirthdayFilters={true}
-              birthdayFrom={birthdayFrom}
-              birthdayTo={birthdayTo}
-              onBirthdayFromChange={setBirthdayFrom}
-              onBirthdayToChange={setBirthdayTo}
-            />
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div className="relative col-span-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search contacts..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterTeam} onValueChange={setFilterTeam}>
+                <SelectTrigger><SelectValue placeholder="Team" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {uniqueTeams.map(team => (
+                    <SelectItem key={team} value={team}>{team}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterBranch} onValueChange={setFilterBranch}>
+                <SelectTrigger><SelectValue placeholder="Branch" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {uniqueBranches.map(branch => (
+                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                <SelectTrigger><SelectValue placeholder="Age Group" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ages</SelectItem>
+                  {uniqueAgeGroups.map(ag => (
+                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterLeague} onValueChange={setFilterLeague}>
+                <SelectTrigger><SelectValue placeholder="League" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  {uniqueLeagues.map(league => (
+                    <SelectItem key={league} value={league}>{league}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
-
-        {lastResult && (
-          <Card className={`border-none shadow-lg mb-6 ${lastResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                {lastResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                )}
-                <div>
-                  <div className={`font-semibold ${lastResult.success ? 'text-green-900' : 'text-red-900'}`}>
-                    {lastResult.success ? 'Invitation sent successfully!' : 'Failed to send invitation'}
-                  </div>
-                  <div className="text-sm text-slate-600 mt-1">
-                    {lastResult.success ? `Sent to ${lastResult.name} (${lastResult.email})` : lastResult.error}
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setLastResult(null)} className="ml-auto">
-                  Dismiss
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <Card className="border-none shadow-lg">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Parent Contacts ({filteredContacts.length})
-              </CardTitle>
-              {selectedContacts.length > 0 && (
-                <Button
-                  onClick={handleBulkInvite}
-                  disabled={bulkInviteMutation.isPending}
-                  className="bg-white text-blue-600 hover:bg-blue-50"
-                  size="sm"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Invite {selectedContacts.length} Selected
-                </Button>
-              )}
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Parent Contacts ({filteredContacts.length})
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-left w-12">
-                      <input
-                        type="checkbox"
-                        checked={selectedContacts.length > 0 && selectedContacts.length === filteredContacts.filter(c => !users.some(u => u.email === c.email)).length}
-                        onChange={toggleAll}
-                        className="w-4 h-4 rounded border-slate-300"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Phone</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Player(s)</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Team</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContacts.map((contact) => {
-                    const hasAccount = users.some(u => u.email === contact.email);
-                    return (
-                      <tr key={contact.id} className="border-b hover:bg-slate-50">
-                        <td className="px-4 py-3">
-                          {!hasAccount && (
-                            <input
-                              type="checkbox"
-                              checked={selectedContacts.includes(contact.id)}
-                              onChange={() => toggleContact(contact.id)}
-                              className="w-4 h-4 rounded border-slate-300"
-                            />
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium">{contact.name}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{contact.email}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{contact.phone || 'N/A'}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{contact.player_name || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{contact.team || 'N/A'}</td>
-                        <td className="px-4 py-3">
-                          {hasAccount ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Has Account
-                            </Badge>
-                          ) : (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleInviteClick(contact.email, contact.name, contact.type === 'Player' ? 'user' : 'parent')}
-                              disabled={inviteMutation.isPending}
-                              className="h-8 w-8 hover:bg-blue-50"
-                            >
-                              {inviteMutation.isPending ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Mail className="w-4 h-4 text-blue-600" />
-                              )}
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {filteredContacts.length === 0 && (
-                <div className="text-center py-12 text-slate-500">
-                  No contacts found
-                </div>
-              )}
-            </div>
+            <ParentContactsTable
+              contacts={filteredContacts}
+              players={players}
+              teams={teams}
+              users={users}
+              onUpdate={() => {}}
+            />
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Invitation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <p className="text-slate-600">
-              Send an invitation email to:
-            </p>
-            <div className="bg-slate-50 p-4 rounded-lg space-y-2">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-400" />
-                <span className="font-semibold">{pendingInvite?.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-600">{pendingInvite?.email}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-blue-100 text-blue-800">
-                  {pendingInvite?.role === 'parent' ? 'Parent' : 'User'}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end pt-4">
-              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={confirmInvite} className="bg-blue-600 hover:bg-blue-700">
-                <Send className="w-4 h-4 mr-2" />
-                Send Invitation
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
