@@ -36,6 +36,7 @@ import EmailTest from './pages/EmailTest';
 import ContactsManager from './pages/ContactsManager';
 import ResetPassword from './pages/ResetPassword';
 import EmailSystem from './pages/EmailSystem';
+import Landing from './pages/Landing';
 import __Layout from './Layout.jsx';
 
 
@@ -78,10 +79,11 @@ export const PAGES = {
     "ContactsManager": ContactsManager,
     "ResetPassword": ResetPassword,
     "EmailSystem": EmailSystem,
+    "Landing": Landing,
 }
 
 export const pagesConfig = {
-    mainPage: "Communications",
+    mainPage: "Players",
     Pages: PAGES,
     Layout: __Layout,
 };

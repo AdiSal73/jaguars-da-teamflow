@@ -2,13 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Users, Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
-import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 
 export default function ContactsManager() {
   const [search, setSearch] = useState('');
@@ -32,35 +29,43 @@ export default function ContactsManager() {
     queryFn: () => base44.entities.User.list()
   });
 
-  const { data: parents = [] } = useQuery({
-    queryKey: ['parents'],
-    queryFn: () => base44.entities.Parent.list()
-  });
-
-  // Extract parent data from players
+  // Extract unique parent contacts from players
   const contacts = useMemo(() => {
-    const parentMap = new Map();
-    
+    const contactMap = new Map();
+
     players.forEach(player => {
-      if (!player.parent_emails || player.parent_emails.length === 0) return;
+      const emailsToProcess = [];
       
-      player.parent_emails.forEach(email => {
-        if (!parentMap.has(email)) {
-          parentMap.set(email, {
+      // Add parent_emails array
+      if (player.parent_emails && player.parent_emails.length > 0) {
+        emailsToProcess.push(...player.parent_emails);
+      }
+      
+      // Also add single email field if it exists
+      if (player.email) {
+        emailsToProcess.push(player.email);
+      }
+
+      emailsToProcess.forEach(email => {
+        if (!email) return;
+        
+        if (!contactMap.has(email)) {
+          const userAccount = users.find(u => u.email === email);
+          contactMap.set(email, {
             email,
-            name: player.parent_name || '',
-            phone: player.phone || '',
-            players: [],
-            teams: new Set()
+            full_name: player.parent_name || userAccount?.full_name || '',
+            phone: player.phone || userAccount?.phone || '',
+            player_ids: [],
+            teams: new Set(),
+            has_user_account: !!userAccount,
+            user_id: userAccount?.id
           });
         }
         
-        const contact = parentMap.get(email);
-        contact.players.push({
-          id: player.id,
-          name: player.full_name,
-          team_id: player.team_id
-        });
+        const contact = contactMap.get(email);
+        if (!contact.player_ids.includes(player.id)) {
+          contact.player_ids.push(player.id);
+        }
         
         const team = teams.find(t => t.id === player.team_id);
         if (team) {
@@ -68,37 +73,39 @@ export default function ContactsManager() {
         }
       });
     });
-    
-    return Array.from(parentMap.values()).map((contact, idx) => {
-      const playerNames = contact.players.map(p => p.name).join(' - ');
+
+    return Array.from(contactMap.values()).map((contact, idx) => {
+      const associatedPlayers = players.filter(p => contact.player_ids.includes(p.id));
+      const playerNames = associatedPlayers.map(p => p.full_name).join(' - ');
       const teamNames = Array.from(contact.teams).join(', ');
-      const primaryPlayer = players.find(p => p.id === contact.players[0]?.id);
-      const primaryTeam = teams.find(t => t.id === primaryPlayer?.team_id);
-      
+      const primaryPlayer = associatedPlayers[0];
+      const primaryTeam = primaryPlayer ? teams.find(t => t.id === primaryPlayer.team_id) : null;
+
       return {
-        id: `parent_${idx}`,
-        type: 'Parent',
-        name: contact.name,
+        id: contact.user_id || `derived_${idx}`,
         email: contact.email,
-        phone: contact.phone,
-        team: teamNames,
+        name: contact.full_name || 'N/A',
+        phone: contact.phone || 'N/A',
+        team: teamNames || 'N/A',
         branch: primaryTeam?.branch,
         age_group: primaryTeam?.age_group,
         league: primaryTeam?.league,
         player_name: playerNames,
-        player_id: contact.players[0]?.id,
-        player_ids: contact.players.map(p => p.id),
-        date_of_birth: primaryPlayer?.date_of_birth
+        player_id: primaryPlayer?.id,
+        player_ids: contact.player_ids,
+        date_of_birth: primaryPlayer?.date_of_birth,
+        has_user_account: contact.has_user_account,
+        user_id: contact.user_id
       };
     });
-  }, [players, teams]);
+  }, [players, teams, users]);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
       const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase()) || 
                            c.email?.toLowerCase().includes(search.toLowerCase()) ||
                            c.player_name?.toLowerCase().includes(search.toLowerCase());
-      const matchesTeam = filterTeam === 'all' || c.team === filterTeam;
+      const matchesTeam = filterTeam === 'all' || c.team.includes(filterTeam);
       const matchesBranch = filterBranch === 'all' || c.branch === filterBranch;
       const matchesAgeGroup = filterAgeGroup === 'all' || c.age_group === filterAgeGroup;
       const matchesLeague = filterLeague === 'all' || c.league === filterLeague;
@@ -187,7 +194,6 @@ export default function ContactsManager() {
               players={players}
               teams={teams}
               users={users}
-              onUpdate={() => {}}
             />
           </CardContent>
         </Card>
