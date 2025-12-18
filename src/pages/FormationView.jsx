@@ -457,18 +457,24 @@ export default function FormationView() {
                                           e.stopPropagation();
                                           navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
                                         }}
-                                        className={`bg-white rounded p-1 border cursor-pointer hover:border-emerald-400 transition-all ${
-                                          dragSnapshot.isDragging ? 'shadow-xl border-emerald-500 scale-105' : 'border-slate-200'
+                                        className={`p-1.5 border-2 rounded-lg bg-white cursor-pointer transition-all ${
+                                          dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-1 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'
                                         }`}
                                       >
-                                        <div className="flex items-center gap-1">
-                                          <div className="w-4 h-4 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-[7px] flex-shrink-0">
-                                            #{player.tryout?.team_ranking || index + 1}
+                                        <div className="flex items-start gap-1">
+                                          <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0 shadow-sm">
+                                            {player.jersey_number || '#'}
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <div className="text-[8px] font-bold text-slate-900 truncate leading-tight">
-                                              {player.full_name}
-                                            </div>
+                                            <div className="font-bold text-[9px] text-slate-900 truncate">{player.full_name}</div>
+                                            {player.date_of_birth && (
+                                              <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
+                                            )}
+                                            {player.tryout?.team_role && (
+                                              <Badge className="text-[7px] px-1 py-0 mt-0.5 bg-purple-100 text-purple-800">
+                                                {player.tryout.team_role}
+                                              </Badge>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
@@ -542,16 +548,17 @@ export default function FormationView() {
                           {...dragProvided.draggableProps}
                           {...dragProvided.dragHandleProps}
                           onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                          className={`p-2 bg-white border rounded-lg cursor-pointer hover:border-emerald-400 transition-all ${
-                            dragSnapshot.isDragging ? 'shadow-xl border-emerald-500 scale-105' : 'border-slate-200'
+                          className={`p-2.5 border-2 rounded-xl bg-white cursor-pointer transition-all ${
+                            dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                              {player.jersey_number || <User className="w-3 h-3" />}
+                          <div className="flex items-start gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+                              {player.jersey_number || <User className="w-4 h-4" />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
+                              <div className="text-[10px] text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
                               {player.team_id && (
                                 <div className="text-[9px] text-slate-500 truncate">
                                   {teams.find(t => t.id === player.team_id)?.name}

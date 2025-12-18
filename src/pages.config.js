@@ -33,7 +33,6 @@ import EmailTemplates from './pages/EmailTemplates';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import TeamDashboard from './pages/TeamDashboard';
 import EmailTest from './pages/EmailTest';
-import EmailTestPage from './pages/EmailTestPage';
 import ContactsManager from './pages/ContactsManager';
 import ResetPassword from './pages/ResetPassword';
 import EmailSystem from './pages/EmailSystem';
@@ -76,7 +75,6 @@ export const PAGES = {
     "CommunicationPreferences": CommunicationPreferences,
     "TeamDashboard": TeamDashboard,
     "EmailTest": EmailTest,
-    "EmailTestPage": EmailTestPage,
     "ContactsManager": ContactsManager,
     "ResetPassword": ResetPassword,
     "EmailSystem": EmailSystem,
