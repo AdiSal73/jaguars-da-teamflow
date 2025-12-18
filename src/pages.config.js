@@ -81,7 +81,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Players",
+    mainPage: "Communications",
     Pages: PAGES,
     Layout: __Layout,
 };
