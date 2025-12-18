@@ -3,7 +3,6 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
@@ -11,6 +10,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPositionFields } from '../constants/positionEvaluationFields';
+
+const ratingLabels = {
+  1: 'Basic',
+  2: 'Novice',
+  3: 'Beginner',
+  4: 'Advanced Beginner',
+  5: 'Intermediate',
+  6: 'Competent',
+  7: 'Advanced',
+  8: 'Accomplished',
+  9: 'Proficient',
+  10: 'Expert'
+};
+
+const SliderField = ({ label, value, onChange }) => (
+  <div className="space-y-2">
+    <div className="flex justify-between items-center">
+      <Label className="text-sm font-medium">{label}</Label>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-500 font-medium">{ratingLabels[value]}</span>
+        <span className="text-sm font-bold text-emerald-600 w-6 text-right">{value}</span>
+      </div>
+    </div>
+    <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={1} max={10} step={1} className="w-full" />
+  </div>
+);
 
 export default function CreateEvaluationDialog({ open, onClose, player }) {
   const queryClient = useQueryClient();
@@ -163,16 +188,6 @@ Keep it concise, specific, and actionable.`;
   const handleSubmit = () => {
     createMutation.mutate(form);
   };
-
-  const SliderField = ({ label, value, onChange }) => (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <Label className="text-sm font-medium">{label}</Label>
-        <span className="text-sm font-bold text-emerald-600">{value}</span>
-      </div>
-      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={1} max={10} step={1} className="w-full" />
-    </div>
-  );
 
   const positionFields = getPositionFields(form.primary_position);
 
@@ -351,4 +366,47 @@ Keep it concise, specific, and actionable.`;
       </DialogContent>
     </Dialog>
   );
+
+  function generateAIContent(field) {
+    setGeneratingAI(prev => ({ ...prev, [field]: true }));
+    
+    const latestAssessment = assessments.length > 0 ? assessments[assessments.length - 1] : null;
+    
+    const prompt = `You are evaluating a soccer player named ${player.full_name}, position: ${form.primary_position}.
+
+Evaluation Scores (1-10 scale):
+- Growth Mindset: ${form.growth_mindset}
+- Resilience: ${form.resilience}
+- Athleticism: ${form.athleticism}
+- Team Focus: ${form.team_focus}
+- Defending Organized: ${form.defending_organized}
+- Attacking Organized: ${form.attacking_organized}
+- Attacking Final Third: ${form.attacking_final_third}
+
+${latestAssessment ? `Latest Physical Assessment:
+- Speed Score: ${latestAssessment.speed_score}
+- Power Score: ${latestAssessment.power_score}
+- Endurance Score: ${latestAssessment.endurance_score}
+- Agility Score: ${latestAssessment.agility_score}` : ''}
+
+${pathway?.skill_matrix ? `Current Skill Matrix:
+${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
+
+${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths based on the scores above.' : ''}
+${field === 'growth' ? 'Write 2-3 sentences identifying the main areas where this player should focus on improvement.' : ''}
+${field === 'focus' ? 'Write 2-3 sentences recommending specific training focus areas and drills that would benefit this player most.' : ''}
+
+Keep it concise, specific, and actionable.`;
+
+    base44.integrations.Core.InvokeLLM({ prompt }).then(response => {
+      if (field === 'strengths') setForm({...form, player_strengths: response});
+      if (field === 'growth') setForm({...form, areas_of_growth: response});
+      if (field === 'focus') setForm({...form, training_focus: response});
+      toast.success('AI content generated');
+    }).catch(() => {
+      toast.error('Failed to generate content');
+    }).finally(() => {
+      setGeneratingAI(prev => ({ ...prev, [field]: false }));
+    });
+  }
 }
