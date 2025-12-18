@@ -145,31 +145,51 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
     try {
       const latestAssessment = assessments.length > 0 ? assessments[assessments.length - 1] : null;
       
-      const prompt = `You are evaluating a soccer player named ${player.full_name}, position: ${form.primary_position}.
+      const knowledgeContext = `
+      MICHIGAN JAGUARS PLAYER DEVELOPMENT PHILOSOPHY:
+      - Win the challenge (tackle, header, game, league)
+      - Be aggressive and always on the front foot
+      - Possession that is meaningful
+      - Play confident and creative soccer (take risks, failure is valuable)
+      - Be positive in transition
+      - Defend zonally but aggressively
 
-Evaluation Scores (1-10 scale):
-- Growth Mindset: ${form.growth_mindset}
-- Resilience: ${form.resilience}
-- Athleticism: ${form.athleticism}
-- Team Focus: ${form.team_focus}
-- Defending Organized: ${form.defending_organized}
-- Attacking Organized: ${form.attacking_organized}
-- Attacking Final Third: ${form.attacking_final_third}
+      CORE VALUES: Respect, Unity, Development/Growth, Competitiveness, Enjoyment
 
-${latestAssessment ? `Latest Physical Assessment:
-- Speed Score: ${latestAssessment.speed_score}
-- Power Score: ${latestAssessment.power_score}
-- Endurance Score: ${latestAssessment.endurance_score}
-- Agility Score: ${latestAssessment.agility_score}` : ''}
+      POSITION-SPECIFIC LANGUAGE (${form.primary_position}):
+      ${form.primary_position === 'GK' ? '- Shot Stopping, Controlling the box, Distribution, Organization\n- Composed, Communication - Directing & Organizing\n- Recognizing Threats, Managing Space, Reading Pressure' : ''}
+      ${form.primary_position?.includes('Centerback') ? '- Master 1v1 duels, Dominate aerial challenges, Build out of the back\n- Calm, Decisive, Relentless\n- Organization - Team Shape to Dictate Play\n- Ball winner - tackling, heading, intercepting' : ''}
+      ${form.primary_position?.includes('Outside Back') ? '- Master 1v1 duels, Build out of the back, Join attack\n- Fast & Agile, Energetic and Dynamic\n- Delay-Deny-Dictate, Flank Defending\n- Overlapping runs, Quality crosses' : ''}
+      ${form.primary_position === 'Defensive Midfielder' ? '- Master 1v1 duels, Organize the press and transition\n- Strong, quick, fit, Controlled, insightful, disciplined\n- Ball winner, Range of Passes, Spatial Awareness (360º)\n- Screening Middle, Breaking pressure, Progressive passing' : ''}
+      ${form.primary_position === 'Attacking Midfielder' ? '- Create scoring chances, Advance the ball, Press and win back\n- Creative and Dangerous, Play Maker\n- Delay-Deny-Dictate, Through balls, Key passes' : ''}
+      ${form.primary_position?.includes('Winger') ? '- Finish chances, Create chances, Wide overloads\n- Quick, explosive, agile, Creative and Energetic\n- Dominate in 1v1, Take on defenders, Quality crosses' : ''}
+      ${form.primary_position === 'Forward' ? '- Finish chances, Create chances, Hold up and link play\n- Strong, explosive, quick, Dynamic and Dangerous\n- Clinical finishing, Back to goal, Target for long balls' : ''}
+      `;
 
-${pathway?.skill_matrix ? `Current Skill Matrix:
-${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
+      const prompt = `You are a Michigan Jaguars coach evaluating ${player.full_name}, playing as ${form.primary_position}.
 
-${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths based on the scores above.' : ''}
-${field === 'growth' ? 'Write 2-3 sentences identifying the main areas where this player should focus on improvement.' : ''}
-${field === 'focus' ? 'Write 2-3 sentences recommending specific training focus areas and drills that would benefit this player most.' : ''}
+      ${knowledgeContext}
 
-Keep it concise, specific, and actionable.`;
+      Current Evaluation Scores (1-10 scale, where 10 = national team starter level):
+      - Growth Mindset: ${form.growth_mindset}
+      - Resilience: ${form.resilience}
+      - Athleticism: ${form.athleticism}
+      - Team Focus: ${form.team_focus}
+      - Defending Organized: ${form.defending_organized}
+      - Attacking Organized: ${form.attacking_organized}
+      - Attacking Final Third: ${form.attacking_final_third}
+
+      ${latestAssessment ? `Physical Assessment:
+      - Speed: ${latestAssessment.speed_score}, Power: ${latestAssessment.power_score}
+      - Endurance: ${latestAssessment.endurance_score}, Agility: ${latestAssessment.agility_score}` : ''}
+
+      ${pathway?.skill_matrix ? `Skill Matrix:\n${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
+
+      ${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths. Use position-specific terminology from the knowledge bank above. Focus on what makes them dangerous and effective in their role.' : ''}
+      ${field === 'growth' ? 'Write 2-3 sentences identifying areas of growth. Use technical language from the position profile. Be specific about skills and situations where improvement is needed (e.g., "1v1 defending in wide areas", "breaking defensive lines with progressive carries").' : ''}
+      ${field === 'focus' ? 'Write 2-3 sentences recommending training focus. Reference specific responsibilities from the position profile (e.g., "defending in transition", "creating overloads in final third", "range of passing to switch play"). Be tactical and actionable.' : ''}
+
+      Use Michigan Jaguars terminology. Be concise, specific, and actionable.`;
 
       const response = await base44.integrations.Core.InvokeLLM({ prompt });
       
