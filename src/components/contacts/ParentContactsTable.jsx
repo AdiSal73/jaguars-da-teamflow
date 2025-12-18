@@ -26,12 +26,21 @@ export default function ParentContactsTable({ contacts, players, teams, users, o
   const [messageContent, setMessageContent] = useState('');
   const [editForm, setEditForm] = useState({ parent_name: '', phone: '' });
 
-  const updatePlayerMutation = useMutation({
-    mutationFn: ({ playerId, data }) => base44.entities.Player.update(playerId, data),
+  const updateParentMutation = useMutation({
+    mutationFn: ({ parentId, data }) => base44.entities.Parent.update(parentId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['parents']);
       setShowEditDialog(false);
       toast.success('Contact updated');
+    }
+  });
+
+  const deleteParentMutation = useMutation({
+    mutationFn: (parentId) => base44.entities.Parent.delete(parentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['parents']);
+      setShowDeleteDialog(false);
+      toast.success('Contact deleted');
     }
   });
 
@@ -67,19 +76,21 @@ export default function ParentContactsTable({ contacts, players, teams, users, o
   });
 
   const handleEdit = (contact) => {
-    const player = players.find(p => p.id === contact.player_id);
     setEditingContact(contact);
     setEditForm({
-      parent_name: player?.parent_name || '',
-      phone: player?.phone || ''
+      parent_name: contact.name || '',
+      phone: contact.phone || ''
     });
     setShowEditDialog(true);
   };
 
   const handleSaveEdit = () => {
-    updatePlayerMutation.mutate({
-      playerId: editingContact.player_id,
-      data: editForm
+    updateParentMutation.mutate({
+      parentId: editingContact.id,
+      data: {
+        full_name: editForm.parent_name,
+        phone: editForm.phone
+      }
     });
   };
 
@@ -89,15 +100,9 @@ export default function ParentContactsTable({ contacts, players, teams, users, o
   };
 
   const confirmDelete = () => {
-    const player = players.find(p => p.id === deletingContact.player_id);
-    if (player) {
-      const updatedEmails = (player.parent_emails || []).filter(e => e !== deletingContact.email);
-      updatePlayerMutation.mutate({
-        playerId: player.id,
-        data: { parent_emails: updatedEmails }
-      });
+    if (deletingContact) {
+      deleteParentMutation.mutate(deletingContact.id);
     }
-    setShowDeleteDialog(false);
   };
 
   const handleInvite = (contact) => {
@@ -205,12 +210,29 @@ export default function ParentContactsTable({ contacts, players, teams, users, o
                   <td className="px-4 py-3 text-sm text-slate-600">{contact.email}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{contact.phone || 'N/A'}</td>
                   <td className="px-4 py-3 text-sm">
-                    <button
-                      onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${contact.player_id}`)}
-                      className="text-blue-600 hover:underline"
-                    >
-                      {contact.player_name}
-                    </button>
+                    {contact.player_ids?.length > 1 ? (
+                      <div className="flex flex-col gap-1">
+                        {contact.player_ids.map(pid => {
+                          const p = players.find(pl => pl.id === pid);
+                          return p ? (
+                            <button
+                              key={pid}
+                              onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${pid}`)}
+                              className="text-blue-600 hover:underline text-xs text-left"
+                            >
+                              {p.full_name}
+                            </button>
+                          ) : null;
+                        })}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${contact.player_id}`)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {contact.player_name}
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">{contact.team || 'N/A'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{contact.branch || 'N/A'}</td>
@@ -317,8 +339,9 @@ export default function ParentContactsTable({ contacts, players, teams, users, o
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <p className="text-slate-600">
-              Remove <strong>{deletingContact?.email}</strong> from {deletingContact?.player_name}'s parent contacts?
+              Permanently delete <strong>{deletingContact?.name}</strong> ({deletingContact?.email})?
             </p>
+            <p className="text-xs text-red-600">This will remove the parent record completely.</p>
             <div className="flex gap-3 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="flex-1">Cancel</Button>
               <Button onClick={confirmDelete} className="flex-1 bg-red-600 hover:bg-red-700">Delete</Button>

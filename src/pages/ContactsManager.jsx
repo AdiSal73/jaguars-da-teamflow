@@ -32,31 +32,73 @@ export default function ContactsManager() {
     queryFn: () => base44.entities.User.list()
   });
 
-  const contacts = useMemo(() => {
-    return players.flatMap(player => {
-      const team = teams.find(t => t.id === player.team_id);
-      const parentContacts = [];
+  const { data: parents = [] } = useQuery({
+    queryKey: ['parents'],
+    queryFn: () => base44.entities.Parent.list()
+  });
 
-      (player.parent_emails || []).forEach((parentEmail, idx) => {
-        parentContacts.push({
-          id: `parent_${player.id}_${idx}`,
-          type: 'Parent',
-          name: player.parent_name || `Parent of ${player.full_name}`,
-          email: parentEmail,
-          phone: player.phone,
-          team: team?.name,
-          branch: team?.branch,
-          age_group: team?.age_group,
-          league: team?.league,
-          player_name: player.full_name,
-          player_id: player.id,
-          date_of_birth: player.date_of_birth
+  // Parse and sync parents from players
+  React.useEffect(() => {
+    const syncParents = async () => {
+      const parentMap = new Map();
+      
+      players.forEach(player => {
+        (player.parent_emails || []).forEach(email => {
+          if (!parentMap.has(email)) {
+            parentMap.set(email, {
+              email,
+              full_name: player.parent_name || `Parent of ${player.full_name}`,
+              phone: player.phone,
+              player_ids: []
+            });
+          }
+          const parent = parentMap.get(email);
+          if (!parent.player_ids.includes(player.id)) {
+            parent.player_ids.push(player.id);
+          }
         });
       });
+      
+      // Create/update parent records
+      for (const [email, parentData] of parentMap) {
+        const existingParent = parents.find(p => p.email === email);
+        if (!existingParent) {
+          await base44.entities.Parent.create(parentData);
+        } else if (JSON.stringify(existingParent.player_ids?.sort()) !== JSON.stringify(parentData.player_ids.sort())) {
+          await base44.entities.Parent.update(existingParent.id, { player_ids: parentData.player_ids });
+        }
+      }
+    };
+    
+    if (players.length > 0) {
+      syncParents();
+    }
+  }, [players]);
 
-      return parentContacts;
+  const contacts = useMemo(() => {
+    return parents.map(parent => {
+      const playerRecords = players.filter(p => parent.player_ids?.includes(p.id));
+      const playerNames = playerRecords.map(p => p.full_name).join(', ');
+      const primaryPlayer = playerRecords[0];
+      const team = teams.find(t => t.id === primaryPlayer?.team_id);
+      
+      return {
+        id: parent.id,
+        type: 'Parent',
+        name: parent.full_name,
+        email: parent.email,
+        phone: parent.phone,
+        team: team?.name,
+        branch: team?.branch,
+        age_group: team?.age_group,
+        league: team?.league,
+        player_name: playerNames,
+        player_id: primaryPlayer?.id,
+        player_ids: parent.player_ids || [],
+        date_of_birth: primaryPlayer?.date_of_birth
+      };
     });
-  }, [players, teams]);
+  }, [parents, players, teams]);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
