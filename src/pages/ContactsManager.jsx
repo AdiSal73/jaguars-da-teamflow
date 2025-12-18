@@ -37,68 +37,61 @@ export default function ContactsManager() {
     queryFn: () => base44.entities.Parent.list()
   });
 
-  // Parse and sync parents from players
-  React.useEffect(() => {
-    const syncParents = async () => {
-      const parentMap = new Map();
-      
-      players.forEach(player => {
-        (player.parent_emails || []).forEach(email => {
-          if (!parentMap.has(email)) {
-            parentMap.set(email, {
-              email,
-              full_name: player.parent_name || `Parent of ${player.full_name}`,
-              phone: player.phone,
-              player_ids: []
-            });
-          }
-          const parent = parentMap.get(email);
-          if (!parent.player_ids.includes(player.id)) {
-            parent.player_ids.push(player.id);
-          }
-        });
-      });
-      
-      // Create/update parent records
-      for (const [email, parentData] of parentMap) {
-        const existingParent = parents.find(p => p.email === email);
-        if (!existingParent) {
-          await base44.entities.Parent.create(parentData);
-        } else if (JSON.stringify(existingParent.player_ids?.sort()) !== JSON.stringify(parentData.player_ids.sort())) {
-          await base44.entities.Parent.update(existingParent.id, { player_ids: parentData.player_ids });
-        }
-      }
-    };
-    
-    if (players.length > 0) {
-      syncParents();
-    }
-  }, [players]);
-
+  // Extract parent data from players
   const contacts = useMemo(() => {
-    return parents.map(parent => {
-      const playerRecords = players.filter(p => parent.player_ids?.includes(p.id));
-      const playerNames = playerRecords.map(p => p.full_name).join(', ');
-      const primaryPlayer = playerRecords[0];
-      const team = teams.find(t => t.id === primaryPlayer?.team_id);
+    const parentMap = new Map();
+    
+    players.forEach(player => {
+      if (!player.parent_emails || player.parent_emails.length === 0) return;
+      
+      player.parent_emails.forEach(email => {
+        if (!parentMap.has(email)) {
+          parentMap.set(email, {
+            email,
+            name: player.parent_name || '',
+            phone: player.phone || '',
+            players: [],
+            teams: new Set()
+          });
+        }
+        
+        const contact = parentMap.get(email);
+        contact.players.push({
+          id: player.id,
+          name: player.full_name,
+          team_id: player.team_id
+        });
+        
+        const team = teams.find(t => t.id === player.team_id);
+        if (team) {
+          contact.teams.add(team.name);
+        }
+      });
+    });
+    
+    return Array.from(parentMap.values()).map((contact, idx) => {
+      const playerNames = contact.players.map(p => p.name).join(' - ');
+      const teamNames = Array.from(contact.teams).join(', ');
+      const primaryPlayer = players.find(p => p.id === contact.players[0]?.id);
+      const primaryTeam = teams.find(t => t.id === primaryPlayer?.team_id);
       
       return {
-        id: parent.id,
+        id: `parent_${idx}`,
         type: 'Parent',
-        name: parent.full_name,
-        email: parent.email,
-        phone: parent.phone,
-        team: team?.name,
-        branch: team?.branch,
-        age_group: team?.age_group,
-        league: team?.league,
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        team: teamNames,
+        branch: primaryTeam?.branch,
+        age_group: primaryTeam?.age_group,
+        league: primaryTeam?.league,
         player_name: playerNames,
-        player_id: primaryPlayer?.id,
-        player_ids: parent.player_ids || [],
+        player_id: contact.players[0]?.id,
+        player_ids: contact.players.map(p => p.id),
         date_of_birth: primaryPlayer?.date_of_birth
       };
     });
-  }, [parents, players, teams]);
+  }, [players, teams]);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {

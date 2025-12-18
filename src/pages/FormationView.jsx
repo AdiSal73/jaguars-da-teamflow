@@ -5,7 +5,9 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { User, Save, Plus, Search, Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { User, Save, Plus, Search, Trash2, ChevronDown, ChevronUp, Star, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -121,6 +123,7 @@ export default function FormationView() {
   const [newFormationName, setNewFormationName] = useState('');
   const [selectedSavedFormation, setSelectedSavedFormation] = useState(null);
   const [draggingPosition, setDraggingPosition] = useState(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -197,20 +200,25 @@ export default function FormationView() {
   });
 
   const updateTryoutMutation = useMutation({
-    mutationFn: async ({ playerId, newRanking, position }) => {
+    mutationFn: async ({ playerId, newRanking, position, ageGroupRanking }) => {
       const player = allPlayers.find(p => p.id === playerId);
       const existingTryout = tryouts.find(t => t.player_id === playerId);
       const teamData = teams.find(t => t.id === player?.team_id);
 
       if (existingTryout) {
-        return base44.entities.PlayerTryout.update(existingTryout.id, { team_ranking: newRanking, primary_position: position });
+        return base44.entities.PlayerTryout.update(existingTryout.id, { 
+          team_ranking: newRanking, 
+          primary_position: position,
+          age_group_ranking: ageGroupRanking || newRanking
+        });
       } else {
         return base44.entities.PlayerTryout.create({
           player_id: playerId,
           player_name: player?.full_name,
           current_team: teamData?.name,
           primary_position: position,
-          team_ranking: newRanking
+          team_ranking: newRanking,
+          age_group_ranking: ageGroupRanking || newRanking
         });
       }
     },
@@ -309,7 +317,7 @@ export default function FormationView() {
     });
   }, [allPlayers, unassignedSearch, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam, birthdayFrom, birthdayTo, teams, tryouts]);
 
-  const handleDragEnd = useCallback((result) => {
+  const handleDragEnd = useCallback(async (result) => {
     if (!result.destination) return;
 
     const sourcePositionId = result.source.droppableId.replace('position-', '');
@@ -324,12 +332,42 @@ export default function FormationView() {
     }
 
     const newRanking = result.destination.index + 1;
+    const draggedPlayer = allPlayers.find(p => p.id === draggedPlayerId);
+    const ageGroup = teams.find(t => t.id === draggedPlayer?.team_id)?.age_group || selectedAgeGroup;
+    
+    // Get all players in the same age group and position
+    const sameAgeGroupPlayers = allPlayers.filter(p => {
+      const playerTeam = teams.find(t => t.id === p.team_id);
+      return playerTeam?.age_group === ageGroup && p.primary_position === destPositionId && p.id !== draggedPlayerId;
+    });
+    
+    // Adjust rankings for other players
+    const updates = [];
+    for (const player of sameAgeGroupPlayers) {
+      const playerTryout = tryouts.find(t => t.player_id === player.id);
+      const currentRank = playerTryout?.age_group_ranking || 9999;
+      
+      if (currentRank >= newRanking) {
+        updates.push(
+          updateTryoutMutation.mutateAsync({
+            playerId: player.id,
+            newRanking: currentRank + 1,
+            position: destPositionId,
+            ageGroupRanking: currentRank + 1
+          })
+        );
+      }
+    }
+    
+    await Promise.all(updates);
+    
     updateTryoutMutation.mutate({
       playerId: draggedPlayerId,
       newRanking,
-      position: destPositionId
+      position: destPositionId,
+      ageGroupRanking: newRanking
     });
-  }, [updatePlayerMutation, updateTryoutMutation]);
+  }, [updatePlayerMutation, updateTryoutMutation, allPlayers, teams, tryouts, selectedAgeGroup]);
 
   const handleSaveNewFormation = () => {
     if (!newFormationName?.trim()) return;
@@ -388,15 +426,57 @@ export default function FormationView() {
     ));
   };
 
+  const handleExportFieldPDF = async () => {
+    setExportingPDF(true);
+    toast.info('Generating PDF...');
+    
+    try {
+      const fieldElement = fieldRef.current;
+      const canvas = await html2canvas(fieldElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#15803d'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+      pdf.save(`${team?.name || 'Formation'}_${selectedFormation}.pdf`);
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   const formation = { name: formations[selectedFormation].name, positions: formationPositions };
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="p-4 md:p-8 mx-auto flex gap-4">
         <div className="flex-1 max-w-5xl">
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
-            <p className="text-sm text-slate-600">Drag players to rank them within each position</p>
+          <div className="mb-6 flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
+              <p className="text-sm text-slate-600">Drag players to rank them within each position. Drag positions to customize formation.</p>
+            </div>
+            <Button onClick={handleExportFieldPDF} disabled={exportingPDF} className="bg-emerald-600 hover:bg-emerald-700">
+              <Download className="w-4 h-4 mr-2" />
+              {exportingPDF ? 'Exporting...' : 'Export Field PDF'}
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
