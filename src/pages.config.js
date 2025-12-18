@@ -37,6 +37,8 @@ import ContactsManager from './pages/ContactsManager';
 import ResetPassword from './pages/ResetPassword';
 import EmailSystem from './pages/EmailSystem';
 import Landing from './pages/Landing';
+import About from './pages/About';
+import Features from './pages/Features';
 import __Layout from './Layout.jsx';
 
 
@@ -80,6 +82,8 @@ export const PAGES = {
     "ResetPassword": ResetPassword,
     "EmailSystem": EmailSystem,
     "Landing": Landing,
+    "About": About,
+    "Features": Features,
 }
 
 export const pagesConfig = {

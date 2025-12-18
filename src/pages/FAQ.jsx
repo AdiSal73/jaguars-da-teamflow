@@ -1,191 +1,232 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-
-const faqData = [
-  {
-    category: 'Getting Started',
-    questions: [
-      {
-        q: 'How do I access my player dashboard?',
-        a: 'Once your account is created, you will automatically be redirected to your player dashboard. You can also access it from the "Player Profile" menu.'
-      },
-      {
-        q: 'How do I reset my password?',
-        a: 'Contact your coach or club administrator to reset your password.'
-      },
-      {
-        q: 'Who can see my player data?',
-        a: 'Only you, your assigned parents, your coaches, and club administrators can view your player dashboard. Other players cannot see your information.'
-      }
-    ]
-  },
-  {
-    category: 'Player Features',
-    questions: [
-      {
-        q: 'What are player goals?',
-        a: 'Player goals are personalized development objectives that you can set and track. Your coach can provide feedback on your progress.'
-      },
-      {
-        q: 'How often are evaluations conducted?',
-        a: 'Evaluations are typically conducted at key points during the season. Your coach will notify you when new evaluations are available.'
-      },
-      {
-        q: 'What do the physical assessment scores mean?',
-        a: 'Physical assessments measure Speed, Power, Endurance, and Agility. Scores are calculated based on standardized tests (20m sprint, vertical jump, YIRT, shuttle run). Higher scores indicate better performance.'
-      }
-    ]
-  },
-  {
-    category: 'Parent Access',
-    questions: [
-      {
-        q: 'Can parents access player dashboards?',
-        a: 'Yes, parents who are assigned to players can view their child\'s dashboard, including evaluations, assessments, goals, and injury history.'
-      },
-      {
-        q: 'How do I get assigned as a parent?',
-        a: 'Club administrators assign parents to players through the User Management section. Contact your club admin if you need to be assigned.'
-      },
-      {
-        q: 'Can I book coaching sessions?',
-        a: 'Yes, parents and players can book coaching sessions through the "Book Session" menu. You can view available coaches and their time slots.'
-      }
-    ]
-  },
-  {
-    category: 'Coach Features',
-    questions: [
-      {
-        q: 'How do I create player evaluations?',
-        a: 'Navigate to the Evaluations page from the Tryouts menu, click "New Evaluation", select a player, and fill out the evaluation form with ratings and notes.'
-      },
-      {
-        q: 'Can I compare players?',
-        a: 'Yes, on the Team Dashboard, you can select multiple players and click "Compare" to see side-by-side comparisons of their metrics.'
-      },
-      {
-        q: 'How do I manage my availability for bookings?',
-        a: 'Go to "My Availability" in the Coaching Tools menu to set up your weekly schedule and availability slots.'
-      }
-    ]
-  },
-  {
-    category: 'Data & Privacy',
-    questions: [
-      {
-        q: 'Is my data secure?',
-        a: 'Yes, all data is securely stored and encrypted. Only authorized users (coaches, admins, assigned parents) can access player information.'
-      },
-      {
-        q: 'Can I export my player data?',
-        a: 'Yes, players and coaches can export player data to CSV or PDF format from the player dashboard.'
-      },
-      {
-        q: 'What happens to my data if I leave the club?',
-        a: 'Your data remains in the system for record-keeping purposes but your account will be marked as inactive. Contact the club admin for data deletion requests.'
-      }
-    ]
-  }
-];
+import { Search, ChevronDown, Users, Shield, Calendar, TrendingUp, HelpCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function FAQ() {
-  const [expandedItems, setExpandedItems] = useState(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
 
-  const toggleItem = (categoryIndex, questionIndex) => {
-    const key = `${categoryIndex}-${questionIndex}`;
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key);
-    } else {
-      newExpanded.add(key);
+  const categories = [
+    {
+      title: 'General',
+      icon: HelpCircle,
+      color: 'emerald',
+      faqs: [
+        {
+          question: 'What is Michigan Jaguars?',
+          answer: 'Michigan Jaguars is a premier youth soccer development organization serving communities across Michigan. We offer competitive teams at various levels including Girls Academy, Aspire, and United leagues.'
+        },
+        {
+          question: 'How many branches do you have?',
+          answer: 'We operate 12 branches across Michigan: CW3, Dearborn, Downriver, Genesee, Huron Valley, Jackson, Lansing, Marshall, Northville, Novi, Rochester Romeo, and West Bloomfield.'
+        },
+        {
+          question: 'What age groups do you serve?',
+          answer: 'We serve players from U-8 through U-19, with teams organized by age group and competitive level.'
+        }
+      ]
+    },
+    {
+      title: 'For Players',
+      icon: Users,
+      color: 'blue',
+      faqs: [
+        {
+          question: 'How do I access my player profile?',
+          answer: 'Players can access their profiles by logging in and navigating to the Player Dashboard. Parents can view their child\'s profile through their parent portal.'
+        },
+        {
+          question: 'How are player evaluations conducted?',
+          answer: 'Players are evaluated through physical assessments (sprint, vertical jump, YIRT, shuttle) and technical evaluations covering mental attributes, defending, and attacking skills.'
+        },
+        {
+          question: 'Can I set personal development goals?',
+          answer: 'Yes! Players and coaches can set personalized development goals with AI-assisted recommendations, timelines, and progress tracking.'
+        },
+        {
+          question: 'How do I book individual training sessions?',
+          answer: 'Use the "Book Session" feature to view coach availability and schedule one-on-one or small group training sessions.'
+        }
+      ]
+    },
+    {
+      title: 'For Parents',
+      icon: Shield,
+      color: 'purple',
+      faqs: [
+        {
+          question: 'How do I get access to the parent portal?',
+          answer: 'Parents receive an email invitation to create their account. Once registered, you\'ll have access to your child\'s player dashboard, performance data, and communications.'
+        },
+        {
+          question: 'How do I view my child\'s progress?',
+          answer: 'Navigate to your child\'s Player Dashboard to view their evaluations, physical assessments, development goals, training modules, and injury status.'
+        },
+        {
+          question: 'How do I communicate with coaches?',
+          answer: 'Use the Communications section to send messages directly to coaches, or respond to announcements and notifications.'
+        },
+        {
+          question: 'Can I book private training for my child?',
+          answer: 'Yes! Use the "Book Session" feature to schedule individual or small group sessions with available coaches.'
+        }
+      ]
+    },
+    {
+      title: 'For Coaches',
+      icon: Calendar,
+      color: 'orange',
+      faqs: [
+        {
+          question: 'How do I create player evaluations?',
+          answer: 'Navigate to the player\'s dashboard and click "Create Evaluation" to assess their performance across mental, physical, defending, and attacking categories.'
+        },
+        {
+          question: 'How do I manage my team roster?',
+          answer: 'Use the Teams section to view your roster, add/remove players, and update team information. The Formation View allows you to organize players by position and ranking.'
+        },
+        {
+          question: 'How do I set my coaching availability?',
+          answer: 'Go to "My Availability" to set your available time slots, locations, and services for individual coaching sessions.'
+        },
+        {
+          question: 'Can I export player or team data?',
+          answer: 'Yes! Most pages include export options for CSV and PDF formats, allowing you to download player profiles, team rosters, and performance reports.'
+        }
+      ]
+    },
+    {
+      title: 'Platform Features',
+      icon: TrendingUp,
+      color: 'cyan',
+      faqs: [
+        {
+          question: 'What is the Formation View?',
+          answer: 'Formation View is an interactive tool that allows coaches to visualize team formations, rank players by position, and manage depth charts with drag-and-drop functionality.'
+        },
+        {
+          question: 'How does the AI-powered development work?',
+          answer: 'Our AI analyzes player data, evaluations, and assessments to generate personalized development goals, training recommendations, and performance insights.'
+        },
+        {
+          question: 'What are physical assessments?',
+          answer: 'Physical assessments measure Speed (20m sprint), Power (vertical jump), Endurance (YIRT), and Agility (shuttle run) to track athletic development over time.'
+        },
+        {
+          question: 'How is data secured?',
+          answer: 'We use role-based access control to ensure that only authorized users can view and edit specific data. Parents see only their children\'s information, coaches see their teams, and admins have full access.'
+        }
+      ]
     }
-    setExpandedItems(newExpanded);
-  };
+  ];
 
-  const filteredFAQ = faqData.map(category => ({
+  const filteredCategories = categories.map(category => ({
     ...category,
-    questions: category.questions.filter(item =>
-      item.q.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.a.toLowerCase().includes(searchTerm.toLowerCase())
+    faqs: category.faqs.filter(faq => 
+      search === '' || 
+      faq.question.toLowerCase().includes(search.toLowerCase()) || 
+      faq.answer.toLowerCase().includes(search.toLowerCase())
     )
-  })).filter(category => category.questions.length > 0);
+  })).filter(category => category.faqs.length > 0);
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center">
-            <HelpCircle className="w-7 h-7 text-white" />
+    <div className="min-h-screen bg-gradient-to-b from-white via-emerald-50 to-slate-50">
+      {/* Hero */}
+      <section className="relative py-20 bg-gradient-to-r from-emerald-600 to-green-600 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }} />
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <HelpCircle className="w-16 h-16 mx-auto mb-6" />
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">Frequently Asked Questions</h1>
+          <p className="text-xl text-emerald-100">
+            Find answers to common questions about Michigan Jaguars and our platform
+          </p>
+        </div>
+      </section>
+
+      {/* Search */}
+      <section className="py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input
+              placeholder="Search questions..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-12 h-14 text-lg shadow-lg border-2 border-emerald-100 focus:border-emerald-500"
+            />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Frequently Asked Questions</h1>
         </div>
-        <p className="text-slate-600 ml-15">Find answers to common questions about the Soccer Club Management System</p>
-      </div>
+      </section>
 
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            placeholder="Search questions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12 border-2"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        {filteredFAQ.map((category, categoryIndex) => (
-          <Card key={categoryIndex} className="border-none shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
-              <CardTitle className="text-lg text-slate-900">{category.category}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {category.questions.map((item, questionIndex) => {
-                  const key = `${categoryIndex}-${questionIndex}`;
-                  const isExpanded = expandedItems.has(key);
-                  return (
-                    <div key={questionIndex}>
-                      <button
-                        onClick={() => toggleItem(categoryIndex, questionIndex)}
-                        className="w-full p-4 flex items-start justify-between hover:bg-slate-50 transition-colors text-left"
-                      >
-                        <div className="flex-1 pr-4">
-                          <h3 className="font-semibold text-slate-900">{item.q}</h3>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                        )}
-                      </button>
-                      {isExpanded && (
-                        <div className="px-4 pb-4 text-slate-600 bg-slate-50">
-                          <p className="leading-relaxed">{item.a}</p>
-                        </div>
-                      )}
+      {/* FAQ Categories */}
+      <section className="pb-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          {filteredCategories.map(category => {
+            const IconComponent = category.icon;
+            const gradientClass = colorMap[category.color];
+            
+            return (
+              <Card key={category.title} className="border-none shadow-xl overflow-hidden">
+                <div className={`bg-gradient-to-r ${gradientClass} text-white p-6`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                      <IconComponent className="w-6 h-6" />
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">{category.title}</h2>
+                      <p className="text-white/80 text-sm">{category.faqs.length} questions</p>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-6">
+                  <Accordion type="single" collapsible className="space-y-4">
+                    {category.faqs.map((faq, index) => (
+                      <AccordionItem key={index} value={`item-${index}`} className="border-2 border-slate-100 rounded-xl px-4 hover:border-emerald-200 transition-all">
+                        <AccordionTrigger className="text-left hover:no-underline py-4">
+                          <span className="font-semibold text-slate-900 pr-4">{faq.question}</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-slate-600 pb-4 leading-relaxed">
+                          {faq.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </CardContent>
+              </Card>
+            );
+          })}
 
-      {filteredFAQ.length === 0 && (
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-12 text-center">
-            <HelpCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500">No questions found matching your search</p>
-          </CardContent>
-        </Card>
-      )}
+          {filteredCategories.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-slate-500 text-lg">No questions match your search</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Contact CTA */}
+      <section className="py-16 bg-gradient-to-r from-emerald-600 to-green-600 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Still have questions?</h2>
+          <p className="text-emerald-100 text-lg mb-6">
+            Can't find the answer you're looking for? Reach out to your coach or club administrator.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a 
+              href="mailto:info@michiganjaguars.com"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white text-emerald-600 rounded-lg font-semibold hover:bg-emerald-50 transition-all"
+            >
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
