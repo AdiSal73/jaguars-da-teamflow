@@ -366,47 +366,4 @@ Keep it concise, specific, and actionable.`;
       </DialogContent>
     </Dialog>
   );
-
-  function generateAIContent(field) {
-    setGeneratingAI(prev => ({ ...prev, [field]: true }));
-    
-    const latestAssessment = assessments.length > 0 ? assessments[assessments.length - 1] : null;
-    
-    const prompt = `You are evaluating a soccer player named ${player.full_name}, position: ${form.primary_position}.
-
-Evaluation Scores (1-10 scale):
-- Growth Mindset: ${form.growth_mindset}
-- Resilience: ${form.resilience}
-- Athleticism: ${form.athleticism}
-- Team Focus: ${form.team_focus}
-- Defending Organized: ${form.defending_organized}
-- Attacking Organized: ${form.attacking_organized}
-- Attacking Final Third: ${form.attacking_final_third}
-
-${latestAssessment ? `Latest Physical Assessment:
-- Speed Score: ${latestAssessment.speed_score}
-- Power Score: ${latestAssessment.power_score}
-- Endurance Score: ${latestAssessment.endurance_score}
-- Agility Score: ${latestAssessment.agility_score}` : ''}
-
-${pathway?.skill_matrix ? `Current Skill Matrix:
-${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
-
-${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths based on the scores above.' : ''}
-${field === 'growth' ? 'Write 2-3 sentences identifying the main areas where this player should focus on improvement.' : ''}
-${field === 'focus' ? 'Write 2-3 sentences recommending specific training focus areas and drills that would benefit this player most.' : ''}
-
-Keep it concise, specific, and actionable.`;
-
-    base44.integrations.Core.InvokeLLM({ prompt }).then(response => {
-      if (field === 'strengths') setForm({...form, player_strengths: response});
-      if (field === 'growth') setForm({...form, areas_of_growth: response});
-      if (field === 'focus') setForm({...form, training_focus: response});
-      toast.success('AI content generated');
-    }).catch(() => {
-      toast.error('Failed to generate content');
-    }).finally(() => {
-      setGeneratingAI(prev => ({ ...prev, [field]: false }));
-    });
-  }
 }
