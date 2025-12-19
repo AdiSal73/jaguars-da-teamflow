@@ -77,11 +77,11 @@ export default function Features() {
             {features.map((feature, index) => (
               <div key={feature.title} className={`grid md:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
                 <div className={index % 2 === 1 ? 'md:order-2' : ''}>
-                  <div className={`w-16 h-16 bg-gradient-to-br ${colorMap[feature.color]} rounded-2xl flex items-center justify-center mb-6 shadow-xl`}>
+                  <div className={`w-16 h-16 bg-gradient-to-br ${colorMap[feature.color]} rounded-2xl flex items-center justify-center mb-6 shadow-2xl hover:scale-110 transition-transform`}>
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-4">{feature.title}</h2>
-                  <p className="text-lg text-slate-600 mb-6">{feature.description}</p>
+                  <h2 className="text-4xl font-bold text-slate-900 mb-4">{feature.title}</h2>
+                  <p className="text-lg text-slate-700 mb-6 leading-relaxed">{feature.description}</p>
                   
                   <div className="space-y-3">
                     {feature.title === 'Complete Player Profiles' && (
@@ -135,12 +135,13 @@ export default function Features() {
                   </div>
                 </div>
                 <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl h-96">
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl h-96 group">
                     <img 
                       src={feature.image} 
                       alt={feature.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
                 </div>
               </div>
@@ -163,15 +164,15 @@ export default function Features() {
               { icon: Target, title: 'Goal Setting', desc: 'AI-assisted goal creation and progress monitoring' },
               { icon: MessageSquare, title: 'Communications Hub', desc: 'Centralized messaging and announcements' }
             ].map(item => (
-              <Card key={item.title} className="border-none shadow-lg hover:shadow-xl transition-all bg-white">
+              <Card key={item.title} className="border-none shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all bg-white group">
                 <CardHeader>
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center mb-3">
-                    <item.icon className="w-6 h-6 text-emerald-600" />
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                    <item.icon className="w-7 h-7 text-white" />
                   </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
+                  <CardTitle className="text-xl font-bold">{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-600">{item.desc}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
