@@ -129,7 +129,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-8">
             <Card className="border-none shadow-xl hover:shadow-2xl transition-all overflow-hidden group">
               <div className="h-48 overflow-hidden">
                 <img
