@@ -112,7 +112,7 @@ export default function Features() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-5 h-5 text-blue-600" />
-                          <span className="text-slate-700">AI-generated recommendations</span>
+                          <span className="text-slate-700">Coach-generated recommendations</span>
                         </div>
                       </>
                     )}
