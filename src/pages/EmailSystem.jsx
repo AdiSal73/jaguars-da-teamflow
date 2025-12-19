@@ -82,10 +82,20 @@ export default function EmailSystem() {
   const sendTestEmailMutation = useMutation({
     mutationFn: async ({ templateId, email }) => {
       const template = templates.find(t => t.id === templateId);
-      return await base44.functions.invoke('sendEmail', {
+      const appUrl = 'https://jaguarsidp.com';
+      let htmlContent = template.html_content
+        .replace(/\{\{full_name\}\}/g, 'Test User')
+        .replace(/\{\{role\}\}/g, 'Admin')
+        .replace(/\{\{app_url\}\}/g, appUrl)
+        .replace(/\{\{dashboard_link\}\}/g, appUrl)
+        .replace(/\{\{reset_url\}\}/g, appUrl)
+        .replace(/\{\{login_link\}\}/g, appUrl)
+        .replace(/\{\{user_name\}\}/g, 'Test User');
+      
+      return await base44.functions.invoke('sendResendEmail', {
         to: email,
         subject: template.subject,
-        body: template.html_content
+        content: htmlContent
       });
     },
     onSuccess: () => {

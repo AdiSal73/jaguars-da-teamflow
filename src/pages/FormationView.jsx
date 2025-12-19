@@ -430,18 +430,27 @@ export default function FormationView() {
     e.preventDefault();
     setResizingPosition(position.id);
     
+    if (!fieldRef.current) return;
+    const fieldRect = fieldRef.current.getBoundingClientRect();
+    
     resizeStartRef.current = {
       startX: e.clientX,
-      startWidth: position.width || 140
+      startY: e.clientY,
+      startWidth: position.width || 140,
+      startHeight: position.height || 100,
+      fieldRect
     };
 
     const handleMouseMove = (moveEvent) => {
       if (!resizeStartRef.current) return;
       const deltaX = moveEvent.clientX - resizeStartRef.current.startX;
+      const deltaY = moveEvent.clientY - resizeStartRef.current.startY;
+      
       const newWidth = Math.max(80, Math.min(300, resizeStartRef.current.startWidth + deltaX));
+      const newHeight = Math.max(60, Math.min(400, resizeStartRef.current.startHeight + deltaY));
 
       setFormationPositions(prev => prev.map(pos => 
-        pos.id === position.id ? { ...pos, width: newWidth } : pos
+        pos.id === position.id ? { ...pos, width: newWidth, height: newHeight } : pos
       ));
     };
 
@@ -630,11 +639,15 @@ export default function FormationView() {
                               className={`bg-white/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg border-2 transition-all relative group ${
                                 snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-emerald-600'
                               }`}
+                              style={{ 
+                                minHeight: `${position.height || 100}px`,
+                                maxHeight: `${position.height || 100}px`
+                              }}
                             >
                               <div className="text-center text-[9px] font-bold text-emerald-700 mb-1 pb-1 border-b border-emerald-200 cursor-move">
                                 {position.label}
                               </div>
-                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                              <div className="space-y-1 overflow-y-auto" style={{ maxHeight: `${(position.height || 100) - 30}px` }}>
                                 {positionPlayers.map((player, index) => (
                                   <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                                     {(dragProvided, dragSnapshot) => (
