@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tantml:react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
+import InviteParentDialog from './InviteParentDialog';
 
 export default function ParentContactsTable({ contacts, players, teams, users }) {
   const navigate = useNavigate();
@@ -170,13 +171,6 @@ export default function ParentContactsTable({ contacts, players, teams, users })
     }
     setInviteContact(contact);
     setShowInviteDialog(true);
-  };
-
-  const confirmInvite = () => {
-    inviteMutation.mutate({
-      email: inviteContact.email,
-      name: inviteContact.name
-    });
   };
 
   const handleMessage = (contact) => {
@@ -411,28 +405,14 @@ export default function ParentContactsTable({ contacts, players, teams, users })
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send Invitation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <p className="text-slate-600">Send an invitation email to:</p>
-            <div className="bg-slate-50 p-4 rounded-lg space-y-2">
-              <div className="font-semibold">{inviteContact?.name}</div>
-              <div className="text-sm text-slate-600">{inviteContact?.email}</div>
-              <Badge className="bg-purple-100 text-purple-800">Parent</Badge>
-            </div>
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowInviteDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={confirmInvite} disabled={inviteMutation.isPending} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                {inviteMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                Send Invitation
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <InviteParentDialog
+        open={showInviteDialog}
+        onClose={() => {
+          setShowInviteDialog(false);
+          setInviteContact(null);
+        }}
+        contact={inviteContact}
+      />
 
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
         <DialogContent>

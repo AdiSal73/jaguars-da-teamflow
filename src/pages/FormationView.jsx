@@ -425,31 +425,29 @@ export default function FormationView() {
   };
 
   const handleResizeStart = (e, position) => {
-    e.stopPropagation();
-    setResizingPosition(position.id);
-  };
+  e.stopPropagation();
+  setResizingPosition(position.id);
 
-  const handleResize = (e, position) => {
-    if (!fieldRef.current || resizingPosition !== position.id) return;
+  const handleMouseMove = (moveEvent) => {
+    if (!fieldRef.current) return;
     const rect = fieldRef.current.getBoundingClientRect();
-    const width = ((e.clientX - rect.left) / rect.width) * 100;
-    const scaledWidth = Math.max(10, Math.min(30, width)) * 5;
-    
+    const relativeX = moveEvent.clientX - rect.left;
+    const newWidth = Math.max(100, Math.min(300, (relativeX / rect.width) * 600));
+
     setFormationPositions(prev => prev.map(pos => 
-      pos.id === position.id ? { ...pos, width: scaledWidth } : pos
+      pos.id === position.id ? { ...pos, width: newWidth } : pos
     ));
   };
 
-  const handleResizeEnd = () => {
+  const handleMouseUp = () => {
     setResizingPosition(null);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
   };
 
-  React.useEffect(() => {
-    if (resizingPosition) {
-      window.addEventListener('mouseup', handleResizeEnd);
-      return () => window.removeEventListener('mouseup', handleResizeEnd);
-    }
-  }, [resizingPosition]);
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+  };
 
   const handleExportFieldPDF = async () => {
     setExportingPDF(true);
@@ -584,6 +582,7 @@ export default function FormationView() {
               >
                 <div className="absolute inset-0 border-4 border-emerald-600">
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 140" preserveAspectRatio="none">
+                    <rect x="0" y="0" width="100" height="140" fill="white" stroke="#10b981" strokeWidth="0.8" />
                     <line x1="0" y1="70" x2="100" y2="70" stroke="#10b981" strokeWidth="0.4" />
                     <circle cx="50" cy="70" r="8" fill="none" stroke="#10b981" strokeWidth="0.4" />
                     <circle cx="50" cy="70" r="0.5" fill="#10b981" />
@@ -670,10 +669,11 @@ export default function FormationView() {
                                 )}
                               </div>
                               <div 
-                                className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-600 rounded-tl cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-600 rounded-tl cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                 onMouseDown={(e) => handleResizeStart(e, position)}
-                                onMouseMove={(e) => handleResize(e, position)}
-                              />
+                              >
+                                <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                              </div>
                             </div>
                           )}
                         </Droppable>
