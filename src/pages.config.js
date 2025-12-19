@@ -39,6 +39,7 @@ import Landing from './pages/Landing';
 import About from './pages/About';
 import Features from './pages/Features';
 import TryoutPlayers from './pages/TryoutPlayers';
+import ScoutingPipeline from './pages/ScoutingPipeline';
 import __Layout from './Layout.jsx';
 
 
@@ -84,6 +85,7 @@ export const PAGES = {
     "About": About,
     "Features": Features,
     "TryoutPlayers": TryoutPlayers,
+    "ScoutingPipeline": ScoutingPipeline,
 }
 
 export const pagesConfig = {

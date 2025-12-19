@@ -37,8 +37,8 @@ const formations = {
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
-      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 160, height: 180 },
       { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
       { id: 'Defensive Midfielder', x: 50, y: 58, label: 'DM', width: 160, height: 180 },
@@ -53,8 +53,8 @@ const formations = {
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
-      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 160, height: 180 },
       { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
       { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 44, y: 55, label: 'CM', width: 160, height: 180 },
@@ -69,8 +69,8 @@ const formations = {
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
-      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 160, height: 180 },
       { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
       { id: 'Right Winger', x: 75, y: 45, label: 'RM', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
