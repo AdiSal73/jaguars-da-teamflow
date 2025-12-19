@@ -287,7 +287,7 @@ export default function Landing() {
             <div className="order-2 md:order-1">
               <h2 className="text-4xl font-bold text-slate-900 mb-6">Personalized Development</h2>
               <p className="text-lg text-slate-700 mb-6">
-                Every player receives a personalized development pathway with AI-assisted goal setting, 
+                Every player receives a personalized development pathway with coach assisted goal setting, 
                 custom training modules, and progress tracking. Our platform ensures no player is left behind.
               </p>
               <div className="grid grid-cols-2 gap-4">
