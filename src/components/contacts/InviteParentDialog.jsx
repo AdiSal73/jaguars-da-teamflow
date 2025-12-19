@@ -43,6 +43,7 @@ export default function InviteParentDialog({ open, onClose, contact }) {
   });
 
   const handleSend = () => {
+    if (!contact) return;
     setSending(true);
     inviteMutation.mutate({
       email: contact.email,
@@ -58,6 +59,8 @@ export default function InviteParentDialog({ open, onClose, contact }) {
         </div>
       );
     }
+
+    if (!contact) return null;
 
     let preview = inviteTemplate.html_content
       .replace(/\{\{full_name\}\}/g, contact.name || 'Parent')
