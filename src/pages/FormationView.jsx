@@ -668,7 +668,7 @@ export default function FormationView() {
                                             {player.jersey_number || '#'}
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <div className="font-bold text-[9px] text-slate-900 truncate">{player.full_name}</div>
+                                            <div className="font-bold text-[9px] text-slate-900 whitespace-normal break-words leading-tight">{player.full_name}</div>
                                             {player.date_of_birth && (
                                               <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
                                             )}

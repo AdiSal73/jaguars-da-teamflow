@@ -224,6 +224,7 @@ export default function PlayerDashboard() {
         player_email: player.player_email || '',
         player_phone: player.player_phone || '',
         date_of_birth: player.date_of_birth || '',
+        grad_year: player.grad_year || '',
         jersey_number: player.jersey_number || '',
         primary_position: player.primary_position || '',
         secondary_position: player.secondary_position || '',
@@ -820,6 +821,14 @@ export default function PlayerDashboard() {
                   <Input type="date" value={playerForm.date_of_birth} onChange={e => setPlayerForm({...playerForm, date_of_birth: e.target.value})} className="h-8 text-xs" />
                 ) : (
                   <p className="text-sm font-medium">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-[10px] text-slate-500">Grad Year</Label>
+                {isEditing ? (
+                  <Input type="number" value={playerForm.grad_year || ''} onChange={e => setPlayerForm({...playerForm, grad_year: Number(e.target.value)})} className="h-8 text-xs" placeholder="2026" />
+                ) : (
+                  <p className="text-sm font-medium">{player.grad_year || 'N/A'}</p>
                 )}
               </div>
               {/* <div className="col-span-2">
