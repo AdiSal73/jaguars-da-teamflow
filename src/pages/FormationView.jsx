@@ -35,65 +35,65 @@ const formations = {
   '4-3-3': {
     name: '4-3-3',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
-      { id: 'Defensive Midfielder', x: 50, y: 58, label: 'DM', width: 140 },
-      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 140 },
-      { id: 'Right Winger', x: 70, y: 25, label: 'RW', width: 140 },
-      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 140 },
-      { id: 'Left Winger', x: 30, y: 25, label: 'LW', width: 140 }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
+      { id: 'Defensive Midfielder', x: 50, y: 58, label: 'DM', width: 160, height: 180 },
+      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 160, height: 180 },
+      { id: 'Right Winger', x: 70, y: 25, label: 'RW', width: 160, height: 180 },
+      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 160, height: 180 },
+      { id: 'Left Winger', x: 30, y: 25, label: 'LW', width: 160, height: 180 }
     ]
   },
   '4-2-3-1': {
     name: '4-2-3-1',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
-      { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM', width: 140 },
-      { id: 'Center Midfielder', x: 44, y: 55, label: 'CM', width: 140 },
-      { id: 'Right Winger', x: 70, y: 35, label: 'RW', width: 140 },
-      { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM', width: 140 },
-      { id: 'Left Winger', x: 30, y: 35, label: 'LW', width: 140 },
-      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 140 }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
+      { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM', width: 160, height: 180 },
+      { id: 'Center Midfielder', x: 44, y: 55, label: 'CM', width: 160, height: 180 },
+      { id: 'Right Winger', x: 70, y: 35, label: 'RW', width: 160, height: 180 },
+      { id: 'Attacking Midfielder', x: 50, y: 35, label: 'CAM', width: 160, height: 180 },
+      { id: 'Left Winger', x: 30, y: 35, label: 'LW', width: 160, height: 180 },
+      { id: 'Forward', x: 50, y: 18, label: 'ST', width: 160, height: 180 }
     ]
   },
   '4-4-2': {
     name: '4-4-2',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
-      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 140 },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 140 },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 140 },
-      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 140 },
-      { id: 'Right Winger', x: 75, y: 45, label: 'RM', width: 140 },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
-      { id: 'Defensive Midfielder', x: 42, y: 50, label: 'DM', width: 140 },
-      { id: 'Left Winger', x: 25, y: 45, label: 'LM', width: 140 },
-      { id: 'Forward', x: 56, y: 20, label: 'ST', width: 140 },
-      { id: 'Attacking Midfielder', x: 44, y: 20, label: 'ST', width: 140 }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
+      { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
+      { id: 'Right Winger', x: 75, y: 45, label: 'RM', width: 160, height: 180 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
+      { id: 'Defensive Midfielder', x: 42, y: 50, label: 'DM', width: 160, height: 180 },
+      { id: 'Left Winger', x: 25, y: 45, label: 'LM', width: 160, height: 180 },
+      { id: 'Forward', x: 56, y: 20, label: 'ST', width: 160, height: 180 },
+      { id: 'Attacking Midfielder', x: 44, y: 20, label: 'ST', width: 160, height: 180 }
     ]
   },
   '3-5-2': {
     name: '3-5-2',
     positions: [
-      { id: 'GK', x: 50, y: 90, label: 'GK', width: 140 },
-      { id: 'Left Centerback', x: 60, y: 70, label: 'LCB', width: 140 },
-      { id: 'Right Centerback', x: 50, y: 72, label: 'CB', width: 140 },
-      { id: 'Left Outside Back', x: 40, y: 70, label: 'RCB', width: 140 },
-      { id: 'Right Outside Back', x: 75, y: 50, label: 'RWB', width: 140 },
-      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 140 },
-      { id: 'Defensive Midfielder', x: 50, y: 55, label: 'DM', width: 140 },
-      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 140 },
-      { id: 'Left Winger', x: 25, y: 50, label: 'LWB', width: 140 },
-      { id: 'Forward', x: 56, y: 22, label: 'ST', width: 140 },
-      { id: 'Right Winger', x: 44, y: 22, label: 'ST', width: 140 }
+      { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 60, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 50, y: 72, label: 'CB', width: 160, height: 180 },
+      { id: 'Left Outside Back', x: 40, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Right Outside Back', x: 75, y: 50, label: 'RWB', width: 160, height: 180 },
+      { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
+      { id: 'Defensive Midfielder', x: 50, y: 55, label: 'DM', width: 160, height: 180 },
+      { id: 'Attacking Midfielder', x: 42, y: 50, label: 'CAM', width: 160, height: 180 },
+      { id: 'Left Winger', x: 25, y: 50, label: 'LWB', width: 160, height: 180 },
+      { id: 'Forward', x: 56, y: 22, label: 'ST', width: 160, height: 180 },
+      { id: 'Right Winger', x: 44, y: 22, label: 'ST', width: 160, height: 180 }
     ]
   }
 };
@@ -446,8 +446,8 @@ export default function FormationView() {
       const deltaX = moveEvent.clientX - resizeStartRef.current.startX;
       const deltaY = moveEvent.clientY - resizeStartRef.current.startY;
       
-      const newWidth = Math.max(80, Math.min(300, resizeStartRef.current.startWidth + deltaX));
-      const newHeight = Math.max(60, Math.min(400, resizeStartRef.current.startHeight + deltaY));
+      const newWidth = Math.max(100, Math.min(300, resizeStartRef.current.startWidth + deltaX));
+      const newHeight = Math.max(120, Math.min(400, resizeStartRef.current.startHeight + deltaY));
 
       setFormationPositions(prev => prev.map(pos => 
         pos.id === position.id ? { ...pos, width: newWidth, height: newHeight } : pos
@@ -505,20 +505,20 @@ export default function FormationView() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="p-4 md:p-8 mx-auto flex gap-4">
+      <div className="p-2 md:p-4 lg:p-8 mx-auto flex flex-col lg:flex-row gap-4">
         <div className="flex-1 max-w-5xl">
-          <div className="mb-6 flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
-              <p className="text-sm text-slate-600">Drag players to rank. Drag positions to move. Resize positions from bottom-right corner.</p>
-            </div>
-            <Button onClick={handleExportFieldPDF} disabled={exportingPDF} className="bg-emerald-600 hover:bg-emerald-700">
-              <Download className="w-4 h-4 mr-2" />
-              {exportingPDF ? 'Exporting...' : 'Export PDF'}
-            </Button>
+          <div className="mb-4 md:mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-900">{team?.name || 'Formation View'}</h1>
+            <p className="text-xs md:text-sm text-slate-600">Drag players to rank. Drag positions to move. Resize from corner.</p>
+          </div>
+          <Button onClick={handleExportFieldPDF} disabled={exportingPDF} className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto">
+            <Download className="w-4 h-4 mr-2" />
+            {exportingPDF ? 'Exporting...' : 'Export PDF'}
+          </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 mb-4">
             <div>
               <Label className="mb-1 block text-xs font-semibold">Gender</Label>
               <Select value={selectedGender} onValueChange={(value) => {setSelectedGender(value);setSelectedTeam('all');setSelectedAgeGroup('all');}}>
@@ -640,14 +640,14 @@ export default function FormationView() {
                                 snapshot.isDraggingOver ? 'border-emerald-500 scale-105' : 'border-emerald-600'
                               }`}
                               style={{ 
-                                minHeight: `${position.height || 100}px`,
-                                maxHeight: `${position.height || 100}px`
+                                minHeight: `${position.height || 180}px`,
+                                maxHeight: `${position.height || 180}px`
                               }}
                             >
                               <div className="text-center text-[9px] font-bold text-emerald-700 mb-1 pb-1 border-b border-emerald-200 cursor-move">
                                 {position.label}
                               </div>
-                              <div className="space-y-1 overflow-y-auto" style={{ maxHeight: `${(position.height || 100) - 30}px` }}>
+                              <div className="space-y-1 overflow-y-auto" style={{ maxHeight: `${(position.height || 180) - 30}px` }}>
                                 {positionPlayers.map((player, index) => (
                                   <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                                     {(dragProvided, dragSnapshot) => (
@@ -671,6 +671,9 @@ export default function FormationView() {
                                             <div className="font-bold text-[9px] text-slate-900 whitespace-normal break-words leading-tight">{player.full_name}</div>
                                             {player.date_of_birth && (
                                               <div className="text-[7px] text-slate-500">{new Date(player.date_of_birth).getFullYear()}</div>
+                                            )}
+                                            {player.tryout?.age_group_ranking && (
+                                              <div className="text-[7px] text-emerald-700 font-bold">AG Rank: {player.tryout.age_group_ranking}</div>
                                             )}
                                             {player.tryout?.team_role && (
                                               <Badge className="text-[7px] px-1 py-0 mt-0.5 bg-purple-100 text-purple-800">
@@ -711,7 +714,7 @@ export default function FormationView() {
             <Card
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`sticky top-4 h-fit w-80 border-none shadow-xl transition-all ${
+              className={`lg:sticky lg:top-4 h-fit w-full lg:w-80 border-none shadow-xl transition-all ${
                 snapshot.isDraggingOver ? 'ring-4 ring-emerald-400' : ''
               }`}
             >
