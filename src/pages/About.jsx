@@ -6,24 +6,34 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg" 
             alt="Michigan Jaguars Team" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/90 to-emerald-700/80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/95 via-emerald-800/85 to-green-900/90" />
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse at top, rgba(16, 185, 129, 0.2) 0%, transparent 60%)'
+          }} />
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center text-white">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Shield className="w-16 h-16" />
+          <div className="flex items-center justify-center gap-3 mb-6 animate-bounce-slow">
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl">
+              <Shield className="w-12 h-12" />
+            </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">About Michigan Jaguars</h1>
-          <p className="text-xl md:text-2xl text-emerald-100">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">About Michigan Jaguars</h1>
+          <p className="text-2xl md:text-3xl text-emerald-200 font-light">
             Building Champions On and Off the Field
           </p>
+          <div className="mt-8 flex items-center justify-center gap-4 text-emerald-300">
+            <div className="h-px w-16 bg-emerald-300"></div>
+            <Trophy className="w-6 h-6" />
+            <div className="h-px w-16 bg-emerald-300"></div>
+          </div>
         </div>
       </section>
 

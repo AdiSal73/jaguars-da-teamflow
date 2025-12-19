@@ -45,9 +45,10 @@ export default function Landing() {
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/bf69f6fda_camps-classes.jpg" 
             alt="Michigan Jaguars Training" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover animate-ken-burns"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/95 via-emerald-800/90 to-emerald-700/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/95 via-emerald-800/85 to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.3)_100%)]" />
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
@@ -56,10 +57,11 @@ export default function Landing() {
               <Shield className="w-12 h-12" />
               <h1 className="text-2xl font-bold">Michigan Jaguars</h1>
             </div>
-            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Develop Champions Through Data
+            <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in-up">
+              Develop Champions<br />
+              <span className="text-emerald-300">Through Data</span>
             </h2>
-            <p className="text-xl md:text-2xl mb-8 text-emerald-100 max-w-2xl">
+            <p className="text-xl md:text-2xl mb-8 text-emerald-100 max-w-2xl animate-fade-in-up-delay">
               Complete player development platform for elite soccer clubs. Track progress, analyze performance, and build championship teams.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -85,24 +87,30 @@ export default function Landing() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }} />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">500+</div>
-              <div className="text-slate-300">Active Players</div>
+            <div className="text-center group">
+              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform">500+</div>
+              <div className="text-slate-400 text-lg">Active Players</div>
             </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">50+</div>
-              <div className="text-slate-300">Competitive Teams</div>
+            <div className="text-center group">
+              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform">50+</div>
+              <div className="text-slate-400 text-lg">Competitive Teams</div>
             </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">30+</div>
-              <div className="text-slate-300">Expert Coaches</div>
+            <div className="text-center group">
+              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform">30+</div>
+              <div className="text-slate-400 text-lg">Expert Coaches</div>
             </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">12</div>
-              <div className="text-slate-300">Michigan Branches</div>
+            <div className="text-center group">
+              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform">12</div>
+              <div className="text-slate-400 text-lg">Michigan Branches</div>
             </div>
           </div>
         </div>
