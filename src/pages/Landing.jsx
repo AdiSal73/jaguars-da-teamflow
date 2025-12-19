@@ -43,11 +43,11 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/bf69f6fda_camps-classes.jpg" 
-            alt="Michigan Jaguars Training" 
-            className="w-full h-full object-cover animate-ken-burns"
-          />
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/bf69f6fda_camps-classes.jpg"
+            alt="Michigan Jaguars Training"
+            className="w-full h-full object-cover animate-ken-burns" />
+
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/95 via-emerald-800/85 to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.3)_100%)]" />
         </div>
@@ -66,20 +66,20 @@ export default function Landing() {
               Complete player development platform for elite soccer clubs. Track progress, analyze performance, and build championship teams.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-white text-emerald-900 hover:bg-emerald-50 text-lg px-8 py-6"
-                onClick={handleGetStarted}
-              >
+                onClick={handleGetStarted}>
+
                 Get Started
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6"
-                onClick={() => navigate(createPageUrl('Features'))}
-              >
+              <Button
+                size="lg"
+                variant="outline" className="bg-gray-950 text-white px-8 py-6 text-lg font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow-sm hover:text-accent-foreground h-10 border-2 border-white hover:bg-white/10"
+
+                onClick={() => navigate(createPageUrl('Features'))}>
+
                 Explore Features
               </Button>
             </div>
@@ -132,11 +132,11 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <Card className="border-none shadow-xl hover:shadow-2xl transition-all overflow-hidden group">
               <div className="h-48 overflow-hidden">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg" 
-                  alt="Player Development" 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg"
+                  alt="Player Development"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+
               </div>
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 -mt-12 relative z-10 shadow-lg">
@@ -165,11 +165,11 @@ export default function Landing() {
 
             <Card className="border-none shadow-xl hover:shadow-2xl transition-all overflow-hidden group">
               <div className="h-48 overflow-hidden">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f70bcf1df_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg" 
-                  alt="Analytics" 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f70bcf1df_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg"
+                  alt="Analytics"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+
               </div>
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 -mt-12 relative z-10 shadow-lg">
@@ -198,11 +198,11 @@ export default function Landing() {
 
             <Card className="border-none shadow-xl hover:shadow-2xl transition-all overflow-hidden group">
               <div className="h-48 overflow-hidden">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg" 
-                  alt="Team Development" 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
+                  alt="Team Development"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+
               </div>
               <CardContent className="p-6">
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 -mt-12 relative z-10 shadow-lg">
@@ -237,11 +237,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg" 
-                alt="Michigan Jaguars Team" 
-                className="w-full h-full object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg"
+                alt="Michigan Jaguars Team"
+                className="w-full h-full object-cover" />
+
             </div>
             <div>
               <h2 className="text-4xl font-bold text-slate-900 mb-6">Elite Training Programs</h2>
@@ -302,11 +302,11 @@ export default function Landing() {
               </div>
             </div>
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl order-1 md:order-2">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/fd6c058de_Small-group-training.jpg" 
-                alt="Small Group Training" 
-                className="w-full h-full object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/fd6c058de_Small-group-training.jpg"
+                alt="Small Group Training"
+                className="w-full h-full object-cover" />
+
             </div>
           </div>
         </div>
@@ -326,23 +326,23 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Users, title: 'Player Profiles', desc: 'Complete digital records' },
-              { icon: BarChart3, title: 'Analytics', desc: 'Performance insights' },
-              { icon: Target, title: 'Formation Tools', desc: 'Tactical planning' },
-              { icon: TrendingUp, title: 'Progress Tracking', desc: 'Development metrics' },
-              { icon: Calendar, title: 'Session Booking', desc: 'Coach availability' },
-              { icon: Shield, title: 'Injury Tracking', desc: 'Medical records' },
-              { icon: Trophy, title: 'Evaluations', desc: 'Skills assessment' },
-              { icon: Star, title: 'AI Insights', desc: 'Smart recommendations' }
-            ].map((item, i) => (
-              <div key={i} className="bg-gradient-to-br from-slate-50 to-white p-6 rounded-xl shadow-lg border-2 border-slate-100 hover:border-emerald-300 hover:shadow-xl transition-all">
+            { icon: Users, title: 'Player Profiles', desc: 'Complete digital records' },
+            { icon: BarChart3, title: 'Analytics', desc: 'Performance insights' },
+            { icon: Target, title: 'Formation Tools', desc: 'Tactical planning' },
+            { icon: TrendingUp, title: 'Progress Tracking', desc: 'Development metrics' },
+            { icon: Calendar, title: 'Session Booking', desc: 'Coach availability' },
+            { icon: Shield, title: 'Injury Tracking', desc: 'Medical records' },
+            { icon: Trophy, title: 'Evaluations', desc: 'Skills assessment' },
+            { icon: Star, title: 'AI Insights', desc: 'Smart recommendations' }].
+            map((item, i) =>
+            <div key={i} className="bg-gradient-to-br from-slate-50 to-white p-6 rounded-xl shadow-lg border-2 border-slate-100 hover:border-emerald-300 hover:shadow-xl transition-all">
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center mb-4">
                   <item.icon className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
                 <p className="text-sm text-slate-600">{item.desc}</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -362,11 +362,11 @@ export default function Landing() {
           <p className="text-xl mb-8 text-emerald-100">
             Join Michigan Jaguars and experience the future of soccer development
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-white text-emerald-900 hover:bg-emerald-50 text-lg px-8 py-6"
-            onClick={handleGetStarted}
-          >
+            onClick={handleGetStarted}>
+
             Get Started Today
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
@@ -390,6 +390,6 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>);
+
 }
