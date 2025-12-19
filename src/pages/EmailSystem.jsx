@@ -92,10 +92,11 @@ export default function EmailSystem() {
         .replace(/\{\{login_link\}\}/g, appUrl)
         .replace(/\{\{user_name\}\}/g, 'Test User');
       
-      return await base44.functions.invoke('sendResendEmail', {
+      return await base44.functions.invoke('sendEmail', {
         to: email,
         subject: template.subject,
-        content: htmlContent
+        html: htmlContent,
+        from: 'Michigan Jaguars <Academy@jaguarsidp.com>'
       });
     },
     onSuccess: () => {
