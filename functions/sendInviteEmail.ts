@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { email, full_name, role, app_url, recipient_email } = await req.json();
+    const { email, full_name, role, recipient_email } = await req.json();
 
     const targetEmail = recipient_email || email;
     
@@ -18,8 +18,51 @@ Deno.serve(async (req) => {
     }
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const appUrl = 'https://jaguarsidp.com';
 
-    const roleText = role === 'coach' ? 'Coach' : role === 'parent' ? 'Parent' : 'User';
+    const templates = await base44.asServiceRole.entities.EmailTemplate.filter({ template_type: 'invite', is_active: true });
+    const inviteTemplate = templates[0];
+
+    let htmlContent, subject;
+
+    if (inviteTemplate) {
+      const roleText = role === 'coach' ? 'Coach' : role === 'parent' ? 'Parent' : 'User';
+      htmlContent = inviteTemplate.html_content
+        .replace(/\{\{full_name\}\}/g, full_name || 'there')
+        .replace(/\{\{role\}\}/g, roleText)
+        .replace(/\{\{app_url\}\}/g, appUrl);
+      subject = inviteTemplate.subject;
+    } else {
+      const roleText = role === 'coach' ? 'Coach' : role === 'parent' ? 'Parent' : 'User';
+      subject = 'Welcome to Michigan Jaguars Management System';
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; margin-bottom: 20px;"></div>
+            <h1 style="color: #10b981; margin: 0;">Welcome to Michigan Jaguars!</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
+            <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
+              Hi ${full_name || 'there'},
+            </p>
+            <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
+              You've been invited to join the Michigan Jaguars Player Development System as a ${roleText}.
+            </p>
+            <p style="font-size: 16px; color: #334155; margin-bottom: 30px;">
+              Click the button below to set up your account and get started:
+            </p>
+            <div style="text-align: center;">
+              <a href="${appUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                Get Started
+              </a>
+            </div>
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+            If you have any questions, please contact your administrator.
+          </p>
+        </div>
+      `;
+    }
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -30,34 +73,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: 'Michigan Jaguars <Academy@jaguarsidp.com>',
         to: [targetEmail],
-        subject: 'Welcome to Michigan Jaguars Management System',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <div style="display: inline-block; width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; margin-bottom: 20px;"></div>
-              <h1 style="color: #10b981; margin: 0;">Welcome to Michigan Jaguars!</h1>
-            </div>
-            <div style="background: #f8fafc; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-              <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
-                Hi ${full_name || 'there'},
-              </p>
-              <p style="font-size: 16px; color: #334155; margin-bottom: 20px;">
-                You've been invited to join the Michigan Jaguars Player Development System as a ${roleText}.
-              </p>
-              <p style="font-size: 16px; color: #334155; margin-bottom: 30px;">
-                Click the button below to set up your account and get started:
-              </p>
-              <div style="text-align: center;">
-                <a href="${app_url || window.location.origin}" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                  Get Started
-                </a>
-              </div>
-            </div>
-            <p style="font-size: 12px; color: #94a3b8; text-align: center;">
-              If you have any questions, please contact your administrator.
-            </p>
-          </div>
-        `
+        subject,
+        html: htmlContent
       })
     });
 

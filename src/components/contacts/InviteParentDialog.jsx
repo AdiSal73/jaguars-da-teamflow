@@ -23,8 +23,7 @@ export default function InviteParentDialog({ open, onClose, contact }) {
       const response = await base44.functions.invoke('sendInviteEmail', {
         recipient_email: email,
         full_name: name,
-        role: 'parent',
-        app_url: window.location.origin
+        role: 'parent'
       });
       return response.data;
     },
@@ -62,10 +61,11 @@ export default function InviteParentDialog({ open, onClose, contact }) {
 
     if (!contact) return null;
 
+    const appUrl = 'https://jaguarsidp.com';
     let preview = inviteTemplate.html_content
       .replace(/\{\{full_name\}\}/g, contact.name || 'Parent')
-      .replace(/\{\{role\}\}/g, 'parent')
-      .replace(/\{\{app_url\}\}/g, window.location.origin);
+      .replace(/\{\{role\}\}/g, 'Parent')
+      .replace(/\{\{app_url\}\}/g, appUrl);
 
     return (
       <div className="border-2 border-slate-200 rounded-lg overflow-hidden max-h-[400px] overflow-y-auto">

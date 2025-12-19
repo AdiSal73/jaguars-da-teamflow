@@ -29,7 +29,6 @@ import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
 import CoachingResources from './pages/CoachingResources';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import PDPViewer from './pages/PDPViewer';
-import EmailTemplates from './pages/EmailTemplates';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import TeamDashboard from './pages/TeamDashboard';
 import EmailTest from './pages/EmailTest';
@@ -74,7 +73,6 @@ export const PAGES = {
     "CoachingResources": CoachingResources,
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "PDPViewer": PDPViewer,
-    "EmailTemplates": EmailTemplates,
     "CommunicationPreferences": CommunicationPreferences,
     "TeamDashboard": TeamDashboard,
     "EmailTest": EmailTest,

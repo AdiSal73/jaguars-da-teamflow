@@ -125,6 +125,7 @@ export default function FormationView() {
   const [draggingPosition, setDraggingPosition] = useState(null);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [resizingPosition, setResizingPosition] = useState(null);
+  const resizeStartRef = useRef(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -425,28 +426,34 @@ export default function FormationView() {
   };
 
   const handleResizeStart = (e, position) => {
-  e.stopPropagation();
-  setResizingPosition(position.id);
+    e.stopPropagation();
+    e.preventDefault();
+    setResizingPosition(position.id);
+    
+    resizeStartRef.current = {
+      startX: e.clientX,
+      startWidth: position.width || 140
+    };
 
-  const handleMouseMove = (moveEvent) => {
-    if (!fieldRef.current) return;
-    const rect = fieldRef.current.getBoundingClientRect();
-    const relativeX = moveEvent.clientX - rect.left;
-    const newWidth = Math.max(100, Math.min(300, (relativeX / rect.width) * 600));
+    const handleMouseMove = (moveEvent) => {
+      if (!resizeStartRef.current) return;
+      const deltaX = moveEvent.clientX - resizeStartRef.current.startX;
+      const newWidth = Math.max(80, Math.min(300, resizeStartRef.current.startWidth + deltaX));
 
-    setFormationPositions(prev => prev.map(pos => 
-      pos.id === position.id ? { ...pos, width: newWidth } : pos
-    ));
-  };
+      setFormationPositions(prev => prev.map(pos => 
+        pos.id === position.id ? { ...pos, width: newWidth } : pos
+      ));
+    };
 
-  const handleMouseUp = () => {
-    setResizingPosition(null);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  };
+    const handleMouseUp = () => {
+      setResizingPosition(null);
+      resizeStartRef.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
 
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   const handleExportFieldPDF = async () => {
