@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import EditablePlayerCard from '../components/player/EditablePlayerCard';
 import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import TeamAnalyticsDashboard from '../components/team/TeamAnalyticsDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ export default function TeamDashboard() {
   const [trainingSessions, setTrainingSessions] = useState('');
   const [editingGoals, setEditingGoals] = useState(false);
   const [editingTraining, setEditingTraining] = useState(false);
+  const [activeTab, setActiveTab] = useState('roster');
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -322,6 +325,24 @@ Format with clear headers and structure.`;
           </Card>
         </div>
 
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-md mb-6">
+            <TabsTrigger value="roster">Team Roster</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="analytics">
+            <TeamAnalyticsDashboard 
+              team={team}
+              players={players}
+              evaluations={evaluations}
+              assessments={assessments}
+              tryouts={tryouts}
+            />
+          </TabsContent>
+
+          <TabsContent value="evaluation">
         {/* Team Evaluation & Analytics */}
         <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-purple-50">
@@ -577,6 +598,9 @@ Format with clear headers and structure.`;
           </CardContent>
         </Card>
 
+          </TabsContent>
+
+          <TabsContent value="roster">
         {/* Team Roster */}
         <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-emerald-50">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b">
@@ -609,6 +633,8 @@ Format with clear headers and structure.`;
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Team Evaluation Dialog */}
