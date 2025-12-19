@@ -125,6 +125,8 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Team Assignments", url: createPageUrl("TeamTryout") },
+        { title: "Outside Players", url: createPageUrl("TryoutPlayers") },
+        { title: "Scouting Pipeline", url: createPageUrl("ScoutingPipeline") },
         { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
         { title: "Depth Chart", url: createPageUrl("FormationView") },
         { title: "Player Comparison", url: createPageUrl("PlayerComparison") },
