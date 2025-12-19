@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, Send, FileText, Users, CheckCircle2, AlertCircle, Loader2, Plus, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EmailTemplateManager from '../components/email/EmailTemplateManager';
 
 export default function EmailSystem() {
   const queryClient = useQueryClient();
@@ -292,84 +293,22 @@ export default function EmailSystem() {
 
           <TabsContent value="templates">
             <Card className="border-none shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Email Templates
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    {templates.length === 0 && (
-                      <Button onClick={initializeDefaultTemplates} size="sm" className="bg-white text-purple-600 hover:bg-purple-50">
-                        Initialize Defaults
-                      </Button>
-                    )}
-                    <Button onClick={() => {
-                      setEditingTemplate(null);
-                      setTemplateForm({
-                        template_name: '',
-                        subject: '',
-                        html_content: '',
-                        text_content: '',
-                        template_type: 'custom'
-                      });
-                      setShowTemplateDialog(true);
-                    }} size="sm" className="bg-white text-purple-600 hover:bg-purple-50">
-                      <Plus className="w-4 h-4 mr-1" />
-                      New Template
-                    </Button>
-                  </div>
-                </div>
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5" />
+                  Email Templates
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="space-y-3">
-                  {templates.map((template) => (
-                    <div key={template.id} className="p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-purple-300 transition-all">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="font-bold text-slate-900">{template.template_name}</h4>
-                            <Badge className="bg-purple-100 text-purple-800 text-xs">{template.template_type}</Badge>
-                            {template.is_active && (
-                              <Badge className="bg-green-100 text-green-800 text-xs">Active</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-600 mb-2">Subject: {template.subject}</p>
-                          {template.variables && template.variables.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {template.variables.map((v, i) => (
-                                <span key={i} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-                                  {`{{${v}}}`}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => handleEditTemplate(template)} className="h-8 px-2">
-                            <Edit2 className="w-4 h-4 text-blue-600" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => {
-                            if (confirm('Delete this template?')) {
-                              deleteTemplateMutation.mutate(template.id);
-                            }
-                          }} className="h-8 px-2">
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {templates.length === 0 && (
-                    <div className="text-center py-12">
-                      <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500 mb-4">No email templates yet</p>
-                      <Button onClick={initializeDefaultTemplates} className="bg-purple-600 hover:bg-purple-700">
-                        Initialize Default Templates
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                {templates.length === 0 && (
+                  <div className="text-center py-8 mb-6">
+                    <Button onClick={initializeDefaultTemplates} className="bg-purple-600 hover:bg-purple-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Initialize Default Templates
+                    </Button>
+                  </div>
+                )}
+                <EmailTemplateManager />
               </CardContent>
             </Card>
           </TabsContent>

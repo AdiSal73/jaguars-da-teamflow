@@ -162,6 +162,49 @@ export default function About() {
         </div>
       </section>
 
+      {/* Platform Screenshots */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">Technology-Driven Development</h2>
+            <p className="text-xl text-slate-600">Our platform helps coaches and parents track every aspect of player growth</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-16">
+            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-emerald-200 hover:scale-105 transition-transform">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg" 
+                alt="Player Dashboard" 
+                className="w-full aspect-video object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-900/90 to-transparent p-4">
+                <p className="text-white font-bold">Player Profiles & Analytics</p>
+              </div>
+            </div>
+            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-purple-200 hover:scale-105 transition-transform">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f5b12cc94_Screenshot2025-12-19101555.png" 
+                alt="Formation Builder" 
+                className="w-full aspect-video object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-900/90 to-transparent p-4">
+                <p className="text-white font-bold">Formation Builder</p>
+              </div>
+            </div>
+            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-blue-200 hover:scale-105 transition-transform">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg" 
+                alt="Team Management" 
+                className="w-full aspect-video object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-900/90 to-transparent p-4">
+                <p className="text-white font-bold">Team Assignments</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Team Photo */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
