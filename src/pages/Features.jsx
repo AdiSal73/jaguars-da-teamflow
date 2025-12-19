@@ -161,7 +161,7 @@ export default function Features() {
               { icon: Activity, title: 'Injury Tracking', desc: 'Monitor injuries, treatment plans, and recovery protocols' },
               { icon: Star, title: 'Player Comparison', desc: 'Compare players side-by-side with detailed metrics' },
               { icon: Trophy, title: 'Team Evaluations', desc: 'Comprehensive team performance assessments' },
-              { icon: Target, title: 'Goal Setting', desc: 'AI-assisted goal creation and progress monitoring' },
+              { icon: Target, title: 'Goal Setting', desc: 'Coach-assisted goal creation and progress monitoring' },
               { icon: MessageSquare, title: 'Communications Hub', desc: 'Centralized messaging and announcements' }
             ].map(item => (
               <Card key={item.title} className="border-none shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all bg-white group">
