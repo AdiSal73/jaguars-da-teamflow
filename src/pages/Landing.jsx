@@ -190,7 +190,7 @@ export default function Landing() {
                   </li>
                   <li className="flex items-center text-sm text-slate-600">
                     <CheckCircle className="w-4 h-4 text-blue-600 mr-2" />
-                    AI development plans
+                    Individual development plans
                   </li>
                 </ul>
               </CardContent>
