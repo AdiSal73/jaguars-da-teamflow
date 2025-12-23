@@ -481,9 +481,14 @@ export default function Tryouts() {
                                        </div>
                                        <div className="flex-1 min-w-0">
                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                         <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 truncate">
-                                           {player.primary_position}
-                                           {player.date_of_birth && <span className="ml-1">• {new Date(player.date_of_birth).getFullYear()}</span>}
+                                         <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 flex gap-1 items-center truncate">
+                                           <span>{player.primary_position}</span>
+                                           {player.grad_year && (
+                                             <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                                           )}
+                                           {player.date_of_birth && (
+                                             <Badge className="bg-slate-400 text-white text-[8px] px-1 py-0">{new Date(player.date_of_birth).getFullYear()}</Badge>
+                                           )}
                                          </div>
                                          {(() => {
                                            const evaluation = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
@@ -751,7 +756,15 @@ export default function Tryouts() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-base md:text-lg truncate">{player.full_name}</CardTitle>
-                          <div className="text-xs text-slate-600 mt-1 truncate">{team?.name} • {team?.age_group}</div>
+                          <div className="text-xs text-slate-600 mt-1 flex gap-1 items-center flex-wrap">
+                            <span>{team?.name} • {team?.age_group}</span>
+                            {player.grad_year && (
+                              <Badge className="bg-slate-600 text-white text-[9px] px-1.5 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                            )}
+                            {player.date_of_birth && (
+                              <Badge className="bg-slate-400 text-white text-[9px] px-1.5 py-0">{new Date(player.date_of_birth).getFullYear()}</Badge>
+                            )}
+                          </div>
                         </div>
                         {isTrappedPlayer(player.date_of_birth) &&
                         <Badge className="bg-red-500 text-white text-[10px] px-1.5 font-bold">

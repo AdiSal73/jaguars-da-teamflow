@@ -302,6 +302,14 @@ export default function EvaluationsNew() {
                 <div className="mt-2">
                   <h3 className="font-bold text-base truncate">{player.full_name}</h3>
                   <p className="text-xs text-white/80 truncate">{player.primary_position}</p>
+                  <div className="flex gap-1 mt-1">
+                    {player.grad_year && (
+                      <Badge className="bg-white/20 text-white text-[9px] px-1.5 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                    )}
+                    {birthYear && (
+                      <Badge className="bg-white/20 text-white text-[9px] px-1.5 py-0">{birthYear}</Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-3 space-y-2" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}>
