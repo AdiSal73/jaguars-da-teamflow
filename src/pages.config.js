@@ -1,91 +1,93 @@
-import Players from './pages/Players';
-import Teams from './pages/Teams';
-import Assessments from './pages/Assessments';
-import ClubManagement from './pages/ClubManagement';
-import CoachManagement from './pages/CoachManagement';
-import UserManagement from './pages/UserManagement';
-import CoachDashboard from './pages/CoachDashboard';
-import Tryouts from './pages/Tryouts';
-import EvaluationsNew from './pages/EvaluationsNew';
-import FormationView from './pages/FormationView';
-import PlayerDashboard from './pages/PlayerDashboard';
-import PlayerComparison from './pages/PlayerComparison';
-import Analytics from './pages/Analytics';
+import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
+import About from './pages/About';
 import AdminDataManagement from './pages/AdminDataManagement';
-import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
-import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
+import AdvancedAnalytics from './pages/AdvancedAnalytics';
+import Analytics from './pages/Analytics';
+import Assessments from './pages/Assessments';
 import Availability from './pages/Availability';
 import BookCoach from './pages/BookCoach';
-import MyBookings from './pages/MyBookings';
 import BookingsTable from './pages/BookingsTable';
-import TeamReports from './pages/TeamReports';
-import TeamTryout from './pages/TeamTryout';
-import FAQ from './pages/FAQ';
-import FitnessResources from './pages/FitnessResources';
-import AdvancedAnalytics from './pages/AdvancedAnalytics';
-import Communications from './pages/Communications';
-import TeamRoster from './pages/TeamRoster';
-import AITrainingPlanGenerator from './pages/AITrainingPlanGenerator';
+import ClubManagement from './pages/ClubManagement';
+import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
+import CoachDashboard from './pages/CoachDashboard';
+import CoachManagement from './pages/CoachManagement';
 import CoachingResources from './pages/CoachingResources';
-import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
-import PDPViewer from './pages/PDPViewer';
 import CommunicationPreferences from './pages/CommunicationPreferences';
-import TeamDashboard from './pages/TeamDashboard';
-import EmailTest from './pages/EmailTest';
+import Communications from './pages/Communications';
 import ContactsManager from './pages/ContactsManager';
-import ResetPassword from './pages/ResetPassword';
 import EmailSystem from './pages/EmailSystem';
-import Landing from './pages/Landing';
-import About from './pages/About';
+import EmailTest from './pages/EmailTest';
+import EvaluationsNew from './pages/EvaluationsNew';
+import FAQ from './pages/FAQ';
 import Features from './pages/Features';
-import TryoutPlayers from './pages/TryoutPlayers';
+import FitnessResources from './pages/FitnessResources';
+import FormationView from './pages/FormationView';
+import Home from './pages/Home';
+import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
+import Landing from './pages/Landing';
+import MyBookings from './pages/MyBookings';
+import PDPViewer from './pages/PDPViewer';
+import PlayerComparison from './pages/PlayerComparison';
+import PlayerDashboard from './pages/PlayerDashboard';
+import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
+import Players from './pages/Players';
+import ResetPassword from './pages/ResetPassword';
 import ScoutingPipeline from './pages/ScoutingPipeline';
+import TeamDashboard from './pages/TeamDashboard';
+import TeamReports from './pages/TeamReports';
+import TeamRoster from './pages/TeamRoster';
+import TeamTryout from './pages/TeamTryout';
+import Teams from './pages/Teams';
+import TryoutPlayers from './pages/TryoutPlayers';
+import Tryouts from './pages/Tryouts';
+import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Players": Players,
-    "Teams": Teams,
-    "Assessments": Assessments,
-    "ClubManagement": ClubManagement,
-    "CoachManagement": CoachManagement,
-    "UserManagement": UserManagement,
-    "CoachDashboard": CoachDashboard,
-    "Tryouts": Tryouts,
-    "EvaluationsNew": EvaluationsNew,
-    "FormationView": FormationView,
-    "PlayerDashboard": PlayerDashboard,
-    "PlayerComparison": PlayerComparison,
-    "Analytics": Analytics,
+    "AITrainingPlanGenerator": AITrainingPlanGenerator,
+    "About": About,
     "AdminDataManagement": AdminDataManagement,
-    "PlayerRoleAssignment": PlayerRoleAssignment,
-    "ClubSettingsAdmin": ClubSettingsAdmin,
+    "AdvancedAnalytics": AdvancedAnalytics,
+    "Analytics": Analytics,
+    "Assessments": Assessments,
     "Availability": Availability,
     "BookCoach": BookCoach,
-    "MyBookings": MyBookings,
     "BookingsTable": BookingsTable,
-    "TeamReports": TeamReports,
-    "TeamTryout": TeamTryout,
-    "FAQ": FAQ,
-    "FitnessResources": FitnessResources,
-    "AdvancedAnalytics": AdvancedAnalytics,
-    "Communications": Communications,
-    "TeamRoster": TeamRoster,
-    "AITrainingPlanGenerator": AITrainingPlanGenerator,
+    "ClubManagement": ClubManagement,
+    "ClubSettingsAdmin": ClubSettingsAdmin,
+    "CoachDashboard": CoachDashboard,
+    "CoachManagement": CoachManagement,
     "CoachingResources": CoachingResources,
-    "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
-    "PDPViewer": PDPViewer,
     "CommunicationPreferences": CommunicationPreferences,
-    "TeamDashboard": TeamDashboard,
-    "EmailTest": EmailTest,
+    "Communications": Communications,
     "ContactsManager": ContactsManager,
-    "ResetPassword": ResetPassword,
     "EmailSystem": EmailSystem,
-    "Landing": Landing,
-    "About": About,
+    "EmailTest": EmailTest,
+    "EvaluationsNew": EvaluationsNew,
+    "FAQ": FAQ,
     "Features": Features,
-    "TryoutPlayers": TryoutPlayers,
+    "FitnessResources": FitnessResources,
+    "FormationView": FormationView,
+    "Home": Home,
+    "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
+    "Landing": Landing,
+    "MyBookings": MyBookings,
+    "PDPViewer": PDPViewer,
+    "PlayerComparison": PlayerComparison,
+    "PlayerDashboard": PlayerDashboard,
+    "PlayerRoleAssignment": PlayerRoleAssignment,
+    "Players": Players,
+    "ResetPassword": ResetPassword,
     "ScoutingPipeline": ScoutingPipeline,
+    "TeamDashboard": TeamDashboard,
+    "TeamReports": TeamReports,
+    "TeamRoster": TeamRoster,
+    "TeamTryout": TeamTryout,
+    "Teams": Teams,
+    "TryoutPlayers": TryoutPlayers,
+    "Tryouts": Tryouts,
+    "UserManagement": UserManagement,
 }
 
 export const pagesConfig = {

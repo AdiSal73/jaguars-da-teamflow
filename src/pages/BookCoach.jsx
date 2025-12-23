@@ -33,6 +33,7 @@ export default function BookCoach() {
       try {
         return await base44.auth.me();
       } catch (error) {
+        // Allow booking without authentication - public access
         return null;
       }
     },
@@ -61,7 +62,7 @@ export default function BookCoach() {
 
   // Get players for this parent/user
   const myPlayers = useMemo(() => {
-    if (!user) return [];
+    if (!user) return []; // Empty for guest users
     // Check if user has linked players (is a parent)
     if (user.player_ids && user.player_ids.length > 0) {
       return players.filter(p => user.player_ids.includes(p.id));
@@ -74,18 +75,13 @@ export default function BookCoach() {
     return [...new Set(myPlayers.map(p => p.team_id).filter(Boolean))];
   }, [myPlayers]);
 
-  // Filter coaches by team assignment - only show coaches for player's teams
+  // Filter coaches - show all coaches with booking enabled for public access
   const availableCoaches = useMemo(() => {
-    // If user has no players or teams, show no coaches
-    if (myTeamIds.length === 0) return [];
-    
     return coaches.filter(c => {
       if (c.booking_enabled === false || !c.availability_slots?.length) return false;
-      // Only show coaches assigned to the player's specific teams
-      if (!c.team_ids?.length) return false;
-      return c.team_ids.some(teamId => myTeamIds.includes(teamId));
+      return true;
     });
-  }, [coaches, myTeamIds]);
+  }, [coaches]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
@@ -95,59 +91,36 @@ export default function BookCoach() {
     onSuccess: async (booking) => {
       queryClient.invalidateQueries(['bookings']);
       
-      // Send email confirmations
+      // Send email confirmations via Resend
       setSendingEmails(true);
       try {
         const location = locations.find(l => l.id === booking.location_id);
-        const locationInfo = location ? `${location.name}\n${location.address}` : 'Location TBD';
+        const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
         
         // Email to client
-        await base44.functions.invoke('sendEmail', {
-          to: user.email,
-          subject: `Booking Confirmation - ${booking.service_name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc; border-radius: 10px;">
-              <h2 style="color: #059669; margin-bottom: 20px;">✓ Booking Confirmed</h2>
-              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #334155; margin-bottom: 15px;">Session Details:</h3>
-                <p style="margin: 8px 0;"><strong>Coach:</strong> ${booking.coach_name}</p>
-                <p style="margin: 8px 0;"><strong>Player:</strong> ${booking.player_name}</p>
-                <p style="margin: 8px 0;"><strong>Service:</strong> ${booking.service_name}</p>
-                <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                <p style="margin: 8px 0;"><strong>Time:</strong> ${formatTimeDisplay(booking.start_time)} - ${formatTimeDisplay(booking.end_time)}</p>
-                <p style="margin: 8px 0;"><strong>Duration:</strong> ${booking.duration} minutes</p>
-                <p style="margin: 8px 0;"><strong>Location:</strong><br>${locationInfo}</p>
-                ${booking.notes ? `<p style="margin: 8px 0;"><strong>Notes:</strong> ${booking.notes}</p>` : ''}
-              </div>
-              <p style="color: #64748b; font-size: 14px;">If you need to reschedule or cancel, please contact your coach directly.</p>
-            </div>
-          `,
-          text: `Booking Confirmed\n\nCoach: ${booking.coach_name}\nPlayer: ${booking.player_name}\nService: ${booking.service_name}\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nLocation: ${locationInfo}${booking.notes ? '\nNotes: ' + booking.notes : ''}`
+        await base44.functions.invoke('sendBookingEmail', {
+          to: booking.parent_email || user?.email,
+          subject: `Booking Confirmed - ${booking.service_name}`,
+          booking: {
+            ...booking,
+            booked_by_name: user?.full_name || 'Guest',
+            location_info: locationInfo
+          },
+          type: 'confirmation_client'
         });
 
         // Email to coach
         const coach = coaches.find(c => c.id === booking.coach_id);
         if (coach?.email) {
-          await base44.functions.invoke('sendEmail', {
+          await base44.functions.invoke('sendBookingEmail', {
             to: coach.email,
             subject: `New Booking - ${booking.player_name}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc; border-radius: 10px;">
-                <h2 style="color: #059669; margin-bottom: 20px;">New Session Booked</h2>
-                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                  <h3 style="color: #334155; margin-bottom: 15px;">Session Details:</h3>
-                  <p style="margin: 8px 0;"><strong>Player:</strong> ${booking.player_name}</p>
-                  <p style="margin: 8px 0;"><strong>Booked by:</strong> ${user.full_name} (${user.email})</p>
-                  <p style="margin: 8px 0;"><strong>Service:</strong> ${booking.service_name}</p>
-                  <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <p style="margin: 8px 0;"><strong>Time:</strong> ${formatTimeDisplay(booking.start_time)} - ${formatTimeDisplay(booking.end_time)}</p>
-                  <p style="margin: 8px 0;"><strong>Duration:</strong> ${booking.duration} minutes</p>
-                  <p style="margin: 8px 0;"><strong>Location:</strong><br>${locationInfo}</p>
-                  ${booking.notes ? `<p style="margin: 8px 0;"><strong>Client Notes:</strong> ${booking.notes}</p>` : ''}
-                </div>
-              </div>
-            `,
-            text: `New Session Booked\n\nPlayer: ${booking.player_name}\nBooked by: ${user.full_name} (${user.email})\nService: ${booking.service_name}\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nLocation: ${locationInfo}${booking.notes ? '\nNotes: ' + booking.notes : ''}`
+            booking: {
+              ...booking,
+              booked_by_name: user?.full_name || 'Guest',
+              location_info: locationInfo
+            },
+            type: 'confirmation_coach'
           });
         }
       } catch (error) {
@@ -289,14 +262,17 @@ export default function BookCoach() {
     setShowConfirmDialog(true);
   };
 
+  const [guestInfo, setGuestInfo] = useState({ name: '', email: '', phone: '' });
+
   const handleConfirmBooking = () => {
     const player = myPlayers.find(p => p.id === selectedPlayerId) || myPlayers[0];
     createBookingMutation.mutate({
       coach_id: selectedCoach.id,
       coach_name: selectedCoach.full_name,
-      player_id: player?.id,
-      player_name: player?.full_name,
-      parent_id: user?.id,
+      player_id: player?.id || null,
+      player_name: player?.full_name || guestInfo.name,
+      parent_id: user?.id || null,
+      parent_email: user?.email || guestInfo.email,
       location_id: selectedSlot.location_id,
       service_name: selectedSlot.service_name,
       booking_date: selectedDate.toISOString().split('T')[0],
@@ -367,8 +343,8 @@ export default function BookCoach() {
             {availableCoaches.length === 0 ? (
               <div className="text-center py-12">
                 <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600 font-semibold mb-2">No coaches available for your team</p>
-                <p className="text-slate-500 text-sm">There are no coaches assigned to your player's team with booking enabled. Please contact your club administrator.</p>
+                <p className="text-slate-600 font-semibold mb-2">No coaches available</p>
+                <p className="text-slate-500 text-sm">No coaches have booking enabled at this time. Please check back later.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -567,7 +543,37 @@ export default function BookCoach() {
               <DialogTitle className="text-xl">Booking Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              {myPlayers.length > 1 && (
+              {!user && (
+                <>
+                  <div>
+                    <Label className="mb-2 block">Your Name *</Label>
+                    <Input
+                      value={guestInfo.name}
+                      onChange={(e) => setGuestInfo({...guestInfo, name: e.target.value})}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Your Email *</Label>
+                    <Input
+                      type="email"
+                      value={guestInfo.email}
+                      onChange={(e) => setGuestInfo({...guestInfo, email: e.target.value})}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Phone Number (optional)</Label>
+                    <Input
+                      value={guestInfo.phone}
+                      onChange={(e) => setGuestInfo({...guestInfo, phone: e.target.value})}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                </>
+              )}
+              
+              {user && myPlayers.length > 1 && (
                 <div>
                   <Label className="mb-2 block">Select Player</Label>
                   <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
@@ -593,7 +599,11 @@ export default function BookCoach() {
               
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setShowBookingDialog(false)} className="flex-1">Cancel</Button>
-                <Button onClick={handleProceedToConfirm} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                <Button 
+                  onClick={handleProceedToConfirm} 
+                  disabled={!user && (!guestInfo.name || !guestInfo.email)}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
                   Continue
                 </Button>
               </div>
@@ -636,9 +646,16 @@ export default function BookCoach() {
                       <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                         <span className="text-slate-600 font-medium">Player</span>
                         <span className="font-bold text-slate-900">
-                          {myPlayers.find(p => p.id === selectedPlayerId)?.full_name || myPlayers[0]?.full_name}
+                          {myPlayers.find(p => p.id === selectedPlayerId)?.full_name || myPlayers[0]?.full_name || guestInfo.name}
                         </span>
                       </div>
+                      
+                      {!user && (
+                        <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                          <span className="text-slate-600 font-medium">Contact</span>
+                          <span className="font-bold text-slate-900">{guestInfo.email}</span>
+                        </div>
+                      )}
                       
                       <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                         <span className="text-slate-600 font-medium">Service</span>
