@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle, CalendarDays, List, Search } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Clock, CheckCircle, CalendarDays, List, Search, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import SlotEditor from '../components/booking/SlotEditor';
 import AvailabilityCalendarView from '../components/availability/AvailabilityCalendarView';
+import ShareBookingLinkDialog from '../components/booking/ShareBookingLinkDialog';
 import { format } from 'date-fns';
 
 
@@ -23,6 +24,7 @@ export default function Availability() {
   const [blackoutDates, setBlackoutDates] = useState([]);
   const [selectedCoachIds, setSelectedCoachIds] = useState([]);
   const [coachSearchTerm, setCoachSearchTerm] = useState('');
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -240,6 +242,16 @@ export default function Availability() {
             </h1>
             <p className="text-sm md:text-base text-slate-600 mt-1">Configure your booking schedule and services</p>
           </div>
+          {currentCoach && !isAdmin && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowShareDialog(true)}
+              className="gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Share Booking Link
+            </Button>
+          )}
           {isAdmin && (
             <div className="flex-1 max-w-md">
               <Label className="text-xs text-slate-600 mb-2 block">Search & Select Coaches</Label>
@@ -582,6 +594,12 @@ export default function Availability() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ShareBookingLinkDialog
+        open={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        coach={currentCoach}
+      />
     </div>
   );
 }
