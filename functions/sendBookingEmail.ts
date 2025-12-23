@@ -18,10 +18,11 @@ Deno.serve(async (req) => {
       return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
 
-    // Parse date correctly to avoid timezone issues
+    // Parse date correctly to avoid timezone issues - force UTC
     const [year, month, day] = booking.booking_date.split('-').map(Number);
-    const bookingDate = new Date(year, month - 1, day);
+    const bookingDate = new Date(Date.UTC(year, month - 1, day));
     const formattedDate = bookingDate.toLocaleDateString('en-US', { 
+      timeZone: 'UTC',
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 
