@@ -41,6 +41,7 @@ import Teams from './pages/Teams';
 import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserManagement from './pages/UserManagement';
+import EvaluationAnalytics from './pages/EvaluationAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "TryoutPlayers": TryoutPlayers,
     "Tryouts": Tryouts,
     "UserManagement": UserManagement,
+    "EvaluationAnalytics": EvaluationAnalytics,
 }
 
 export const pagesConfig = {
