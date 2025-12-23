@@ -144,6 +144,7 @@ export default function Layout({ children, currentPageName }) {
         { title: "Team Reports", url: createPageUrl("TeamReports") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
+        { title: "Evaluation Analytics", url: createPageUrl("EvaluationAnalytics") },
         { title: "Formation View", url: createPageUrl("FormationView") },
         { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
         { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },

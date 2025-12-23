@@ -109,19 +109,42 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
     }
   }, [player, open]);
 
+  const calculateGreatRating = (data) => {
+    const mental = (
+      2 * data.growth_mindset +
+      2 * data.resilience +
+      data.efficiency_in_execution +
+      4 * data.athleticism +
+      data.team_focus
+    ) / 10;
+
+    const defending = (
+      2 * data.defending_organized +
+      2 * data.defending_transition +
+      3 * data.defending_final_third +
+      data.defending_set_pieces
+    ) / 8;
+
+    const attacking = (
+      2 * data.attacking_organized +
+      2 * data.attacking_in_transition +
+      3 * data.attacking_final_third +
+      data.attacking_set_pieces
+    ) / 8;
+
+    const positionRoles = (
+      data.position_role_1 +
+      data.position_role_2 +
+      data.position_role_3 +
+      data.position_role_4
+    ) / 4;
+
+    return Math.round((2 * mental + 2 * defending + 2 * attacking + 4 * positionRoles) * 10) / 10;
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const scores = [
-        data.growth_mindset, data.resilience, data.efficiency_in_execution,
-        data.athleticism, data.team_focus, data.defending_organized,
-        data.defending_final_third, data.defending_transition,
-        data.attacking_organized, data.attacking_final_third, data.attacking_in_transition,
-        data.position_role_1, data.position_role_2, data.position_role_3, data.position_role_4
-      ].filter(s => s > 0);
-      
-      const overall_score = scores.length > 0 
-        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
-        : 0;
+      const overall_score = calculateGreatRating(data);
 
       return base44.entities.Evaluation.create({
         player_id: player.id,
