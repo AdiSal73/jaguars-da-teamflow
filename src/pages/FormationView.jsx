@@ -861,6 +861,9 @@ export default function FormationView() {
                                 <div className="text-[10px] text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
                                 {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
                                 <div className="flex flex-wrap gap-0.5 mt-1.5">
+                                  {player.grad_year && (
+                                    <Badge className="bg-slate-600 text-white text-[8px] px-1.5 py-0 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                                  )}
                                   {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
                                   {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
                                   {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}

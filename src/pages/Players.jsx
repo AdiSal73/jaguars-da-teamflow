@@ -753,6 +753,9 @@ export default function Players() {
                              {team?.league && <span> • {team.league}</span>}
                            </div>
                            <div className="flex flex-wrap gap-1">
+                             {player.grad_year && (
+                               <Badge className="bg-slate-600 text-white text-[10px] font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                             )}
                              {(() => {
                                const latestEval = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
                                const latestAssess = assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
