@@ -6,15 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar, Clock, User, X, MessageSquare } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Calendar, Clock, User, X, MessageSquare, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
 
 export default function MyBookings() {
   const queryClient = useQueryClient();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [messageForm, setMessageForm] = useState({ subject: '', content: '' });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -36,12 +42,59 @@ export default function MyBookings() {
     queryFn: () => base44.entities.Location.list()
   });
 
+  const currentCoach = coaches.find(c => c.email === user?.email);
+  const isCoach = !!currentCoach;
+
   const cancelBookingMutation = useMutation({
-    mutationFn: (id) => base44.entities.Booking.update(id, { status: 'cancelled' }),
+    mutationFn: async (id) => {
+      const booking = bookings.find(b => b.id === id);
+      await base44.entities.Booking.update(id, { status: 'cancelled' });
+      
+      // Send cancellation emails
+      const location = locations.find(l => l.id === booking.location_id);
+      const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+      
+      if (booking.parent_email) {
+        await base44.functions.invoke('sendBookingEmail', {
+          to: booking.parent_email,
+          subject: `Booking Cancelled - ${booking.service_name}`,
+          booking: { ...booking, location_info: locationInfo },
+          type: 'cancellation'
+        });
+      }
+      
+      const coach = coaches.find(c => c.id === booking.coach_id);
+      if (coach?.email) {
+        await base44.functions.invoke('sendBookingEmail', {
+          to: coach.email,
+          subject: `Booking Cancelled - ${booking.player_name}`,
+          booking: { ...booking, location_info: locationInfo },
+          type: 'cancellation'
+        });
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['bookings']);
       setShowCancelDialog(false);
       setSelectedBooking(null);
+    }
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ to, subject, content }) => {
+      await base44.integrations.Core.SendEmail({
+        to,
+        subject,
+        body: content
+      });
+    },
+    onSuccess: () => {
+      toast.success('Message sent successfully');
+      setShowMessageDialog(false);
+      setMessageForm({ subject: '', content: '' });
+    },
+    onError: (error) => {
+      toast.error(`Failed to send message: ${error.message}`);
     }
   });
 
@@ -123,12 +176,21 @@ export default function MyBookings() {
                 <X className="w-4 h-4 mr-1" />
                 Cancel
               </Button>
-              <Link to={createPageUrl('Messages')}>
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="w-4 h-4 mr-1" />
-                  Message Coach
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => { 
+                  setSelectedBooking(booking); 
+                  setMessageForm({ 
+                    subject: `Regarding Session on ${new Date(booking.booking_date).toLocaleDateString()}`,
+                    content: '' 
+                  });
+                  setShowMessageDialog(true); 
+                }}
+              >
+                <MessageSquare className="w-4 h-4 mr-1" />
+                Message {isCoach ? 'Client' : 'Coach'}
+              </Button>
             </div>
           )}
         </CardContent>
@@ -219,6 +281,64 @@ export default function MyBookings() {
                 className="flex-1"
               >
                 Cancel Booking
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message Dialog */}
+      <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>To</Label>
+              <Input
+                value={isCoach ? (selectedBooking?.parent_email || 'Client') : (coaches.find(c => c.id === selectedBooking?.coach_id)?.email || 'Coach')}
+                disabled
+                className="bg-slate-50"
+              />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                value={messageForm.subject}
+                onChange={(e) => setMessageForm({...messageForm, subject: e.target.value})}
+                placeholder="Message subject"
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={messageForm.content}
+                onChange={(e) => setMessageForm({...messageForm, content: e.target.value})}
+                rows={5}
+                placeholder="Type your message..."
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowMessageDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  const recipient = isCoach 
+                    ? selectedBooking?.parent_email 
+                    : coaches.find(c => c.id === selectedBooking?.coach_id)?.email;
+                  sendMessageMutation.mutate({
+                    to: recipient,
+                    subject: messageForm.subject,
+                    content: messageForm.content
+                  });
+                }}
+                disabled={!messageForm.subject || !messageForm.content}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send Message
               </Button>
             </div>
           </div>

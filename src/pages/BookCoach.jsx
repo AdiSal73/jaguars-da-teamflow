@@ -75,13 +75,32 @@ export default function BookCoach() {
     return [...new Set(myPlayers.map(p => p.team_id).filter(Boolean))];
   }, [myPlayers]);
 
-  // Filter coaches - show all coaches with booking enabled for public access
+  // Filter coaches based on access mode
   const availableCoaches = useMemo(() => {
-    return coaches.filter(c => {
-      if (c.booking_enabled === false || !c.availability_slots?.length) return false;
-      return true;
-    });
-  }, [coaches]);
+    // If coach ID in URL (shared link), show only that coach
+    if (coachIdParam) {
+      return coaches.filter(c => c.id === coachIdParam && c.booking_enabled !== false && c.availability_slots?.length > 0);
+    }
+    
+    // Default: show coaches for user's teams
+    if (user && myTeamIds.length > 0) {
+      return coaches.filter(c => {
+        if (c.booking_enabled === false || !c.availability_slots?.length) return false;
+        if (!c.team_ids?.length) return false;
+        return c.team_ids.some(teamId => myTeamIds.includes(teamId));
+      });
+    }
+    
+    // No user and no coach param - show no coaches
+    return [];
+  }, [coaches, coachIdParam, user, myTeamIds]);
+
+  // Auto-select coach if coming from shared link
+  React.useEffect(() => {
+    if (coachIdParam && availableCoaches.length === 1 && !selectedCoach) {
+      setSelectedCoach(availableCoaches[0]);
+    }
+  }, [coachIdParam, availableCoaches, selectedCoach]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
