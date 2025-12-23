@@ -48,7 +48,45 @@ export default function BookingsTable() {
   const isAdmin = user?.role === 'admin';
 
   const updateBookingMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Booking.update(id, data),
+    mutationFn: async ({ id, data, sendCancellationEmail }) => {
+      const result = await base44.entities.Booking.update(id, data);
+      
+      // Send cancellation email if status changed to cancelled
+      if (sendCancellationEmail && data.status === 'cancelled') {
+        const booking = bookings.find(b => b.id === id);
+        const location = locations.find(l => l.id === booking.location_id);
+        const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+        
+        // Email to client
+        if (booking.parent_email) {
+          await base44.functions.invoke('sendBookingEmail', {
+            to: booking.parent_email,
+            subject: `Booking Cancelled - ${booking.service_name}`,
+            booking: {
+              ...booking,
+              location_info: locationInfo
+            },
+            type: 'cancellation'
+          });
+        }
+        
+        // Email to coach
+        const coach = coaches.find(c => c.id === booking.coach_id);
+        if (coach?.email) {
+          await base44.functions.invoke('sendBookingEmail', {
+            to: coach.email,
+            subject: `Booking Cancelled - ${booking.player_name}`,
+            booking: {
+              ...booking,
+              location_info: locationInfo
+            },
+            type: 'cancellation'
+          });
+        }
+      }
+      
+      return result;
+    },
     onSuccess: () => queryClient.invalidateQueries(['bookings'])
   });
 
@@ -258,7 +296,11 @@ export default function BookingsTable() {
                       <td className="px-4 py-3">
                         <Select 
                           value={booking.status} 
-                          onValueChange={(value) => updateBookingMutation.mutate({ id: booking.id, data: { status: value } })}
+                          onValueChange={(value) => updateBookingMutation.mutate({ 
+                            id: booking.id, 
+                            data: { status: value },
+                            sendCancellationEmail: value === 'cancelled' && booking.status !== 'cancelled'
+                          })}
                         >
                           <SelectTrigger className="h-8 w-28">
                             <Badge className={`${statusColors[booking.status]} text-xs`}>{booking.status}</Badge>
