@@ -18,7 +18,9 @@ Deno.serve(async (req) => {
       return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
 
-    const bookingDate = new Date(booking.booking_date + 'T00:00:00');
+    // Parse date correctly to avoid timezone issues
+    const [year, month, day] = booking.booking_date.split('-').map(Number);
+    const bookingDate = new Date(year, month - 1, day);
     const formattedDate = bookingDate.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -205,17 +207,34 @@ Deno.serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      return Response.json({ error: `Resend API error: ${error}` }, { status: 500 });
+      const errorText = await response.text();
+      console.error('Resend API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        booking: booking,
+        recipient: to
+      });
+      return Response.json({ 
+        error: `Resend API error (${response.status}): ${errorText}`,
+        details: { status: response.status, body: errorText }
+      }, { status: 500 });
     }
 
     const result = await response.json();
+    console.log('Email sent successfully:', { to, type, emailId: result.id });
     return Response.json({ success: true, id: result.id });
 
   } catch (error) {
+    console.error('sendBookingEmail function error:', {
+      message: error.message,
+      stack: error.stack,
+      booking
+    });
     return Response.json({ 
       error: error.message,
-      stack: error.stack 
+      stack: error.stack,
+      context: 'sendBookingEmail function'
     }, { status: 500 });
   }
 });

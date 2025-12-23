@@ -97,17 +97,20 @@ export default function BookCoach() {
         const location = locations.find(l => l.id === booking.location_id);
         const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
         
-        // Email to client
-        await base44.functions.invoke('sendBookingEmail', {
-          to: booking.parent_email || user?.email,
-          subject: `Booking Confirmed - ${booking.service_name}`,
-          booking: {
-            ...booking,
-            booked_by_name: user?.full_name || 'Guest',
-            location_info: locationInfo
-          },
-          type: 'confirmation_client'
-        });
+        // Email to client - ensure we use the correct email
+        const clientEmail = user?.email || booking.parent_email || guestInfo.email;
+        if (clientEmail) {
+          await base44.functions.invoke('sendBookingEmail', {
+            to: clientEmail,
+            subject: `Booking Confirmed - ${booking.service_name}`,
+            booking: {
+              ...booking,
+              booked_by_name: user?.full_name || guestInfo.name || 'Guest',
+              location_info: locationInfo
+            },
+            type: 'confirmation_client'
+          });
+        }
 
         // Email to coach
         const coach = coaches.find(c => c.id === booking.coach_id);

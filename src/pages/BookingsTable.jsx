@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, Download, Filter } from 'lucide-react';
+import { Calendar, Search, Download, Filter, Edit, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
+import EditBookingDialog from '../components/booking/EditBookingDialog';
 
 export default function BookingsTable() {
   const queryClient = useQueryClient();
@@ -18,6 +20,7 @@ export default function BookingsTable() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
+  const [editingBooking, setEditingBooking] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -87,7 +90,54 @@ export default function BookingsTable() {
       
       return result;
     },
-    onSuccess: () => queryClient.invalidateQueries(['bookings'])
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bookings']);
+      toast.success('Booking updated successfully');
+    },
+    onError: (error) => {
+      console.error('Update booking error:', error);
+      toast.error(`Failed to update booking: ${error.message}`);
+    }
+  });
+
+  const deleteBookingMutation = useMutation({
+    mutationFn: (id) => base44.entities.Booking.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bookings']);
+      setEditingBooking(null);
+      toast.success('Booking deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Delete booking error:', error);
+      toast.error(`Failed to delete booking: ${error.message}`);
+    }
+  });
+
+  const sendReminderMutation = useMutation({
+    mutationFn: async (booking) => {
+      const location = locations.find(l => l.id === booking.location_id);
+      const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+      
+      if (booking.parent_email) {
+        await base44.functions.invoke('sendBookingEmail', {
+          to: booking.parent_email,
+          subject: `Reminder: Upcoming Session - ${booking.service_name}`,
+          booking: {
+            ...booking,
+            booked_by_name: 'Reminder',
+            location_info: locationInfo
+          },
+          type: 'confirmation_client'
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success('Reminder email sent');
+    },
+    onError: (error) => {
+      console.error('Send reminder error:', error);
+      toast.error(`Failed to send reminder: ${error.message}`);
+    }
   });
 
   const filteredBookings = useMemo(() => {
@@ -321,9 +371,29 @@ export default function BookingsTable() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {booking.status === 'confirmed' && (
-                          <BookingCalendarSync booking={booking} coach={coach} location={location} />
-                        )}
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setEditingBooking(booking)}
+                            className="h-7 px-2"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          {booking.parent_email && booking.status === 'confirmed' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => sendReminderMutation.mutate(booking)}
+                              className="h-7 px-2"
+                            >
+                              <Mail className="w-3 h-3" />
+                            </Button>
+                          )}
+                          {booking.status === 'confirmed' && (
+                            <BookingCalendarSync booking={booking} coach={coach} location={location} />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

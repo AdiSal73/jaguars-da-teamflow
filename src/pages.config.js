@@ -17,6 +17,7 @@ import Communications from './pages/Communications';
 import ContactsManager from './pages/ContactsManager';
 import EmailSystem from './pages/EmailSystem';
 import EmailTest from './pages/EmailTest';
+import EvaluationAnalytics from './pages/EvaluationAnalytics';
 import EvaluationsNew from './pages/EvaluationsNew';
 import FAQ from './pages/FAQ';
 import Features from './pages/Features';
@@ -41,7 +42,6 @@ import Teams from './pages/Teams';
 import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserManagement from './pages/UserManagement';
-import EvaluationAnalytics from './pages/EvaluationAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -65,6 +65,7 @@ export const PAGES = {
     "ContactsManager": ContactsManager,
     "EmailSystem": EmailSystem,
     "EmailTest": EmailTest,
+    "EvaluationAnalytics": EvaluationAnalytics,
     "EvaluationsNew": EvaluationsNew,
     "FAQ": FAQ,
     "Features": Features,
@@ -89,7 +90,6 @@ export const PAGES = {
     "TryoutPlayers": TryoutPlayers,
     "Tryouts": Tryouts,
     "UserManagement": UserManagement,
-    "EvaluationAnalytics": EvaluationAnalytics,
 }
 
 export const pagesConfig = {
