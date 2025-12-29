@@ -11,7 +11,11 @@ import { toast } from 'sonner';
 
 export default function AddParentDialog({ open, onClose, player }) {
   const queryClient = useQueryClient();
-  const [email, setEmail] = useState('');
+  const [parentForm, setParentForm] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
@@ -19,15 +23,15 @@ export default function AddParentDialog({ open, onClose, player }) {
   });
 
   const addParentMutation = useMutation({
-    mutationFn: async (parentEmail) => {
+    mutationFn: async (parentData) => {
       // Add email to player's parent_emails array
-      const updatedParentEmails = [...(player.parent_emails || []), parentEmail];
+      const updatedParentEmails = [...(player.parent_emails || []), parentData.email];
       await base44.entities.Player.update(player.id, {
         parent_emails: updatedParentEmails
       });
 
       // Check if user exists with this email
-      const existingUser = allUsers.find(u => u.email === parentEmail);
+      const existingUser = allUsers.find(u => u.email === parentData.email);
       if (existingUser) {
         // Add player to user's player_ids
         const currentPlayerIds = existingUser.player_ids || [];
@@ -39,8 +43,8 @@ export default function AddParentDialog({ open, onClose, player }) {
       } else {
         // Send invitation
         await base44.functions.invoke('sendInviteEmail', {
-          email: parentEmail,
-          full_name: '',
+          email: parentData.email,
+          full_name: parentData.name,
           role: 'parent',
           app_url: window.location.origin,
           player_name: player.full_name
@@ -51,7 +55,7 @@ export default function AddParentDialog({ open, onClose, player }) {
       queryClient.invalidateQueries(['player']);
       queryClient.invalidateQueries(['allUsers']);
       toast.success('Parent added successfully');
-      setEmail('');
+      setParentForm({ name: '', email: '', phone: '' });
       onClose();
     },
     onError: () => {
@@ -60,15 +64,19 @@ export default function AddParentDialog({ open, onClose, player }) {
   });
 
   const handleSubmit = () => {
-    if (!email || !email.includes('@')) {
+    if (!parentForm.email || !parentForm.email.includes('@')) {
       toast.error('Please enter a valid email');
       return;
     }
-    if ((player.parent_emails || []).includes(email)) {
+    if (!parentForm.name) {
+      toast.error('Please enter parent name');
+      return;
+    }
+    if ((player.parent_emails || []).includes(parentForm.email)) {
       toast.error('This email is already linked to the player');
       return;
     }
-    addParentMutation.mutate(email);
+    addParentMutation.mutate(parentForm);
   };
 
   return (
@@ -96,12 +104,33 @@ export default function AddParentDialog({ open, onClose, player }) {
           </div>
 
           <div>
-            <Label>Parent/Guardian Email *</Label>
+            <Label>Parent/Guardian Name *</Label>
+            <Input
+              value={parentForm.name}
+              onChange={(e) => setParentForm({...parentForm, name: e.target.value})}
+              placeholder="Full name"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label>Email *</Label>
             <Input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={parentForm.email}
+              onChange={(e) => setParentForm({...parentForm, email: e.target.value})}
               placeholder="parent@email.com"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label>Phone Number</Label>
+            <Input
+              type="tel"
+              value={parentForm.phone}
+              onChange={(e) => setParentForm({...parentForm, phone: e.target.value})}
+              placeholder="(555) 123-4567"
               className="mt-1"
             />
           </div>
@@ -123,7 +152,7 @@ export default function AddParentDialog({ open, onClose, player }) {
             <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
             <Button
               onClick={handleSubmit}
-              disabled={!email || addParentMutation.isPending}
+              disabled={!parentForm.email || !parentForm.name || addParentMutation.isPending}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
               {addParentMutation.isPending ? 'Adding...' : 'Add Parent'}
