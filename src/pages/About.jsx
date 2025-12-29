@@ -8,11 +8,11 @@ export default function About() {
       {/* Hero Section */}
       <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg" 
-            alt="Michigan Jaguars Team" 
-            className="w-full h-full object-cover scale-105"
-          />
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg"
+            alt="Michigan Jaguars Team"
+            className="w-full h-full object-cover scale-105" />
+
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/95 via-emerald-800/85 to-green-900/90" />
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at top, rgba(16, 185, 129, 0.2) 0%, transparent 60%)'
@@ -87,18 +87,18 @@ export default function About() {
                   excellence, tactical understanding, and mental resilience. We believe in nurturing not 
                   just great soccer players, but exceptional individuals.
                 </p>
-                <p>
-                  Today, Michigan Jaguars is home to over 500 players, 30+ coaches, and 50+ teams 
-                  competing at various levels including Girls Academy, Aspire, and United leagues.
+                <p className="">
+
+
                 </p>
               </div>
             </div>
             <div className="relative">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg" 
-                alt="Team Celebration" 
-                className="rounded-2xl shadow-2xl"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
+                alt="Team Celebration"
+                className="rounded-2xl shadow-2xl" />
+
             </div>
           </div>
         </div>
@@ -152,12 +152,12 @@ export default function About() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map(branch => (
-              <div key={branch} className="bg-white p-4 rounded-xl shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all text-center">
+            {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map((branch) =>
+            <div key={branch} className="bg-white p-4 rounded-xl shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all text-center">
                 <MapPin className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
                 <div className="font-semibold text-slate-900">{branch}</div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -172,31 +172,31 @@ export default function About() {
           
           <div className="grid md:grid-cols-3 gap-6 mb-16">
             <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-emerald-200 hover:scale-105 transition-transform">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg" 
-                alt="Player Dashboard" 
-                className="w-full aspect-video object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg"
+                alt="Player Dashboard"
+                className="w-full aspect-video object-cover" />
+
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-900/90 to-transparent p-4">
                 <p className="text-white font-bold">Player Profiles & Analytics</p>
               </div>
             </div>
             <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-purple-200 hover:scale-105 transition-transform">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f5b12cc94_Screenshot2025-12-19101555.png" 
-                alt="Formation Builder" 
-                className="w-full aspect-video object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f5b12cc94_Screenshot2025-12-19101555.png"
+                alt="Formation Builder"
+                className="w-full aspect-video object-cover" />
+
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-900/90 to-transparent p-4">
                 <p className="text-white font-bold">Formation Builder</p>
               </div>
             </div>
             <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-blue-200 hover:scale-105 transition-transform">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg" 
-                alt="Team Management" 
-                className="w-full aspect-video object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
+                alt="Team Management"
+                className="w-full aspect-video object-cover" />
+
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-900/90 to-transparent p-4">
                 <p className="text-white font-bold">Team Assignments</p>
               </div>
@@ -210,11 +210,11 @@ export default function About() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="relative h-96 rounded-2xl overflow-hidden shadow-2xl">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f70bcf1df_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg" 
-                alt="Training Session" 
-                className="w-full h-full object-cover"
-              />
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f70bcf1df_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg"
+                alt="Training Session"
+                className="w-full h-full object-cover" />
+
             </div>
             <div>
               <h2 className="text-4xl font-bold text-slate-900 mb-6">Professional Development</h2>
@@ -230,6 +230,6 @@ export default function About() {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>);
+
 }
