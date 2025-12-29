@@ -107,6 +107,13 @@ export default function BookCoach() {
     }
   }, [coachIdParam, availableCoaches, selectedCoach]);
 
+  // Show error dialog when no coaches are available for logged-in users/parents
+  React.useEffect(() => {
+    if (!userLoading && user && myTeamIds.length > 0 && availableCoaches.length === 0 && !coachIdParam) {
+      setShowNoCoachesError(true);
+    }
+  }, [userLoading, user, myTeamIds, availableCoaches, coachIdParam]);
+
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
       const booking = await base44.entities.Booking.create(data);
