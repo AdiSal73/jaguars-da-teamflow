@@ -423,7 +423,7 @@ export default function CoachAvailability() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="mb-4 flex gap-4 text-xs">
+            <div className="mb-4 flex gap-4 text-xs flex-wrap">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-emerald-100 border-2 border-emerald-400 rounded"></div>
                 <span>Available</span>
