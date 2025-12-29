@@ -530,6 +530,32 @@ export default function BookCoach() {
           </div>
         )}
 
+        {/* No Coaches Error Dialog */}
+        <Dialog open={showNoCoachesError} onOpenChange={setShowNoCoachesError}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                No Coaches Available
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <p className="text-slate-600">
+                There are currently no coaches assigned to your team with booking enabled.
+              </p>
+              <p className="text-slate-600">
+                Please contact your club administrator to have a coach assigned to your team, or check back later.
+              </p>
+              <Button 
+                onClick={() => setShowNoCoachesError(false)} 
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Share Dialog */}
         <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
           <DialogContent className="max-w-md">
