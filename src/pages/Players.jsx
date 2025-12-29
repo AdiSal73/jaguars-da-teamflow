@@ -747,14 +747,15 @@ export default function Players() {
                            <h3 className="font-bold text-lg text-slate-900">{player.full_name}</h3>
                            <p className="text-sm text-slate-600 mb-1">{player.primary_position || 'No position'}</p>
                            <div className="text-xs text-slate-500 mb-2">
-                             {birthYear && <span>{birthYear}</span>}
-                             {birthYear && team && <span> • </span>}
                              {team && <span>{team.name}</span>}
                              {team?.league && <span> • {team.league}</span>}
                            </div>
                            <div className="flex flex-wrap gap-1">
                              {player.grad_year && (
                                <Badge className="bg-slate-600 text-white text-[10px] font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                             )}
+                             {birthYear && (
+                               <Badge className="bg-slate-400 text-white text-[10px] font-bold">{birthYear}</Badge>
                              )}
                              {(() => {
                                const latestEval = evaluations.filter(e => e.player_id === player.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
