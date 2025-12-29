@@ -140,7 +140,7 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
         { title: "All Bookings", url: createPageUrl("BookingsTable") },
-        { title: "My Availability", url: createPageUrl("Availability") },
+        { title: "My Availability", url: createPageUrl("coachAvailability") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
@@ -166,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
     ...parentPlayerMenuItems,
     {
       title: "Book Session",
-      url: createPageUrl("BookCoach"),
+      url: createPageUrl("Bookingpage"),
       icon: Calendar,
       roles: ["user", "parent"]
     },
