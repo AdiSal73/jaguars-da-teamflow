@@ -4,9 +4,11 @@ import AdminDataManagement from './pages/AdminDataManagement';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import Analytics from './pages/Analytics';
 import Assessments from './pages/Assessments';
+import BookingPage from './pages/BookingPage';
 import BookingsTable from './pages/BookingsTable';
 import ClubManagement from './pages/ClubManagement';
 import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
+import CoachAvailability from './pages/CoachAvailability';
 import CoachDashboard from './pages/CoachDashboard';
 import CoachManagement from './pages/CoachManagement';
 import CoachingResources from './pages/CoachingResources';
@@ -41,8 +43,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import CoachAvailability from './pages/CoachAvailability';
-import BookingPage from './pages/BookingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -53,9 +53,11 @@ export const PAGES = {
     "AdvancedAnalytics": AdvancedAnalytics,
     "Analytics": Analytics,
     "Assessments": Assessments,
+    "BookingPage": BookingPage,
     "BookingsTable": BookingsTable,
     "ClubManagement": ClubManagement,
     "ClubSettingsAdmin": ClubSettingsAdmin,
+    "CoachAvailability": CoachAvailability,
     "CoachDashboard": CoachDashboard,
     "CoachManagement": CoachManagement,
     "CoachingResources": CoachingResources,
@@ -90,8 +92,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "CoachAvailability": CoachAvailability,
-    "BookingPage": BookingPage,
 }
 
 export const pagesConfig = {

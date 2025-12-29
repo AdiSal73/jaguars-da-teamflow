@@ -8,9 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, CheckCircle, MapPin, Mail } from 'lucide-react';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay } from 'date-fns';
+import { Calendar, Clock, User, CheckCircle, MapPin } from 'lucide-react';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, parse, addMinutes } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function BookingPage() {
@@ -18,8 +17,7 @@ export default function BookingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedBookableSlot, setSelectedBookableSlot] = useState(null);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -99,8 +97,7 @@ export default function BookingPage() {
   const { data: timeSlots = [] } = useQuery({
     queryKey: ['timeSlots', selectedCoach?.id],
     queryFn: () => base44.entities.TimeSlot.filter({ 
-      coach_id: selectedCoach.id,
-      is_available: true
+      coach_id: selectedCoach.id
     }),
     enabled: !!selectedCoach
   });
@@ -112,18 +109,12 @@ export default function BookingPage() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
-      const booking = await base44.entities.Booking.create(data);
-      
-      // Mark slot as unavailable
-      await base44.entities.TimeSlot.update(data.slot_id, { is_available: false });
-      
-      return booking;
+      return await base44.entities.Booking.create(data);
     },
     onSuccess: async (booking) => {
       queryClient.invalidateQueries(['bookings']);
       queryClient.invalidateQueries(['timeSlots']);
       
-      // Send confirmation emails
       const location = locations.find(l => l.id === booking.location_id);
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
       
@@ -155,13 +146,64 @@ export default function BookingPage() {
       setTimeout(() => {
         setShowConfirmDialog(false);
         setBookingSuccess(false);
-        setSelectedSlot(null);
-        setSelectedService(null);
+        setSelectedBookableSlot(null);
       }, 2000);
     }
   });
 
-  // Calendar rendering
+  // Generate bookable slots from time slots
+  const getBookableSlotsForDate = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const daySlots = timeSlots.filter(s => s.date === dateStr);
+    
+    const bookableSlots = [];
+    
+    daySlots.forEach(slot => {
+      const services = selectedCoach.services || [];
+      
+      services.forEach(service => {
+        if (!slot.service_names?.includes(service.name)) return;
+        
+        const startTime = parse(slot.start_time, 'HH:mm', new Date());
+        const endTime = parse(slot.end_time, 'HH:mm', new Date());
+        const serviceDuration = service.duration;
+        const bufferBefore = slot.buffer_before || 0;
+        const bufferAfter = slot.buffer_after || 0;
+        
+        let currentTime = addMinutes(startTime, bufferBefore);
+        
+        while (addMinutes(currentTime, serviceDuration + bufferAfter) <= endTime) {
+          const slotStartTime = format(currentTime, 'HH:mm');
+          const slotEndTime = format(addMinutes(currentTime, serviceDuration), 'HH:mm');
+          
+          // Check if this specific slot time is already booked
+          const isBooked = bookings.some(b => 
+            b.booking_date === dateStr &&
+            b.coach_id === selectedCoach.id &&
+            b.start_time === slotStartTime &&
+            b.service_name === service.name
+          );
+          
+          if (!isBooked) {
+            bookableSlots.push({
+              parentSlotId: slot.id,
+              date: dateStr,
+              start_time: slotStartTime,
+              end_time: slotEndTime,
+              service: service,
+              location_id: slot.location_id,
+              duration: serviceDuration
+            });
+          }
+          
+          currentTime = addMinutes(currentTime, serviceDuration + bufferBefore + bufferAfter);
+        }
+      });
+    });
+    
+    return bookableSlots;
+  };
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
@@ -169,13 +211,11 @@ export default function BookingPage() {
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getSlotsForDate = (date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return timeSlots.filter(s => s.date === dateStr);
+    return getBookableSlotsForDate(date);
   };
 
-  const handleSlotClick = (slot, service) => {
-    setSelectedSlot(slot);
-    setSelectedService(service);
+  const handleSlotClick = (bookableSlot) => {
+    setSelectedBookableSlot(bookableSlot);
     setShowBookingDialog(true);
   };
 
@@ -191,14 +231,14 @@ export default function BookingPage() {
     createBookingMutation.mutate({
       coach_id: selectedCoach.id,
       coach_name: selectedCoach.full_name,
-      slot_id: selectedSlot.id,
       player_name: playerName,
       parent_email: parentEmail,
-      location_id: selectedSlot.location_id,
-      service_name: selectedService,
-      booking_date: selectedSlot.date,
-      start_time: selectedSlot.start_time,
-      end_time: selectedSlot.end_time,
+      location_id: selectedBookableSlot.location_id,
+      service_name: selectedBookableSlot.service.name,
+      booking_date: selectedBookableSlot.date,
+      start_time: selectedBookableSlot.start_time,
+      end_time: selectedBookableSlot.end_time,
+      duration: selectedBookableSlot.duration,
       status: 'confirmed',
       notes: bookingForm.notes
     });
@@ -240,7 +280,7 @@ export default function BookingPage() {
                     onClick={() => {
                       setSelectedCoach(coach);
                       setSelectedDate(null);
-                      setSelectedSlot(null);
+                      setSelectedBookableSlot(null);
                     }}
                     className={`p-4 rounded-xl border-2 transition-all ${
                       selectedCoach?.id === coach.id
@@ -321,7 +361,7 @@ export default function BookingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-emerald-600" />
-                  Available Times
+                  Available Time Slots
                   {selectedDate && (
                     <span className="text-sm font-normal text-slate-500">
                       {format(selectedDate, 'MMM d')}
@@ -333,33 +373,40 @@ export default function BookingPage() {
                 {!selectedDate ? (
                   <div className="text-center py-16">
                     <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <p className="text-slate-500">Select a date to view available times</p>
+                    <p className="text-slate-500">Select a date to view available slots</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {getSlotsForDate(selectedDate).map(slot => (
-                      <div key={slot.id} className="space-y-2">
-                        <div className="font-semibold text-sm flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          {slot.start_time} - {slot.end_time}
-                        </div>
-                        <div className="grid gap-2 ml-6">
-                          {slot.service_names?.map(serviceName => (
-                            <button
-                              key={serviceName}
-                              onClick={() => handleSlotClick(slot, serviceName)}
-                              className="p-3 rounded-lg border-2 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
-                            >
-                              <div className="font-medium">{serviceName}</div>
-                              <div className="text-xs text-slate-500 mt-1">
-                                <MapPin className="w-3 h-3 inline mr-1" />
-                                {getLocationName(slot.location_id)}
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                    {getSlotsForDate(selectedDate).length === 0 ? (
+                      <p className="text-center text-slate-500 py-8">No available slots</p>
+                    ) : (
+                      getSlotsForDate(selectedDate).map((bookableSlot, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSlotClick(bookableSlot)}
+                          className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="font-semibold flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-emerald-600" />
+                                {bookableSlot.start_time} - {bookableSlot.end_time}
                               </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                              <div className="text-sm text-slate-600 mt-1">
+                                {bookableSlot.service.name} ({bookableSlot.duration} min)
+                              </div>
+                              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {getLocationName(bookableSlot.location_id)}
+                              </div>
+                            </div>
+                            <Badge style={{ backgroundColor: bookableSlot.service.color, color: 'white' }}>
+                              Book
+                            </Badge>
+                          </div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -435,19 +482,23 @@ export default function BookingPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Service</span>
-                      <span className="font-bold">{selectedService}</span>
+                      <span className="font-bold">{selectedBookableSlot?.service.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Date</span>
-                      <span className="font-bold">{selectedSlot && format(new Date(selectedSlot.date), 'MMM d, yyyy')}</span>
+                      <span className="font-bold">{selectedBookableSlot && format(new Date(selectedBookableSlot.date), 'MMM d, yyyy')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Time</span>
-                      <span className="font-bold">{selectedSlot && `${selectedSlot.start_time} - ${selectedSlot.end_time}`}</span>
+                      <span className="font-bold">{selectedBookableSlot && `${selectedBookableSlot.start_time} - ${selectedBookableSlot.end_time}`}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Duration</span>
+                      <span className="font-bold">{selectedBookableSlot?.duration} minutes</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Location</span>
-                      <span className="font-bold text-right text-sm">{selectedSlot && getLocationName(selectedSlot.location_id)}</span>
+                      <span className="font-bold text-right text-sm">{selectedBookableSlot && getLocationName(selectedBookableSlot.location_id)}</span>
                     </div>
                   </div>
                   <div className="flex gap-3">

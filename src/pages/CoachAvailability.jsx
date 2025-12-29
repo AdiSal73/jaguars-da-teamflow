@@ -13,7 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function CoachAvailability() {
   const queryClient = useQueryClient();
@@ -52,6 +53,34 @@ export default function CoachAvailability() {
 
   const currentCoach = coaches.find(c => c.email === user?.email);
   const services = currentCoach?.services || [];
+  
+  const [activeTab, setActiveTab] = useState('calendar');
+  const [showServiceDialog, setShowServiceDialog] = useState(false);
+  const [serviceForm, setServiceForm] = useState({ name: '', duration: 60, color: '#10b981' });
+  
+  const updateCoachMutation = useMutation({
+    mutationFn: (data) => base44.entities.Coach.update(currentCoach.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['coaches']);
+      setShowServiceDialog(false);
+      setServiceForm({ name: '', duration: 60, color: '#10b981' });
+      toast.success('Services updated');
+    }
+  });
+
+  const handleAddService = () => {
+    if (!serviceForm.name) {
+      toast.error('Please enter a service name');
+      return;
+    }
+    const updatedServices = [...services, serviceForm];
+    updateCoachMutation.mutate({ services: updatedServices });
+  };
+
+  const handleDeleteService = (serviceName) => {
+    const updatedServices = services.filter(s => s.name !== serviceName);
+    updateCoachMutation.mutate({ services: updatedServices });
+  };
 
   const { data: locations = [] } = useQuery({
     queryKey: ['locations'],
@@ -192,8 +221,8 @@ export default function CoachAvailability() {
     }
 
     if (slotForm.is_recurring) {
-      // Create recurrence pattern
-      const dayOfWeek = new Date(slotForm.recurrence_start_date).getDay();
+      // FIX: Use parseISO to properly parse the date in local timezone
+      const dayOfWeek = parseISO(slotForm.recurrence_start_date + 'T00:00:00').getDay();
       createRecurrenceMutation.mutate({
         coach_id: currentCoach.id,
         day_of_week: dayOfWeek,
@@ -272,7 +301,21 @@ export default function CoachAvailability() {
 
   const getSlotsForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return timeSlots.filter(s => s.date === dateStr && s.is_available);
+    const slots = timeSlots.filter(s => s.date === dateStr);
+    
+    // Check if each slot is booked
+    return slots.map(slot => {
+      const slotBookings = bookings.filter(b => 
+        b.booking_date === slot.date && 
+        b.start_time === slot.start_time && 
+        b.end_time === slot.end_time
+      );
+      return {
+        ...slot,
+        isBooked: slotBookings.length > 0,
+        bookingInfo: slotBookings[0]
+      };
+    });
   };
 
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -298,6 +341,60 @@ export default function CoachAvailability() {
           </Button>
         </div>
 
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="services" className="mt-6">
+            <Card className="border-none shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                <div className="flex justify-between items-center">
+                  <CardTitle>Manage Services</CardTitle>
+                  <Button onClick={() => setShowServiceDialog(true)} variant="ghost" className="text-white hover:bg-white/20">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Service
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {services.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-slate-500 mb-4">No services configured yet</p>
+                    <Button onClick={() => setShowServiceDialog(true)} className="bg-purple-600 hover:bg-purple-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Service
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {services.map((service, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: service.color }}></div>
+                          <div>
+                            <div className="font-semibold">{service.name}</div>
+                            <div className="text-sm text-slate-500">{service.duration} minutes</div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteService(service.name)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="calendar" className="mt-6">
         <Card className="border-none shadow-xl">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
             <div className="flex justify-between items-center">
@@ -372,13 +469,16 @@ export default function CoachAvailability() {
                           key={slot.id}
                           onClick={(e) => handleSlotClick(e, slot)}
                           className={`group relative text-xs p-1.5 rounded-lg font-medium transition-all ${
-                            slot.is_recurring_instance
+                            slot.isBooked
+                              ? 'bg-red-200 text-red-900 hover:bg-red-300'
+                              : slot.is_recurring_instance
                               ? 'bg-purple-200 text-purple-900 hover:bg-purple-300'
                               : 'bg-emerald-200 text-emerald-900 hover:bg-emerald-300'
                           }`}
                         >
                           <div className="flex items-center gap-1">
                             {slot.is_recurring_instance && <Repeat className="w-2.5 h-2.5" />}
+                            {slot.isBooked && <span className="text-[8px]">●</span>}
                             <span>{slot.start_time}-{slot.end_time}</span>
                           </div>
                         </div>
@@ -393,6 +493,35 @@ export default function CoachAvailability() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Service Dialog */}
+        <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Service</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Service Name *</Label>
+                <Input value={serviceForm.name} onChange={e => setServiceForm({...serviceForm, name: e.target.value})} placeholder="e.g., 1-on-1 Training" />
+              </div>
+              <div>
+                <Label>Duration (minutes) *</Label>
+                <Input type="number" min="15" step="15" value={serviceForm.duration} onChange={e => setServiceForm({...serviceForm, duration: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <Label>Color</Label>
+                <Input type="color" value={serviceForm.color} onChange={e => setServiceForm({...serviceForm, color: e.target.value})} />
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowServiceDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleAddService} className="flex-1 bg-purple-600 hover:bg-purple-700">Add Service</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Add/Edit Slot Dialog */}
         <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
@@ -603,22 +732,27 @@ export default function CoachAvailability() {
             </DialogHeader>
             
             {slotToEdit && (
-              <div className="space-y-4 mt-4">
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-emerald-600" />
-                    <span className="font-bold">{slotToEdit.start_time} - {slotToEdit.end_time}</span>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    Services: {slotToEdit.service_names?.join(', ')}
-                  </div>
-                  {slotToEdit.is_recurring_instance && (
-                    <Badge className="mt-2 bg-purple-100 text-purple-800">
-                      <Repeat className="w-3 h-3 mr-1" />
-                      Recurring Event
-                    </Badge>
-                  )}
+            <div className="space-y-4 mt-4">
+              <div className="p-4 bg-slate-50 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                  <span className="font-bold">{slotToEdit.start_time} - {slotToEdit.end_time}</span>
                 </div>
+                <div className="text-sm text-slate-600">
+                  Services: {slotToEdit.service_names?.join(', ')}
+                </div>
+                {slotToEdit.isBooked && (
+                  <Badge className="mt-2 bg-red-100 text-red-800">
+                    Booked by {slotToEdit.bookingInfo?.player_name}
+                  </Badge>
+                )}
+                {slotToEdit.is_recurring_instance && (
+                  <Badge className="mt-2 bg-purple-100 text-purple-800">
+                    <Repeat className="w-3 h-3 mr-1" />
+                    Recurring Event
+                  </Badge>
+                )}
+              </div>
 
                 <div className="space-y-2">
                   <Button
