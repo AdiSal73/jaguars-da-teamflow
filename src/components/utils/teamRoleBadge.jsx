@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
+// Team role color mapping for badge styling
 const colorMap = {
   'United Rotation': 'bg-red-500 text-white',
   'United Starter': 'bg-orange-500 text-white',
