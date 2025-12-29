@@ -4,8 +4,6 @@ import AdminDataManagement from './pages/AdminDataManagement';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import Analytics from './pages/Analytics';
 import Assessments from './pages/Assessments';
-import Availability from './pages/Availability';
-import BookCoach from './pages/BookCoach';
 import BookingsTable from './pages/BookingsTable';
 import ClubManagement from './pages/ClubManagement';
 import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
@@ -55,8 +53,6 @@ export const PAGES = {
     "AdvancedAnalytics": AdvancedAnalytics,
     "Analytics": Analytics,
     "Assessments": Assessments,
-    "Availability": Availability,
-    "BookCoach": BookCoach,
     "BookingsTable": BookingsTable,
     "ClubManagement": ClubManagement,
     "ClubSettingsAdmin": ClubSettingsAdmin,
