@@ -186,8 +186,8 @@ export default function Layout({ children, currentPageName }) {
       ]
     },
     {
-      title: "FAQ",
-      url: createPageUrl("FAQ"),
+      title: "About",
+      url: createPageUrl("about"),
       icon: HelpCircle,
       roles: ["admin", "coach", "user", "parent"]
     }
