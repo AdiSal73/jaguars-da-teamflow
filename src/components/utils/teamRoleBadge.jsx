@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
-const ROLE_COLORS = {
+const colorMap = {
   'United Rotation': 'bg-red-500 text-white',
   'United Starter': 'bg-orange-500 text-white',
   'Aspire Rotation': 'bg-yellow-500 text-white',
@@ -21,7 +21,7 @@ const ROLE_COLORS = {
 };
 
 export function getRoleBadgeColor(role) {
-  return ROLE_COLORS[role] || 'bg-slate-500 text-white';
+  return colorMap[role] || 'bg-slate-500 text-white';
 }
 
 export function TeamRoleBadge({ role, className = '', size = 'default' }) {
