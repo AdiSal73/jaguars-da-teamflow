@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,9 @@ import EditablePlayerCard from '../components/player/EditablePlayerCard';
 import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
 import TeamAnalyticsDashboard from '../components/team/TeamAnalyticsDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AddPlayerDialog from '../components/team/AddPlayerDialog';
+import AssignCoachDialog from '../components/team/AssignCoachDialog';
+import AddTryoutPlayerDialog from '../components/team/AddTryoutPlayerDialog';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -35,6 +38,9 @@ export default function TeamDashboard() {
   const [editingGoals, setEditingGoals] = useState(false);
   const [editingTraining, setEditingTraining] = useState(false);
   const [activeTab, setActiveTab] = useState('roster');
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [showAssignCoachDialog, setShowAssignCoachDialog] = useState(false);
+  const [showAddTryoutDialog, setShowAddTryoutDialog] = useState(false);
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -604,10 +610,23 @@ Format with clear headers and structure.`;
         {/* Team Roster */}
         <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-emerald-50">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Team Roster
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Team Roster
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowAddPlayerDialog(true)} className="text-white hover:bg-white/20">
+                  <Plus className="w-4 h-4 mr-1" />Add Player
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddTryoutDialog(true)} className="text-white hover:bg-white/20">
+                  <UserPlus className="w-4 h-4 mr-1" />Add Tryout
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAssignCoachDialog(true)} className="text-white hover:bg-white/20">
+                  Assign Coach
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -704,6 +723,25 @@ Format with clear headers and structure.`;
           </div>
         </DialogContent>
       </Dialog>
+
+      <AddPlayerDialog
+        open={showAddPlayerDialog}
+        onClose={() => setShowAddPlayerDialog(false)}
+        teamId={teamId}
+        teamName={team?.name}
+      />
+
+      <AssignCoachDialog
+        open={showAssignCoachDialog}
+        onClose={() => setShowAssignCoachDialog(false)}
+        team={team}
+      />
+
+      <AddTryoutPlayerDialog
+        open={showAddTryoutDialog}
+        onClose={() => setShowAddTryoutDialog(false)}
+        teamId={teamId}
+      />
     </div>
   );
 }
