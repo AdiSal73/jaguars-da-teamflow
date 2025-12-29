@@ -84,7 +84,11 @@ export default function BookCoach() {
   const availableCoaches = useMemo(() => {
     // If coach ID in URL (shared link), show only that coach
     if (coachIdParam) {
-      return coaches.filter(c => c.id === coachIdParam && c.booking_enabled !== false && c.availability_slots?.length > 0);
+      const sharedCoach = coaches.find(c => c.id === coachIdParam);
+      if (sharedCoach && sharedCoach.booking_enabled !== false && sharedCoach.availability_slots?.length > 0) {
+        return [sharedCoach];
+      }
+      return [];
     }
     
     // Default: show coaches for user's teams

@@ -726,7 +726,7 @@ export default function PlayerDashboard() {
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6 -mt-8">
 
-      <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
+      <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-6`}>
       {/* Player Info & Contact */}
       <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
       <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
@@ -1027,8 +1027,8 @@ export default function PlayerDashboard() {
         </Card>
         )}
 
-        {/* Physical Assessment */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
+        {/* Physical Assessment - Larger Display */}
+        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all lg:col-span-2">
           <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
             <CardTitle className="text-base flex items-center justify-between font-bold">
               <div className="flex items-center gap-2">
@@ -1052,53 +1052,55 @@ export default function PlayerDashboard() {
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {currentAssessment ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 bg-red-50 rounded-lg text-center">
-                    <div className="text-[10px] text-red-600">Sprint (20m)</div>
-                    <div className="text-lg font-bold text-red-700">{currentAssessment.sprint?.toFixed(2)}s</div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-red-50 rounded-xl text-center shadow-sm">
+                    <div className="text-xs text-red-600 font-semibold mb-1">Sprint (20m)</div>
+                    <div className="text-3xl font-bold text-red-700">{currentAssessment.sprint?.toFixed(2)}<span className="text-lg">s</span></div>
                   </div>
-                  <div className="p-2 bg-blue-50 rounded-lg text-center">
-                    <div className="text-[10px] text-blue-600">Vertical</div>
-                    <div className="text-lg font-bold text-blue-700">{currentAssessment.vertical}"</div>
+                  <div className="p-4 bg-blue-50 rounded-xl text-center shadow-sm">
+                    <div className="text-xs text-blue-600 font-semibold mb-1">Vertical Jump</div>
+                    <div className="text-3xl font-bold text-blue-700">{currentAssessment.vertical}<span className="text-lg">"</span></div>
                   </div>
-                  <div className="p-2 bg-emerald-50 rounded-lg text-center">
-                    <div className="text-[10px] text-emerald-600">YIRT</div>
-                    <div className="text-lg font-bold text-emerald-700">{currentAssessment.yirt}</div>
+                  <div className="p-4 bg-emerald-50 rounded-xl text-center shadow-sm">
+                    <div className="text-xs text-emerald-600 font-semibold mb-1">YIRT Level</div>
+                    <div className="text-3xl font-bold text-emerald-700">{currentAssessment.yirt}</div>
                   </div>
-                  <div className="p-2 bg-pink-50 rounded-lg text-center">
-                    <div className="text-[10px] text-pink-600">Shuttle</div>
-                    <div className="text-lg font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}s</div>
+                  <div className="p-4 bg-pink-50 rounded-xl text-center shadow-sm">
+                    <div className="text-xs text-pink-600 font-semibold mb-1">Shuttle Run</div>
+                    <div className="text-3xl font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}<span className="text-lg">s</span></div>
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
-                    { label: 'Speed', score: currentAssessment.speed_score, color: '#ef4444' },
-                    { label: 'Power', score: currentAssessment.power_score, color: '#3b82f6' },
-                    { label: 'Endurance', score: currentAssessment.endurance_score, color: '#10b981' },
-                    { label: 'Agility', score: currentAssessment.agility_score, color: '#ec4899' }
-                  ].map(({ label, score, color }) => (
-                    <div key={label} className="text-center">
-                      <div className="relative w-10 h-10 mx-auto">
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle cx="20" cy="20" r="16" stroke="#e5e7eb" strokeWidth="4" fill="none" />
-                          <circle cx="20" cy="20" r="16" stroke={color} strokeWidth="4" fill="none"
-                            strokeDasharray={`${2 * Math.PI * 16}`}
-                            strokeDashoffset={`${2 * Math.PI * 16 * (1 - (score || 0) / 100)}`}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">{score || 0}</div>
+                    { label: 'Speed', score: currentAssessment.speed_score, color: '#ef4444', bgColor: 'bg-red-50' },
+                    { label: 'Power', score: currentAssessment.power_score, color: '#3b82f6', bgColor: 'bg-blue-50' },
+                    { label: 'Endurance', score: currentAssessment.endurance_score, color: '#10b981', bgColor: 'bg-emerald-50' },
+                    { label: 'Agility', score: currentAssessment.agility_score, color: '#ec4899', bgColor: 'bg-pink-50' }
+                  ].map(({ label, score, color, bgColor }) => (
+                    <div key={label} className={`p-4 ${bgColor} rounded-xl`}>
+                      <div className="text-center">
+                        <div className="relative w-20 h-20 mx-auto mb-2">
+                          <svg className="w-full h-full transform -rotate-90">
+                            <circle cx="40" cy="40" r="32" stroke="#e5e7eb" strokeWidth="6" fill="none" />
+                            <circle cx="40" cy="40" r="32" stroke={color} strokeWidth="6" fill="none"
+                              strokeDasharray={`${2 * Math.PI * 32}`}
+                              strokeDashoffset={`${2 * Math.PI * 32 * (1 - (score || 0) / 100)}`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center text-xl font-bold" style={{ color }}>{score || 0}</div>
+                        </div>
+                        <div className="text-sm font-semibold text-slate-700">{label}</div>
                       </div>
-                      <div className="text-[8px] text-slate-500 mt-1">{label}</div>
                     </div>
                   ))}
                 </div>
-                <div className="text-center p-2 bg-slate-900 rounded-lg">
-                  <div className="text-[10px] text-white/70">Overall</div>
-                  <div className="text-xl font-bold text-white">{currentAssessment.overall_score || 0}</div>
+                <div className="text-center p-6 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl shadow-lg">
+                  <div className="text-sm text-white/70 mb-1">Overall Score</div>
+                  <div className="text-4xl font-bold text-white">{currentAssessment.overall_score || 0}<span className="text-xl text-white/70">/100</span></div>
                 </div>
               </div>
             ) : (
