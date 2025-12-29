@@ -41,8 +41,10 @@ import TeamTryout from './pages/TeamTryout';
 import Teams from './pages/Teams';
 import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
-import UserManagement from './pages/UserManagement';
 import UserDashboard from './pages/UserDashboard';
+import UserManagement from './pages/UserManagement';
+import CoachAvailability from './pages/CoachAvailability';
+import BookingPage from './pages/BookingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -90,8 +92,10 @@ export const PAGES = {
     "Teams": Teams,
     "TryoutPlayers": TryoutPlayers,
     "Tryouts": Tryouts,
-    "UserManagement": UserManagement,
     "UserDashboard": UserDashboard,
+    "UserManagement": UserManagement,
+    "CoachAvailability": CoachAvailability,
+    "BookingPage": BookingPage,
 }
 
 export const pagesConfig = {
