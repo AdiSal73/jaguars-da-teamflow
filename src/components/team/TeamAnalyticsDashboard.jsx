@@ -4,6 +4,8 @@ import { TrendingUp, Users, Target, Award, AlertCircle } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
+
 export default function TeamAnalyticsDashboard({ team, players, evaluations, assessments, tryouts }) {
   const teamPlayers = players.filter(p => p.team_id === team.id);
   const teamEvaluations = evaluations.filter(e => teamPlayers.some(p => p.id === e.player_id));
