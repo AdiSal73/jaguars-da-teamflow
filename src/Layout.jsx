@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Users, Shield, Calendar, Activity, LogOut,
   ChevronDown, ChevronUp, Clock, BarChart3, UserCog, MessageSquare,
-  TrendingUp, Settings, Menu, X, HelpCircle } from
+  TrendingUp, Settings, Menu, X, HelpCircle, User as UserIcon } from
 "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -184,6 +184,12 @@ export default function Layout({ children, currentPageName }) {
         { title: "Messages", url: createPageUrl("Communications") },
         { title: "Preferences", url: createPageUrl("CommunicationPreferences") }
       ]
+    },
+    {
+      title: "My Account",
+      url: createPageUrl("UserDashboard"),
+      icon: UserIcon,
+      roles: ["user", "parent"]
     },
     {
       title: "About",
