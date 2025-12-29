@@ -1485,8 +1485,10 @@ export default function PlayerDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Documents & Reports */}
+        {documents.length > 0 && (
         <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
           <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
             <div className="flex items-center justify-between">
@@ -1538,9 +1540,11 @@ export default function PlayerDashboard() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
+      )}
 
-          <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
+      <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
