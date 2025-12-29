@@ -116,9 +116,12 @@ export default function Availability() {
     let updatedSlots;
 
     if (editingSlot) {
-      updatedSlots = coachSlots.map(s => s.id === slotData.id ? slotData : s);
+      // When editing, ensure we update the specific slot by ID
+      updatedSlots = coachSlots.map(s => s.id === editingSlot.id ? { ...slotData, id: editingSlot.id } : s);
     } else {
-      updatedSlots = [...coachSlots, slotData];
+      // When adding new, ensure unique ID
+      const newSlot = { ...slotData, id: slotData.id || `slot_${Date.now()}` };
+      updatedSlots = [...coachSlots, newSlot];
     }
 
     await updateCoachMutation.mutateAsync({
@@ -138,6 +141,9 @@ export default function Availability() {
     
     if (!targetCoach) return;
 
+    if (!window.confirm('Delete this availability slot?')) return;
+
+    // Only delete the specific slot by ID
     const updatedSlots = (targetCoach.availability_slots || []).filter(s => s.id !== slotId);
     await updateCoachMutation.mutateAsync({
       id: targetCoach.id,
@@ -145,6 +151,8 @@ export default function Availability() {
         availability_slots: updatedSlots
       }
     });
+    
+    toast.success('Slot deleted successfully');
   };
 
   const handleDeleteRecurringSlots = async (slot) => {
