@@ -26,6 +26,11 @@ export default function BookCoach() {
   const [shareEmail, setShareEmail] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [sendingEmails, setSendingEmails] = useState(false);
+  const [showNoCoachesError, setShowNoCoachesError] = useState(false);
+
+  // Get coach ID from URL params for shared links
+  const urlParams = new URLSearchParams(window.location.search);
+  const coachIdParam = urlParams.get('coach');
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
