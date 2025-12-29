@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, Printer } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, Printer, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import GoalFeedbackDialog from '../components/messaging/GoalFeedbackDialog';
 import ParentEmailsManager from '../components/player/ParentEmailsManager';
+import AddParentDialog from '../components/player/AddParentDialog';
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
 import EditEvaluationDialog from '../components/evaluation/EditEvaluationDialog';
 import EvaluationRadarChart from '../components/evaluation/EvaluationRadarChart';
@@ -104,6 +105,7 @@ export default function PlayerDashboard() {
   const [exportingPDF, setExportingPDF] = useState(false);
   const [showCreateEvalDialog, setShowCreateEvalDialog] = useState(false);
   const [showEditEvalDialog, setShowEditEvalDialog] = useState(false);
+  const [showAddParentDialog, setShowAddParentDialog] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -882,7 +884,19 @@ export default function PlayerDashboard() {
             </div>
             
             <div className="border-t pt-2 mt-2">
-              <div className="text-[10px] font-semibold text-slate-500 mb-2">Parent Emails</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] font-semibold text-slate-500">Parent Emails</div>
+                {isAdminOrCoach && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAddParentDialog(true)}
+                    className="h-6 text-xs px-2"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />Add
+                  </Button>
+                )}
+              </div>
               <ParentEmailsManager
                 parentEmails={playerForm.parent_emails || []}
                 onChange={(emails) => setPlayerForm({...playerForm, parent_emails: emails})}
@@ -1674,6 +1688,12 @@ export default function PlayerDashboard() {
         open={showEditEvalDialog}
         onClose={() => setShowEditEvalDialog(false)}
         evaluation={currentEvaluation}
+        player={player}
+      />
+
+      <AddParentDialog
+        open={showAddParentDialog}
+        onClose={() => setShowAddParentDialog(false)}
         player={player}
       />
       </div>
