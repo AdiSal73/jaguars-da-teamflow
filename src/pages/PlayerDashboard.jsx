@@ -1303,6 +1303,7 @@ export default function PlayerDashboard() {
             )}
 
       {/* Player Development Pathway & Training Modules */}
+      {pathway?.training_modules?.length > 0 && (
       <div className="mt-6">
         <PlayerDevelopmentDisplay
           player={player}
@@ -1312,8 +1313,9 @@ export default function PlayerDashboard() {
           onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
           onProvideFeedback={isAdminOrCoach ? (goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); } : null}
           isAdminOrCoach={isAdminOrCoach}
-        />
-      </div>
+          />
+          </div>
+          )}
 
       {/* Position Knowledge Bank - Bento Grid */}
       {player.primary_position && (
@@ -1323,8 +1325,10 @@ export default function PlayerDashboard() {
       )}
 
       {/* Bento Grid - Events, Injuries, Documents */}
+      {(pathway?.events_camps?.length > 0 || injuries.length > 0 || documents.length > 0) && (
       <div className="grid md:grid-cols-3 gap-6 mt-6">
         {/* Events & Camps */}
+        {pathway?.events_camps?.length > 0 && (
         <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm hover:shadow-3xl transition-all">
           <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
             <div className="flex items-center justify-between">
@@ -1385,10 +1389,12 @@ export default function PlayerDashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+          )}
 
-        {/* Injury Tracking */}
-            <Card className="border-none shadow-2xl mt-6 overflow-hidden bg-gradient-to-br from-white to-red-50 backdrop-blur-sm">
+          {/* Injury Tracking */}
+          {injuries.length > 0 && (
+            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-red-50 backdrop-blur-sm">
           <CardHeader className="pb-3 bg-gradient-to-r from-red-600 to-orange-600 text-white border-b border-red-400/30">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
