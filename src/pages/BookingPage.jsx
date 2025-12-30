@@ -233,20 +233,20 @@ export default function BookingPage() {
             b.booking_date === dateStr &&
             b.coach_id === selectedCoach.id &&
             b.start_time === slotStartTime &&
-            b.service_name === service.name
+            b.service_name === service.name &&
+            b.status !== 'cancelled'
           );
           
-          if (!isBooked) {
-            bookableSlots.push({
-              parentSlotId: slot.id,
-              date: dateStr,
-              start_time: slotStartTime,
-              end_time: slotEndTime,
-              service: service,
-              location_id: slot.location_id,
-              duration: serviceDuration
-            });
-          }
+          bookableSlots.push({
+            parentSlotId: slot.id,
+            date: dateStr,
+            start_time: slotStartTime,
+            end_time: slotEndTime,
+            service: service,
+            location_id: slot.location_id,
+            duration: serviceDuration,
+            isBooked: isBooked
+          });
           
           currentTime = addMinutes(currentTime, serviceDuration + bufferBefore + bufferAfter);
         }
@@ -446,30 +446,35 @@ export default function BookingPage() {
                 ) : (
                   <div className="space-y-4 max-h-[500px] overflow-y-auto">
                     {getSlotsForDate(selectedDate).length === 0 ? (
-                      <p className="text-center text-slate-500 py-8">No available slots</p>
+                      <p className="text-center text-slate-500 py-8">No slots available</p>
                     ) : (
                       getSlotsForDate(selectedDate).map((bookableSlot, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleSlotClick(bookableSlot)}
-                          className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
+                          onClick={() => !bookableSlot.isBooked && handleSlotClick(bookableSlot)}
+                          disabled={bookableSlot.isBooked}
+                          className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                            bookableSlot.isBooked 
+                              ? 'border-red-300 bg-red-50 cursor-not-allowed opacity-60' 
+                              : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50'
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <div>
-                              <div className="font-semibold flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-emerald-600" />
+                              <div className={`font-semibold flex items-center gap-2 ${bookableSlot.isBooked ? 'text-red-700' : ''}`}>
+                                <Clock className={`w-4 h-4 ${bookableSlot.isBooked ? 'text-red-600' : 'text-emerald-600'}`} />
                                 {bookableSlot.start_time} - {bookableSlot.end_time}
                               </div>
-                              <div className="text-sm text-slate-600 mt-1">
+                              <div className={`text-sm mt-1 ${bookableSlot.isBooked ? 'text-red-600' : 'text-slate-600'}`}>
                                 {bookableSlot.service.name} ({bookableSlot.duration} min)
                               </div>
-                              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                              <div className={`text-xs mt-1 flex items-center gap-1 ${bookableSlot.isBooked ? 'text-red-500' : 'text-slate-500'}`}>
                                 <MapPin className="w-3 h-3" />
                                 {getLocationName(bookableSlot.location_id)}
                               </div>
                             </div>
-                            <Badge style={{ backgroundColor: bookableSlot.service.color, color: 'white' }}>
-                              Book
+                            <Badge className={bookableSlot.isBooked ? 'bg-red-500 text-white' : ''} style={!bookableSlot.isBooked ? { backgroundColor: bookableSlot.service.color, color: 'white' } : {}}>
+                              {bookableSlot.isBooked ? 'Booked' : 'Book'}
                             </Badge>
                           </div>
                         </button>

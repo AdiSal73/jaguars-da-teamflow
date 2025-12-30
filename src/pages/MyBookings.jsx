@@ -224,6 +224,11 @@ export default function MyBookings() {
   const BookingCard = ({ booking }) => {
     const coach = coaches.find(c => c.id === booking.coach_id);
     const location = locations.find(l => l.id === booking.location_id);
+    
+    // Parse date correctly to avoid timezone shift
+    const [year, month, day] = booking.booking_date.split('-').map(Number);
+    const bookingDate = new Date(year, month - 1, day);
+    
     return (
       <Card className="border-none shadow-md hover:shadow-lg transition-all">
         <CardContent className="p-5">
@@ -249,7 +254,7 @@ export default function MyBookings() {
           <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              {new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {bookingDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             </div>
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
