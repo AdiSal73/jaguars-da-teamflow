@@ -99,6 +99,12 @@ export default function CoachAvailability() {
     enabled: !!currentCoach
   });
 
+  const { data: bookings = [] } = useQuery({
+    queryKey: ['bookings', currentCoach?.id],
+    queryFn: () => base44.entities.Booking.filter({ coach_id: currentCoach.id }),
+    enabled: !!currentCoach
+  });
+
   const createSlotMutation = useMutation({
     mutationFn: (data) => base44.entities.TimeSlot.create(data),
     onSuccess: () => {
@@ -431,6 +437,10 @@ export default function CoachAvailability() {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-purple-100 border-2 border-purple-400 rounded"></div>
                 <span>Recurring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded"></div>
+                <span>Booked</span>
               </div>
             </div>
             

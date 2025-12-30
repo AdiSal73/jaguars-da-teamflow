@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { MessageSquare, Send, Bell, Megaphone, Users, User, Search, Plus, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import NewMessageDialog from '../components/messaging/NewMessageDialog';
 
 export default function Communications() {
   const queryClient = useQueryClient();
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedThread, setSelectedThread] = useState(null);
   const [messageContent, setMessageContent] = useState('');
@@ -307,7 +308,13 @@ export default function Communications() {
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="md:col-span-1">
               <CardHeader>
-                <CardTitle className="text-base">Conversations</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Conversations</CardTitle>
+                  <Button size="sm" onClick={() => setShowNewMessageDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="w-3 h-3 mr-1" />
+                    New
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y max-h-[600px] overflow-y-auto">
@@ -559,6 +566,12 @@ export default function Communications() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewMessageDialog 
+        open={showNewMessageDialog}
+        onClose={() => setShowNewMessageDialog(false)}
+        user={user}
+      />
     </div>
   );
 }

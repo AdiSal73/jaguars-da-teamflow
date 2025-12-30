@@ -21,6 +21,7 @@ export default function BookingPage() {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [bookingForm, setBookingForm] = useState({
     player_name: '',
     parent_email: '',
@@ -119,11 +120,15 @@ export default function BookingPage() {
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
       
       try {
+        // Send notifications
+        await base44.functions.invoke('sendBookingNotifications', { booking_id: booking.id });
+
+        // Send emails
         const clientEmail = user?.email || booking.parent_email;
         if (clientEmail) {
           await base44.functions.invoke('sendBookingEmail', {
             to: clientEmail,
-            subject: `Booking Confirmed - ${booking.service_name}`,
+            subject: `Booking Confirmed - ${booking.service_name} for ${booking.player_name}`,
             booking: { ...booking, location_info: locationInfo },
             type: 'confirmation_client'
           });
@@ -139,7 +144,7 @@ export default function BookingPage() {
           });
         }
       } catch (error) {
-        console.error('Email send error:', error);
+        console.error('Notification/Email error:', error);
       }
 
       setBookingSuccess(true);
@@ -147,6 +152,7 @@ export default function BookingPage() {
         setShowConfirmDialog(false);
         setBookingSuccess(false);
         setSelectedBookableSlot(null);
+        setSelectedPlayer(null);
       }, 2000);
     }
   });
@@ -225,13 +231,21 @@ export default function BookingPage() {
       return;
     }
 
-    const playerName = myPlayers[0]?.full_name || bookingForm.player_name;
+    if (user && myPlayers.length > 1 && !selectedPlayer) {
+      toast.error('Please select a player');
+      return;
+    }
+
+    const playerName = selectedPlayer?.full_name || myPlayers[0]?.full_name || bookingForm.player_name;
+    const playerId = selectedPlayer?.id || myPlayers[0]?.id || null;
     const parentEmail = user?.email || bookingForm.parent_email;
 
     createBookingMutation.mutate({
       coach_id: selectedCoach.id,
       coach_name: selectedCoach.full_name,
+      player_id: playerId,
       player_name: playerName,
+      parent_id: user?.id || null,
       parent_email: parentEmail,
       location_id: selectedBookableSlot.location_id,
       service_name: selectedBookableSlot.service.name,
@@ -421,6 +435,23 @@ export default function BookingPage() {
               <DialogTitle>Booking Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {user && myPlayers.length > 1 && (
+                <div>
+                  <Label>Select Player *</Label>
+                  <Select value={selectedPlayer?.id || ''} onValueChange={(id) => setSelectedPlayer(myPlayers.find(p => p.id === id))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose which player to book for" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {myPlayers.map(player => (
+                        <SelectItem key={player.id} value={player.id}>
+                          {player.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {!user && (
                 <>
                   <div>
@@ -448,7 +479,10 @@ export default function BookingPage() {
                     setShowBookingDialog(false);
                     setShowConfirmDialog(true);
                   }}
-                  disabled={!user && (!bookingForm.player_name || !bookingForm.parent_email)}
+                  disabled={
+                    (!user && (!bookingForm.player_name || !bookingForm.parent_email)) ||
+                    (user && myPlayers.length > 1 && !selectedPlayer)
+                  }
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 >
                   Continue
@@ -476,6 +510,10 @@ export default function BookingPage() {
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="bg-emerald-50 p-6 rounded-xl space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Player</span>
+                      <span className="font-bold">{selectedPlayer?.full_name || myPlayers[0]?.full_name || bookingForm.player_name}</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Coach</span>
                       <span className="font-bold">{selectedCoach?.full_name}</span>

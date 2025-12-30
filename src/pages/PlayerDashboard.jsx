@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, Mail, Phone, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, Printer, UserPlus } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Save, ChevronLeft, ChevronRight, TrendingUp, Plus, FileDown, Share2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -27,7 +27,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
 import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
-import EventsTimeline from '../components/player/EventsTimeline';
 
 const metricColors = {
   growth_mindset: '#8b5cf6',
@@ -132,15 +131,15 @@ export default function PlayerDashboard() {
   });
 
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
-  const canEdit = isAdminOrCoach; // Only admins and coaches can edit
+  const canEdit = isAdminOrCoach;
   
   const isAuthorized = React.useMemo(() => {
     if (!currentUser) return false;
-    if (!player) return true; // Allow loading state
+    if (!player) return true;
     if (currentUser.role === 'admin') return true;
     
     const currentCoach = coaches.find(c => c.email === currentUser.email);
-    if (currentCoach) return true; // All coaches can view all players
+    if (currentCoach) return true;
     
     if (currentUser.player_ids && currentUser.player_ids.includes(playerId)) return true;
     if (player.email && player.email === currentUser.email) return true;
@@ -262,9 +261,7 @@ export default function PlayerDashboard() {
     mutationFn: async (data) => {
       await base44.entities.Player.update(playerId, data);
       
-      // Sync parent accounts
       if (data.parent_emails) {
-        // First, remove this player from any parent accounts that are no longer linked
         const currentParentEmails = player?.parent_emails || [];
         const removedParentEmails = currentParentEmails.filter(email => !data.parent_emails.includes(email));
 
@@ -276,7 +273,6 @@ export default function PlayerDashboard() {
           }
         }
 
-        // Then, add this player to any newly linked parent accounts
         for (const email of data.parent_emails) {
           const existingUser = allUsers.find(u => u.email === email);
           if (existingUser) {
@@ -292,7 +288,7 @@ export default function PlayerDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['player', playerId]);
-      queryClient.invalidateQueries(['allUsers']); // Invalidate allUsers to reflect changes in parent links
+      queryClient.invalidateQueries(['allUsers']);
     }
   });
 
@@ -361,10 +357,6 @@ export default function PlayerDashboard() {
     }
   });
 
-  const handleInvitePlayer = async (email, player) => {
-    toast.info('Parents will be automatically linked when you add their email to the player profile.');
-  };
-
   const handleSendGoalFeedback = async (player, goal, feedback) => {
     const registeredUsers = assignedParents.map(p => p.email).filter(Boolean);
 
@@ -387,60 +379,11 @@ export default function PlayerDashboard() {
       jersey_number: playerForm.jersey_number ? Number(playerForm.jersey_number) : null
     };
     await updatePlayerMutation.mutateAsync(playerData);
-    if (isAdminOrCoach) { // Only update tryout info if coach/admin
+    if (isAdminOrCoach) {
       await updateTryoutMutation.mutateAsync(tryoutForm);
     }
     setIsEditing(false);
     toast.success('Player updated successfully');
-  };
-
-  const handleExportFullPagePDF = async () => {
-    setExportingPDF(true);
-    toast.info('Generating PDF... This may take a moment');
-    
-    try {
-      const element = document.querySelector('.min-h-screen'); 
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#f8fafc'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * pageWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`${player.full_name.replace(/\s+/g, '_')}_Dashboard.pdf`);
-      toast.success('PDF exported successfully');
-    } catch (error) {
-      console.error('PDF export error:', error);
-      toast.error('Failed to export PDF');
-    } finally {
-      setExportingPDF(false);
-    }
   };
 
   const teamPlayers = player?.team_id 
@@ -461,172 +404,12 @@ export default function PlayerDashboard() {
 
   const existingTeamNames = [...new Set(allTeams.map(t => t.name).filter(Boolean))];
 
-  const handleExport = (format, selectedOptions) => {
-    if (format === 'csv') {
-      const headers = ['Field', 'Value'];
-      const rows = [
-        ['Name', player.full_name],
-        ['Jersey Number', player.jersey_number || ''],
-        ['Position', player.primary_position || ''],
-        ['Team', team?.name || ''],
-        ['Status', player.status || ''],
-        ['DOB', player.date_of_birth || ''],
-        ['Email', player.email || ''],
-        ['Phone', player.phone || ''],
-        ['Parent Name', player.parent_name || ''],
-        ['Parent Emails', (player.parent_emails || []).join(', ') || '']
-      ];
-
-      if (selectedOptions.includes('tryout') && isAdminOrCoach && tryout) {
-        rows.push(
-          ['--- Tryout Info ---', ''],
-          ['Team Role', tryout.team_role || ''],
-          ['Recommendation', tryout.recommendation || ''],
-          ['Next Year Team', tryout.next_year_team || ''],
-          ['Next Season Status', tryout.next_season_status || ''],
-          ['Registration Status', tryout.registration_status || ''],
-          ['Dominant Foot', tryout.dominant_foot || ''],
-          ['Notes', tryout.notes || '']
-        );
-      }
-
-      if (selectedOptions.includes('assessment') && currentAssessment) {
-        rows.push(
-          ['--- Physical Assessment ---', ''],
-          ['Date', currentAssessment.assessment_date || ''],
-          ['Sprint (20m)', currentAssessment.sprint?.toFixed(2) || ''],
-          ['Vertical', currentAssessment.vertical || ''],
-          ['YIRT', currentAssessment.yirt || ''],
-          ['Shuttle', currentAssessment.shuttle?.toFixed(2) || ''],
-          ['Speed Score', currentAssessment.speed_score || ''],
-          ['Power Score', currentAssessment.power_score || ''],
-          ['Endurance Score', currentAssessment.endurance_score || ''],
-          ['Agility Score', currentAssessment.agility_score || ''],
-          ['Overall Score', currentAssessment.overall_score || '']
-        );
-      }
-
-      if (selectedOptions.includes('evaluation') && currentEvaluation) {
-        rows.push(
-          ['--- Evaluation ---', ''],
-          ['Date', new Date(currentEvaluation.created_date).toLocaleDateString()],
-          ['Growth Mindset', currentEvaluation.growth_mindset || ''],
-          ['Resilience', currentEvaluation.resilience || ''],
-          ['Efficiency', currentEvaluation.efficiency_in_execution || ''],
-          ['Athleticism', currentEvaluation.athleticism || ''],
-          ['Team Focus', currentEvaluation.team_focus || ''],
-          ['Defending Organized', currentEvaluation.defending_organized || ''],
-          ['Defending Final Third', currentEvaluation.defending_final_third || ''],
-          ['Defending Transition', currentEvaluation.defending_transition || ''],
-          ['Attacking Organized', currentEvaluation.attacking_organized || ''],
-          ['Attacking Final Third', currentEvaluation.attacking_final_third || ''],
-          ['Attacking In Transition', currentEvaluation.attacking_in_transition || ''],
-          ['Strengths', currentEvaluation.player_strengths || ''],
-          ['Areas of Growth', currentEvaluation.areas_of_growth || ''],
-          ['Training Focus', currentEvaluation.training_focus || '']
-        );
-      }
-
-      const csv = generateCSV(headers, rows);
-      downloadFile(csv, `player_${player.full_name.replace(/\s+/g, '_')}.csv`);
-    } else { // PDF
-      const sections = [
-        {
-          title: 'Player Information',
-          content: `
-            <table>
-              <tr><th>Name</th><td>${player.full_name}</td></tr>
-              <tr><th>Jersey</th><td>${player.jersey_number || 'N/A'}</td></tr>
-              <tr><th>Position</th><td>${player.primary_position || 'N/A'}</td></tr>
-              <tr><th>Team</th><td>${team?.name || 'N/A'}</td></tr>
-              <tr><th>Status</th><td>${player.status || 'N/A'}</td></tr>
-              <tr><th>DOB</th><td>${player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</td></tr>
-              <tr><th>Email</th><td>${player.email || 'N/A'}</td></tr>
-              <tr><th>Phone</th><td>${player.phone || 'N/A'}</td></tr>
-              <tr><th>Parent Name</th><td>${player.parent_name || 'N/A'}</td></tr>
-              <tr><th>Parent Emails</th><td>${(player.parent_emails || []).join(', ') || 'N/A'}</td></tr>
-            </table>
-          `
-        }
-      ];
-
-      if (selectedOptions.includes('tryout') && isAdminOrCoach && tryout) {
-        sections.push({
-          title: 'Tryout Information',
-          content: `
-            <table>
-              <tr><th>Team Role</th><td>${tryout.team_role || 'N/A'}</td></tr>
-              <tr><th>Recommendation</th><td>${tryout.recommendation || 'N/A'}</td></tr>
-              <tr><th>Next Year Team</th><td>${tryout.next_year_team || 'N/A'}</td></tr>
-              <tr><th>Next Season Status</th><td>${tryout.next_season_status || 'N/A'}</td></tr>
-              <tr><th>Registration</th><td>${tryout.registration_status || 'N/A'}</td></tr>
-              <tr><th>Notes</th><td>${tryout.notes || 'N/A'}</td></tr>
-            </table>
-          `
-        });
-      }
-
-      if (selectedOptions.includes('assessment') && currentAssessment) {
-        sections.push({
-          title: 'Physical Assessment',
-          content: `
-            <table>
-              <tr><th>Date</th><td>${currentAssessment.assessment_date || 'N/A'}</td></tr>
-              <tr><th>Sprint (20m)</th><td>${currentAssessment.sprint?.toFixed(2) || 'N/A'}s</td></tr>
-              <tr><th>Vertical</th><td>${currentAssessment.vertical || 'N/A'}"</td></tr>
-              <tr><th>YIRT</th><td>${currentAssessment.yirt || 'N/A'}</td></tr>
-              <tr><th>Shuttle</th><td>${currentAssessment.shuttle?.toFixed(2) || 'N/A'}s</td></tr>
-              <tr><th>Speed</th><td>${currentAssessment.speed_score || 'N/A'}</td></tr>
-              <tr><th>Power</th><td>${currentAssessment.power_score || 'N/A'}</td></tr>
-              <tr><th>Endurance</th><td>${currentAssessment.endurance_score || 'N/A'}</td></tr>
-              <tr><th>Agility</th><td>${currentAssessment.agility_score || 'N/A'}</td></tr>
-              <tr><th>Overall</th><td>${currentAssessment.overall_score || 'N/A'}</td></tr>
-            </table>
-          `
-        });
-      }
-
-      if (selectedOptions.includes('evaluation') && currentEvaluation) {
-        sections.push({
-          title: 'Evaluation',
-          content: `
-            <table>
-              <tr><th>Growth Mindset</th><td>${currentEvaluation.growth_mindset || 'N/A'}</td></tr>
-              <tr><th>Resilience</th><td>${currentEvaluation.resilience || 'N/A'}</td></tr>
-              <tr><th>Athleticism</th><td>${currentEvaluation.athleticism || 'N/A'}</td></tr>
-              <tr><th>Team Focus</th><td>${currentEvaluation.team_focus || 'N/A'}</td></tr>
-              <tr><th>Defending Organized</th><td>${currentEvaluation.defending_organized || 'N/A'}</td></tr>
-              <tr><th>Attacking Organized</th><td>${currentEvaluation.attacking_organized || 'N/A'}</td></tr>
-              <tr><th>Strengths</th><td>${currentEvaluation.player_strengths || 'N/A'}</td></tr>
-              <tr><th>Areas of Growth</th><td>${currentEvaluation.areas_of_growth || 'N/A'}</td></tr>
-            </table>
-          `
-        });
-      }
-
-      const html = generatePDFContent(`Player Report: ${player.full_name}`, sections);
-      printPDF(html);
-    }
-    setShowExportDialog(false);
-  };
-
-  const exportOptions = [
-    { id: 'player', label: 'Player Information' },
-    { id: 'assessment', label: 'Physical Assessment' },
-    { id: 'evaluation', label: 'Evaluation Data' },
-    ...(isAdminOrCoach ? [{ id: 'tryout', label: 'Tryout Information' }] : [])
-  ];
-
   const physicalTrendData = assessments.slice().reverse().map(a => ({
     date: new Date(a.assessment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     Speed: a.speed_score || 0,
     Power: a.power_score || 0,
     Endurance: a.endurance_score || 0,
-    Agility: a.agility_score || 0,
-    sprint: a.sprint,
-    vertical: a.vertical,
-    yirt: a.yirt,
-    shuttle: a.shuttle
+    Agility: a.agility_score || 0
   }));
 
   const evaluationTrendData = evaluations.slice().reverse().map(e => ({
@@ -636,10 +419,6 @@ export default function PlayerDashboard() {
     Defending: Math.round(((e.defending_organized || 0) + (e.defending_final_third || 0) + (e.defending_transition || 0)) / 3),
     Attacking: Math.round(((e.attacking_organized || 0) + (e.attacking_final_third || 0) + (e.attacking_in_transition || 0)) / 3)
   }));
-
-  const handleUpdateEvents = (updatedEvents) => {
-    updatePathwayMutation.mutate({ events_camps: updatedEvents });
-  };
 
   if (playerLoading) {
     return (
@@ -661,1054 +440,278 @@ export default function PlayerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100">
-      {/* Hero Header */}
-      <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMThjMy4wOCAwIDYtLjc4IDguNTQtMi4xNkw0NC42OSAzNGMuOTQuOTQgMi40Ni45NCAzLjQgMCAuOTQtLjk0Ljk0LTIuNDYgMC0zLjRsMTguMTUtMTguMTVDOzUuMjIgMjQgMzYgMjEuMDggMzYgMTh6bS0xOCAxNGMtNy43MyAwLTE0LTYuMjctMTQtMTRTMTAuMjcgNCAxOCA0czE0IDYuMjcgMTQgMTQtNi4yNyAxNC0xNCAxNHoiLz48L2c+PC9nPg8vc3ZnPg==')] opacity-20"></div>
-        <div className="max-w-[1600px] mx-auto p-6 md:p-8 relative z-10">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl md:text-4xl font-bold shadow-2xl ring-4 ring-white/30">
-                  {player.jersey_number || player.full_name?.charAt(0)}
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-4xl font-bold">{player.full_name}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className="bg-emerald-500/30 backdrop-blur-sm text-white border-emerald-300/40">
-                      {player.primary_position}
-                    </Badge>
-                    <Badge className="bg-green-500/30 backdrop-blur-sm text-white border-green-300/40">
-                      {team?.name}
-                    </Badge>
-                    {player.status === 'Injured' && (
-                      <Badge className="bg-red-500 text-white">
-                        Injured
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+    <div className="min-h-screen bg-slate-900 p-2 md:p-4">
+      {/* Compact Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl p-4 mb-2 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20 h-8 px-2">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-xl font-bold text-white ring-2 ring-white/30">
+              {player.jersey_number || player.full_name?.charAt(0)}
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">{player.full_name}</h1>
+              <div className="flex gap-1.5">
+                <Badge className="text-[10px] bg-white/20 text-white border-white/30">{player.primary_position}</Badge>
+                <Badge className="text-[10px] bg-white/20 text-white border-white/30">{team?.name}</Badge>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" disabled={!previousPlayer} onClick={() => navigate(`?id=${previousPlayer?.id}`)} className="text-white hover:bg-white/20">
-                <ChevronLeft className="w-4 h-4" />
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" disabled={!previousPlayer} onClick={() => navigate(`?id=${previousPlayer?.id}`)} className="text-white hover:bg-white/20 h-8 px-2">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)} className="text-white hover:bg-white/20 h-8 px-2">
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            {canEdit && (
+              <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} size="sm" className="bg-white text-emerald-600 hover:bg-white/90 h-8">
+                {isEditing ? <><Save className="w-3 h-3 mr-1" />Save</> : 'Edit'}
               </Button>
-              <Button variant="ghost" size="sm" disabled={!nextPlayer} onClick={() => navigate(`?id=${nextPlayer?.id}`)} className="text-white hover:bg-white/20">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              {isAdminOrCoach && (
-                <Button variant="ghost" size="sm" onClick={() => setShowShareDialog(true)} className="text-white hover:bg-white/20">
-                  <Share2 className="w-4 h-4 mr-1" />
-                  Share
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={handleExportFullPagePDF} disabled={exportingPDF} className="text-white hover:bg-white/20">
-                <Printer className="w-4 h-4 mr-1" />
-                {exportingPDF ? 'Exporting...' : 'Export PDF'}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)} className="text-white hover:bg-white/20">
-                <FileDown className="w-4 h-4 mr-1" />
-                Export Data
-              </Button>
-              {canEdit && (
-                <Button onClick={() => isEditing ? handleSaveAll() : setIsEditing(true)} className="bg-white text-emerald-600 hover:bg-white/90 shadow-lg">
-                  {isEditing ? <><Save className="w-4 h-4 mr-2" />Save</> : 'Edit'}
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto p-4 md:p-6 -mt-8">
-
-      <div className={`grid grid-cols-1 ${isAdminOrCoach ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-6`}>
-      {/* Player Info & Contact */}
-      <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-      <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
-            <CardTitle className="text-base flex items-center gap-2 font-bold">
-              <User className="w-5 h-5" /> Player Info
-            </CardTitle>
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-12 gap-2 auto-rows-min">
+        {/* Player Info - Compact */}
+        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
+            <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" />Info</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-center mb-4">
-              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-xl ring-4 ring-emerald-100">
-                {player.jersey_number || player.full_name?.charAt(0)}
-              </div>
+          <CardContent className="p-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div><Label className="text-[9px] text-slate-500">Jersey</Label>{isEditing ? <Input value={playerForm.jersey_number} onChange={e => setPlayerForm({...playerForm, jersey_number: e.target.value})} className="h-7 text-xs" /> : <p className="font-medium">{player.jersey_number || 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">DOB</Label>{isEditing ? <Input type="date" value={playerForm.date_of_birth} onChange={e => setPlayerForm({...playerForm, date_of_birth: e.target.value})} className="h-7 text-xs" /> : <p className="font-medium text-xs">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">Position</Label>{isEditing ? <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent>{['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => <SelectItem key={pos} value={pos}>{pos}</SelectItem>)}</SelectContent></Select> : <p className="font-medium text-xs">{player.primary_position || 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">Team</Label><p className="font-medium text-xs">{team?.name || 'N/A'}</p></div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[10px] text-slate-500">Name</Label>
-                {isEditing ? (
-                  <Input value={playerForm.full_name} onChange={e => setPlayerForm({...playerForm, full_name: e.target.value})} className="h-8 text-xs" />
-                ) : (
-                  <p className="text-sm font-medium">{player.full_name}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Jersey #</Label>
-                {isEditing ? (
-                  <Input type="number" value={playerForm.jersey_number} onChange={e => setPlayerForm({...playerForm, jersey_number: e.target.value})} className="h-8 text-xs" />
-                ) : (
-                  <p className="text-sm font-medium">{player.jersey_number || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Primary Position</Label>
-                {isEditing ? (
-                  <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
-                        <SelectItem key={pos} value={pos}>{pos}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm font-medium">{player.primary_position || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Secondary Position</Label>
-                {isEditing ? (
-                  <Select value={playerForm.secondary_position || ''} onValueChange={v => setPlayerForm({...playerForm, secondary_position: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
-                      {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
-                        <SelectItem key={pos} value={pos}>{pos}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm font-medium">{player.secondary_position || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-               <Label className="text-[10px] text-slate-500">Team</Label>
-               {isEditing ? (
-                 <Select value={playerForm.team_id || ''} onValueChange={v => setPlayerForm({...playerForm, team_id: v})}>
-                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select team" /></SelectTrigger>
-                   <SelectContent>
-                     {allTeams.map(t => (
-                       <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-               ) : (
-                 <p className="text-sm font-medium">{team?.name || 'N/A'}</p>
-               )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Status</Label>
-                {isEditing ? (
-                  <Select value={playerForm.status} onValueChange={v => setPlayerForm({...playerForm, status: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Injured">Injured</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  player.status === 'Injured' ? <Badge className="bg-red-100 text-red-800 text-[10px]">Injured</Badge> : <span className="text-xs">-</span>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">DOB</Label>
-                {isEditing ? (
-                  <Input type="date" value={playerForm.date_of_birth} onChange={e => setPlayerForm({...playerForm, date_of_birth: e.target.value})} className="h-8 text-xs" />
-                ) : (
-                  <p className="text-sm font-medium">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Grad Year</Label>
-                {isEditing ? (
-                  <Input type="number" value={playerForm.grad_year || ''} onChange={e => setPlayerForm({...playerForm, grad_year: Number(e.target.value)})} className="h-8 text-xs" placeholder="2026" />
-                ) : (
-                  <p className="text-sm font-medium">{player.grad_year || 'N/A'}</p>
-                )}
-              </div>
-              {/* <div className="col-span-2">
-                <Label className="text-[10px] text-slate-500">Parent Name</Label>
-                {isEditing ? (
-                  <Input value={playerForm.parent_name} onChange={e => setPlayerForm({...playerForm, parent_name: e.target.value})} className="h-8 text-xs" />
-                ) : (
-                  <p className="text-sm font-medium">{player.parent_name || 'N/A'}</p>
-                )}
-              </div> */}
-              </div>
-            <div className="border-t pt-2 space-y-2">
-              <div>
-                <Label className="text-[9px] text-slate-500">Player Contact</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Mail className="w-3 h-3 text-slate-400" />
-                  {isEditing ? (
-                    <Input type="email" value={playerForm.player_email} onChange={e => setPlayerForm({...playerForm, player_email: e.target.value})} className="h-7 text-xs flex-1" placeholder="Player email" />
-                  ) : (
-                    <span className="text-xs text-slate-600">{player.player_email || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <Phone className="w-3 h-3 text-slate-400" />
-                  {isEditing ? (
-                    <Input value={playerForm.player_phone} onChange={e => setPlayerForm({...playerForm, player_phone: e.target.value})} className="h-7 text-xs flex-1" placeholder="Player phone" />
-                  ) : (
-                    <span className="text-xs text-slate-600">{player.player_phone || 'N/A'}</span>
-                  )}
-                </div>
-              </div>
-              <div className="pt-2 border-t">
-                <Label className="text-[9px] text-slate-500">Parent Contact</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Mail className="w-3 h-3 text-slate-400" />
-                  {isEditing ? (
-                    <Input type="email" value={playerForm.email} onChange={e => setPlayerForm({...playerForm, email: e.target.value})} className="h-7 text-xs flex-1" placeholder="Parent email" />
-                  ) : (
-                    <span className="text-xs text-slate-600">{player.email || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <Phone className="w-3 h-3 text-slate-400" />
-                  {isEditing ? (
-                    <Input value={playerForm.phone} onChange={e => setPlayerForm({...playerForm, phone: e.target.value})} className="h-7 text-xs flex-1" placeholder="Parent phone" />
-                  ) : (
-                    <span className="text-xs text-slate-600">{player.phone || 'N/A'}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="border-t pt-2 mt-2">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] font-semibold text-slate-500">Parent Emails</div>
-                {isAdminOrCoach && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAddParentDialog(true)}
-                    className="h-6 text-xs px-2"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />Add
-                  </Button>
-                )}
-              </div>
-              <ParentEmailsManager
-                parentEmails={playerForm.parent_emails || []}
-                onChange={(emails) => setPlayerForm({...playerForm, parent_emails: emails})}
-                disabled={!isEditing}
-              />
-              {assignedParents.length > 0 && (
-                <div className="mt-2 text-xs text-slate-500">
-                  {assignedParents.length} parent account(s) linked
-                </div>
-              )}
+            <div className="border-t pt-2">
+              <div className="text-[9px] font-semibold text-slate-500 mb-1">Parent Emails</div>
+              <ParentEmailsManager parentEmails={playerForm.parent_emails || []} onChange={(emails) => setPlayerForm({...playerForm, parent_emails: emails})} disabled={!isEditing} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Tryout Info - Only visible to admin/coach */}
+        {/* Tryout Info */}
         {isAdminOrCoach && (
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-700 to-green-700 text-white border-b border-emerald-400/30">
-            <CardTitle className="text-base font-bold">🎯 Tryout Info</CardTitle>
+        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-purple-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3">
+            <CardTitle className="text-sm">🎯 Tryout</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[10px] text-slate-500">Team Role</Label>
-                {isEditing ? (
-                  <Select value={tryoutForm.team_role} onValueChange={v => setTryoutForm({...tryoutForm, team_role: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {['Indispensable Player','GA Starter','GA Rotation','Aspire Starter','Aspire Rotation','United Starter','United Rotation'].map(r => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className="bg-purple-100 text-purple-800 text-[10px]">{tryout?.team_role || 'N/A'}</Badge>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Recommendation</Label>
-                {isEditing ? (
-                  <Select value={tryoutForm.recommendation} onValueChange={v => setTryoutForm({...tryoutForm, recommendation: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Move up">🔼 Move up</SelectItem>
-                      <SelectItem value="Keep">✅ Keep</SelectItem>
-                      <SelectItem value="Move down">🔽 Move down</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={`text-[10px] ${tryout?.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-800' : tryout?.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {tryout?.recommendation || 'N/A'}
-                  </Badge>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Dominant Foot</Label>
-                {isEditing ? (
-                  <Select value={tryoutForm.dominant_foot} onValueChange={v => setTryoutForm({...tryoutForm, dominant_foot: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Left">Left</SelectItem>
-                      <SelectItem value="Right">Right</SelectItem>
-                      <SelectItem value="Both">Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm font-medium">{tryout?.dominant_foot || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Next Year Team</Label>
-                {isEditing ? (
-                  <ComboboxInput
-                    value={tryoutForm.next_year_team}
-                    onChange={(val) => setTryoutForm({...tryoutForm, next_year_team: val})}
-                    options={existingTeamNames}
-                    placeholder="Select or type team"
-                    className="text-xs"
-                  />
-                ) : (
-                  <p className="text-sm font-medium">{tryout?.next_year_team || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Next Season Status</Label>
-                {isEditing ? (
-                  <Select value={tryoutForm.next_season_status} onValueChange={v => setTryoutForm({...tryoutForm, next_season_status: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="N/A">N/A</SelectItem>
-                      <SelectItem value="Accepted Offer">Accepted</SelectItem>
-                      <SelectItem value="Rejected Offer">Rejected</SelectItem>
-                      <SelectItem value="Considering Offer">Considering</SelectItem>
-                      <SelectItem value="Not Offered">Not Offered</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm font-medium">{tryout?.next_season_status || 'N/A'}</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-[10px] text-slate-500">Registration</Label>
-                {isEditing ? (
-                  <Select value={tryoutForm.registration_status} onValueChange={v => setTryoutForm({...tryoutForm, registration_status: v})}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Not Signed">Not Signed</SelectItem>
-                      <SelectItem value="Signed">Signed</SelectItem>
-                      <SelectItem value="Signed and Paid">Signed & Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={`text-[10px] ${tryout?.registration_status === 'Signed and Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'}`}>
-                    {tryout?.registration_status || 'Not Signed'}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-[10px] text-slate-500">Notes</Label>
-              {isEditing ? (
-                <Textarea value={tryoutForm.notes} onChange={e => setTryoutForm({...tryoutForm, notes: e.target.value})} className="text-xs" rows={2} />
-              ) : (
-                <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded">{tryout?.notes || 'No notes'}</p>
-              )}
+          <CardContent className="p-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div><Label className="text-[9px] text-slate-500">Role</Label>{isEditing ? <Select value={tryoutForm.team_role} onValueChange={v => setTryoutForm({...tryoutForm, team_role: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent>{['Indispensable Player','GA Starter','GA Rotation','Aspire Starter','Aspire Rotation','United Starter','United Rotation'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select> : <Badge className="text-[9px]">{tryout?.team_role || 'N/A'}</Badge>}</div>
+              <div><Label className="text-[9px] text-slate-500">Next Team</Label><p className="font-medium text-xs">{tryout?.next_year_team || 'N/A'}</p></div>
             </div>
           </CardContent>
         </Card>
         )}
 
-        {/* Physical Assessment - Larger Display */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all lg:col-span-2">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
-            <CardTitle className="text-base flex items-center justify-between font-bold">
-              <div className="flex items-center gap-2">
-                💪 Physical Assessment
-                {assessments.length > 1 && (
-                  <span className="text-[10px] text-white/70">({assessmentIndex + 1}/{assessments.length})</span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {assessments.length > 1 && (
-                  <>
-                    <button onClick={() => setAssessmentIndex(Math.min(assessmentIndex + 1, assessments.length - 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/20 rounded disabled:opacity-30">
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setAssessmentIndex(Math.max(assessmentIndex - 1, 0))} disabled={assessmentIndex <= 0} className="p-1 hover:bg-white/20 rounded disabled:opacity-30">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-                {currentAssessment && <span className="text-[10px] font-normal text-white/80">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</span>}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {currentAssessment ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-red-50 rounded-xl text-center shadow-sm">
-                    <div className="text-xs text-red-600 font-semibold mb-1">Sprint (20m)</div>
-                    <div className="text-3xl font-bold text-red-700">{currentAssessment.sprint?.toFixed(2)}<span className="text-lg">s</span></div>
-                  </div>
-                  <div className="p-4 bg-blue-50 rounded-xl text-center shadow-sm">
-                    <div className="text-xs text-blue-600 font-semibold mb-1">Vertical Jump</div>
-                    <div className="text-3xl font-bold text-blue-700">{currentAssessment.vertical}<span className="text-lg">"</span></div>
-                  </div>
-                  <div className="p-4 bg-emerald-50 rounded-xl text-center shadow-sm">
-                    <div className="text-xs text-emerald-600 font-semibold mb-1">YIRT Level</div>
-                    <div className="text-3xl font-bold text-emerald-700">{currentAssessment.yirt}</div>
-                  </div>
-                  <div className="p-4 bg-pink-50 rounded-xl text-center shadow-sm">
-                    <div className="text-xs text-pink-600 font-semibold mb-1">Shuttle Run</div>
-                    <div className="text-3xl font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}<span className="text-lg">s</span></div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Speed', score: currentAssessment.speed_score, color: '#ef4444', bgColor: 'bg-red-50' },
-                    { label: 'Power', score: currentAssessment.power_score, color: '#3b82f6', bgColor: 'bg-blue-50' },
-                    { label: 'Endurance', score: currentAssessment.endurance_score, color: '#10b981', bgColor: 'bg-emerald-50' },
-                    { label: 'Agility', score: currentAssessment.agility_score, color: '#ec4899', bgColor: 'bg-pink-50' }
-                  ].map(({ label, score, color, bgColor }) => (
-                    <div key={label} className={`p-4 ${bgColor} rounded-xl`}>
-                      <div className="text-center">
-                        <div className="relative w-20 h-20 mx-auto mb-2">
-                          <svg className="w-full h-full transform -rotate-90">
-                            <circle cx="40" cy="40" r="32" stroke="#e5e7eb" strokeWidth="6" fill="none" />
-                            <circle cx="40" cy="40" r="32" stroke={color} strokeWidth="6" fill="none"
-                              strokeDasharray={`${2 * Math.PI * 32}`}
-                              strokeDashoffset={`${2 * Math.PI * 32 * (1 - (score || 0) / 100)}`}
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center text-xl font-bold" style={{ color }}>{score || 0}</div>
-                        </div>
-                        <div className="text-sm font-semibold text-slate-700">{label}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center p-6 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl shadow-lg">
-                  <div className="text-sm text-white/70 mb-1">Overall Score</div>
-                  <div className="text-4xl font-bold text-white">{currentAssessment.overall_score || 0}<span className="text-xl text-white/70">/100</span></div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-center text-slate-500 py-6 text-sm">No assessments yet</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Evaluation Metrics */}
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
-            <div className="flex items-center justify-between mb-1">
-              <CardTitle className="text-base flex items-center gap-2 font-bold">
-                📊 Evaluation
-                {evaluations.length > 1 && (
-                  <span className="text-[10px] text-slate-400">({evaluationIndex + 1}/{evaluations.length})</span>
-                )}
-              </CardTitle>
-              <div className="flex items-center gap-1">
-                {evaluations.length > 1 && (
-                  <>
-                    <button onClick={() => setEvaluationIndex(Math.min(evaluationIndex + 1, evaluations.length - 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setEvaluationIndex(Math.max(evaluationIndex - 1, 0))} disabled={evaluationIndex <= 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
+        {/* Physical Assessment - Compact */}
+        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-blue-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">💪 Physical</CardTitle>
+              {assessments.length > 1 && (
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowCreateEvalDialog(true)}>
-                    <Plus className="w-3 h-3 mr-1" />New
-                  </Button>
-                  {currentEvaluation && isAdminOrCoach && (
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowEditEvalDialog(true)}>
-                      Edit
-                    </Button>
-                  )}
+                  <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-0.5 hover:bg-white/20 rounded disabled:opacity-30"><ChevronLeft className="w-3 h-3" /></button>
+                  <button onClick={() => setAssessmentIndex(Math.min(assessments.length - 1, assessmentIndex + 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-0.5 hover:bg-white/20 rounded disabled:opacity-30"><ChevronRight className="w-3 h-3" /></button>
                 </div>
-              </div>
-              </div>
-              <p className="text-[10px] text-white/90 italic mt-1">Ratings are 1-10. 10 is what a national team starter would get.</p>
-              {currentEvaluation && <span className="text-[10px] font-normal text-white/80">{new Date(currentEvaluation.created_date).toLocaleDateString()}</span>}
+              )}
+            </div>
           </CardHeader>
-          <CardContent>
-            {currentEvaluation ? (
-              <div className="space-y-2">
-                <div className="text-[10px] font-semibold text-slate-700 mb-1">Mental & Character</div>
-                {['growth_mindset', 'resilience', 'efficiency_in_execution', 'athleticism', 'team_focus'].map(key => (
-                  <SliderBar
-                    key={key}
-                    label={metricLabels[key]}
-                    value={currentEvaluation[key]}
-                    color={metricColors[key]}
-                  />
-                ))}
-                <div className="text-[10px] font-semibold text-slate-700 mt-3 mb-1">Defending</div>
-                {['defending_organized', 'defending_final_third', 'defending_transition'].map(key => (
-                  <SliderBar
-                    key={key}
-                    label={metricLabels[key]}
-                    value={currentEvaluation[key]}
-                    color={metricColors[key]}
-                  />
-                ))}
-                <div className="text-[10px] font-semibold text-slate-700 mt-3 mb-1">Attacking</div>
-                {['attacking_organized', 'attacking_final_third', 'attacking_in_transition'].map(key => (
-                  <SliderBar
-                    key={key}
-                    label={metricLabels[key]}
-                    value={currentEvaluation[key]}
-                    color={metricColors[key]}
-                  />
+          <CardContent className="p-3">
+            {currentAssessment ? (
+              <div className="grid grid-cols-2 gap-2">
+                {[{l:'Speed',s:currentAssessment.speed_score,c:'#ef4444'},{l:'Power',s:currentAssessment.power_score,c:'#3b82f6'},{l:'Endurance',s:currentAssessment.endurance_score,c:'#10b981'},{l:'Agility',s:currentAssessment.agility_score,c:'#ec4899'}].map(({l,s,c})=>(
+                  <div key={l} className="text-center p-2 rounded-lg" style={{backgroundColor:c+'15'}}>
+                    <div className="text-2xl font-bold" style={{color:c}}>{s||0}</div>
+                    <div className="text-[9px] text-slate-600">{l}</div>
+                  </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-slate-500 text-sm mb-2">No evaluations yet</p>
-                {isAdminOrCoach && (
-                  <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                    <Plus className="w-4 h-4 mr-1" />Create Evaluation
-                  </Button>
-                )}
-              </div>
-            )}
+            ) : <p className="text-center text-xs text-slate-500 py-4">No data</p>}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Development Notes */}
-      {currentEvaluation && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-emerald-50 to-green-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-emerald-900">Strengths</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-emerald-800">{currentEvaluation.player_strengths || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-emerald-100 to-green-100 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-emerald-900">Areas of Growth</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-emerald-800">{currentEvaluation.areas_of_growth || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-2xl bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-green-900">Training Focus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-green-800">{currentEvaluation.training_focus || 'Not specified'}</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Analytics Row */}
-      {(assessments.length > 1 || evaluations.length > 1 || currentEvaluation) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {assessments.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
-                <CardTitle className="text-base flex items-center gap-2 font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                  Physical Progress ({assessments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={physicalTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Tooltip 
-                      contentStyle={{ fontSize: 11 }} 
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-2 border rounded shadow-lg text-xs">
-                              <p className="font-bold mb-1">{data.date}</p>
-                              <p>Sprint: {data.sprint?.toFixed(2)}s</p>
-                              <p>Vertical: {data.vertical}"</p>
-                              <p>YIRT: {data.yirt}</p>
-                              <p>Shuttle: {data.shuttle?.toFixed(2)}s</p>
-                              <hr className="my-1" />
-                              {payload.map((p, i) => (
-                                <p key={i} style={{ color: p.color }}>{p.name}: {p.value}</p>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Line type="monotone" dataKey="Speed" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Power" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Endurance" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Agility" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {evaluations.length > 1 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-              <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white border-b border-emerald-400/30">
-                <CardTitle className="text-base flex items-center gap-2 font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                  Evaluation Progress ({evaluations.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={evaluationTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Line type="monotone" dataKey="Mental" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Physical" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Defending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="Attacking" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            )}
-
-            {currentEvaluation && (
-            <EvaluationRadarChart evaluation={currentEvaluation} />
-            )}
+        {/* Evaluation */}
+        <Card className="col-span-12 md:col-span-5 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">📊 Evaluation</CardTitle>
+              <div className="flex gap-1">
+                {evaluations.length > 1 && (
+                  <>
+                    <button onClick={() => setEvaluationIndex(Math.max(0, evaluationIndex - 1))} disabled={evaluationIndex === 0} className="p-0.5 hover:bg-white/20 rounded disabled:opacity-30"><ChevronLeft className="w-3 h-3" /></button>
+                    <button onClick={() => setEvaluationIndex(Math.min(evaluations.length - 1, evaluationIndex + 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-0.5 hover:bg-white/20 rounded disabled:opacity-30"><ChevronRight className="w-3 h-3" /></button>
+                  </>
+                )}
+                <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="h-6 px-2 text-[10px] bg-white/20 hover:bg-white/30 text-white border-0"><Plus className="w-3 h-3" /></Button>
+              </div>
             </div>
-            )}
+          </CardHeader>
+          <CardContent className="p-3">
+            {currentEvaluation ? (
+              <div className="space-y-1.5">
+                {['growth_mindset','resilience','athleticism','defending_organized','attacking_organized'].map(key=><SliderBar key={key} label={metricLabels[key]} value={currentEvaluation[key]} color={metricColors[key]}/>)}
+              </div>
+            ) : <p className="text-center text-xs py-4">No evaluation</p>}
+          </CardContent>
+        </Card>
 
-      {/* Player Development Pathway & Training Modules */}
-      {pathway?.training_modules?.length > 0 && (
-      <div className="mt-6">
-        <PlayerDevelopmentDisplay
-          player={player}
-          pathway={pathway}
-          assessments={assessments}
-          onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
-          onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
-          onProvideFeedback={isAdminOrCoach ? (goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); } : null}
-          isAdminOrCoach={isAdminOrCoach}
+        {/* Radar Chart */}
+        {currentEvaluation && <div className="col-span-12 md:col-span-3"><EvaluationRadarChart evaluation={currentEvaluation} /></div>}
+
+        {/* Physical Trend */}
+        {assessments.length > 1 && (
+        <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-orange-600 to-red-600 text-white p-3">
+            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4" />Physical Progress</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3">
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={physicalTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} />
+                <Tooltip contentStyle={{ fontSize: 10 }} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                <Line type="monotone" dataKey="Speed" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Power" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Endurance" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Agility" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        )}
+
+        {/* Evaluation Trend */}
+        {evaluations.length > 1 && (
+        <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3">
+            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4" />Evaluation Progress</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3">
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={evaluationTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                <YAxis domain={[0, 10]} tick={{ fontSize: 9 }} />
+                <Tooltip contentStyle={{ fontSize: 10 }} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                <Line type="monotone" dataKey="Mental" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Physical" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Defending" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="Attacking" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        )}
+
+        {/* Development Pathway */}
+        {pathway?.training_modules?.length > 0 && (
+        <div className="col-span-12">
+          <PlayerDevelopmentDisplay
+            player={player}
+            pathway={pathway}
+            assessments={assessments}
+            onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+            onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
+            onProvideFeedback={isAdminOrCoach ? (goal) => { setFeedbackGoal(goal); setShowFeedbackDialog(true); } : null}
+            isAdminOrCoach={isAdminOrCoach}
           />
-          </div>
-          )}
+        </div>
+        )}
 
-      {/* Position Knowledge Bank - Bento Grid */}
-      {player.primary_position && (
-        <div className="mt-6">
+        {/* Position Knowledge Bank */}
+        {player.primary_position && (
+        <div className="col-span-12">
           <PositionKnowledgeBank position={player.primary_position} />
         </div>
-      )}
+        )}
 
-      {/* Bento Grid - Events, Injuries, Documents */}
-      {(pathway?.events_camps?.length > 0 || injuries.length > 0 || documents.length > 0) && (
-      <div className="grid md:grid-cols-3 gap-6 mt-6">
-        {/* Events & Camps */}
-        {pathway?.events_camps?.length > 0 && (
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
+        {/* Injuries */}
+        {injuries.length > 0 && (
+        <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg max-h-[400px] overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-red-600 to-orange-600 text-white p-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                🏆 Events & Camps
-                {pathway?.events_camps?.length > 0 && (
-                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 text-xs">
-                    {pathway.events_camps.length}
-                  </Badge>
-                )}
-              </CardTitle>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  const newEvent = {
-                    id: `event_${Date.now()}`,
-                    event_name: '',
-                    event_date: '',
-                    event_type: 'Training Camp',
-                    notes: ''
-                  };
-                  const updatedEvents = [...(pathway?.events_camps || []), newEvent];
-                  updatePathwayMutation.mutate({ events_camps: updatedEvents });
-                }}
-                className="text-white hover:bg-white/20 h-7 px-2"
-              >
-                <Plus className="w-3 h-3" />
-              </Button>
+              <CardTitle className="text-sm">🏥 Injuries</CardTitle>
+              {isAdminOrCoach && <Button size="sm" onClick={() => setShowInjuryDialog(true)} variant="ghost" className="h-6 px-2 text-white hover:bg-white/20"><Plus className="w-3 h-3" /></Button>}
             </div>
           </CardHeader>
-          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
-            {!pathway?.events_camps || pathway.events_camps.length === 0 ? (
-              <div className="text-center py-12 bg-white/60 rounded-xl">
-                <div className="text-4xl mb-3">🎯</div>
-                <p className="text-slate-500 text-sm">No events recorded</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {pathway.events_camps.map(event => (
-                  <div key={event.id} className="p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-purple-200/50 hover:border-purple-400/50 hover:shadow-lg transition-all">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-bold text-sm text-slate-900">{event.event_name}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className="text-[9px] bg-purple-100 text-purple-800">{event.event_type}</Badge>
-                          {event.event_date && (
-                            <span className="text-xs text-slate-500">
-                              {new Date(event.event_date).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                        {event.notes && <p className="text-xs text-slate-600 mt-2 italic">{event.notes}</p>}
-                      </div>
+          <CardContent className="p-3 overflow-y-auto max-h-80">
+            <div className="space-y-2">
+              {injuries.map(injury => (
+                <div key={injury.id} className={`p-2 rounded-lg border ${injury.status === 'Active' ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="font-bold text-xs">{injury.injury_type}</div>
+                      <div className="text-[9px] text-slate-600">{new Date(injury.injury_date).toLocaleDateString()}</div>
                     </div>
+                    <Badge className={`text-[8px] ${injury.status === 'Active' ? 'bg-red-500' : 'bg-green-500'}`}>{injury.status}</Badge>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-          </Card>
-          )}
-
-          {/* Injury Tracking */}
-          {injuries.length > 0 && (
-            <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-red-50 backdrop-blur-sm">
-          <CardHeader className="pb-3 bg-gradient-to-r from-red-600 to-orange-600 text-white border-b border-red-400/30">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                🏥 Injury Tracking
-                {injuries.some(i => i.status === 'Active' || i.status === 'Recovering') && (
-                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 animate-pulse text-xs">
-                    {injuries.filter(i => i.status === 'Active' || i.status === 'Recovering').length}
-                  </Badge>
-                )}
-              </CardTitle>
-              {isAdminOrCoach && (
-                <Button variant="ghost" size="sm" onClick={() => setShowInjuryDialog(true)} className="text-white hover:bg-white/20 h-7 px-2">
-                  <Plus className="w-3 h-3" />
-                </Button>
-              )}
+                </div>
+              ))}
             </div>
-          </CardHeader>
-          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
-            {injuries.length === 0 ? (
-              <div className="text-center py-12 bg-white/60 rounded-xl">
-                <div className="text-4xl mb-3">✓</div>
-                <p className="text-emerald-600 font-semibold mb-1">Healthy</p>
-                <p className="text-xs text-slate-500">No injury history</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {injuries.map(injury => (
-                  <div 
-                    key={injury.id} 
-                    className={`rounded-xl border overflow-hidden transition-all bg-white/80 backdrop-blur-sm hover:shadow-lg ${
-                      injury.status === 'Active' ? 'border-red-300/50' : 
-                      injury.status === 'Recovering' ? 'border-yellow-300/50' : 
-                      'border-green-300/50'
-                    }`}
-                  >
-                    <div className="p-3">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <h4 className="font-bold text-sm text-slate-900">{injury.injury_type}</h4>
-                            {injury.severity && (
-                              <Badge className={`text-[8px] px-1.5 py-0 ${
-                                injury.severity === 'Severe' ? 'bg-red-100 text-red-900' :
-                                injury.severity === 'Moderate' ? 'bg-orange-100 text-orange-900' :
-                                'bg-blue-100 text-blue-900'
-                              }`}>
-                                {injury.severity}
-                              </Badge>
-                            )}
-                            <Badge className={`text-[8px] px-1.5 py-0 ${
-                              injury.status === 'Active' ? 'bg-red-500 text-white' : 
-                              injury.status === 'Recovering' ? 'bg-yellow-500 text-white' : 
-                              'bg-green-500 text-white'
-                            }`}>
-                              {injury.status}
-                            </Badge>
-                          </div>
-                          <div className="text-[10px] text-slate-600 space-y-0.5">
-                            <div>{new Date(injury.injury_date).toLocaleDateString()}</div>
-                            {injury.recovery_date && (
-                              <div className="text-slate-500">→ {new Date(injury.recovery_date).toLocaleDateString()}</div>
-                            )}
-                          </div>
-                        </div>
-                        {isAdminOrCoach && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => { setEditingInjury(injury); setShowEditInjuryDialog(true); }}
-                            className="hover:bg-slate-100 h-6 px-2 text-[10px]"
-                          >
-                            Update
-                          </Button>
-                        )}
-                      </div>
-                      
-                      {injury.treatment_notes && (
-                        <div className="mt-2 p-2 bg-slate-50/80 rounded-lg">
-                          <p className="text-[10px] text-slate-600">{injury.treatment_notes}</p>
-                        </div>
-                      )}
-
-
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
         )}
 
-        {/* Documents & Reports */}
+        {/* Documents */}
         {documents.length > 0 && (
-        <Card className="border-none shadow-2xl overflow-hidden bg-gradient-to-br from-white to-emerald-50 backdrop-blur-sm hover:shadow-3xl transition-all">
-          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
+        <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg max-h-[400px] overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                📄 Documents & Reports
-                {documents.length > 0 && (
-                  <Badge className="bg-white/30 backdrop-blur-sm text-white border-white/40 text-xs">
-                    {documents.length}
-                  </Badge>
-                )}
-              </CardTitle>
-              {isAdminOrCoach && (
-                <Button variant="ghost" size="sm" onClick={() => setShowDocumentDialog(true)} className="text-white hover:bg-white/20 h-7 px-2">
-                  <Plus className="w-3 h-3" />
-                </Button>
-              )}
+              <CardTitle className="text-sm">📄 Documents</CardTitle>
+              {isAdminOrCoach && <Button size="sm" onClick={() => setShowDocumentDialog(true)} variant="ghost" className="h-6 px-2 text-white hover:bg-white/20"><Plus className="w-3 h-3" /></Button>}
             </div>
           </CardHeader>
-          <CardContent className="p-4 max-h-[400px] overflow-y-auto">
-            {documents.length === 0 ? (
-              <div className="text-center py-12 bg-white/60 rounded-xl">
-                <div className="text-4xl mb-3">📁</div>
-                <p className="text-slate-500 text-sm">No documents</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {documents.map(doc => (
-                  <div key={doc.id} className="p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-blue-200/50 hover:border-blue-400/50 hover:shadow-lg transition-all">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="font-semibold text-sm text-blue-600 hover:underline">
-                          {doc.title}
-                        </a>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className="text-[8px] bg-blue-100 text-blue-800 px-1.5 py-0">{doc.document_type}</Badge>
-                          {doc.upload_date && <span className="text-[10px] text-slate-500">{new Date(doc.upload_date).toLocaleDateString()}</span>}
-                        </div>
-                        {doc.notes && <p className="text-[10px] text-slate-600 mt-1">{doc.notes}</p>}
-                      </div>
-                      {isAdminOrCoach && (
-                        <Button variant="ghost" size="sm" onClick={() => deleteDocumentMutation.mutate(doc.id)} className="hover:bg-red-50 hover:text-red-600 h-6 px-2 text-[10px]">
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <CardContent className="p-3 overflow-y-auto max-h-80">
+            <div className="space-y-2">
+              {documents.map(doc => (
+                <a key={doc.id} href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block p-2 rounded-lg border border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all">
+                  <div className="font-semibold text-xs text-blue-600">{doc.title}</div>
+                  <div className="text-[9px] text-slate-500">{doc.document_type}</div>
+                </a>
+              ))}
+            </div>
           </CardContent>
         </Card>
         )}
       </div>
-      )}
 
+      {/* Dialogs */}
       <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Upload Document</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
-            <div>
-              <Label>Document Type</Label>
-              <Select value={newDocument.document_type} onValueChange={v => setNewDocument({...newDocument, document_type: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Medical Report">Medical Report</SelectItem>
-                  <SelectItem value="Scouting Note">Scouting Note</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Title</Label>
-              <Input value={newDocument.title} onChange={e => setNewDocument({...newDocument, title: e.target.value})} placeholder="e.g., Pre-season Medical" />
-            </div>
-            <div>
-              <Label>File</Label>
-              <Input type="file" onChange={e => setNewDocument({...newDocument, file: e.target.files[0]})} />
-            </div>
-            <div>
-              <Label>Notes (optional)</Label>
-              <Textarea value={newDocument.notes} onChange={e => setNewDocument({...newDocument, notes: e.target.value})} rows={2} />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setShowDocumentDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={() => uploadDocumentMutation.mutate(newDocument)} disabled={!newDocument.title || !newDocument.file} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                Upload
-              </Button>
-            </div>
+            <div><Label>Type</Label><Select value={newDocument.document_type} onValueChange={v => setNewDocument({...newDocument, document_type: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Medical Report">Medical Report</SelectItem><SelectItem value="Scouting Note">Scouting Note</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>
+            <div><Label>Title</Label><Input value={newDocument.title} onChange={e => setNewDocument({...newDocument, title: e.target.value})} /></div>
+            <div><Label>File</Label><Input type="file" onChange={e => setNewDocument({...newDocument, file: e.target.files[0]})} /></div>
+            <div className="flex gap-3"><Button variant="outline" onClick={() => setShowDocumentDialog(false)} className="flex-1">Cancel</Button><Button onClick={() => uploadDocumentMutation.mutate(newDocument)} disabled={!newDocument.title || !newDocument.file} className="flex-1 bg-emerald-600">Upload</Button></div>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={showInjuryDialog} onOpenChange={setShowInjuryDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Log New Injury</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Date of Injury *</Label>
-                <Input type="date" value={newInjury.injury_date} onChange={e => setNewInjury({...newInjury, injury_date: e.target.value})} />
-              </div>
-              <div>
-                <Label>Severity *</Label>
-                <Select value={newInjury.severity} onValueChange={v => setNewInjury({...newInjury, severity: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Minor">Minor (1-2 weeks)</SelectItem>
-                    <SelectItem value="Moderate">Moderate (2-6 weeks)</SelectItem>
-                    <SelectItem value="Severe">Severe (6+ weeks)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label>Injury Type *</Label>
-              <Input value={newInjury.injury_type} onChange={e => setNewInjury({...newInjury, injury_type: e.target.value})} placeholder="e.g., Left Ankle Sprain, Hamstring Strain" />
-            </div>
-            <div>
-              <Label>Estimated Return to Play Date</Label>
-              <Input type="date" value={newInjury.recovery_date} onChange={e => setNewInjury({...newInjury, recovery_date: e.target.value})} />
-            </div>
-            <div>
-              <Label>Treatment & Recovery Plan</Label>
-              <Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, treatment_notes: e.target.value})} rows={3} placeholder="Include initial treatment, rehabilitation plan, and any specialist referrals..." />
-            </div>
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowInjuryDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={() => createInjuryMutation.mutate(newInjury)} disabled={!newInjury.injury_date || !newInjury.injury_type} className="flex-1 bg-red-600 hover:bg-red-700">
-                Log Injury
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
+        <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Log New Injury</DialogTitle></DialogHeader><div className="space-y-4 mt-4"><div className="grid grid-cols-2 gap-4"><div><Label>Date *</Label><Input type="date" value={newInjury.injury_date} onChange={e => setNewInjury({...newInjury, injury_date: e.target.value})} /></div><div><Label>Severity</Label><Select value={newInjury.severity} onValueChange={v => setNewInjury({...newInjury, severity: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Minor">Minor</SelectItem><SelectItem value="Moderate">Moderate</SelectItem><SelectItem value="Severe">Severe</SelectItem></SelectContent></Select></div></div><div><Label>Type *</Label><Input value={newInjury.injury_type} onChange={e => setNewInjury({...newInjury, injury_type: e.target.value})} /></div><div><Label>Recovery Date</Label><Input type="date" value={newInjury.recovery_date} onChange={e => setNewInjury({...newInjury, recovery_date: e.target.value})} /></div><div><Label>Treatment Notes</Label><Textarea value={newInjury.treatment_notes} onChange={e => setNewInjury({...newInjury, treatment_notes: e.target.value})} rows={2} /></div><div className="flex gap-3"><Button variant="outline" onClick={() => setShowInjuryDialog(false)} className="flex-1">Cancel</Button><Button onClick={() => createInjuryMutation.mutate(newInjury)} disabled={!newInjury.injury_date || !newInjury.injury_type} className="flex-1 bg-red-600">Log</Button></div></div></DialogContent>
       </Dialog>
 
       <Dialog open={showEditInjuryDialog} onOpenChange={setShowEditInjuryDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Update Injury Status</DialogTitle>
-          </DialogHeader>
-          {editingInjury && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Status *</Label>
-                  <Select value={editingInjury.status} onValueChange={v => setEditingInjury({...editingInjury, status: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Recovering">Recovering</SelectItem>
-                      <SelectItem value="Recovered">Recovered</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Recovery Date</Label>
-                  <Input type="date" value={editingInjury.recovery_date || ''} onChange={e => setEditingInjury({...editingInjury, recovery_date: e.target.value})} />
-                </div>
-              </div>
-              <div>
-                <Label>Treatment Notes</Label>
-                <Textarea value={editingInjury.treatment_notes || ''} onChange={e => setEditingInjury({...editingInjury, treatment_notes: e.target.value})} rows={3} />
-              </div>
-              <div className="flex gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowEditInjuryDialog(false)} className="flex-1">Cancel</Button>
-                <Button onClick={() => updateInjuryMutation.mutate({ id: editingInjury.id, data: editingInjury })} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                  Update Status
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Update Injury</DialogTitle></DialogHeader>{editingInjury && <div className="space-y-4 mt-4"><div className="grid grid-cols-2 gap-4"><div><Label>Status</Label><Select value={editingInjury.status} onValueChange={v => setEditingInjury({...editingInjury, status: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Recovering">Recovering</SelectItem><SelectItem value="Recovered">Recovered</SelectItem></SelectContent></Select></div><div><Label>Recovery Date</Label><Input type="date" value={editingInjury.recovery_date || ''} onChange={e => setEditingInjury({...editingInjury, recovery_date: e.target.value})} /></div></div><div><Label>Notes</Label><Textarea value={editingInjury.treatment_notes || ''} onChange={e => setEditingInjury({...editingInjury, treatment_notes: e.target.value})} rows={2} /></div><div className="flex gap-3"><Button variant="outline" onClick={() => setShowEditInjuryDialog(false)} className="flex-1">Cancel</Button><Button onClick={() => updateInjuryMutation.mutate({ id: editingInjury.id, data: editingInjury })} className="flex-1 bg-emerald-600">Update</Button></div></div>}</DialogContent>
       </Dialog>
 
-      <ExportDialog
-        open={showExportDialog}
-        onClose={() => setShowExportDialog(false)}
-        title="Export Player Data"
-        options={exportOptions}
-        onExport={handleExport}
-      />
-
-      <SharePlayerDialog
-        open={showShareDialog}
-        onClose={() => setShowShareDialog(false)}
-        player={player}
-        onInvite={handleInvitePlayer}
-      />
-
-      <GoalFeedbackDialog
-        open={showFeedbackDialog}
-        onClose={() => { setShowFeedbackDialog(false); setFeedbackGoal(null); }}
-        goal={feedbackGoal}
-        player={player}
-        onSendFeedback={handleSendGoalFeedback}
-      />
-
-      <CreateEvaluationDialog
-        open={showCreateEvalDialog}
-        onClose={() => setShowCreateEvalDialog(false)}
-        player={player}
-      />
-
-      <EditEvaluationDialog
-        open={showEditEvalDialog}
-        onClose={() => setShowEditEvalDialog(false)}
-        evaluation={currentEvaluation}
-        player={player}
-      />
-
-      <AddParentDialog
-        open={showAddParentDialog}
-        onClose={() => setShowAddParentDialog(false)}
-        player={player}
-      />
-      </div>
-      </div>
-      );
-      }
+      <SharePlayerDialog open={showShareDialog} onClose={() => setShowShareDialog(false)} player={player} onInvite={() => {}} />
+      <GoalFeedbackDialog open={showFeedbackDialog} onClose={() => { setShowFeedbackDialog(false); setFeedbackGoal(null); }} goal={feedbackGoal} player={player} onSendFeedback={handleSendGoalFeedback} />
+      <CreateEvaluationDialog open={showCreateEvalDialog} onClose={() => setShowCreateEvalDialog(false)} player={player} />
+      <EditEvaluationDialog open={showEditEvalDialog} onClose={() => setShowEditEvalDialog(false)} evaluation={currentEvaluation} player={player} />
+      <AddParentDialog open={showAddParentDialog} onClose={() => setShowAddParentDialog(false)} player={player} />
+    </div>
+  );
+}
