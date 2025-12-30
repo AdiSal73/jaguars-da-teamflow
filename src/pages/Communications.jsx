@@ -420,15 +420,6 @@ export default function Communications() {
                         .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
                         .map(msg => {
                         const isSent = msg.sender_email === user?.email;
-                        
-                        React.useEffect(() => {
-                          if (!isSent && !msg.read) {
-                            base44.entities.Message.update(msg.id, { read: true }).then(() => {
-                              queryClient.invalidateQueries(['messages']);
-                            });
-                          }
-                        }, [msg.id, isSent, msg.read]);
-                        
                         return (
                           <div key={msg.id} className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] p-3 rounded-lg ${
