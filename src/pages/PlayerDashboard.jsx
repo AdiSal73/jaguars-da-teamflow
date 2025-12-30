@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import ExportDialog, { generateCSV, downloadFile, generatePDFContent, printPDF } from '../components/export/ExportDialog';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
 import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
@@ -479,7 +479,7 @@ export default function PlayerDashboard() {
       <div className="grid grid-cols-12 gap-2 auto-rows-min">
         {/* Player Info - Compact */}
         <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white p-3">
             <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" />Info</CardTitle>
           </CardHeader>
           <CardContent className="p-3 space-y-2">
@@ -498,8 +498,8 @@ export default function PlayerDashboard() {
 
         {/* Tryout Info */}
         {isAdminOrCoach && (
-        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-purple-50 border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3">
+        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-700 to-green-700 text-white p-3">
             <CardTitle className="text-sm">🎯 Tryout Info</CardTitle>
           </CardHeader>
           <CardContent className="p-3 space-y-2">
@@ -515,9 +515,9 @@ export default function PlayerDashboard() {
         </Card>
         )}
 
-        {/* Physical Assessment - Compact */}
-        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-blue-50 border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-3">
+        {/* Physical Assessment - Compact with Radial Chart */}
+        <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-700 to-emerald-700 text-white p-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm">💪 Physical</CardTitle>
@@ -540,13 +540,31 @@ export default function PlayerDashboard() {
                   <div className="p-1 bg-green-50 rounded"><div className="font-bold text-green-700">{currentAssessment.yirt}</div><div className="text-slate-500">YIRT</div></div>
                   <div className="p-1 bg-pink-50 rounded"><div className="font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}s</div><div className="text-slate-500">Shuttle</div></div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[{l:'Speed',s:currentAssessment.speed_score,c:'#ef4444'},{l:'Power',s:currentAssessment.power_score,c:'#3b82f6'},{l:'Endurance',s:currentAssessment.endurance_score,c:'#10b981'},{l:'Agility',s:currentAssessment.agility_score,c:'#ec4899'}].map(({l,s,c})=>(
-                    <div key={l} className="text-center p-2 rounded-lg" style={{backgroundColor:c+'15'}}>
-                      <div className="text-2xl font-bold" style={{color:c}}>{s||0}</div>
-                      <div className="text-[9px] text-slate-600">{l}</div>
-                    </div>
-                  ))}
+                <ResponsiveContainer width="100%" height={140}>
+                  <RadialBarChart 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius="20%" 
+                    outerRadius="90%" 
+                    data={[
+                      { name: 'Speed', value: currentAssessment.speed_score || 0, fill: '#ef4444' },
+                      { name: 'Power', value: currentAssessment.power_score || 0, fill: '#3b82f6' },
+                      { name: 'Endurance', value: currentAssessment.endurance_score || 0, fill: '#10b981' },
+                      { name: 'Agility', value: currentAssessment.agility_score || 0, fill: '#ec4899' }
+                    ]}
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                    <RadialBar background dataKey="value" cornerRadius={10} />
+                    <Tooltip contentStyle={{ fontSize: 10 }} />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-4 gap-1 text-[9px] text-center">
+                  <div><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Speed</div>
+                  <div><span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>Power</div>
+                  <div><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Endur</div>
+                  <div><span className="inline-block w-2 h-2 rounded-full bg-pink-500 mr-1"></span>Agility</div>
                 </div>
               </div>
             ) : <p className="text-center text-xs text-slate-500 py-4">No data</p>}
@@ -555,7 +573,7 @@ export default function PlayerDashboard() {
 
         {/* Evaluation */}
         <Card className="col-span-12 md:col-span-5 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-800 to-emerald-800 text-white p-3">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm">📊 Evaluation</CardTitle>
@@ -596,7 +614,7 @@ export default function PlayerDashboard() {
         {/* Physical Trend */}
         {assessments.length > 1 && (
         <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-orange-600 to-red-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
             <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4" />Physical Progress</CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -620,7 +638,7 @@ export default function PlayerDashboard() {
         {/* Evaluation Trend */}
         {evaluations.length > 1 && (
         <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg">
-          <CardHeader className="pb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-700 to-emerald-700 text-white p-3">
             <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="w-4 h-4" />Evaluation Progress</CardTitle>
           </CardHeader>
           <CardContent className="p-3">
@@ -666,7 +684,7 @@ export default function PlayerDashboard() {
         {/* Injuries */}
         {injuries.length > 0 && (
         <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg max-h-[400px] overflow-hidden">
-          <CardHeader className="pb-2 bg-gradient-to-r from-red-600 to-orange-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white p-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">🏥 Injuries</CardTitle>
               {isAdminOrCoach && <Button size="sm" onClick={() => setShowInjuryDialog(true)} variant="ghost" className="h-6 px-2 text-white hover:bg-white/20"><Plus className="w-3 h-3" /></Button>}
@@ -693,7 +711,7 @@ export default function PlayerDashboard() {
         {/* Documents */}
         {documents.length > 0 && (
         <Card className="col-span-12 md:col-span-6 bg-white border-none shadow-lg max-h-[400px] overflow-hidden">
-          <CardHeader className="pb-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-3">
+          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-700 to-green-700 text-white p-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">📄 Documents</CardTitle>
               {isAdminOrCoach && <Button size="sm" onClick={() => setShowDocumentDialog(true)} variant="ghost" className="h-6 px-2 text-white hover:bg-white/20"><Plus className="w-3 h-3" /></Button>}

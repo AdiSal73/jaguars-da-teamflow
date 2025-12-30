@@ -26,6 +26,7 @@ export default function CoachAvailability() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
   
   const [slotForm, setSlotForm] = useState({
     date: '',
@@ -281,7 +282,11 @@ export default function CoachAvailability() {
     const isPast = date < new Date(new Date().setHours(0,0,0,0));
     if (isPast) return;
     
-    setSlotForm({ ...slotForm, date: format(date, 'yyyy-MM-dd'), recurrence_start_date: format(date, 'yyyy-MM-dd') });
+    setSelectedDate(date);
+  };
+
+  const handleAddSlotForDate = () => {
+    setSlotForm({ ...slotForm, date: format(selectedDate, 'yyyy-MM-dd'), recurrence_start_date: format(selectedDate, 'yyyy-MM-dd') });
     setEditingSlot(null);
     setShowSlotDialog(true);
   };
@@ -392,7 +397,8 @@ export default function CoachAvailability() {
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
-            <Card className="border-none shadow-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="border-none shadow-xl lg:col-span-2">
               <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
                 <div className="flex justify-between items-center">
                   <CardTitle>Calendar</CardTitle>
@@ -494,6 +500,92 @@ export default function CoachAvailability() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Side Panel for Selected Date */}
+            {selectedDate && (
+              <Card className="border-none shadow-xl lg:col-span-1">
+                <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4">
+                  <CardTitle className="text-sm flex items-center justify-between">
+                    <div>
+                      <div className="font-bold">{format(selectedDate, 'EEEE')}</div>
+                      <div className="text-xs opacity-90">{format(selectedDate, 'MMMM d, yyyy')}</div>
+                    </div>
+                    <Button onClick={handleAddSlotForDate} size="sm" className="bg-white/20 hover:bg-white/30 text-white h-7">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Slot
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 max-h-[600px] overflow-y-auto">
+                  {getSlotsForDate(selectedDate).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p className="text-sm text-slate-500">No slots for this day</p>
+                      <Button onClick={handleAddSlotForDate} size="sm" className="mt-3 bg-emerald-600">
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add First Slot
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {getSlotsForDate(selectedDate).map(slot => (
+                        <div
+                          key={slot.id}
+                          onClick={() => handleSlotClick({ stopPropagation: () => {} }, slot)}
+                          className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                            slot.isBooked
+                              ? 'border-red-200 bg-red-50 hover:bg-red-100'
+                              : slot.is_recurring_instance
+                              ? 'border-purple-200 bg-purple-50 hover:bg-purple-100'
+                              : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="font-bold text-sm flex items-center gap-2">
+                              <Clock className="w-4 h-4" />
+                              {slot.start_time} - {slot.end_time}
+                            </div>
+                            {slot.is_recurring_instance && (
+                              <Badge className="text-[9px] bg-purple-500 text-white">
+                                <Repeat className="w-2.5 h-2.5 mr-0.5" />
+                                Recurring
+                              </Badge>
+                            )}
+                            {slot.isBooked && (
+                              <Badge className="text-[9px] bg-red-500 text-white">Booked</Badge>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            {slot.service_names?.map(serviceName => {
+                              const service = services.find(s => s.name === serviceName);
+                              return (
+                                <div key={serviceName} className="flex items-center gap-2 text-xs">
+                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: service?.color || '#10b981' }}></div>
+                                  <span>{serviceName}</span>
+                                  <span className="text-slate-500">({service?.duration || 60} min)</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-2 text-xs text-slate-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {locations.find(l => l.id === slot.location_id)?.name || 'Location'}
+                          </div>
+                          {slot.isBooked && (
+                            <div className="mt-2 pt-2 border-t border-red-200">
+                              <div className="text-xs font-semibold text-red-700">
+                                Booked by: {slot.bookingInfo?.player_name}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            </div>
           </TabsContent>
         </Tabs>
 

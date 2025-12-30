@@ -29,6 +29,22 @@ export default function BookingPage() {
     notes: ''
   });
 
+  const findNextAvailableSlot = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 90; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() + i);
+      const slots = getBookableSlotsForDate(checkDate);
+      if (slots.length > 0) {
+        setCurrentMonth(checkDate);
+        setSelectedDate(checkDate);
+        return;
+      }
+    }
+  };
+
   const urlParams = new URLSearchParams(window.location.search);
   const coachIdParam = urlParams.get('coach');
 
@@ -276,10 +292,18 @@ export default function BookingPage() {
         {/* Coach Selection */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-emerald-600" />
-              Select Your Coach
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5 text-emerald-600" />
+                Select Your Coach
+              </CardTitle>
+              {selectedCoach && (
+                <Button onClick={findNextAvailableSlot} variant="outline" className="gap-2">
+                  <Clock className="w-4 h-4" />
+                  Next Available Slot
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {availableCoaches.length === 0 ? (
@@ -510,34 +534,40 @@ export default function BookingPage() {
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="bg-emerald-50 p-6 rounded-xl space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Player</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Player Name</span>
                       <span className="font-bold">{selectedPlayer?.full_name || myPlayers[0]?.full_name || bookingForm.player_name}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Coach</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Coach</span>
                       <span className="font-bold">{selectedCoach?.full_name}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Service</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Service</span>
                       <span className="font-bold">{selectedBookableSlot?.service.name}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Date</span>
-                      <span className="font-bold">{selectedBookableSlot && format(new Date(selectedBookableSlot.date), 'MMM d, yyyy')}</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Date</span>
+                      <span className="font-bold">{selectedBookableSlot && format(new Date(selectedBookableSlot.date), 'EEEE, MMMM d, yyyy')}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Time</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Time</span>
                       <span className="font-bold">{selectedBookableSlot && `${selectedBookableSlot.start_time} - ${selectedBookableSlot.end_time}`}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Duration</span>
+                    <div className="flex justify-between border-b border-emerald-200 pb-3">
+                      <span className="text-slate-600 font-semibold">Duration</span>
                       <span className="font-bold">{selectedBookableSlot?.duration} minutes</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Location</span>
+                      <span className="text-slate-600 font-semibold">Location</span>
                       <span className="font-bold text-right text-sm">{selectedBookableSlot && getLocationName(selectedBookableSlot.location_id)}</span>
                     </div>
+                    {bookingForm.notes && (
+                      <div className="border-t border-emerald-200 pt-3">
+                        <div className="text-slate-600 font-semibold mb-1">Notes</div>
+                        <div className="text-sm text-slate-700 bg-white p-2 rounded">{bookingForm.notes}</div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-3">
                     <Button variant="outline" onClick={() => {
