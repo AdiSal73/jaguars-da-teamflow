@@ -19,7 +19,9 @@ export default function MyBookings() {
   const queryClient = useQueryClient();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [messageForm, setMessageForm] = useState({ subject: '', content: '' });
 
   const { data: user } = useQuery({
@@ -80,13 +82,41 @@ export default function MyBookings() {
     }
   });
 
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (id) => {
+      await base44.entities.Booking.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bookings']);
+      setShowDeleteDialog(false);
+      setSelectedBooking(null);
+      toast.success('Booking deleted');
+    }
+  });
+
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ to, subject, content }) => {
-      await base44.integrations.Core.SendEmail({
+    mutationFn: async ({ to, subject, content, sendNotification }) => {
+      await base44.functions.invoke('sendEmail', {
         to,
         subject,
-        body: content
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #059669;">${subject}</h2>
+          <div style="white-space: pre-wrap; line-height: 1.6;">${content}</div>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+          <p style="color: #6b7280; font-size: 12px;">Michigan Jaguars Player Development System</p>
+        </div>`,
+        text: content
       });
+
+      if (sendNotification) {
+        await base44.entities.Notification.create({
+          user_email: to,
+          type: 'message',
+          title: subject,
+          message: content.substring(0, 200),
+          priority: 'medium'
+        });
+      }
     },
     onSuccess: () => {
       toast.success('Message sent successfully');
@@ -95,6 +125,50 @@ export default function MyBookings() {
     },
     onError: (error) => {
       toast.error(`Failed to send message: ${error.message}`);
+    }
+  });
+
+  const sendReminderMutation = useMutation({
+    mutationFn: async (booking) => {
+      const coach = coaches.find(c => c.id === booking.coach_id);
+      const location = locations.find(l => l.id === booking.location_id);
+      const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+      
+      const reminderSubject = `Reminder: ${booking.service_name} Session Tomorrow`;
+      const reminderContent = `Hi ${booking.player_name},\n\nThis is a friendly reminder about your upcoming session:\n\n📅 Date: ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n⏰ Time: ${booking.start_time} - ${booking.end_time}\n👨‍🏫 Coach: ${coach?.full_name || booking.coach_name}\n📍 Location: ${locationInfo}\n🎯 Service: ${booking.service_name}\n\nWe look forward to seeing you!\n\nMichigan Jaguars`;
+      
+      await base44.functions.invoke('sendEmail', {
+        to: booking.parent_email,
+        subject: reminderSubject,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #059669;">Reminder: Session Tomorrow</h2>
+          <p>Hi ${booking.player_name},</p>
+          <p>This is a friendly reminder about your upcoming session:</p>
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p><strong>📅 Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            <p><strong>⏰ Time:</strong> ${booking.start_time} - ${booking.end_time}</p>
+            <p><strong>👨‍🏫 Coach:</strong> ${coach?.full_name || booking.coach_name}</p>
+            <p><strong>📍 Location:</strong> ${locationInfo}</p>
+            <p><strong>🎯 Service:</strong> ${booking.service_name}</p>
+          </div>
+          <p>We look forward to seeing you!</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+          <p style="color: #6b7280; font-size: 12px;">Michigan Jaguars Player Development System</p>
+        </div>`,
+        text: reminderContent
+      });
+
+      await base44.entities.Notification.create({
+        user_email: booking.parent_email,
+        type: 'training',
+        title: 'Session Reminder',
+        message: `Your session with ${coach?.full_name} is tomorrow at ${booking.start_time}`,
+        priority: 'high'
+      });
+    },
+    onSuccess: () => {
+      toast.success('Reminder sent');
+      setShowReminderDialog(false);
     }
   });
 
@@ -170,12 +244,8 @@ export default function MyBookings() {
           )}
           
           {booking.status === 'confirmed' && booking.booking_date >= today && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <BookingCalendarSync booking={booking} coach={coach} location={location} />
-              <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowCancelDialog(true); }}>
-                <X className="w-4 h-4 mr-1" />
-                Cancel
-              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -183,14 +253,38 @@ export default function MyBookings() {
                   setSelectedBooking(booking); 
                   setMessageForm({ 
                     subject: `Regarding Session on ${new Date(booking.booking_date).toLocaleDateString()}`,
-                    content: '' 
+                    content: `Hi,\n\nI wanted to reach out regarding our session:\n\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nService: ${booking.service_name}\n\n` 
                   });
                   setShowMessageDialog(true); 
                 }}
               >
                 <MessageSquare className="w-4 h-4 mr-1" />
-                Message {isCoach ? 'Client' : 'Coach'}
+                Message {isCoach ? 'Player' : 'Coach'}
               </Button>
+              {isCoach && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { 
+                    setSelectedBooking(booking); 
+                    setShowReminderDialog(true); 
+                  }}
+                  className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  Send Reminder
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowCancelDialog(true); }} className="border-orange-300 text-orange-600 hover:bg-orange-50">
+                <X className="w-4 h-4 mr-1" />
+                Cancel Booking
+              </Button>
+              {(user?.role === 'admin' || isCoach) && (
+                <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowDeleteDialog(true); }} className="border-red-300 text-red-600 hover:bg-red-50">
+                  <X className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -227,7 +321,7 @@ export default function MyBookings() {
                 <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-slate-700 mb-2">No Upcoming Bookings</h2>
                 <p className="text-slate-500 mb-4">You don't have any scheduled sessions.</p>
-                <Link to={createPageUrl('BookCoach')}>
+                <Link to={createPageUrl('Bookingpage')}>
                   <Button className="bg-emerald-600 hover:bg-emerald-700">Book a Session</Button>
                 </Link>
               </CardContent>
@@ -287,6 +381,64 @@ export default function MyBookings() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Booking</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-slate-600 mb-4">
+              Are you sure you want to permanently delete this booking? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => deleteBookingMutation.mutate(selectedBooking?.id)}
+                disabled={deleteBookingMutation.isPending}
+                className="flex-1"
+              >
+                {deleteBookingMutation.isPending ? 'Deleting...' : 'Delete Booking'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reminder Dialog */}
+      <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Session Reminder</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+              <p className="text-sm text-blue-900">
+                This will send an email and notification reminder to:
+              </p>
+              <p className="font-semibold text-blue-900 mt-2">{selectedBooking?.parent_email}</p>
+              <p className="text-xs text-blue-700 mt-1">Player: {selectedBooking?.player_name}</p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowReminderDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => sendReminderMutation.mutate(selectedBooking)}
+                disabled={sendReminderMutation.isPending}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {sendReminderMutation.isPending ? 'Sending...' : 'Send Reminder'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Message Dialog */}
       <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
         <DialogContent className="max-w-md">
@@ -297,13 +449,13 @@ export default function MyBookings() {
             <div>
               <Label>To</Label>
               <Input
-                value={isCoach ? (selectedBooking?.parent_email || 'Client') : (coaches.find(c => c.id === selectedBooking?.coach_id)?.email || 'Coach')}
+                value={isCoach ? (selectedBooking?.parent_email || 'Player') : (coaches.find(c => c.id === selectedBooking?.coach_id)?.email || 'Coach')}
                 disabled
                 className="bg-slate-50"
               />
             </div>
             <div>
-              <Label>Subject</Label>
+              <Label>Subject *</Label>
               <Input
                 value={messageForm.subject}
                 onChange={(e) => setMessageForm({...messageForm, subject: e.target.value})}
@@ -311,13 +463,19 @@ export default function MyBookings() {
               />
             </div>
             <div>
-              <Label>Message</Label>
+              <Label>Message *</Label>
               <Textarea
                 value={messageForm.content}
                 onChange={(e) => setMessageForm({...messageForm, content: e.target.value})}
-                rows={5}
+                rows={6}
                 placeholder="Type your message..."
               />
+            </div>
+            <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+              <p className="text-xs text-emerald-900">
+                ✓ Email will be sent via Resend<br/>
+                ✓ In-app notification will be created
+              </p>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setShowMessageDialog(false)} className="flex-1">
@@ -331,14 +489,15 @@ export default function MyBookings() {
                   sendMessageMutation.mutate({
                     to: recipient,
                     subject: messageForm.subject,
-                    content: messageForm.content
+                    content: messageForm.content,
+                    sendNotification: true
                   });
                 }}
-                disabled={!messageForm.subject || !messageForm.content}
+                disabled={!messageForm.subject || !messageForm.content || sendMessageMutation.isPending}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                Send Message
+                {sendMessageMutation.isPending ? 'Sending...' : 'Send Message'}
               </Button>
             </div>
           </div>

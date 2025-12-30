@@ -61,7 +61,8 @@ export default function Communications() {
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => base44.entities.Notification.filter({ user_email: user?.email }, '-created_date')
+    queryFn: () => base44.entities.Notification.filter({ user_email: user?.email }, '-created_date'),
+    enabled: !!user
   });
 
   const currentCoach = coaches.find(c => c.email === user?.email);
@@ -72,7 +73,6 @@ export default function Communications() {
     mutationFn: async (data) => {
       const announcement = await base44.entities.Announcement.create(data);
       
-      // Create notifications for targeted users
       let targetEmails = [];
       if (data.target_type === 'team' && data.target_team_ids?.length > 0) {
         const targetPlayers = players.filter(p => data.target_team_ids.includes(p.team_id));
@@ -86,6 +86,13 @@ export default function Communications() {
           ...players.flatMap(p => p.parent_emails || []),
           ...coaches.map(c => c.email)
         ])].filter(Boolean);
+      } else if (data.target_type === 'coaches') {
+        targetEmails = coaches.map(c => c.email).filter(Boolean);
+      } else if (data.target_type === 'players') {
+        targetEmails = [...new Set([
+          ...players.map(p => p.email),
+          ...players.flatMap(p => p.parent_emails || [])
+        ])].filter(Boolean);
       }
 
       for (const email of targetEmails) {
@@ -98,6 +105,25 @@ export default function Communications() {
         });
       }
 
+      try {
+        await base44.functions.invoke('sendEmail', {
+          to: targetEmails,
+          subject: `[Announcement] ${data.title}`,
+          html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #059669;">${data.title}</h2>
+            <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; white-space: pre-wrap; line-height: 1.6;">
+              ${data.content}
+            </div>
+            <p style="color: #6b7280; font-size: 12px;">From: ${data.author_name}</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+            <p style="color: #6b7280; font-size: 12px;">Michigan Jaguars Player Development System</p>
+          </div>`,
+          text: `${data.title}\n\n${data.content}\n\nFrom: ${data.author_name}`
+        });
+      } catch (error) {
+        console.error('Email send error:', error);
+      }
+
       return announcement;
     },
     onSuccess: () => {
@@ -105,7 +131,7 @@ export default function Communications() {
       queryClient.invalidateQueries(['notifications']);
       setShowAnnouncementDialog(false);
       setAnnouncementForm({ title: '', content: '', target_type: 'team', target_team_ids: [], priority: 'normal' });
-      toast.success('Announcement sent');
+      toast.success('Announcement sent with email notifications');
     }
   });
 
@@ -122,10 +148,20 @@ export default function Communications() {
       });
 
       try {
-        await base44.integrations.Core.SendEmail({
+        await base44.functions.invoke('sendEmail', {
           to: data.recipient_email,
           subject: `New message from ${data.sender_name}`,
-          body: `You have a new message from ${data.sender_name}:\n\n${data.content}\n\nReply via the app.`
+          html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #059669;">New Message</h2>
+            <p>You have a new message from <strong>${data.sender_name}</strong>:</p>
+            <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; white-space: pre-wrap;">
+              ${data.content}
+            </div>
+            <p style="color: #6b7280; font-size: 14px;">Reply via the Michigan Jaguars app.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+            <p style="color: #6b7280; font-size: 12px;">Michigan Jaguars Player Development System</p>
+          </div>`,
+          text: `You have a new message from ${data.sender_name}:\n\n${data.content}\n\nReply via the app.`
         });
       } catch (error) {
         console.error('Email send error:', error);
@@ -380,16 +416,27 @@ export default function Communications() {
                   </CardHeader>
                   <CardContent className="p-4">
                     <div className="space-y-4 mb-4 max-h-[400px] overflow-y-auto">
-                      {selectedThread.messages.map(msg => {
+                      {selectedThread.messages
+                        .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+                        .map(msg => {
                         const isSent = msg.sender_email === user?.email;
+                        
+                        React.useEffect(() => {
+                          if (!isSent && !msg.read) {
+                            base44.entities.Message.update(msg.id, { read: true }).then(() => {
+                              queryClient.invalidateQueries(['messages']);
+                            });
+                          }
+                        }, [msg.id, isSent, msg.read]);
+                        
                         return (
                           <div key={msg.id} className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[70%] p-3 rounded-lg ${
                               isSent ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-900'
                             }`}>
-                              <p className="text-sm">{msg.content}</p>
+                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                               <p className={`text-[10px] mt-1 ${isSent ? 'text-emerald-100' : 'text-slate-500'}`}>
-                                {new Date(msg.created_date).toLocaleTimeString()}
+                                {new Date(msg.created_date).toLocaleString()}
                               </p>
                             </div>
                           </div>

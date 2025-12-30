@@ -118,6 +118,26 @@ export default function NewMessageDialog({ open, onClose, user }) {
         priority: 'medium'
       });
 
+      try {
+        await base44.functions.invoke('sendEmail', {
+          to: data.recipient_email,
+          subject: `New message from ${data.sender_name}`,
+          html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #059669;">New Message</h2>
+            <p>You have a new message from <strong>${data.sender_name}</strong>:</p>
+            <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; white-space: pre-wrap;">
+              ${data.content}
+            </div>
+            <p style="color: #6b7280; font-size: 14px;">Reply via the Michigan Jaguars app.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+            <p style="color: #6b7280; font-size: 12px;">Michigan Jaguars Player Development System</p>
+          </div>`,
+          text: `You have a new message from ${data.sender_name}:\n\n${data.content}\n\nReply via the app.`
+        });
+      } catch (error) {
+        console.error('Email send error:', error);
+      }
+
       return message;
     },
     onSuccess: () => {
@@ -127,7 +147,7 @@ export default function NewMessageDialog({ open, onClose, user }) {
       setRecipientEmail('');
       setRecipientName('');
       onClose();
-      toast.success('Message sent');
+      toast.success('Message sent with email notification');
     }
   });
 
