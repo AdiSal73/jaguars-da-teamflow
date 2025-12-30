@@ -205,7 +205,7 @@ export default function MyBookings() {
           <h1 className="text-3xl font-bold text-slate-900">My Bookings</h1>
           <p className="text-slate-600 mt-1">View and manage your scheduled sessions</p>
         </div>
-        <Link to={createPageUrl('BookCoach')}>
+        <Link to={createPageUrl('Bookingpage')}>
           <Button className="bg-emerald-600 hover:bg-emerald-700">Book New Session</Button>
         </Link>
       </div>
