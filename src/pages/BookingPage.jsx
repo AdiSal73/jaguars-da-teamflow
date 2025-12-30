@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Clock, User, CheckCircle, MapPin } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, parse, addMinutes } from 'date-fns';
 import { toast } from 'sonner';
+import { createPageUrl } from '@/utils';
 
 export default function BookingPage() {
   const queryClient = useQueryClient();
@@ -136,31 +137,59 @@ export default function BookingPage() {
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
       
       try {
-        // Send notifications
-        await base44.functions.invoke('sendBookingNotifications', { booking_id: booking.id });
-
-        // Send emails
         const clientEmail = user?.email || booking.parent_email;
+        const coach = coaches.find(c => c.id === booking.coach_id);
+
+        // Send email to client
         if (clientEmail) {
           await base44.functions.invoke('sendBookingEmail', {
             to: clientEmail,
-            subject: `Booking Confirmed - ${booking.service_name} for ${booking.player_name}`,
-            booking: { ...booking, location_info: locationInfo },
+            subject: `Booking Confirmed - ${booking.service_name}`,
+            booking: { 
+              ...booking, 
+              location_info: locationInfo,
+              booked_by_name: user?.full_name || 'Guest'
+            },
             type: 'confirmation_client'
+          });
+          
+          // Create notification for client
+          await base44.entities.Notification.create({
+            user_email: clientEmail,
+            type: 'training',
+            title: 'Session Booked',
+            message: `Your session with ${coach?.full_name} on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been confirmed.`,
+            link: createPageUrl('MyBookings'),
+            priority: 'high'
           });
         }
 
-        const coach = coaches.find(c => c.id === booking.coach_id);
+        // Send email to coach
         if (coach?.email) {
           await base44.functions.invoke('sendBookingEmail', {
             to: coach.email,
             subject: `New Booking - ${booking.player_name}`,
-            booking: { ...booking, location_info: locationInfo },
+            booking: { 
+              ...booking, 
+              location_info: locationInfo,
+              booked_by_name: user?.full_name || booking.parent_email
+            },
             type: 'confirmation_coach'
+          });
+          
+          // Create notification for coach
+          await base44.entities.Notification.create({
+            user_email: coach.email,
+            type: 'training',
+            title: 'New Booking',
+            message: `${booking.player_name} booked ${booking.service_name} on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time}`,
+            link: createPageUrl('BookingsTable'),
+            priority: 'medium'
           });
         }
       } catch (error) {
-        console.error('Notification/Email error:', error);
+        console.error('Email/Notification error:', error);
+        toast.error('Booking created but email notification failed');
       }
 
       setBookingSuccess(true);
