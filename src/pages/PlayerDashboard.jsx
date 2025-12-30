@@ -560,11 +560,23 @@ export default function PlayerDashboard() {
                     <Tooltip contentStyle={{ fontSize: 10 }} />
                   </RadialBarChart>
                 </ResponsiveContainer>
-                <div className="grid grid-cols-4 gap-1 text-[9px] text-center">
-                  <div><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Speed</div>
-                  <div><span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>Power</div>
-                  <div><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Endur</div>
-                  <div><span className="inline-block w-2 h-2 rounded-full bg-pink-500 mr-1"></span>Agility</div>
+                <div className="grid grid-cols-4 gap-1 text-[9px]">
+                  <div className="text-center">
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Speed
+                    <div className="font-bold text-red-700">{currentAssessment.speed_score || 0}</div>
+                  </div>
+                  <div className="text-center">
+                    <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>Power
+                    <div className="font-bold text-blue-700">{currentAssessment.power_score || 0}</div>
+                  </div>
+                  <div className="text-center">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Endur
+                    <div className="font-bold text-green-700">{currentAssessment.endurance_score || 0}</div>
+                  </div>
+                  <div className="text-center">
+                    <span className="inline-block w-2 h-2 rounded-full bg-pink-500 mr-1"></span>Agility
+                    <div className="font-bold text-pink-700">{currentAssessment.agility_score || 0}</div>
+                  </div>
                 </div>
               </div>
             ) : <p className="text-center text-xs text-slate-500 py-4">No data</p>}
@@ -601,6 +613,28 @@ export default function PlayerDashboard() {
                     {[1,2,3,4].map(i => currentEvaluation[`position_role_${i}_label`] && (
                       <SliderBar key={i} label={currentEvaluation[`position_role_${i}_label`]} value={currentEvaluation[`position_role_${i}`]} color="#6366f1" />
                     ))}
+                  </div>
+                )}
+                {(currentEvaluation.player_strengths || currentEvaluation.areas_of_growth || currentEvaluation.training_focus) && (
+                  <div className="border-t pt-2 mt-2 space-y-2">
+                    {currentEvaluation.player_strengths && (
+                      <div className="bg-emerald-50 p-2 rounded">
+                        <p className="text-[9px] font-semibold text-emerald-900 mb-0.5">💪 Strengths</p>
+                        <p className="text-[10px] text-slate-700 leading-relaxed">{currentEvaluation.player_strengths}</p>
+                      </div>
+                    )}
+                    {currentEvaluation.areas_of_growth && (
+                      <div className="bg-orange-50 p-2 rounded">
+                        <p className="text-[9px] font-semibold text-orange-900 mb-0.5">📈 Areas of Growth</p>
+                        <p className="text-[10px] text-slate-700 leading-relaxed">{currentEvaluation.areas_of_growth}</p>
+                      </div>
+                    )}
+                    {currentEvaluation.training_focus && (
+                      <div className="bg-blue-50 p-2 rounded">
+                        <p className="text-[9px] font-semibold text-blue-900 mb-0.5">🎯 Training Focus</p>
+                        <p className="text-[10px] text-slate-700 leading-relaxed">{currentEvaluation.training_focus}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
