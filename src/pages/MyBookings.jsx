@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, User, X, MessageSquare, Send } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Clock, User, X, MessageSquare, Send, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
@@ -23,6 +24,9 @@ export default function MyBookings() {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [messageForm, setMessageForm] = useState({ subject: '', content: '' });
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [coachFilter, setCoachFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -202,9 +206,18 @@ export default function MyBookings() {
     return b.parent_id === user?.id || b.created_by === user?.email;
   });
 
+  // Apply filters
+  const filteredBookings = myBookings.filter(b => {
+    if (statusFilter !== 'all' && b.status !== statusFilter) return false;
+    if (coachFilter !== 'all' && b.coach_id !== coachFilter) return false;
+    if (dateRange.from && b.booking_date < dateRange.from) return false;
+    if (dateRange.to && b.booking_date > dateRange.to) return false;
+    return true;
+  });
+
   const today = new Date().toISOString().split('T')[0];
-  const upcomingBookings = myBookings.filter(b => b.booking_date >= today && b.status !== 'cancelled');
-  const pastBookings = myBookings.filter(b => b.booking_date < today || b.status === 'cancelled');
+  const upcomingBookings = filteredBookings.filter(b => b.booking_date >= today && b.status !== 'cancelled');
+  const pastBookings = filteredBookings.filter(b => b.booking_date < today || b.status === 'cancelled');
 
   const formatTimeDisplay = (timeStr) => {
     if (!timeStr) return '';
@@ -330,6 +343,65 @@ export default function MyBookings() {
           <Button className="bg-emerald-600 hover:bg-emerald-700">Book New Session</Button>
         </Link>
       </div>
+
+      {/* Filters */}
+      <Card className="mb-6 border-none shadow-md">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="w-4 h-4 text-slate-600" />
+            <span className="font-semibold text-slate-900">Filters</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label className="text-xs">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Coach</Label>
+              <Select value={coachFilter} onValueChange={setCoachFilter}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Coaches</SelectItem>
+                  {coaches.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">From Date</Label>
+              <Input 
+                type="date" 
+                value={dateRange.from} 
+                onChange={e => setDateRange({...dateRange, from: e.target.value})}
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">To Date</Label>
+              <Input 
+                type="date" 
+                value={dateRange.to} 
+                onChange={e => setDateRange({...dateRange, to: e.target.value})}
+                className="h-9"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="upcoming">
         <TabsList className="mb-6 bg-slate-100">

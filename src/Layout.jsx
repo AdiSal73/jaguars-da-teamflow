@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Users, Shield, Calendar, Activity, LogOut,
   ChevronDown, ChevronUp, Clock, BarChart3, UserCog, MessageSquare,
-  TrendingUp, Settings, Menu, X, HelpCircle, User as UserIcon } from
+  TrendingUp, Settings, Menu, X, HelpCircle, User as UserIcon, Search } from
 "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -17,12 +17,14 @@ import {
   DropdownMenuSeparator } from
 "@/components/ui/dropdown-menu";
 import NotificationCenter from "./components/notifications/NotificationCenter";
+import GlobalSearch from "./components/search/GlobalSearch";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMobileMenus, setExpandedMobileMenus] = useState({});
+  const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   const { data: user, isError } = useQuery({
     queryKey: ['currentUser'],
@@ -291,6 +293,14 @@ export default function Layout({ children, currentPageName }) {
             </nav>
 
             <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowGlobalSearch(true)}
+                className="text-slate-600 hover:text-slate-900"
+              >
+                <Search className="w-5 h-5" />
+              </Button>
               <NotificationCenter />
               
               <DropdownMenu>
@@ -407,6 +417,8 @@ export default function Layout({ children, currentPageName }) {
       <main className="min-h-[calc(100vh-64px)]">
         {children}
       </main>
-    </div>
-  );
-}
+
+      <GlobalSearch open={showGlobalSearch} onClose={() => setShowGlobalSearch(false)} />
+      </div>
+      );
+      }

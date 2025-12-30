@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,8 @@ export default function CoachAvailability() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
+  const [locationFilter, setLocationFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('all');
   
   const [slotForm, setSlotForm] = useState({
     date: '',
@@ -306,13 +308,22 @@ export default function CoachAvailability() {
 
   const getSlotsForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const slots = timeSlots.filter(s => s.date === dateStr);
+    let slots = timeSlots.filter(s => s.date === dateStr);
+    
+    // Apply filters
+    if (locationFilter !== 'all') {
+      slots = slots.filter(s => s.location_id === locationFilter);
+    }
+    if (serviceFilter !== 'all') {
+      slots = slots.filter(s => s.service_names?.includes(serviceFilter));
+    }
     
     return slots.map(slot => {
       const slotBookings = bookings.filter(b => 
         b.booking_date === slot.date && 
         b.start_time === slot.start_time && 
-        b.end_time === slot.end_time
+        b.end_time === slot.end_time &&
+        b.status !== 'cancelled'
       );
       return {
         ...slot,
@@ -397,6 +408,46 @@ export default function CoachAvailability() {
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
+            {/* Filters */}
+            <Card className="mb-4 border-none shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="w-4 h-4 text-slate-600" />
+                  <span className="font-semibold text-slate-900">Filter Slots</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Location</Label>
+                    <Select value={locationFilter} onValueChange={setLocationFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Locations</SelectItem>
+                        {locations.map(l => (
+                          <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Service</Label>
+                    <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Services</SelectItem>
+                        {services.map(s => (
+                          <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="border-none shadow-xl lg:col-span-2">
               <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
