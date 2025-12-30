@@ -52,26 +52,43 @@ export default function MyBookings() {
       const booking = bookings.find(b => b.id === id);
       await base44.entities.Booking.update(id, { status: 'cancelled' });
       
-      // Send cancellation emails
       const location = locations.find(l => l.id === booking.location_id);
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+      const coach = coaches.find(c => c.id === booking.coach_id);
       
+      // Send cancellation email to parent
       if (booking.parent_email) {
         await base44.functions.invoke('sendBookingEmail', {
           to: booking.parent_email,
           subject: `Booking Cancelled - ${booking.service_name}`,
-          booking: { ...booking, location_info: locationInfo },
+          booking: { ...booking, location_info: locationInfo, booked_by_name: user?.full_name || 'Guest' },
           type: 'cancellation'
+        });
+        
+        await base44.entities.Notification.create({
+          user_email: booking.parent_email,
+          type: 'training',
+          title: 'Booking Cancelled',
+          message: `Your session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been cancelled.`,
+          priority: 'high'
         });
       }
       
-      const coach = coaches.find(c => c.id === booking.coach_id);
+      // Send cancellation email to coach
       if (coach?.email) {
         await base44.functions.invoke('sendBookingEmail', {
           to: coach.email,
           subject: `Booking Cancelled - ${booking.player_name}`,
-          booking: { ...booking, location_info: locationInfo },
+          booking: { ...booking, location_info: locationInfo, booked_by_name: user?.full_name || booking.parent_email },
           type: 'cancellation'
+        });
+        
+        await base44.entities.Notification.create({
+          user_email: coach.email,
+          type: 'training',
+          title: 'Booking Cancelled',
+          message: `${booking.player_name}'s session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} was cancelled.`,
+          priority: 'medium'
         });
       }
     },
@@ -79,6 +96,10 @@ export default function MyBookings() {
       queryClient.invalidateQueries(['bookings']);
       setShowCancelDialog(false);
       setSelectedBooking(null);
+      toast.success('Booking cancelled and notifications sent');
+    },
+    onError: (error) => {
+      toast.error(`Failed to cancel: ${error.message}`);
     }
   });
 
