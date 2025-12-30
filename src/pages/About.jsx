@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Target, Users, Heart, Trophy, MapPin } from 'lucide-react';
+import { Shield, Target, Users, Heart, Trophy, MapPin, TrendingUp, Award, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function About() {
@@ -11,225 +11,340 @@ export default function About() {
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/1c4c46ec6_jags-GA-1.jpg"
             alt="Michigan Jaguars Team"
-            className="w-full h-full object-cover scale-105" />
-
+            className="w-full h-full object-cover scale-105"
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/95 via-emerald-800/85 to-green-900/90" />
-          <div className="absolute inset-0" style={{
-            background: 'radial-gradient(ellipse at top, rgba(16, 185, 129, 0.2) 0%, transparent 60%)'
-          }} />
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center text-white">
-          <div className="flex items-center justify-center gap-3 mb-6 animate-bounce-slow">
-            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl">
-              <Shield className="w-12 h-12" />
-            </div>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <img 
+              src="https://jaguarsidp.com/wp-content/uploads/2024/03/Jaguars-logo.png" 
+              alt="Michigan Jaguars" 
+              className="w-24 h-24 animate-bounce-slow"
+            />
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">About Michigan Jaguars</h1>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">Michigan Jaguars</h1>
           <p className="text-2xl md:text-3xl text-emerald-200 font-light">
-            Building Champions On and Off the Field
+            Player Development Program 2025
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4 text-emerald-300">
-            <div className="h-px w-16 bg-emerald-300"></div>
-            <Trophy className="w-6 h-6" />
-            <div className="h-px w-16 bg-emerald-300"></div>
-          </div>
         </div>
       </section>
 
-      {/* Mission & Vision */}
+      {/* Mission Statement */}
       <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12">
-            <Card className="border-none shadow-2xl bg-gradient-to-br from-emerald-50 to-green-50">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center mb-4">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-4">Our Mission</h3>
-                <p className="text-slate-700 leading-relaxed">
-                  To provide elite soccer training and development opportunities for young athletes across Michigan, 
-                  fostering both athletic excellence and personal growth through dedication, teamwork, and passion for the game.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-2xl bg-gradient-to-br from-blue-50 to-cyan-50">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-4">Our Vision</h3>
-                <p className="text-slate-700 leading-relaxed">
-                  To be the premier youth soccer development organization in Michigan, known for producing 
-                  skilled players, successful teams, and well-rounded individuals prepared for the next level.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Our Story */}
-      <section className="py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-6">Our Story</h2>
-              <div className="space-y-4 text-slate-700 leading-relaxed">
-                <p>
-                  Michigan Jaguars was founded with a vision to provide world-class soccer development 
-                  opportunities for young athletes throughout Michigan. What started as a single team 
-                  has grown into a comprehensive club spanning 12 branches across the state.
-                </p>
-                <p>
-                  Our club is built on the foundation of player-first development, emphasizing technical 
-                  excellence, tactical understanding, and mental resilience. We believe in nurturing not 
-                  just great soccer players, but exceptional individuals.
-                </p>
-                <p className="">
-
-
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
-                alt="Team Celebration"
-                className="rounded-2xl shadow-2xl" />
-
-            </div>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-slate-900 mb-6">Our Mission</h2>
+            <p className="text-xl text-slate-700 leading-relaxed max-w-4xl mx-auto">
+              Founded in 2005, Michigan Jaguars is a Michigan-based youth soccer club dedicated to player development. 
+              We strive to provide unique and inclusive soccer experiences while building meaningful relationships 
+              and community across our 12 branches statewide.
+            </p>
           </div>
         </div>
       </section>
 
       {/* Core Values */}
-      <section className="py-20 bg-gradient-to-b from-emerald-50 to-white">
+      <section className="py-20 bg-emerald-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-center text-slate-900 mb-12">Our Core Values</h2>
+          <h2 className="text-4xl font-bold text-center text-slate-900 mb-4">Core Values</h2>
+          <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+            The foundation of everything we do at Michigan Jaguars
+          </p>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Passion</h3>
-              <p className="text-slate-600">
-                We instill a love for the game that drives players to continuously improve and excel.
-              </p>
-            </div>
+          <div className="grid md:grid-cols-5 gap-6">
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Respect</h3>
+                <p className="text-sm text-slate-600">For self, teammates, opponents, and the game</p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Teamwork</h3>
-              <p className="text-slate-600">
-                Success comes from working together, supporting teammates, and building strong bonds.
-              </p>
-            </div>
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Unity</h3>
+                <p className="text-sm text-slate-600">Emphasizing teamwork and collaboration</p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Trophy className="w-8 h-8 text-white" />
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Development/Growth</h3>
+                <p className="text-sm text-slate-600">Continuous improvement on and off the field</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Competitiveness</h3>
+                <p className="text-sm text-slate-600">Striving for excellence in every match</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg hover:shadow-xl transition-all">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Enjoyment</h3>
+                <p className="text-sm text-slate-600">Fostering love and passion for soccer</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Game Model & Philosophy */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-center text-slate-900 mb-4">Game Model & Philosophy</h2>
+          <p className="text-center text-slate-600 mb-12 max-w-3xl mx-auto">
+            Our playing style is defined by six key tenets that guide how we train and compete
+          </p>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { title: 'Aggressive Defending', desc: 'High-pressure, proactive defense that wins the ball back quickly' },
+              { title: 'Possession-Based Attack', desc: 'Patient build-up play with purpose and creativity' },
+              { title: 'Quick Transitions', desc: 'Rapid counter-attacks and immediate defensive organization' },
+              { title: 'Vertical Play', desc: 'Moving the ball forward efficiently when opportunities arise' },
+              { title: 'Technical Excellence', desc: 'Strong individual skills in all aspects of the game' },
+              { title: 'Tactical Intelligence', desc: 'Understanding roles, responsibilities, and decision-making' }
+            ].map((tenet, idx) => (
+              <Card key={idx} className="border-emerald-200 hover:shadow-lg transition-all">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <span className="text-emerald-700 font-bold">{idx + 1}</span>
+                    </div>
+                    <h3 className="font-bold text-slate-900">{tenet.title}</h3>
+                  </div>
+                  <p className="text-sm text-slate-600">{tenet.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Development Stages */}
+      <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-center text-slate-900 mb-4">Development Stages</h2>
+          <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+            Age-appropriate training tailored to each player's developmental needs
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className="border-none shadow-xl bg-gradient-to-br from-blue-50 to-cyan-50">
+              <CardContent className="p-8">
+                <div className="text-blue-600 font-bold mb-2">U7-U10</div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">Discovery</h3>
+                <p className="text-slate-700">Focus on fun, exploration, and developing a love for the game through play-based learning.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-gradient-to-br from-emerald-50 to-green-50">
+              <CardContent className="p-8">
+                <div className="text-emerald-600 font-bold mb-2">U11-U13</div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">Foundation</h3>
+                <p className="text-slate-700">Building technical skills, tactical awareness, and understanding of positional roles.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardContent className="p-8">
+                <div className="text-purple-600 font-bold mb-2">U14-U15</div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">Development</h3>
+                <p className="text-slate-700">Refining skills, tactical complexity, and physical conditioning as players mature.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-gradient-to-br from-orange-50 to-red-50">
+              <CardContent className="p-8">
+                <div className="text-orange-600 font-bold mb-2">U16-U19</div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">Learning to Win</h3>
+                <p className="text-slate-700">Preparing players for competitive excellence and next-level opportunities.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Training Methodology */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-center text-slate-900 mb-4">Training Methodology</h2>
+          <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+            Tactical Periodization: A holistic approach to player development
+          </p>
+
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-8 mb-8">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6">Key Principles</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-1">Specificity</h4>
+                  <p className="text-sm text-slate-700">Training mimics game situations and our playing style</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Excellence</h3>
-              <p className="text-slate-600">
-                We strive for the highest standards in training, competition, and personal development.
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-1">Progression</h4>
+                  <p className="text-sm text-slate-700">Gradual increase in complexity and intensity</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-1">Alternation</h4>
+                  <p className="text-sm text-slate-700">Varied training loads for optimal recovery</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-1">Integration</h4>
+                  <p className="text-sm text-slate-700">Technical, tactical, physical, and mental aspects combined</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Individual Development Plan */}
+      <section className="py-20 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold text-slate-900 mb-6">Individual Development Plan (IDP)</h2>
+              <p className="text-lg text-slate-700 mb-6">
+                Every player receives a personalized development roadmap through our comprehensive IDP process:
               </p>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">1</div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Assessment</h4>
+                    <p className="text-sm text-slate-600">Regular evaluations of technical, tactical, physical, and mental attributes</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">2</div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Goal Setting</h4>
+                    <p className="text-sm text-slate-600">Collaborative creation of specific, measurable objectives</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">3</div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Action Planning</h4>
+                    <p className="text-sm text-slate-600">Customized training plans and recommendations</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">4</div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Progress Tracking</h4>
+                    <p className="text-sm text-slate-600">Ongoing monitoring and adjustment of development plans</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative h-96 rounded-2xl overflow-hidden shadow-2xl">
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
+                alt="Training Session"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Branches */}
-      <section className="py-20">
+      <section className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-slate-900 mb-4">Our Locations</h2>
-            <p className="text-xl text-slate-600">Serving communities across Michigan</p>
+            <p className="text-xl text-slate-600">12 branches serving communities across Michigan</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map((branch) =>
-            <div key={branch} className="bg-white p-4 rounded-xl shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all text-center">
+            {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map((branch) => (
+              <div key={branch} className="bg-white p-4 rounded-xl shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all text-center">
                 <MapPin className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
                 <div className="font-semibold text-slate-900">{branch}</div>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Platform Screenshots */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Technology-Driven Development</h2>
-            <p className="text-xl text-slate-600">Our platform helps coaches and parents track every aspect of player growth</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-emerald-200 hover:scale-105 transition-transform">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/dce41a79e_Giada-M.jpeg"
-                alt="Player Dashboard"
-                className="w-full aspect-video object-cover" />
-
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-900/90 to-transparent p-4">
-                <p className="text-white font-bold">Player Profiles & Analytics</p>
-              </div>
-            </div>
-            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-purple-200 hover:scale-105 transition-transform">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f5b12cc94_Screenshot2025-12-19101555.png"
-                alt="Formation Builder"
-                className="w-full aspect-video object-cover" />
-
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-900/90 to-transparent p-4">
-                <p className="text-white font-bold">Formation Builder</p>
-              </div>
-            </div>
-            <div className="relative rounded-xl overflow-hidden shadow-xl border-2 border-blue-200 hover:scale-105 transition-transform">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/c57a202f6_Jags-GA-2.jpg"
-                alt="Team Management"
-                className="w-full aspect-video object-cover" />
-
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-900/90 to-transparent p-4">
-                <p className="text-white font-bold">Team Assignments</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team Photo */}
-      <section className="py-20 bg-slate-50">
+      {/* Culture & Environment */}
+      <section className="py-20 bg-gradient-to-b from-emerald-50 to-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="relative h-96 rounded-2xl overflow-hidden shadow-2xl">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/f70bcf1df_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg"
-                alt="Training Session"
-                className="w-full h-full object-cover" />
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">Environment & Culture</h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              We are committed to providing a safe, respectful, and enjoyable environment where every player 
+              can develop their love for soccer and reach their full potential.
+            </p>
+          </div>
 
-            </div>
-            <div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-6">Professional Development</h2>
-              <p className="text-lg text-slate-700 mb-4">
-                Our coaches are dedicated professionals committed to developing each player's potential. 
-                We combine technical training, tactical awareness, and physical conditioning with character development.
-              </p>
-              <p className="text-lg text-slate-700">
-                From recreational players to elite academy athletes, we provide the right environment 
-                and resources for every player to thrive.
-              </p>
+          <div className="bg-gradient-to-br from-white to-emerald-50 rounded-2xl p-8 shadow-xl">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">Leadership Through Service</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Character Building</h4>
+                <p className="text-sm text-slate-600">Developing integrity, discipline, and sportsmanship</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Community Impact</h4>
+                <p className="text-sm text-slate-600">Giving back and making a positive difference</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-bold text-slate-900 mb-2">Lifelong Success</h4>
+                <p className="text-sm text-slate-600">Skills that extend beyond the soccer field</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
-    </div>);
-
+    </div>
+  );
 }
