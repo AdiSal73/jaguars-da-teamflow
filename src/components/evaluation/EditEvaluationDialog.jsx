@@ -144,9 +144,21 @@ export default function EditEvaluationDialog({ open, onClose, evaluation, player
     try {
       const latestAssessment = assessments.length > 0 ? assessments[assessments.length - 1] : null;
       
-      const prompt = `You are evaluating a soccer player named ${player.full_name}, position: ${form.primary_position}.
+      const pdpContext = `MICHIGAN JAGUARS PDP GAME MODEL:
+- Win the challenge (tackle, header, game, league)
+- Be aggressive and always on the front foot
+- Possession that is meaningful
+- Play confident and creative soccer (take risks, failure is valuable)
+- Be positive in transition
+- Defend zonally but aggressively
 
-Evaluation Scores (1-10 scale):
+CORE VALUES: Respect, Unity, Development/Growth, Competitiveness, Enjoyment`;
+
+      const prompt = `You are a Michigan Jaguars coach evaluating ${player.full_name}, position: ${form.primary_position}. Use PDP language and concepts.
+
+${pdpContext}
+
+Evaluation Scores (1-10 scale, 10 = national team starter):
 - Growth Mindset: ${form.growth_mindset}
 - Resilience: ${form.resilience}
 - Athleticism: ${form.athleticism}
@@ -155,20 +167,20 @@ Evaluation Scores (1-10 scale):
 - Attacking Organized: ${form.attacking_organized}
 - Attacking Final Third: ${form.attacking_final_third}
 
-${latestAssessment ? `Latest Physical Assessment:
-- Speed Score: ${latestAssessment.speed_score}
-- Power Score: ${latestAssessment.power_score}
-- Endurance Score: ${latestAssessment.endurance_score}
-- Agility Score: ${latestAssessment.agility_score}` : ''}
+${latestAssessment ? `Physical Assessment:
+- Speed: ${latestAssessment.speed_score}/100
+- Power: ${latestAssessment.power_score}/100
+- Endurance: ${latestAssessment.endurance_score}/100
+- Agility: ${latestAssessment.agility_score}/100` : ''}
 
-${pathway?.skill_matrix ? `Current Skill Matrix:
+${pathway?.skill_matrix ? `Skill Matrix:
 ${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
 
-${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths based on the scores above.' : ''}
-${field === 'growth' ? 'Write 2-3 sentences identifying the main areas where this player should focus on improvement.' : ''}
-${field === 'focus' ? 'Write 2-3 sentences recommending specific training focus areas and drills that would benefit this player most.' : ''}
+${field === 'strengths' ? 'Write 2-3 sentences highlighting strengths using PDP language: "wins challenges consistently", "aggressive on the front foot", "creative in possession", "positive in transition". Reference position-specific traits.' : ''}
+${field === 'growth' ? 'Write 2-3 sentences on growth areas using PDP concepts: "needs to be more aggressive winning duels", "can take more creative risks", "improve pressing triggers", "better zonal positioning". Be specific to game model alignment.' : ''}
+${field === 'focus' ? 'Write 2-3 sentences on training focus using Tactical Periodization principles. Reference game model: "winning 1v1s", "being first to ball", "calculated risk-taking", "quick transitions", "pressing moments". Connect to position role.' : ''}
 
-Keep it concise, specific, and actionable.`;
+Use authentic Michigan Jaguars PDP terminology.`;
 
       const response = await base44.integrations.Core.InvokeLLM({ prompt });
       

@@ -35,7 +35,27 @@ Defending Focus: ${(positionKnowledge.defending?.balanced || []).slice(0, 2).map
 Attacking Focus: ${(positionKnowledge.attacking?.balanced || []).slice(0, 2).map(r => r.title).join(', ')}
 ` : '';
 
-      const prompt = `Generate personalized development goals for a soccer player based on their evaluation data and position requirements, referencing concepts from the Jaguars Knowledge Bank and the Player Development Program (PDP).
+      const pdpContext = `MICHIGAN JAGUARS PLAYER DEVELOPMENT PROGRAM PHILOSOPHY:
+
+GAME MODEL:
+- Win the challenge (tackle, header, game, league)
+- Be aggressive and always on the front foot
+- Possession that is meaningful
+- Play confident and creative soccer (take risks, failure is valuable)
+- Be positive in transition
+- Defend zonally but aggressively (can we find moments to press)
+
+CORE VALUES: Respect, Unity, Development/Growth, Competitiveness, Enjoyment
+
+TRAINING PRINCIPLES:
+- Age-appropriate development
+- Tactical Periodization (integrating physical, technical, tactical, psychological)
+- Individual Development Plans tailored to each player
+- Leadership Through Service environment`;
+
+      const prompt = `Generate personalized development goals for a soccer player using Michigan Jaguars PDP language and concepts.
+
+${pdpContext}
 
 ${knowledgeContext}
 
@@ -44,7 +64,7 @@ Player Profile:
 - Position: ${player.primary_position}
 - Age: ${player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : 'Unknown'}
 
-${latestEvaluation ? `Latest Evaluation Scores (1-10 scale):
+${latestEvaluation ? `Latest Evaluation Scores (1-10 scale, where 10 = national team starter):
 - Growth Mindset: ${latestEvaluation.growth_mindset}
 - Resilience: ${latestEvaluation.resilience}
 - Athleticism: ${latestEvaluation.athleticism}
@@ -61,18 +81,18 @@ ${latestAssessment ? `Physical Assessment:
 - Endurance: ${latestAssessment.endurance_score}/100
 - Agility: ${latestAssessment.agility_score}/100` : ''}
 
-Based on this data, generate 3-5 SMART development goals that are:
-1. Specific and measurable
-2. Aligned with the player's position requirements and PDP concepts
-3. Address identified areas of growth and training focus
-4. Mix of technical, tactical, physical, and mental aspects
-5. Realistic timeframes (suggest 4-12 weeks per goal)
+Using PDP principles and language (win the challenge, be on the front foot, meaningful possession, creative soccer), generate 3-5 SMART development goals that:
+1. Use Michigan Jaguars terminology and concepts
+2. Align with the player's position requirements 
+3. Address evaluation areas of growth and training focus
+4. Mix technical, tactical, physical, and mental development
+5. Include realistic 4-12 week timeframes
 
 For each goal, provide:
-- description: A clear, actionable goal statement
-- plan_of_action: Specific steps to achieve this goal
+- description: Clear, actionable goal using PDP language
+- plan_of_action: Specific steps referencing PDP principles
 - category: Technical, Tactical, Physical, or Mental
-- suggested_weeks: Recommended timeframe in weeks`;
+- suggested_weeks: Timeframe in weeks`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,

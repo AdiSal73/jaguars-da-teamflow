@@ -169,16 +169,20 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
       const latestAssessment = assessments.length > 0 ? assessments[assessments.length - 1] : null;
       
       const knowledgeContext = `
-      MICHIGAN JAGUARS PLAYER DEVELOPMENT PHILOSOPHY:
+      MICHIGAN JAGUARS PLAYER DEVELOPMENT PROGRAM (PDP):
+      
+      GAME MODEL PRINCIPLES:
       - Win the challenge (tackle, header, game, league)
       - Be aggressive and always on the front foot
       - Possession that is meaningful
       - Play confident and creative soccer (take risks, failure is valuable)
       - Be positive in transition
-      - Defend zonally but aggressively
+      - Defend zonally but aggressively (can we find moments to press)
 
       CORE VALUES: Respect, Unity, Development/Growth, Competitiveness, Enjoyment
-
+      
+      TRAINING METHODOLOGY: Tactical Periodization - integrating physical, technical, tactical, and psychological aspects
+      
       POSITION-SPECIFIC LANGUAGE (${form.primary_position}):
       ${form.primary_position === 'GK' ? '- Shot Stopping, Controlling the box, Distribution, Organization\n- Composed, Communication - Directing & Organizing\n- Recognizing Threats, Managing Space, Reading Pressure' : ''}
       ${form.primary_position?.includes('Centerback') ? '- Master 1v1 duels, Dominate aerial challenges, Build out of the back\n- Calm, Decisive, Relentless\n- Organization - Team Shape to Dictate Play\n- Ball winner - tackling, heading, intercepting' : ''}
@@ -189,7 +193,7 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
       ${form.primary_position === 'Forward' ? '- Finish chances, Create chances, Hold up and link play\n- Strong, explosive, quick, Dynamic and Dangerous\n- Clinical finishing, Back to goal, Target for long balls' : ''}
       `;
 
-      const prompt = `You are a Michigan Jaguars coach evaluating ${player.full_name}, playing as ${form.primary_position}.
+      const prompt = `You are a Michigan Jaguars coach evaluating ${player.full_name}, playing as ${form.primary_position}. Use PDP language and concepts in your evaluation.
 
       ${knowledgeContext}
 
@@ -208,11 +212,11 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
 
       ${pathway?.skill_matrix ? `Skill Matrix:\n${pathway.skill_matrix.map(s => `- ${s.skill_name}: ${s.current_rating}/10`).join('\n')}` : ''}
 
-      ${field === 'strengths' ? 'Write 2-3 sentences highlighting the player\'s key strengths. Use position-specific terminology from the knowledge bank above. Focus on what makes them dangerous and effective in their role.' : ''}
-      ${field === 'growth' ? 'Write 2-3 sentences identifying areas of growth. Use technical language from the position profile. Be specific about skills and situations where improvement is needed (e.g., "1v1 defending in wide areas", "breaking defensive lines with progressive carries").' : ''}
-      ${field === 'focus' ? 'Write 2-3 sentences recommending training focus. Reference specific responsibilities from the position profile (e.g., "defending in transition", "creating overloads in final third", "range of passing to switch play"). Be tactical and actionable.' : ''}
+      ${field === 'strengths' ? 'Write 2-3 sentences highlighting key strengths. Use PDP language: "wins challenges", "on the front foot", "meaningful possession", "creative in final third", "positive in transition". Reference position-specific traits from above.' : ''}
+      ${field === 'growth' ? 'Write 2-3 sentences identifying areas of growth. Use PDP concepts and position language. Be specific about game model alignment (e.g., "needs to be more aggressive winning aerial duels", "can take more creative risks in attacking third", "improve zonal defending positioning").' : ''}
+      ${field === 'focus' ? 'Write 2-3 sentences recommending training focus using Tactical Periodization principles. Reference game model elements: "winning 1v1s", "being first to the ball", "taking calculated risks", "transitioning quickly", "pressing triggers". Be specific to position and PDP philosophy.' : ''}
 
-      Use Michigan Jaguars terminology. Be concise, specific, and actionable.`;
+      CRITICAL: Use authentic Michigan Jaguars PDP language and concepts throughout.`;
 
       const response = await base44.integrations.Core.InvokeLLM({ prompt });
       

@@ -62,7 +62,27 @@ export default function AITrainingPlanGenerator({ player, pathway, assessments, 
         recent_skips: feedback.slice(0, 5).filter(f => f.completion_status === 'Skipped').length
       } : null;
 
-      const prompt = `You are a professional soccer development coach with expertise in adaptive training methodologies. Create a personalized 4-week training plan for:
+      const pdpContext = `MICHIGAN JAGUARS PLAYER DEVELOPMENT PROGRAM:
+
+GAME MODEL PRINCIPLES:
+- Win the challenge (tackle, header, game, league)
+- Be aggressive and always on the front foot  
+- Possession that is meaningful
+- Play confident and creative soccer (take risks, failure is valuable)
+- Be positive in transition
+- Defend zonally but aggressively
+
+CORE VALUES: Respect, Unity, Development/Growth, Competitiveness, Enjoyment
+
+TRAINING METHODOLOGY:
+- Tactical Periodization (integrating physical, technical, tactical, psychological)
+- Specificity: exercises directly relate to our game model
+- Progression: systematic increase in complexity
+- Alternation: balance between work and recovery`;
+
+      const prompt = `You are a Michigan Jaguars coach creating an adaptive training plan using PDP principles and Tactical Periodization methodology.
+
+${pdpContext}
 
 Player: ${player.full_name}
 Position: ${player.primary_position}
@@ -103,15 +123,15 @@ Strengths: ${latestEval.player_strengths || 'Not specified'}
 Areas of Growth: ${latestEval.areas_of_growth || 'Not specified'}
 Training Focus: ${latestEval.training_focus || 'Not specified'}` : ''}
 
-Create an ADAPTIVE comprehensive 4-week training plan with:
-1. Weekly training modules (3-4 per week)
-2. Each module should include: title, detailed description with SPECIFIC EXERCISES, training type, weekly sessions, duration
-3. Focus on addressing weaknesses while maintaining strengths
-4. Include both physical and technical/tactical training
-5. Progressive difficulty week-by-week, BUT ADJUST based on feedback analysis above
-6. CRITICAL: In the description, reference specific exercises from the knowledge bank (Speed, Power, Endurance, Agility, Strength, Flexibility) and explicitly mention them. For example: "Week 1-2: Focus on plyometric exercises (see Power training) including box jumps and depth jumps"
-7. ADAPTIVE LEARNING: If feedback shows overtraining (high RPE, skips), reduce intensity. If undertraining (low RPE, too easy), increase challenge.
-8. Include recommended_intensity field (percentage 60-100%) based on feedback analysis
+Create an ADAPTIVE 4-week training plan using MICHIGAN JAGUARS PDP LANGUAGE and TACTICAL PERIODIZATION:
+1. Weekly training modules aligned with our game model (win challenges, be aggressive, meaningful possession)
+2. Each module: title, detailed description with SPECIFIC EXERCISES, training type, sessions, duration
+3. Use PDP terminology: "be on the front foot", "positive in transition", "creative soccer", "zonal defending"
+4. Focus on position-specific responsibilities from our game model
+5. Progressive difficulty with Tactical Periodization principles (specificity, alternation)
+6. Reference knowledge bank exercises (Speed, Power, Endurance, Agility) explicitly
+7. ADAPTIVE: Adjust intensity based on feedback (high RPE = reduce, low RPE = increase challenge)
+8. Include recommended_intensity (60-100%) based on feedback analysis
 
 Return ONLY valid JSON matching this exact structure:
 {

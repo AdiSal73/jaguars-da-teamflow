@@ -31,11 +31,11 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: from || 'onboarding@resend.dev',
+        from: from || 'Michigan Jaguars <onboarding@resend.dev>',
         to: Array.isArray(to) ? to : [to],
         subject,
-        html,
-        text
+        html: html || text,
+        text: text || html
       })
     });
 
