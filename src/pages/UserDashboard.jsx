@@ -120,10 +120,18 @@ export default function UserDashboard() {
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button onClick={() => { setIsEditing(false); setFormData({ full_name: user.full_name, email: user.email, phone: user.phone, display_name: user.display_name }); }} variant="outline">
+                  <Button onClick={() => { 
+                    setIsEditing(false); 
+                    setFormData({ 
+                      full_name: user.full_name, 
+                      email: user.email, 
+                      phone: user.phone || '', 
+                      display_name: user.display_name || '' 
+                    }); 
+                  }} variant="outline">
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={handleSave} disabled={updateUserMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
                     <Save className="w-4 h-4 mr-2" />
                     Save
                   </Button>

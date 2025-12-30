@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Trash2, Edit, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -137,7 +136,6 @@ export default function CoachAvailability() {
     mutationFn: async (data) => {
       const pattern = await base44.entities.RecurrencePattern.create(data);
       
-      // Generate slots for next 3 months
       const generateUntil = new Date();
       generateUntil.setMonth(generateUntil.getMonth() + 3);
       
@@ -186,7 +184,6 @@ export default function CoachAvailability() {
         await base44.entities.TimeSlot.delete(slot.id);
       }
       
-      // Update pattern end date
       await base44.entities.RecurrencePattern.update(patternId, {
         recurrence_end_date: fromDate
       });
@@ -227,7 +224,6 @@ export default function CoachAvailability() {
     }
 
     if (slotForm.is_recurring) {
-      // FIX: Use parseISO to properly parse the date in local timezone
       const dayOfWeek = parseISO(slotForm.recurrence_start_date + 'T00:00:00').getDay();
       createRecurrenceMutation.mutate({
         coach_id: currentCoach.id,
@@ -242,7 +238,6 @@ export default function CoachAvailability() {
         recurrence_end_date: slotForm.recurrence_end_date || null
       });
     } else {
-      // Create single slot
       createSlotMutation.mutate({
         coach_id: currentCoach.id,
         date: slotForm.date,
@@ -298,7 +293,6 @@ export default function CoachAvailability() {
     toast.success('Booking link copied to clipboard');
   };
 
-  // Calendar rendering
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
@@ -309,7 +303,6 @@ export default function CoachAvailability() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const slots = timeSlots.filter(s => s.date === dateStr);
     
-    // Check if each slot is booked
     return slots.map(slot => {
       const slotBookings = bookings.filter(b => 
         b.booking_date === slot.date && 
@@ -323,8 +316,6 @@ export default function CoachAvailability() {
       };
     });
   };
-
-  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!currentCoach) {
     return <div className="p-8 text-center">Loading...</div>;
@@ -401,108 +392,108 @@ export default function CoachAvailability() {
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
-        <Card className="border-none shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
-            <div className="flex justify-between items-center">
-              <CardTitle>Calendar</CardTitle>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="font-semibold px-4 py-2">
-                  {format(currentMonth, 'MMMM yyyy')}
-                </span>
-                <Button 
-                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/20"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-4 flex gap-4 text-xs flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-emerald-100 border-2 border-emerald-400 rounded"></div>
-                <span>Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-purple-100 border-2 border-purple-400 rounded"></div>
-                <span>Recurring</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded"></div>
-                <span>Booked</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-7 gap-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-sm font-semibold text-slate-600 py-2">
-                  {day}
-                </div>
-              ))}
-              
-              {calendarDays.map((day, idx) => {
-                const daySlots = getSlotsForDate(day);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isToday = isSameDay(day, new Date());
-                const isPast = day < new Date(new Date().setHours(0,0,0,0));
-                const hasRecurring = daySlots.some(s => s.is_recurring_instance);
-                
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => !isPast && handleDateClick(day)}
-                    className={`min-h-[100px] p-2 border rounded-xl cursor-pointer transition-all ${
-                      !isCurrentMonth ? 'bg-slate-50 opacity-50' :
-                      isPast ? 'bg-slate-100 cursor-not-allowed' :
-                      hasRecurring ? 'bg-purple-50 border-purple-300 hover:bg-purple-100' :
-                      daySlots.length > 0 ? 'bg-emerald-50 border-emerald-300 hover:bg-emerald-100' :
-                      'bg-white hover:bg-slate-50 hover:border-emerald-200'
-                    } ${isToday ? 'ring-2 ring-emerald-500' : ''}`}
-                  >
-                    <div className={`text-sm font-medium mb-2 ${isToday ? 'text-emerald-600' : ''}`}>
-                      {format(day, 'd')}
-                    </div>
-                    <div className="space-y-1">
-                      {daySlots.slice(0, 2).map(slot => (
-                        <div
-                          key={slot.id}
-                          onClick={(e) => handleSlotClick(e, slot)}
-                          className={`group relative text-xs p-1.5 rounded-lg font-medium transition-all ${
-                            slot.isBooked
-                              ? 'bg-red-200 text-red-900 hover:bg-red-300'
-                              : slot.is_recurring_instance
-                              ? 'bg-purple-200 text-purple-900 hover:bg-purple-300'
-                              : 'bg-emerald-200 text-emerald-900 hover:bg-emerald-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1">
-                            {slot.is_recurring_instance && <Repeat className="w-2.5 h-2.5" />}
-                            {slot.isBooked && <span className="text-[8px]">●</span>}
-                            <span>{slot.start_time}-{slot.end_time}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {daySlots.length > 2 && (
-                        <div className="text-xs text-slate-500 text-center">+{daySlots.length - 2}</div>
-                      )}
-                    </div>
+            <Card className="border-none shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+                <div className="flex justify-between items-center">
+                  <CardTitle>Calendar</CardTitle>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:bg-white/20"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="font-semibold px-4 py-2">
+                      {format(currentMonth, 'MMMM yyyy')}
+                    </span>
+                    <Button 
+                      onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:bg-white/20"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="mb-4 flex gap-4 text-xs flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-emerald-100 border-2 border-emerald-400 rounded"></div>
+                    <span>Available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-purple-100 border-2 border-purple-400 rounded"></div>
+                    <span>Recurring</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-100 border-2 border-red-400 rounded"></div>
+                    <span>Booked</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-2">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="text-center text-sm font-semibold text-slate-600 py-2">
+                      {day}
+                    </div>
+                  ))}
+                  
+                  {calendarDays.map((day, idx) => {
+                    const daySlots = getSlotsForDate(day);
+                    const isCurrentMonth = isSameMonth(day, currentMonth);
+                    const isToday = isSameDay(day, new Date());
+                    const isPast = day < new Date(new Date().setHours(0,0,0,0));
+                    const hasRecurring = daySlots.some(s => s.is_recurring_instance);
+                    
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => !isPast && handleDateClick(day)}
+                        className={`min-h-[100px] p-2 border rounded-xl cursor-pointer transition-all ${
+                          !isCurrentMonth ? 'bg-slate-50 opacity-50' :
+                          isPast ? 'bg-slate-100 cursor-not-allowed' :
+                          hasRecurring ? 'bg-purple-50 border-purple-300 hover:bg-purple-100' :
+                          daySlots.length > 0 ? 'bg-emerald-50 border-emerald-300 hover:bg-emerald-100' :
+                          'bg-white hover:bg-slate-50 hover:border-emerald-200'
+                        } ${isToday ? 'ring-2 ring-emerald-500' : ''}`}
+                      >
+                        <div className={`text-sm font-medium mb-2 ${isToday ? 'text-emerald-600' : ''}`}>
+                          {format(day, 'd')}
+                        </div>
+                        <div className="space-y-1">
+                          {daySlots.slice(0, 2).map(slot => (
+                            <div
+                              key={slot.id}
+                              onClick={(e) => handleSlotClick(e, slot)}
+                              className={`group relative text-xs p-1.5 rounded-lg font-medium transition-all ${
+                                slot.isBooked
+                                  ? 'bg-red-200 text-red-900 hover:bg-red-300'
+                                  : slot.is_recurring_instance
+                                  ? 'bg-purple-200 text-purple-900 hover:bg-purple-300'
+                                  : 'bg-emerald-200 text-emerald-900 hover:bg-emerald-300'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1">
+                                {slot.is_recurring_instance && <Repeat className="w-2.5 h-2.5" />}
+                                {slot.isBooked && <span className="text-[8px]">●</span>}
+                                <span>{slot.start_time}-{slot.end_time}</span>
+                              </div>
+                            </div>
+                          ))}
+                          {daySlots.length > 2 && (
+                            <div className="text-xs text-slate-500 text-center">+{daySlots.length - 2}</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
@@ -546,7 +537,6 @@ export default function CoachAvailability() {
             </DialogHeader>
             
             <div className="space-y-6 mt-4">
-              {/* Recurring Toggle */}
               <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border-2 border-purple-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -564,7 +554,6 @@ export default function CoachAvailability() {
                 </div>
               </div>
 
-              {/* Date or Day Selection */}
               {slotForm.is_recurring ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -611,7 +600,6 @@ export default function CoachAvailability() {
                 </div>
               )}
 
-              {/* Time Range */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="flex items-center gap-2 text-sm font-semibold">
@@ -639,7 +627,6 @@ export default function CoachAvailability() {
                 </div>
               </div>
 
-              {/* Location */}
               <div>
                 <Label className="flex items-center gap-2 text-sm font-semibold">
                   <MapPin className="w-4 h-4 text-emerald-600" />
@@ -657,7 +644,6 @@ export default function CoachAvailability() {
                 </Select>
               </div>
 
-              {/* Services */}
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Services Available *</Label>
                 <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
@@ -684,7 +670,6 @@ export default function CoachAvailability() {
                 </div>
               </div>
 
-              {/* Buffers */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm">Buffer Before (minutes)</Label>
