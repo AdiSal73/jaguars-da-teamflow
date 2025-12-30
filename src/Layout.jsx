@@ -219,7 +219,7 @@ export default function Layout({ children, currentPageName }) {
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to={createPageUrl("Analytics")} className="flex items-center gap-3 group">
+            <Link to={createPageUrl("About")} className="flex items-center gap-3 group">
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-emerald-200 transition-all">
                 <Shield className="w-6 h-6 text-white" />
               </div>
