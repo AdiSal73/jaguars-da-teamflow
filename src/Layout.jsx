@@ -220,9 +220,11 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to={createPageUrl("About")} className="flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-emerald-200 transition-all">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
+              <img 
+                src="https://jaguarsidp.com/wp-content/uploads/2024/03/Jaguars-logo.png" 
+                alt="Michigan Jaguars" 
+                className="w-10 h-10 rounded-xl shadow-lg group-hover:shadow-emerald-200 transition-all object-contain"
+              />
               <div className="hidden sm:block">
                 <h1 className="font-bold text-slate-900 text-lg">Michigan Jaguars</h1>
                 <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development </p>

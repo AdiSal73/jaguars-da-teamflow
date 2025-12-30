@@ -99,7 +99,8 @@ export default function MyBookings() {
       toast.success('Booking cancelled and notifications sent');
     },
     onError: (error) => {
-      toast.error(`Failed to cancel: ${error.message}`);
+      console.error('Cancel error:', error);
+      toast.error(`Failed to cancel booking: ${error.message}`);
     }
   });
 

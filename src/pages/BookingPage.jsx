@@ -187,9 +187,10 @@ export default function BookingPage() {
             priority: 'medium'
           });
         }
+        toast.success('Booking confirmed and notifications sent');
       } catch (error) {
         console.error('Email/Notification error:', error);
-        toast.error('Booking created but email notification failed');
+        toast.error('Booking confirmed, but notifications failed to send');
       }
 
       setBookingSuccess(true);
