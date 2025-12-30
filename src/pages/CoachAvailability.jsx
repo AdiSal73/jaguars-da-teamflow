@@ -733,9 +733,9 @@ export default function CoachAvailability() {
 
         {/* Edit/Delete Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Manage Time Slot</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Edit Time Slot</DialogTitle>
               <DialogDescription>
                 {slotToEdit && format(new Date(slotToEdit.date), 'EEEE, MMMM d, yyyy')}
               </DialogDescription>
@@ -743,68 +743,90 @@ export default function CoachAvailability() {
             
             {slotToEdit && (
             <div className="space-y-4 mt-4">
-              <div className="p-4 bg-slate-50 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold">{slotToEdit.start_time} - {slotToEdit.end_time}</span>
+              {slotToEdit.isBooked && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <Badge className="bg-red-500 text-white">Booked by {slotToEdit.bookingInfo?.player_name}</Badge>
+                  <p className="text-xs text-red-700 mt-1">This slot is already booked. Editing will not affect the existing booking.</p>
                 </div>
-                <div className="text-sm text-slate-600">
-                  Services: {slotToEdit.service_names?.join(', ')}
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Time</Label>
+                  <Input type="time" value={slotToEdit.start_time} onChange={e => setSlotToEdit({...slotToEdit, start_time: e.target.value})} />
                 </div>
-                {slotToEdit.isBooked && (
-                  <Badge className="mt-2 bg-red-100 text-red-800">
-                    Booked by {slotToEdit.bookingInfo?.player_name}
-                  </Badge>
-                )}
-                {slotToEdit.is_recurring_instance && (
-                  <Badge className="mt-2 bg-purple-100 text-purple-800">
-                    <Repeat className="w-3 h-3 mr-1" />
-                    Recurring Event
-                  </Badge>
-                )}
+                <div>
+                  <Label>End Time</Label>
+                  <Input type="time" value={slotToEdit.end_time} onChange={e => setSlotToEdit({...slotToEdit, end_time: e.target.value})} />
+                </div>
               </div>
 
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
-                    onClick={handleDeleteSingle}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete This Slot Only
-                  </Button>
+              <div>
+                <Label>Location</Label>
+                <Select value={slotToEdit.location_id} onValueChange={v => setSlotToEdit({...slotToEdit, location_id: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map(loc => <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {slotToEdit.is_recurring_instance && (
-                    <>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-orange-600 hover:bg-orange-50 hover:text-orange-700 border-orange-200"
-                        onClick={handleDeleteRemaining}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete This & All Future Occurrences
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-red-700 hover:bg-red-50 hover:text-red-800 border-red-300"
-                        onClick={handleDeleteAllRecurring}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete All Occurrences in Series
-                      </Button>
-                    </>
-                  )}
+              <div>
+                <Label>Services</Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
+                  {services.map(service => (
+                    <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer">
+                      <Checkbox
+                        checked={slotToEdit.service_names?.includes(service.name)}
+                        onCheckedChange={checked => {
+                          const updated = checked
+                            ? [...(slotToEdit.service_names || []), service.name]
+                            : (slotToEdit.service_names || []).filter(s => s !== service.name);
+                          setSlotToEdit({...slotToEdit, service_names: updated});
+                        }}
+                      />
+                      <span className="flex-1 text-sm">{service.name}</span>
+                    </label>
+                  ))}
                 </div>
+              </div>
 
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowEditDialog(false)}
-                  className="w-full mt-4"
-                >
-                  Cancel
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Buffer Before (min)</Label>
+                  <Input type="number" min="0" step="5" value={slotToEdit.buffer_before || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_before: parseInt(e.target.value) || 0})} />
+                </div>
+                <div>
+                  <Label>Buffer After (min)</Label>
+                  <Input type="number" min="0" step="5" value={slotToEdit.buffer_after || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_after: parseInt(e.target.value) || 0})} />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
+                <Button onClick={() => updateSlotMutation.mutate({ id: slotToEdit.id, data: slotToEdit })} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
                 </Button>
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
               </div>
+
+              <div className="space-y-2 border-t pt-4">
+                <p className="text-sm font-semibold text-slate-700">Delete Options:</p>
+                <Button variant="outline" className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200" onClick={handleDeleteSingle}>
+                  <Trash2 className="w-4 h-4 mr-2" />Delete This Slot Only
+                </Button>
+                {slotToEdit.is_recurring_instance && (
+                  <>
+                    <Button variant="outline" className="w-full justify-start text-orange-600 hover:bg-orange-50 border-orange-200" onClick={handleDeleteRemaining}>
+                      <Trash2 className="w-4 h-4 mr-2" />Delete This & All Future
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start text-red-700 hover:bg-red-50 border-red-300" onClick={handleDeleteAllRecurring}>
+                      <Trash2 className="w-4 h-4 mr-2" />Delete All in Series
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
             )}
           </DialogContent>
         </Dialog>

@@ -113,14 +113,23 @@ export default function Communications() {
     mutationFn: async (data) => {
       const message = await base44.entities.Message.create(data);
       
-      // Create notification
       await base44.entities.Notification.create({
         user_email: data.recipient_email,
         type: 'message',
         title: `New message from ${data.sender_name}`,
         message: data.content.substring(0, 200),
-        link: `/communications`
+        priority: 'medium'
       });
+
+      try {
+        await base44.integrations.Core.SendEmail({
+          to: data.recipient_email,
+          subject: `New message from ${data.sender_name}`,
+          body: `You have a new message from ${data.sender_name}:\n\n${data.content}\n\nReply via the app.`
+        });
+      } catch (error) {
+        console.error('Email send error:', error);
+      }
 
       return message;
     },

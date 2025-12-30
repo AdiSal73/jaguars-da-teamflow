@@ -180,10 +180,7 @@ export default function Layout({ children, currentPageName }) {
       title: "Communications",
       icon: MessageSquare,
       roles: ["admin", "coach", "user", "parent"],
-      submenu: [
-        { title: "Messages", url: createPageUrl("Communications") },
-        { title: "Preferences", url: createPageUrl("CommunicationPreferences") }
-      ]
+      url: createPageUrl("Communications")
     },
     {
       title: "My Account",

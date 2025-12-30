@@ -500,12 +500,16 @@ export default function PlayerDashboard() {
         {isAdminOrCoach && (
         <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-purple-50 border-none shadow-lg">
           <CardHeader className="pb-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3">
-            <CardTitle className="text-sm">🎯 Tryout</CardTitle>
+            <CardTitle className="text-sm">🎯 Tryout Info</CardTitle>
           </CardHeader>
           <CardContent className="p-3 space-y-2">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div><Label className="text-[9px] text-slate-500">Role</Label>{isEditing ? <Select value={tryoutForm.team_role} onValueChange={v => setTryoutForm({...tryoutForm, team_role: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent>{['Indispensable Player','GA Starter','GA Rotation','Aspire Starter','Aspire Rotation','United Starter','United Rotation'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select> : <Badge className="text-[9px]">{tryout?.team_role || 'N/A'}</Badge>}</div>
-              <div><Label className="text-[9px] text-slate-500">Next Team</Label><p className="font-medium text-xs">{tryout?.next_year_team || 'N/A'}</p></div>
+              <div><Label className="text-[9px] text-slate-500">Recommendation</Label>{isEditing ? <Select value={tryoutForm.recommendation} onValueChange={v => setTryoutForm({...tryoutForm, recommendation: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Move up">🔼 Move up</SelectItem><SelectItem value="Keep">✅ Keep</SelectItem><SelectItem value="Move down">🔽 Move down</SelectItem></SelectContent></Select> : <Badge className={`text-[9px] ${tryout?.recommendation === 'Move up' ? 'bg-green-100 text-green-800' : tryout?.recommendation === 'Move down' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>{tryout?.recommendation || 'N/A'}</Badge>}</div>
+              <div><Label className="text-[9px] text-slate-500">Dominant Foot</Label>{isEditing ? <Select value={tryoutForm.dominant_foot} onValueChange={v => setTryoutForm({...tryoutForm, dominant_foot: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Left">Left</SelectItem><SelectItem value="Right">Right</SelectItem><SelectItem value="Both">Both</SelectItem></SelectContent></Select> : <p className="font-medium text-xs">{tryout?.dominant_foot || 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">Secondary Pos</Label>{isEditing ? <Select value={playerForm.secondary_position || ''} onValueChange={v => setPlayerForm({...playerForm, secondary_position: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value={null}>None</SelectItem>{['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => <SelectItem key={pos} value={pos}>{pos}</SelectItem>)}</SelectContent></Select> : <p className="font-medium text-xs">{player.secondary_position || 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">Next Team</Label>{isEditing ? <ComboboxInput value={tryoutForm.next_year_team} onChange={(val) => setTryoutForm({...tryoutForm, next_year_team: val})} options={existingTeamNames} placeholder="Team" className="text-xs h-7" /> : <p className="font-medium text-xs">{tryout?.next_year_team || 'N/A'}</p>}</div>
+              <div><Label className="text-[9px] text-slate-500">Registration</Label>{isEditing ? <Select value={tryoutForm.registration_status} onValueChange={v => setTryoutForm({...tryoutForm, registration_status: v})}><SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Not Signed">Not Signed</SelectItem><SelectItem value="Signed">Signed</SelectItem><SelectItem value="Signed and Paid">Signed & Paid</SelectItem></SelectContent></Select> : <Badge className={`text-[9px] ${tryout?.registration_status === 'Signed and Paid' ? 'bg-green-500 text-white' : 'bg-slate-300'}`}>{tryout?.registration_status || 'N/A'}</Badge>}</div>
             </div>
           </CardContent>
         </Card>
@@ -515,7 +519,10 @@ export default function PlayerDashboard() {
         <Card className="col-span-12 md:col-span-4 bg-gradient-to-br from-white to-blue-50 border-none shadow-lg">
           <CardHeader className="pb-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">💪 Physical</CardTitle>
+              <div>
+                <CardTitle className="text-sm">💪 Physical</CardTitle>
+                {currentAssessment && <p className="text-[9px] text-white/80">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</p>}
+              </div>
               {assessments.length > 1 && (
                 <div className="flex gap-1">
                   <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-0.5 hover:bg-white/20 rounded disabled:opacity-30"><ChevronLeft className="w-3 h-3" /></button>
@@ -526,13 +533,21 @@ export default function PlayerDashboard() {
           </CardHeader>
           <CardContent className="p-3">
             {currentAssessment ? (
-              <div className="grid grid-cols-2 gap-2">
-                {[{l:'Speed',s:currentAssessment.speed_score,c:'#ef4444'},{l:'Power',s:currentAssessment.power_score,c:'#3b82f6'},{l:'Endurance',s:currentAssessment.endurance_score,c:'#10b981'},{l:'Agility',s:currentAssessment.agility_score,c:'#ec4899'}].map(({l,s,c})=>(
-                  <div key={l} className="text-center p-2 rounded-lg" style={{backgroundColor:c+'15'}}>
-                    <div className="text-2xl font-bold" style={{color:c}}>{s||0}</div>
-                    <div className="text-[9px] text-slate-600">{l}</div>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <div className="grid grid-cols-4 gap-2 text-center text-[10px] mb-2">
+                  <div className="p-1 bg-red-50 rounded"><div className="font-bold text-red-700">{currentAssessment.sprint?.toFixed(2)}s</div><div className="text-slate-500">Sprint</div></div>
+                  <div className="p-1 bg-blue-50 rounded"><div className="font-bold text-blue-700">{currentAssessment.vertical}"</div><div className="text-slate-500">Vert</div></div>
+                  <div className="p-1 bg-green-50 rounded"><div className="font-bold text-green-700">{currentAssessment.yirt}</div><div className="text-slate-500">YIRT</div></div>
+                  <div className="p-1 bg-pink-50 rounded"><div className="font-bold text-pink-700">{currentAssessment.shuttle?.toFixed(2)}s</div><div className="text-slate-500">Shuttle</div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{l:'Speed',s:currentAssessment.speed_score,c:'#ef4444'},{l:'Power',s:currentAssessment.power_score,c:'#3b82f6'},{l:'Endurance',s:currentAssessment.endurance_score,c:'#10b981'},{l:'Agility',s:currentAssessment.agility_score,c:'#ec4899'}].map(({l,s,c})=>(
+                    <div key={l} className="text-center p-2 rounded-lg" style={{backgroundColor:c+'15'}}>
+                      <div className="text-2xl font-bold" style={{color:c}}>{s||0}</div>
+                      <div className="text-[9px] text-slate-600">{l}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : <p className="text-center text-xs text-slate-500 py-4">No data</p>}
           </CardContent>
@@ -542,7 +557,10 @@ export default function PlayerDashboard() {
         <Card className="col-span-12 md:col-span-5 bg-gradient-to-br from-white to-emerald-50 border-none shadow-lg">
           <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white p-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">📊 Evaluation</CardTitle>
+              <div>
+                <CardTitle className="text-sm">📊 Evaluation</CardTitle>
+                {currentEvaluation && <p className="text-[9px] text-white/80">{new Date(currentEvaluation.created_date).toLocaleDateString()}</p>}
+              </div>
               <div className="flex gap-1">
                 {evaluations.length > 1 && (
                   <>
@@ -551,6 +569,7 @@ export default function PlayerDashboard() {
                   </>
                 )}
                 <Button size="sm" onClick={() => setShowCreateEvalDialog(true)} className="h-6 px-2 text-[10px] bg-white/20 hover:bg-white/30 text-white border-0"><Plus className="w-3 h-3" /></Button>
+                {currentEvaluation && isAdminOrCoach && <Button size="sm" onClick={() => setShowEditEvalDialog(true)} className="h-6 px-2 text-[10px] bg-white/20 hover:bg-white/30 text-white border-0">Edit</Button>}
               </div>
             </div>
           </CardHeader>
@@ -558,6 +577,14 @@ export default function PlayerDashboard() {
             {currentEvaluation ? (
               <div className="space-y-1.5">
                 {['growth_mindset','resilience','athleticism','defending_organized','attacking_organized'].map(key=><SliderBar key={key} label={metricLabels[key]} value={currentEvaluation[key]} color={metricColors[key]}/>)}
+                {currentEvaluation.position_role_1_label && (
+                  <div className="border-t pt-2 mt-2">
+                    <p className="text-[9px] font-semibold text-slate-500 mb-1">Position Roles</p>
+                    {[1,2,3,4].map(i => currentEvaluation[`position_role_${i}_label`] && (
+                      <SliderBar key={i} label={currentEvaluation[`position_role_${i}_label`]} value={currentEvaluation[`position_role_${i}`]} color="#6366f1" />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : <p className="text-center text-xs py-4">No evaluation</p>}
           </CardContent>
