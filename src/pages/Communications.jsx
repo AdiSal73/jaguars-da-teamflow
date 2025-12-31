@@ -22,6 +22,8 @@ export default function Communications() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedThread, setSelectedThread] = useState(null);
   const [messageContent, setMessageContent] = useState('');
+  const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
+  const [announcementRecipients, setAnnouncementRecipients] = useState([]);
   const [announcementForm, setAnnouncementForm] = useState({
     title: '',
     content: '',

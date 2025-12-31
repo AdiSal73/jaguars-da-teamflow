@@ -4,8 +4,13 @@ import { Calendar, Download } from 'lucide-react';
 
 export default function BookingCalendarSync({ booking, coach, location }) {
   const generateICS = () => {
-    const startDate = new Date(`${booking.booking_date}T${booking.start_time}`);
-    const endDate = new Date(`${booking.booking_date}T${booking.end_time}`);
+    // Parse date correctly to avoid timezone issues
+    const [year, month, day] = booking.booking_date.split('-').map(Number);
+    const [startHour, startMin] = booking.start_time.split(':').map(Number);
+    const [endHour, endMin] = booking.end_time.split(':').map(Number);
+    
+    const startDate = new Date(year, month - 1, day, startHour, startMin);
+    const endDate = new Date(year, month - 1, day, endHour, endMin);
     
     const formatICSDate = (date) => {
       return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
