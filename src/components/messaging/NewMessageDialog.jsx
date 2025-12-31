@@ -230,16 +230,6 @@ export default function NewMessageDialog({ open, onClose, user }) {
           </div>
         </div>
       </DialogContent>
-      
-      <SendConfirmDialog
-        open={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        onConfirm={handleSendMessage}
-        title="Send Message?"
-        description="This message will be sent via email and in-app notification."
-        recipients={selectedRecipient ? [selectedRecipient.name] : []}
-        isLoading={sendMessageMutation.isPending}
-      />
     </Dialog>
   );
 }
