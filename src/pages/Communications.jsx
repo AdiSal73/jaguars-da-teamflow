@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { MessageSquare, Send, Bell, Megaphone, Users, User, Search, Plus, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import NewMessageDialog from '../components/messaging/NewMessageDialog';
-import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
+import SendConfirmDialog from '../components/messaging/SendConfirmDialog.jsx';
 
 export default function Communications() {
   const queryClient = useQueryClient();
