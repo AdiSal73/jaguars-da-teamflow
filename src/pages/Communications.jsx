@@ -10,10 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Send, Bell, Megaphone, Users, User, Search, Plus, Calendar, Clock } from 'lucide-react';
+import { MessageSquare, Send, Bell, Megaphone, Search, Plus, Clock, User, Filter, CheckCheck, Check, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import NewMessageDialog from '../components/messaging/NewMessageDialog';
-import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
 
 export default function Communications() {
   const queryClient = useQueryClient();
@@ -22,6 +22,9 @@ export default function Communications() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedThread, setSelectedThread] = useState(null);
   const [messageContent, setMessageContent] = useState('');
+  const [messageSearchTerm, setMessageSearchTerm] = useState('');
+  const [messageDateFilter, setMessageDateFilter] = useState('all');
+  const [messageSenderFilter, setMessageSenderFilter] = useState('all');
   const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
   const [announcementRecipients, setAnnouncementRecipients] = useState([]);
   const [announcementForm, setAnnouncementForm] = useState({
@@ -180,6 +183,11 @@ export default function Communications() {
     }
   });
 
+  const markMessageReadMutation = useMutation({
+    mutationFn: (id) => base44.entities.Message.update(id, { read: true }),
+    onSuccess: () => queryClient.invalidateQueries(['messages'])
+  });
+
   const markNotificationReadMutation = useMutation({
     mutationFn: (id) => base44.entities.Notification.update(id, { read: true }),
     onSuccess: () => queryClient.invalidateQueries(['notifications'])
@@ -212,9 +220,45 @@ export default function Communications() {
         threads[otherEmail].unreadCount++;
       }
     });
-    return Object.values(threads).sort((a, b) => 
+    
+    // Apply filters
+    let filteredThreads = Object.values(threads);
+    
+    if (messageSenderFilter !== 'all') {
+      filteredThreads = filteredThreads.filter(t => t.email === messageSenderFilter);
+    }
+    
+    if (messageDateFilter !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      if (messageDateFilter === 'today') {
+        filterDate.setHours(0, 0, 0, 0);
+      } else if (messageDateFilter === 'week') {
+        filterDate.setDate(now.getDate() - 7);
+      } else if (messageDateFilter === 'month') {
+        filterDate.setMonth(now.getMonth() - 1);
+      }
+      filteredThreads = filteredThreads.filter(t => 
+        new Date(t.lastMessage.created_date) >= filterDate
+      );
+    }
+    
+    return filteredThreads.sort((a, b) => 
       new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date)
     );
+  }, [myMessages, user, messageSenderFilter, messageDateFilter]);
+
+  // Get unique senders for filter
+  const uniqueSenders = useMemo(() => {
+    const senders = new Map();
+    myMessages.forEach(msg => {
+      const otherEmail = msg.sender_email === user?.email ? msg.recipient_email : msg.sender_email;
+      const otherName = msg.sender_email === user?.email ? msg.recipient_name : msg.sender_name;
+      if (!senders.has(otherEmail)) {
+        senders.set(otherEmail, otherName);
+      }
+    });
+    return Array.from(senders.entries());
   }, [myMessages, user]);
 
   const relevantAnnouncements = useMemo(() => {
@@ -239,6 +283,8 @@ export default function Communications() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleSendMessage = (recipientEmail, recipientName) => {
+    if (!messageContent.trim()) return;
+    
     sendMessageMutation.mutate({
       sender_id: user?.id,
       sender_name: user?.full_name,
@@ -252,6 +298,18 @@ export default function Communications() {
       read: false
     });
   };
+
+  // Mark messages as read when thread is opened
+  React.useEffect(() => {
+    if (selectedThread) {
+      const unreadMessages = selectedThread.messages.filter(m => 
+        m.recipient_email === user?.email && !m.read
+      );
+      unreadMessages.forEach(msg => {
+        markMessageReadMutation.mutate(msg.id);
+      });
+    }
+  }, [selectedThread?.email]);
 
   const handlePrepareAnnouncement = () => {
     if (!announcementForm.title || !announcementForm.content) {
@@ -274,16 +332,11 @@ export default function Communications() {
     }
 
     setAnnouncementRecipients(recipients);
-    setShowAnnouncementConfirm(true);
-  };
-
-  const handleCreateAnnouncement = () => {
     createAnnouncementMutation.mutate({
       ...announcementForm,
       author_name: user?.full_name,
       author_email: user?.email
     });
-    setShowAnnouncementConfirm(false);
   };
 
   return (
@@ -303,15 +356,15 @@ export default function Communications() {
         )}
       </div>
 
-      <Tabs defaultValue="announcements" className="space-y-6">
+      <Tabs defaultValue="messages" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="announcements" className="flex items-center gap-2">
-            <Megaphone className="w-4 h-4" />
-            Announcements
-          </TabsTrigger>
           <TabsTrigger value="messages" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Messages
+          </TabsTrigger>
+          <TabsTrigger value="announcements" className="flex items-center gap-2">
+            <Megaphone className="w-4 h-4" />
+            Announcements
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2 relative">
             <Bell className="w-4 h-4" />
@@ -323,6 +376,201 @@ export default function Communications() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="messages">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Threads List */}
+            <Card className="lg:col-span-1 border-none shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    Conversations
+                  </CardTitle>
+                  <Button size="sm" onClick={() => setShowNewMessageDialog(true)} className="bg-white/20 hover:bg-white/30 text-white h-7 border-0">
+                    <Plus className="w-3 h-3 mr-1" />
+                    New
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {/* Message Filters */}
+                <div className="p-3 border-b bg-slate-50 space-y-2">
+                  <Input
+                    placeholder="Search conversations..."
+                    value={messageSearchTerm}
+                    onChange={(e) => setMessageSearchTerm(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={messageSenderFilter} onValueChange={setMessageSenderFilter}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="All contacts" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All contacts</SelectItem>
+                        {uniqueSenders.map(([email, name]) => (
+                          <SelectItem key={email} value={email}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={messageDateFilter} onValueChange={setMessageDateFilter}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">This week</SelectItem>
+                        <SelectItem value="month">This month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="divide-y max-h-[600px] overflow-y-auto">
+                  {messageThreads
+                    .filter(thread => 
+                      !messageSearchTerm || 
+                      thread.name?.toLowerCase().includes(messageSearchTerm.toLowerCase()) ||
+                      thread.email?.toLowerCase().includes(messageSearchTerm.toLowerCase())
+                    )
+                    .map(thread => (
+                    <button
+                      key={thread.email}
+                      onClick={() => setSelectedThread(thread)}
+                      className={`w-full p-4 text-left hover:bg-slate-50 transition-colors ${
+                        selectedThread?.email === thread.email ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                              {thread.name?.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-sm truncate">{thread.name}</div>
+                              <div className="text-xs text-slate-500 truncate flex items-center gap-1">
+                                {thread.lastMessage.sender_email === user?.email && (
+                                  thread.lastMessage.read ? 
+                                    <CheckCheck className="w-3 h-3 text-blue-500" /> : 
+                                    <Check className="w-3 h-3 text-slate-400" />
+                                )}
+                                {thread.lastMessage?.content}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {format(new Date(thread.lastMessage.created_date), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {thread.unreadCount > 0 && (
+                          <Badge className="bg-emerald-500 text-white text-[10px]">
+                            {thread.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  {messageThreads.length === 0 && (
+                    <div className="p-8 text-center text-slate-500">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No conversations yet</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Message Thread */}
+            <Card className="lg:col-span-2 border-none shadow-xl">
+              {selectedThread ? (
+                <>
+                  <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {selectedThread.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <div>{selectedThread.name}</div>
+                        <div className="text-xs text-slate-500 font-normal">{selectedThread.email}</div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {/* Message History */}
+                    <div className="space-y-4 mb-4 max-h-[450px] overflow-y-auto pr-2">
+                      {selectedThread.messages
+                        .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+                        .map(msg => {
+                        const isSent = msg.sender_email === user?.email;
+                        return (
+                          <div key={msg.id} className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[75%] ${isSent ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                              <div className={`p-3 rounded-2xl ${
+                                isSent 
+                                  ? 'bg-emerald-500 text-white rounded-br-sm' 
+                                  : 'bg-slate-100 text-slate-900 rounded-bl-sm'
+                              }`}>
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                              </div>
+                              <div className="flex items-center gap-1 px-2">
+                                <p className={`text-[10px] ${isSent ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                  {format(new Date(msg.created_date), 'MMM d, h:mm a')}
+                                </p>
+                                {isSent && (
+                                  msg.read ? 
+                                    <CheckCheck className="w-3 h-3 text-blue-500" title="Read" /> : 
+                                    <Check className="w-3 h-3 text-slate-400" title="Sent" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Message Input */}
+                    <div className="flex gap-2 border-t pt-4">
+                      <Textarea
+                        value={messageContent}
+                        onChange={(e) => setMessageContent(e.target.value)}
+                        placeholder="Type your message..."
+                        rows={2}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (messageContent.trim()) {
+                              handleSendMessage(selectedThread.email, selectedThread.name);
+                            }
+                          }
+                        }}
+                        className="resize-none"
+                      />
+                      <Button 
+                        onClick={() => handleSendMessage(selectedThread.email, selectedThread.name)}
+                        disabled={!messageContent.trim() || sendMessageMutation.isPending}
+                        className="bg-emerald-600 hover:bg-emerald-700 self-end"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </>
+              ) : (
+                <CardContent className="p-12 text-center">
+                  <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-4">Select a conversation to start messaging</p>
+                  <Button onClick={() => setShowNewMessageDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Start New Conversation
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="announcements" className="space-y-4">
           {relevantAnnouncements.length === 0 ? (
@@ -363,7 +611,7 @@ export default function Communications() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {new Date(announcement.created_date).toLocaleString()}
+                          {format(new Date(announcement.created_date), 'MMM d, h:mm a')}
                         </div>
                       </div>
                     </div>
@@ -375,125 +623,6 @@ export default function Communications() {
               </Card>
             ))
           )}
-        </TabsContent>
-
-        <TabsContent value="messages">
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="md:col-span-1">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Conversations</CardTitle>
-                  <Button size="sm" onClick={() => setShowNewMessageDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                    <Plus className="w-3 h-3 mr-1" />
-                    New
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y max-h-[600px] overflow-y-auto">
-                  {messageThreads.map(thread => (
-                    <button
-                      key={thread.email}
-                      onClick={() => setSelectedThread(thread)}
-                      className={`w-full p-4 text-left hover:bg-slate-50 transition-colors ${
-                        selectedThread?.email === thread.email ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                              {thread.name?.charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-sm truncate">{thread.name}</div>
-                              <div className="text-xs text-slate-500 truncate">
-                                {thread.lastMessage?.content}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {thread.unreadCount > 0 && (
-                          <Badge className="bg-emerald-500 text-white text-[10px]">
-                            {thread.unreadCount}
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                  {messageThreads.length === 0 && (
-                    <div className="p-8 text-center text-slate-500">
-                      <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No conversations yet</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="md:col-span-2">
-              {selectedThread ? (
-                <>
-                  <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50 border-b">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                        {selectedThread.name?.charAt(0)}
-                      </div>
-                      {selectedThread.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="space-y-4 mb-4 max-h-[400px] overflow-y-auto">
-                      {selectedThread.messages
-                        .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
-                        .map(msg => {
-                        const isSent = msg.sender_email === user?.email;
-                        return (
-                          <div key={msg.id} className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] p-3 rounded-lg ${
-                              isSent ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-900'
-                            }`}>
-                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                              <p className={`text-[10px] mt-1 ${isSent ? 'text-emerald-100' : 'text-slate-500'}`}>
-                                {new Date(msg.created_date).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-2 border-t pt-4">
-                      <Input
-                        value={messageContent}
-                        onChange={(e) => setMessageContent(e.target.value)}
-                        placeholder="Type your message..."
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            if (messageContent.trim()) {
-                              handleSendMessage(selectedThread.email, selectedThread.name);
-                            }
-                          }
-                        }}
-                      />
-                      <Button 
-                        onClick={() => handleSendMessage(selectedThread.email, selectedThread.name)}
-                        disabled={!messageContent.trim()}
-                        className="bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </>
-              ) : (
-                <CardContent className="p-12 text-center">
-                  <MessageSquare className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500">Select a conversation to start messaging</p>
-                </CardContent>
-              )}
-            </Card>
-          </div>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-3">
@@ -508,7 +637,7 @@ export default function Communications() {
             notifications.map(notification => (
               <Card 
                 key={notification.id} 
-                className={`${notification.read ? 'bg-slate-50' : 'bg-white border-l-4 border-l-emerald-500'}`}
+                className={`${notification.read ? 'bg-slate-50' : 'bg-white border-l-4 border-l-emerald-500 shadow-md'} cursor-pointer hover:shadow-lg transition-shadow`}
                 onClick={() => !notification.read && markNotificationReadMutation.mutate(notification.id)}
               >
                 <CardContent className="p-4">
@@ -527,7 +656,7 @@ export default function Communications() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-slate-400 ml-6 mt-1">
-                        {new Date(notification.created_date).toLocaleString()}
+                        {format(new Date(notification.created_date), 'MMM d, h:mm a')}
                       </p>
                     </div>
                   </div>
@@ -538,6 +667,7 @@ export default function Communications() {
         </TabsContent>
       </Tabs>
 
+      {/* Announcement Dialog */}
       <Dialog open={showAnnouncementDialog} onOpenChange={setShowAnnouncementDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -628,11 +758,11 @@ export default function Communications() {
             </Button>
             <Button
               onClick={handlePrepareAnnouncement}
-              disabled={!announcementForm.title || !announcementForm.content}
+              disabled={!announcementForm.title || !announcementForm.content || createAnnouncementMutation.isPending}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
               <Send className="w-4 h-4 mr-2" />
-              Send Announcement
+              {createAnnouncementMutation.isPending ? 'Sending...' : 'Send Announcement'}
             </Button>
           </div>
         </DialogContent>
@@ -642,16 +772,6 @@ export default function Communications() {
         open={showNewMessageDialog}
         onClose={() => setShowNewMessageDialog(false)}
         user={user}
-      />
-      
-      <SendConfirmDialog
-        open={showAnnouncementConfirm}
-        onClose={() => setShowAnnouncementConfirm(false)}
-        onConfirm={handleCreateAnnouncement}
-        title="Send Announcement?"
-        description="This announcement will be sent via email and in-app notification."
-        recipients={announcementRecipients}
-        isLoading={createAnnouncementMutation.isPending}
       />
     </div>
   );
