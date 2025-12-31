@@ -139,11 +139,26 @@ export default function BookingPage() {
       try {
         const clientEmail = user?.email || booking.parent_email;
         const coach = coaches.find(c => c.id === booking.coach_id);
+        const player = players.find(p => p.id === booking.player_id);
 
-        // Send email to client
-        if (clientEmail) {
+        // Gather all recipients
+        const allRecipients = [];
+        if (clientEmail) allRecipients.push(clientEmail);
+        if (coach?.email) allRecipients.push(coach.email);
+        if (player?.parent_emails?.length > 0) {
+          player.parent_emails.forEach(email => {
+            if (!allRecipients.includes(email)) allRecipients.push(email);
+          });
+        }
+        if (player?.player_email && !allRecipients.includes(player.player_email)) {
+          allRecipients.push(player.player_email);
+        }
+
+        // Send one email to all parties
+        if (allRecipients.length > 0) {
           await base44.functions.invoke('sendBookingEmail', {
-            to: clientEmail,
+            to: allRecipients[0],
+            additionalRecipients: allRecipients.slice(1),
             subject: `Booking Confirmed - ${booking.service_name}`,
             booking: { 
               ...booking, 
@@ -152,42 +167,20 @@ export default function BookingPage() {
             },
             type: 'confirmation_client'
           });
-          
-          // Create notification for client
-          await base44.entities.Notification.create({
-            user_email: clientEmail,
-            type: 'training',
-            title: 'Session Booked',
-            message: `Your session with ${coach?.full_name} on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been confirmed.`,
-            link: createPageUrl('MyBookings'),
-            priority: 'high'
-          });
-        }
 
-        // Send email to coach
-        if (coach?.email) {
-          await base44.functions.invoke('sendBookingEmail', {
-            to: coach.email,
-            subject: `New Booking - ${booking.player_name}`,
-            booking: { 
-              ...booking, 
-              location_info: locationInfo,
-              booked_by_name: user?.full_name || booking.parent_email
-            },
-            type: 'confirmation_coach'
-          });
-          
-          // Create notification for coach
-          await base44.entities.Notification.create({
-            user_email: coach.email,
-            type: 'training',
-            title: 'New Booking',
-            message: `${booking.player_name} booked ${booking.service_name} on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time}`,
-            link: createPageUrl('BookingsTable'),
-            priority: 'medium'
-          });
+          // Create notifications for all
+          for (const email of allRecipients) {
+            await base44.entities.Notification.create({
+              user_email: email,
+              type: 'training',
+              title: 'Session Booked',
+              message: `Session: ${booking.service_name} with ${coach?.full_name} on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time}`,
+              link: createPageUrl('MyBookings'),
+              priority: 'high'
+            });
+          }
         }
-        toast.success('Booking confirmed and notifications sent');
+        toast.success('Booking confirmed and notifications sent to all parties');
       } catch (error) {
         console.error('Email/Notification error:', error);
         toast.error('Booking confirmed, but notifications failed to send');

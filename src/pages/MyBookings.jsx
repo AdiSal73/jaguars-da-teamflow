@@ -51,6 +51,11 @@ export default function MyBookings() {
     queryFn: () => base44.entities.Location.list()
   });
 
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
   const currentCoach = coaches.find(c => c.email === user?.email);
   const isCoach = !!currentCoach;
 
@@ -58,45 +63,45 @@ export default function MyBookings() {
     mutationFn: async (id) => {
       const booking = bookings.find(b => b.id === id);
       await base44.entities.Booking.update(id, { status: 'cancelled' });
-      
+
       const location = locations.find(l => l.id === booking.location_id);
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
       const coach = coaches.find(c => c.id === booking.coach_id);
-      
-      // Send cancellation email to parent
-      if (booking.parent_email) {
+      const player = players.find(p => p.id === booking.player_id);
+
+      // Gather all recipients
+      const allRecipients = [];
+      if (booking.parent_email) allRecipients.push(booking.parent_email);
+      if (coach?.email) allRecipients.push(coach.email);
+      if (player?.parent_emails?.length > 0) {
+        player.parent_emails.forEach(email => {
+          if (!allRecipients.includes(email)) allRecipients.push(email);
+        });
+      }
+      if (player?.player_email && !allRecipients.includes(player.player_email)) {
+        allRecipients.push(player.player_email);
+      }
+
+      // Send cancellation email to all parties
+      if (allRecipients.length > 0) {
         await base44.functions.invoke('sendBookingEmail', {
-          to: booking.parent_email,
+          to: allRecipients[0],
+          additionalRecipients: allRecipients.slice(1),
           subject: `Booking Cancelled - ${booking.service_name}`,
           booking: { ...booking, location_info: locationInfo, booked_by_name: user?.full_name || 'Guest' },
           type: 'cancellation'
         });
-        
-        await base44.entities.Notification.create({
-          user_email: booking.parent_email,
-          type: 'training',
-          title: 'Booking Cancelled',
-          message: `Your session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been cancelled.`,
-          priority: 'high'
-        });
-      }
-      
-      // Send cancellation email to coach
-      if (coach?.email) {
-        await base44.functions.invoke('sendBookingEmail', {
-          to: coach.email,
-          subject: `Booking Cancelled - ${booking.player_name}`,
-          booking: { ...booking, location_info: locationInfo, booked_by_name: user?.full_name || booking.parent_email },
-          type: 'cancellation'
-        });
-        
-        await base44.entities.Notification.create({
-          user_email: coach.email,
-          type: 'training',
-          title: 'Booking Cancelled',
-          message: `${booking.player_name}'s session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} was cancelled.`,
-          priority: 'medium'
-        });
+
+        // Create notifications for all
+        for (const email of allRecipients) {
+          await base44.entities.Notification.create({
+            user_email: email,
+            type: 'training',
+            title: 'Booking Cancelled',
+            message: `Session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been cancelled.`,
+            priority: 'high'
+          });
+        }
       }
     },
     onSuccess: () => {
@@ -304,7 +309,7 @@ export default function MyBookings() {
                 <MessageSquare className="w-4 h-4 mr-1" />
                 Message {isCoach ? 'Player' : 'Coach'}
               </Button>
-              {isCoach && (
+              {isCoach && booking.booking_date >= today && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -318,18 +323,20 @@ export default function MyBookings() {
                   Send Reminder
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowCancelDialog(true); }} className="border-orange-300 text-orange-600 hover:bg-orange-50">
+              {booking.booking_date >= today && (
+                <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowCancelDialog(true); }} className="border-orange-300 text-orange-600 hover:bg-orange-50">
                 <X className="w-4 h-4 mr-1" />
                 Cancel Booking
-              </Button>
-              {(user?.role === 'admin' || isCoach) && (
+                </Button>
+                )}
+                {(user?.role === 'admin' || isCoach) && (
                 <Button variant="outline" size="sm" onClick={() => { setSelectedBooking(booking); setShowDeleteDialog(true); }} className="border-red-300 text-red-600 hover:bg-red-50">
                   <X className="w-4 h-4 mr-1" />
                   Delete
                 </Button>
-              )}
-            </div>
-          )}
+                )}
+                </div>
+                )}
         </CardContent>
       </Card>
     );
