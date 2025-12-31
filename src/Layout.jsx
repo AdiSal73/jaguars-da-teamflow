@@ -224,7 +224,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center justify-between h-16">
             <Link to={createPageUrl("About")} className="flex items-center gap-3 group">
               <img 
-                src="https://jaguarsidp.com/wp-content/uploads/2024/03/Jaguars-logo.png" 
+                src="https://ssprodst.blob.core.windows.net/logos/58/2821a300-9ff6-46d2-a00b-73be4dc4f316-04-02-2025-07-54-52-995.png" 
                 alt="Michigan Jaguars" 
                 className="w-10 h-10 rounded-xl shadow-lg group-hover:shadow-emerald-200 transition-all object-contain"
               />
