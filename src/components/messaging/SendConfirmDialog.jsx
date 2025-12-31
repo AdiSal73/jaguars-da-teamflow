@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Send, Mail } from 'lucide-react';
 
-export default function SendConfirmDialog({ 
+function SendConfirmDialog({ 
   open, 
   onClose, 
   onConfirm, 
