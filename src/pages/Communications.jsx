@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { MessageSquare, Send, Bell, Megaphone, Users, User, Search, Plus, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import NewMessageDialog from '../components/messaging/NewMessageDialog';
+import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
 
 export default function Communications() {
   const queryClient = useQueryClient();
@@ -28,6 +29,8 @@ export default function Communications() {
     target_team_ids: [],
     priority: 'normal'
   });
+  const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
+  const [announcementRecipients, setAnnouncementRecipients] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -250,12 +253,37 @@ export default function Communications() {
     });
   };
 
+  const handlePrepareAnnouncement = () => {
+    if (!announcementForm.title || !announcementForm.content) {
+      toast.error('Please fill in title and content');
+      return;
+    }
+
+    let recipients = [];
+    if (announcementForm.target_type === 'all') {
+      recipients = ['All users'];
+    } else if (announcementForm.target_type === 'team' && announcementForm.target_team_ids.length > 0) {
+      recipients = announcementForm.target_team_ids.map(tid => {
+        const team = teams.find(t => t.id === tid);
+        return team?.name || 'Unknown Team';
+      });
+    } else if (announcementForm.target_type === 'players') {
+      recipients = ['All players & parents'];
+    } else if (announcementForm.target_type === 'coaches') {
+      recipients = ['All coaches'];
+    }
+
+    setAnnouncementRecipients(recipients);
+    setShowAnnouncementConfirm(true);
+  };
+
   const handleCreateAnnouncement = () => {
     createAnnouncementMutation.mutate({
       ...announcementForm,
       author_name: user?.full_name,
       author_email: user?.email
     });
+    setShowAnnouncementConfirm(false);
   };
 
   return (
@@ -599,16 +627,12 @@ export default function Communications() {
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                if (confirm(`Send announcement "${announcementForm.title}" to selected recipients?`)) {
-                  handleCreateAnnouncement();
-                }
-              }}
-              disabled={!announcementForm.title || !announcementForm.content || createAnnouncementMutation.isPending}
+              onClick={handlePrepareAnnouncement}
+              disabled={!announcementForm.title || !announcementForm.content}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
             >
               <Send className="w-4 h-4 mr-2" />
-              {createAnnouncementMutation.isPending ? 'Sending...' : 'Send Announcement'}
+              Send Announcement
             </Button>
           </div>
         </DialogContent>
@@ -618,6 +642,16 @@ export default function Communications() {
         open={showNewMessageDialog}
         onClose={() => setShowNewMessageDialog(false)}
         user={user}
+      />
+      
+      <SendConfirmDialog
+        open={showAnnouncementConfirm}
+        onClose={() => setShowAnnouncementConfirm(false)}
+        onConfirm={handleCreateAnnouncement}
+        title="Send Announcement?"
+        description="This announcement will be sent via email and in-app notification."
+        recipients={announcementRecipients}
+        isLoading={createAnnouncementMutation.isPending}
       />
     </div>
   );
