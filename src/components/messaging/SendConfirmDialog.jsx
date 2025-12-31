@@ -63,3 +63,5 @@ function SendConfirmDialog({
     </Dialog>
   );
 }
+
+export default SendConfirmDialog;
