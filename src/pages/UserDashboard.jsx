@@ -22,6 +22,11 @@ export default function UserDashboard() {
     queryFn: () => base44.auth.me()
   });
 
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list()
+  });
+
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',

@@ -141,6 +141,7 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
+        { title: "My Account", url: createPageUrl("UserDashboard") },
         { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "My Availability", url: createPageUrl("coachAvailability") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
