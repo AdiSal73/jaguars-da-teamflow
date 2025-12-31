@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
+import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
 
 export default function MyBookings() {
   const queryClient = useQueryClient();
@@ -27,6 +28,8 @@ export default function MyBookings() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [coachFilter, setCoachFilter] = useState('all');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [showSendConfirm, setShowSendConfirm] = useState(false);
+  const [sendRecipient, setSendRecipient] = useState('');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -585,23 +588,36 @@ export default function MyBookings() {
                   const recipient = isCoach 
                     ? selectedBooking?.parent_email 
                     : coaches.find(c => c.id === selectedBooking?.coach_id)?.email;
-                  sendMessageMutation.mutate({
-                    to: recipient,
-                    subject: messageForm.subject,
-                    content: messageForm.content,
-                    sendNotification: true
-                  });
+                  setSendRecipient(recipient);
+                  setShowSendConfirm(true);
                 }}
                 disabled={!messageForm.subject || !messageForm.content || sendMessageMutation.isPending}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {sendMessageMutation.isPending ? 'Sending...' : 'Send Message'}
+                Send Message
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+
+      <SendConfirmDialog
+        open={showSendConfirm}
+        onClose={() => setShowSendConfirm(false)}
+        onConfirm={() => {
+          sendMessageMutation.mutate({
+            to: sendRecipient,
+            subject: messageForm.subject,
+            content: messageForm.content,
+            sendNotification: true
+          });
+          setShowSendConfirm(false);
+        }}
+        title="Send Message?"
+        recipients={[sendRecipient]}
+        isLoading={sendMessageMutation.isPending}
+      />
+      </div>
+      );
+      }

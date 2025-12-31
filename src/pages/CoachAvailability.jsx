@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy, Filter } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy, Filter, User } from 'lucide-react';
+import { parse, addMinutes } from 'date-fns';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -293,7 +294,7 @@ export default function CoachAvailability() {
     setShowSlotDialog(true);
   };
 
-  const bookingPageUrl = `${window.location.origin}${window.location.pathname}#/BookingPage?coach=${currentCoach?.id}`;
+  const bookingPageUrl = `${window.location.origin}${window.location.pathname}#/PublicCoachBooking?coach=${currentCoach?.id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingPageUrl);
@@ -579,58 +580,89 @@ export default function CoachAvailability() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {getSlotsForDate(selectedDate).map(slot => (
-                        <div
-                          key={slot.id}
-                          onClick={() => handleSlotClick({ stopPropagation: () => {} }, slot)}
-                          className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                            slot.isBooked
-                              ? 'border-red-200 bg-red-50 hover:bg-red-100'
-                              : slot.is_recurring_instance
-                              ? 'border-purple-200 bg-purple-50 hover:bg-purple-100'
-                              : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="font-bold text-sm flex items-center gap-2">
-                              <Clock className="w-4 h-4" />
-                              {slot.start_time} - {slot.end_time}
-                            </div>
-                            {slot.is_recurring_instance && (
-                              <Badge className="text-[9px] bg-purple-500 text-white">
-                                <Repeat className="w-2.5 h-2.5 mr-0.5" />
-                                Recurring
-                              </Badge>
-                            )}
-                            {slot.isBooked && (
-                              <Badge className="text-[9px] bg-red-500 text-white">Booked</Badge>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            {slot.service_names?.map(serviceName => {
-                              const service = services.find(s => s.name === serviceName);
-                              return (
-                                <div key={serviceName} className="flex items-center gap-2 text-xs">
-                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: service?.color || '#10b981' }}></div>
-                                  <span>{serviceName}</span>
-                                  <span className="text-slate-500">({service?.duration || 60} min)</span>
-                                </div>
+                      {(() => {
+                        const dateSlots = getSlotsForDate(selectedDate);
+                        const individualSlots = [];
+                        
+                        // Break down each TimeSlot into individual bookable segments
+                        dateSlots.forEach(slot => {
+                          slot.service_names?.forEach(serviceName => {
+                            const service = services.find(s => s.name === serviceName);
+                            if (!service) return;
+                            
+                            const startTime = parse(slot.start_time, 'HH:mm', new Date());
+                            const endTime = parse(slot.end_time, 'HH:mm', new Date());
+                            const serviceDuration = service.duration;
+                            const bufferBefore = slot.buffer_before || 0;
+                            const bufferAfter = slot.buffer_after || 0;
+                            
+                            let currentTime = addMinutes(startTime, bufferBefore);
+                            
+                            while (addMinutes(currentTime, serviceDuration + bufferAfter) <= endTime) {
+                              const slotStartTime = format(currentTime, 'HH:mm');
+                              const slotEndTime = format(addMinutes(currentTime, serviceDuration), 'HH:mm');
+                              
+                              const booking = bookings.find(b => 
+                                b.booking_date === slot.date &&
+                                b.start_time === slotStartTime &&
+                                b.service_name === serviceName &&
+                                b.status !== 'cancelled'
                               );
-                            })}
-                          </div>
-                          <div className="mt-2 text-xs text-slate-600 flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {locations.find(l => l.id === slot.location_id)?.name || 'Location'}
-                          </div>
-                          {slot.isBooked && (
-                            <div className="mt-2 pt-2 border-t border-red-200">
-                              <div className="text-xs font-semibold text-red-700">
-                                Booked by: {slot.bookingInfo?.player_name}
+                              
+                              individualSlots.push({
+                                parentSlot: slot,
+                                start_time: slotStartTime,
+                                end_time: slotEndTime,
+                                service: service,
+                                isBooked: !!booking,
+                                bookingInfo: booking,
+                                location_id: slot.location_id,
+                                is_recurring_instance: slot.is_recurring_instance
+                              });
+                              
+                              currentTime = addMinutes(currentTime, serviceDuration + bufferBefore + bufferAfter);
+                            }
+                          });
+                        });
+                        
+                        return individualSlots.map((slot, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => slot.parentSlot && handleSlotClick({ stopPropagation: () => {} }, slot.parentSlot)}
+                            className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                              slot.isBooked
+                                ? 'border-red-200 bg-red-50 hover:bg-red-100'
+                                : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="font-bold text-sm flex items-center gap-2">
+                                <Clock className="w-4 h-4" />
+                                {slot.start_time} - {slot.end_time}
                               </div>
+                              <Badge className={`text-[9px] ${slot.isBooked ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                                {slot.isBooked ? 'Booked' : 'Open'}
+                              </Badge>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-2 text-xs mb-1">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: slot.service.color }}></div>
+                              <span className="font-semibold">{slot.service.name}</span>
+                              <span className="text-slate-500">({slot.service.duration} min)</span>
+                            </div>
+                            <div className="text-xs text-slate-600 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {locations.find(l => l.id === slot.location_id)?.name || 'Location'}
+                            </div>
+                            {slot.isBooked && (
+                              <div className="mt-2 pt-2 border-t border-red-200">
+                                <div className="text-xs font-semibold text-red-700">
+                                  Player: {slot.bookingInfo?.player_name}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ));
+                      })()}
                     </div>
                   )}
                 </CardContent>

@@ -583,7 +583,11 @@ export default function BookingPage() {
                     </div>
                     <div className="flex justify-between border-b border-emerald-200 pb-3">
                       <span className="text-slate-600 font-semibold">Date</span>
-                      <span className="font-bold">{selectedBookableSlot && format(new Date(selectedBookableSlot.date), 'EEEE, MMMM d, yyyy')}</span>
+                      <span className="font-bold">{selectedBookableSlot && (() => {
+                        const [year, month, day] = selectedBookableSlot.date.split('-').map(Number);
+                        const bookingDate = new Date(year, month - 1, day);
+                        return bookingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                      })()}</span>
                     </div>
                     <div className="flex justify-between border-b border-emerald-200 pb-3">
                       <span className="text-slate-600 font-semibold">Time</span>
