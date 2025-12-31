@@ -35,31 +35,61 @@ export default function PublicCoachBooking() {
     queryKey: ['coach', coachId],
     queryFn: async () => {
       if (!coachId) return null;
-      const coaches = await base44.entities.Coach.filter({ id: coachId });
-      return coaches[0] || null;
+      const response = await fetch(`${base44.apiUrl}/api/entities/Coach/${coachId}`, {
+        headers: { 'x-app-id': base44.appId }
+      });
+      if (!response.ok) return null;
+      return await response.json();
     },
     enabled: !!coachId
   });
 
   const { data: timeSlots = [] } = useQuery({
     queryKey: ['timeSlots', coachId],
-    queryFn: () => base44.entities.TimeSlot.filter({ coach_id: coachId }),
+    queryFn: async () => {
+      const response = await fetch(`${base44.apiUrl}/api/entities/TimeSlot?coach_id=${coachId}`, {
+        headers: { 'x-app-id': base44.appId }
+      });
+      if (!response.ok) return [];
+      return await response.json();
+    },
     enabled: !!coachId
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => base44.entities.Booking.list()
+    queryFn: async () => {
+      const response = await fetch(`${base44.apiUrl}/api/entities/Booking`, {
+        headers: { 'x-app-id': base44.appId }
+      });
+      if (!response.ok) return [];
+      return await response.json();
+    }
   });
 
   const { data: locations = [] } = useQuery({
     queryKey: ['locations'],
-    queryFn: () => base44.entities.Location.list()
+    queryFn: async () => {
+      const response = await fetch(`${base44.apiUrl}/api/entities/Location`, {
+        headers: { 'x-app-id': base44.appId }
+      });
+      if (!response.ok) return [];
+      return await response.json();
+    }
   });
 
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
-      return await base44.entities.Booking.create(data);
+      const response = await fetch(`${base44.apiUrl}/api/entities/Booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-app-id': base44.appId
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create booking');
+      return await response.json();
     },
     onSuccess: async (booking) => {
       queryClient.invalidateQueries(['bookings']);
@@ -69,20 +99,34 @@ export default function PublicCoachBooking() {
       
       try {
         // Send email to client
-        await base44.functions.invoke('sendBookingEmail', {
-          to: booking.parent_email,
-          subject: `Booking Confirmed - ${booking.service_name}`,
-          booking: { ...booking, location_info: locationInfo, booked_by_name: 'Guest' },
-          type: 'confirmation_client'
+        const response = await fetch(`${base44.apiUrl}/api/functions/sendBookingEmail`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-app-id': base44.appId
+          },
+          body: JSON.stringify({
+            to: booking.parent_email,
+            subject: `Booking Confirmed - ${booking.service_name}`,
+            booking: { ...booking, location_info: locationInfo, booked_by_name: 'Guest' },
+            type: 'confirmation_client'
+          })
         });
 
         // Send email to coach
         if (coach?.email) {
-          await base44.functions.invoke('sendBookingEmail', {
-            to: coach.email,
-            subject: `New Booking - ${booking.player_name}`,
-            booking: { ...booking, location_info: locationInfo, booked_by_name: booking.parent_email },
-            type: 'confirmation_coach'
+          await fetch(`${base44.apiUrl}/api/functions/sendBookingEmail`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-app-id': base44.appId
+            },
+            body: JSON.stringify({
+              to: coach.email,
+              subject: `New Booking - ${booking.player_name}`,
+              booking: { ...booking, location_info: locationInfo, booked_by_name: booking.parent_email },
+              type: 'confirmation_coach'
+            })
           });
         }
         

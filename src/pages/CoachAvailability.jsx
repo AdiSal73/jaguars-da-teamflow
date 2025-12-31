@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy, Filter, User } from 'lucide-react';
+import { Calendar, Plus, Trash2, Save, Clock, MapPin, Repeat, ChevronLeft, ChevronRight, Share2, Copy, Filter, User, Settings } from 'lucide-react';
+import PublicShareButton from '../components/booking/PublicShareButton';
 import { parse, addMinutes } from 'date-fns';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -349,10 +350,13 @@ export default function CoachAvailability() {
             </h1>
             <p className="text-slate-600 mt-1">Set your available times for player bookings</p>
           </div>
-          <Button onClick={() => setShowShareDialog(true)} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-            <Share2 className="w-4 h-4" />
-            Share Booking Link
-          </Button>
+          <div className="flex gap-2">
+            <PublicShareButton coachId={currentCoach?.id} coachName={currentCoach?.full_name} />
+            <Button onClick={() => setShowServiceDialog(true)} variant="outline">
+              <Settings className="w-4 h-4 mr-2" />
+              Services
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -991,34 +995,7 @@ export default function CoachAvailability() {
           </DialogContent>
         </Dialog>
 
-        {/* Share Dialog */}
-        <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-emerald-600" />
-                Share Your Booking Page
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                <p className="text-sm text-emerald-900 mb-3">
-                  Share this link with players and parents. They can book sessions with you even if they're not on your teams.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={bookingPageUrl}
-                    readOnly
-                    className="flex-1 bg-white font-mono text-xs"
-                  />
-                  <Button onClick={handleCopyLink} variant="outline" size="icon">
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+
 
         {/* Success Dialog */}
         <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
