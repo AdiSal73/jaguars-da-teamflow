@@ -31,8 +31,6 @@ export default function Communications() {
     target_team_ids: [],
     priority: 'normal'
   });
-  const [showAnnouncementConfirm, setShowAnnouncementConfirm] = useState(false);
-  const [announcementRecipients, setAnnouncementRecipients] = useState([]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
