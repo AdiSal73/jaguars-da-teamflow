@@ -275,11 +275,11 @@ export default function PublicCoachBooking() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']?.map(day => (
                   <div key={day} className="text-center text-xs font-semibold text-slate-600 py-2">{day}</div>
                 ))}
                 
-                {calendarDays.map((day, idx) => {
+                {calendarDays?.map((day, idx) => {
                   const daySlots = getBookableSlotsForDate(day);
                   const isCurrentMonth = isSameMonth(day, currentMonth);
                   const isToday = isSameDay(day, new Date());
@@ -330,7 +330,7 @@ export default function PublicCoachBooking() {
                   {getBookableSlotsForDate(selectedDate).length === 0 ? (
                     <p className="text-center text-slate-500 py-8">No available slots</p>
                   ) : (
-                    getBookableSlotsForDate(selectedDate).map((bookableSlot, idx) => (
+                    getBookableSlotsForDate(selectedDate)?.map((bookableSlot, idx) => (
                       <button
                         key={idx}
                         onClick={() => !bookableSlot.isBooked && handleSlotClick(bookableSlot)}
