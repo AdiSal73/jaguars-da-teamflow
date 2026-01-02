@@ -1,17 +1,18 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
+const colorMap = {
+  'Indispensable Player': 'bg-purple-600 text-white border-purple-700',
+  'GA Starter': 'bg-emerald-600 text-white border-emerald-700',
+  'GA Rotation': 'bg-emerald-400 text-white border-emerald-500',
+  'Aspire Starter': 'bg-blue-600 text-white border-blue-700',
+  'Aspire Rotation': 'bg-blue-400 text-white border-blue-500',
+  'United Starter': 'bg-orange-600 text-white border-orange-700',
+  'United Rotation': 'bg-orange-400 text-white border-orange-500'
+};
+
 export function getRoleBadgeColor(role) {
-  const colors = {
-    'Indispensable Player': 'bg-purple-600 text-white border-purple-700',
-    'GA Starter': 'bg-emerald-600 text-white border-emerald-700',
-    'GA Rotation': 'bg-emerald-400 text-white border-emerald-500',
-    'Aspire Starter': 'bg-blue-600 text-white border-blue-700',
-    'Aspire Rotation': 'bg-blue-400 text-white border-blue-500',
-    'United Starter': 'bg-orange-600 text-white border-orange-700',
-    'United Rotation': 'bg-orange-400 text-white border-orange-500'
-  };
-  return colors[role] || 'bg-slate-400 text-white border-slate-500';
+  return colorMap[role] || 'bg-slate-400 text-white border-slate-500';
 }
 
 export function TeamRoleBadge({ role, size = 'default' }) {
