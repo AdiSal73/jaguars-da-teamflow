@@ -131,7 +131,7 @@ export default function Tryouts() {
       teamPlayers = teamPlayers.filter((p) => isTrappedPlayer(p.date_of_birth));
     }
 
-    const playersWithTryout = teamPlayers.map((p) => getPlayerTryoutData(p));
+    const playersWithTryout = teamPlayers?.map((p) => getPlayerTryoutData(p)) || [];
 
     return playersWithTryout.sort((a, b) => {
       if (sortBy === 'team') {
@@ -215,7 +215,7 @@ export default function Tryouts() {
   });
 
   const getAllPlayersWithTryout = () => {
-    const allPlayersData = players.map((p) => getPlayerTryoutData(p));
+    const allPlayersData = players?.map((p) => getPlayerTryoutData(p)) || [];
     let filtered = allPlayersData;
 
     if (!showAllPlayers) {
@@ -403,13 +403,13 @@ export default function Tryouts() {
         <CardContent className="p-3 md:p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
           <div className="space-y-3 md:space-y-4">
             {teams
-              .sort((a, b) => {
+              ?.sort((a, b) => {
                   const pA = calculateTeamPriority(a);
                   const pB = calculateTeamPriority(b);
                   if (pA !== pB) return pA - pB;
                   return (typeof a.name === 'string' ? a.name : '').localeCompare(typeof b.name === 'string' ? b.name : '');
               })
-              .map((team) => {
+              ?.map((team) => {
               const teamPlayers = getTeamPlayers(team);
               teamPlayers.sort((a, b) => (a.tryout?.team_ranking || 9999) - (b.tryout?.team_ranking || 9999));
 
@@ -444,7 +444,7 @@ export default function Tryouts() {
                         {teamPlayers.length === 0 ? (
                           <p className="text-center text-slate-400 text-xs md:text-sm py-6 md:py-8 italic">Drop players here</p>
                         ) : (
-                          teamPlayers.map((player, index) => (
+                          teamPlayers?.map((player, index) => (
                             <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                               {(provided, snapshot) => (
                                 <PlayerHoverTooltip 
@@ -601,15 +601,15 @@ export default function Tryouts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
-                    {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].sort((a, b) => {
+                    {[...new Set(teams?.map((t) => t.age_group).filter(Boolean) || [])].sort((a, b) => {
                       const extractAge = (ag) => {
                         const match = ag?.match(/U-?(\d+)/i);
                         return match ? parseInt(match[1]) : 0;
                       };
                       return extractAge(b) - extractAge(a);
-                    }).map((ageGroup) =>
+                    })?.map((ageGroup) =>
                     <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
-                    )}
+                    ) || []}
                   </SelectContent>
                 </Select>
               </div>
@@ -641,7 +641,7 @@ export default function Tryouts() {
                     <SelectItem value="all">All Coaches</SelectItem>
                     {coaches?.map((coach) =>
                     <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
-                    )}
+                    ) || []}
                   </SelectContent>
                 </Select>
               </div>
@@ -669,7 +669,7 @@ export default function Tryouts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Seasons</SelectItem>
-                    {[...new Set(teams.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean))].sort().reverse().map(season => (
+                    {[...new Set(teams?.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean) || [])].sort().reverse()?.map(season => (
                       <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>

@@ -7,10 +7,10 @@ import { Badge } from '@/components/ui/badge';
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
 
 export default function TeamAnalyticsDashboard({ team, players, evaluations, assessments, tryouts }) {
-  const teamPlayers = players.filter(p => p.team_id === team.id);
-  const teamEvaluations = evaluations.filter(e => teamPlayers.some(p => p.id === e.player_id));
-  const teamAssessments = assessments.filter(a => teamPlayers.some(p => p.id === a.player_id));
-  const teamTryouts = tryouts.filter(t => teamPlayers.some(p => p.id === t.player_id));
+  const teamPlayers = players?.filter(p => p.team_id === team.id) || [];
+  const teamEvaluations = evaluations?.filter(e => teamPlayers.some(p => p.id === e.player_id)) || [];
+  const teamAssessments = assessments?.filter(a => teamPlayers.some(p => p.id === a.player_id)) || [];
+  const teamTryouts = tryouts?.filter(t => teamPlayers.some(p => p.id === t.player_id)) || [];
 
   const avgEvalMetrics = React.useMemo(() => {
     if (teamEvaluations.length === 0) return null;
@@ -23,7 +23,7 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
 
     const averages = {};
     metrics.forEach(metric => {
-      const values = teamEvaluations.map(e => e[metric]).filter(v => v != null);
+      const values = teamEvaluations?.map(e => e[metric]).filter(v => v != null) || [];
       averages[metric] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     });
 
@@ -40,25 +40,25 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
 
   const positionDistribution = React.useMemo(() => {
     const dist = {};
-    teamPlayers.forEach(p => {
+    teamPlayers?.forEach(p => {
       const pos = p.primary_position || 'Unassigned';
       dist[pos] = (dist[pos] || 0) + 1;
     });
-    return Object.entries(dist).map(([position, count]) => ({ position, count }));
+    return Object.entries(dist)?.map(([position, count]) => ({ position, count })) || [];
   }, [teamPlayers]);
 
   const roleDistribution = React.useMemo(() => {
     const dist = {};
-    teamTryouts.forEach(t => {
+    teamTryouts?.forEach(t => {
       const role = t.team_role || 'Unassigned';
       dist[role] = (dist[role] || 0) + 1;
     });
-    return Object.entries(dist).map(([role, count]) => ({ role, count }));
+    return Object.entries(dist)?.map(([role, count]) => ({ role, count })) || [];
   }, [teamTryouts]);
 
   const physicalTrend = React.useMemo(() => {
     const byMonth = {};
-    teamAssessments.forEach(a => {
+    teamAssessments?.forEach(a => {
       const month = new Date(a.assessment_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (!byMonth[month]) {
         byMonth[month] = { month, speed: [], power: [], endurance: [], agility: [] };
@@ -69,7 +69,7 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
       byMonth[month].agility.push(a.agility_score || 0);
     });
 
-    return Object.values(byMonth).map(m => ({
+    return Object.values(byMonth)?.map(m => ({
       month: m.month,
       Speed: (m.speed.reduce((a, b) => a + b, 0) / m.speed.length).toFixed(0),
       Power: (m.power.reduce((a, b) => a + b, 0) / m.power.length).toFixed(0),
@@ -80,15 +80,15 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
 
   const topPerformers = React.useMemo(() => {
     return teamPlayers
-      .map(p => {
-        const playerEvals = evaluations.filter(e => e.player_id === p.id);
+      ?.map(p => {
+        const playerEvals = evaluations?.filter(e => e.player_id === p.id) || [];
         const avgScore = playerEvals.length > 0 
           ? playerEvals.reduce((sum, e) => sum + (e.overall_score || 0), 0) / playerEvals.length 
           : 0;
         return { ...p, avgScore };
       })
-      .sort((a, b) => b.avgScore - a.avgScore)
-      .slice(0, 5);
+      ?.sort((a, b) => b.avgScore - a.avgScore)
+      ?.slice(0, 5) || [];
   }, [teamPlayers, evaluations]);
 
   const strengthsWeaknesses = React.useMemo(() => {
@@ -103,11 +103,11 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
       { key: 'building_out', label: 'Building Out' }
     ];
 
-    const sorted = metrics.map(m => ({ ...m, value: avgEvalMetrics[m.key] || 0 })).sort((a, b) => b.value - a.value);
+    const sorted = metrics?.map(m => ({ ...m, value: avgEvalMetrics[m.key] || 0 }))?.sort((a, b) => b.value - a.value) || [];
     
     return {
-      strengths: sorted.slice(0, 3),
-      weaknesses: sorted.slice(-3).reverse()
+      strengths: sorted?.slice(0, 3) || [],
+      weaknesses: sorted?.slice(-3)?.reverse() || []
     };
   }, [avgEvalMetrics]);
 
@@ -216,7 +216,7 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
           <CardContent className="pt-4">
             {strengthsWeaknesses.strengths.length > 0 ? (
               <div className="space-y-3">
-                {strengthsWeaknesses.strengths.map((s, i) => (
+                {strengthsWeaknesses.strengths?.map((s, i) => (
                   <div key={s.key} className="flex items-center justify-between">
                     <span className="text-sm text-slate-700">{s.label}</span>
                     <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
           <CardContent className="pt-4">
             {strengthsWeaknesses.weaknesses.length > 0 ? (
               <div className="space-y-3">
-                {strengthsWeaknesses.weaknesses.map((w, i) => (
+                {strengthsWeaknesses.weaknesses?.map((w, i) => (
                   <div key={w.key} className="flex items-center justify-between">
                     <span className="text-sm text-slate-700">{w.label}</span>
                     <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function TeamAnalyticsDashboard({ team, players, evaluations, ass
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-2">
-            {topPerformers.map((player, index) => (
+            {topPerformers?.map((player, index) => (
               <div key={player.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">

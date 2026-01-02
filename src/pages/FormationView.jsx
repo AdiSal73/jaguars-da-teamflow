@@ -248,8 +248,8 @@ export default function FormationView() {
   const team = teams.find((t) => t.id === selectedTeam) || (selectedAgeGroup !== 'all' ? { name: `${selectedAgeGroup} Players` } : { name: 'All Players' });
 
   const getPlayersForPosition = useCallback((positionId) => {
-    const posPlayers = players.filter((player) => player.primary_position === positionId);
-    const withTryout = posPlayers.map((p) => {
+    const posPlayers = players?.filter((player) => player.primary_position === positionId) || [];
+    const withTryout = posPlayers?.map((p) => {
       const tryout = tryouts.find((t) => t.player_id === p.id);
       return { ...p, tryout };
     });
@@ -260,9 +260,9 @@ export default function FormationView() {
     });
   }, [players, tryouts]);
 
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
-  const uniqueBirthYears = [...new Set(allPlayers.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
-  const uniqueCurrentTeams = [...new Set(allPlayers.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
+  const uniqueAgeGroups = [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort();
+  const uniqueBirthYears = [...new Set(allPlayers?.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean) || [])].sort((a, b) => b - a);
+  const uniqueCurrentTeams = [...new Set(allPlayers?.map(p => teams?.find(t => t.id === p.team_id)?.name).filter(Boolean) || [])].sort();
 
   const getPlayerWithTryoutData = (playerId) => {
     const player = allPlayers.find(p => p.id === playerId);
@@ -378,7 +378,7 @@ export default function FormationView() {
       age_group: selectedAgeGroup !== 'all' ? selectedAgeGroup : null,
       base_formation: selectedFormation,
       positions: formationPositions,
-      player_assignments: formationPositions.map(pos => ({
+      player_assignments: formationPositions?.map(pos => ({
         position_id: pos.id,
         player_ids: getPlayersForPosition(pos.id).map(p => p.id)
       })),
@@ -535,7 +535,7 @@ export default function FormationView() {
               <Select value={selectedFormation} onValueChange={setSelectedFormation}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.keys(formations).map((key) => (
+                  {Object.keys(formations)?.map((key) => (
                     <SelectItem key={key} value={key}>{formations[key].name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -547,7 +547,7 @@ export default function FormationView() {
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {teams.map((team) => (
+                  {teams?.map((team) => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -559,7 +559,7 @@ export default function FormationView() {
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Ages</SelectItem>
-                  {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].map((ageGroup) => (
+                  {[...new Set(teams?.map((t) => t.age_group).filter(Boolean) || [])].map((ageGroup) => (
                     <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
                   ))}
                 </SelectContent>
@@ -574,7 +574,7 @@ export default function FormationView() {
                 }}>
                   <SelectTrigger className="h-9 text-xs flex-1"><SelectValue placeholder="Load..." /></SelectTrigger>
                   <SelectContent>
-                    {savedFormations.map(sf => (
+                    {savedFormations?.map(sf => (
                       <SelectItem key={sf.id} value={sf.id}>
                         {sf.is_default && <Star className="w-3 h-3 inline mr-1 text-yellow-500" />}
                         {sf.name}
@@ -608,7 +608,7 @@ export default function FormationView() {
                     <rect x="30" y="134" width="40" height="6" fill="none" stroke="#10b981" strokeWidth="0.4" />
                   </svg>
 
-                  {formation.positions.map((position) => {
+                  {formation.positions?.map((position) => {
                     const positionPlayers = getPlayersForPosition(position.id);
                     return (
                       <div
@@ -648,7 +648,7 @@ export default function FormationView() {
                                 {position.label}
                               </div>
                               <div className="space-y-1 overflow-y-auto" style={{ maxHeight: `${(position.height || 180) - 30}px` }}>
-                                {positionPlayers.map((player, index) => (
+                                {positionPlayers?.map((player, index) => (
                                   <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
                                     {(dragProvided, dragSnapshot) => (
                                       <div
@@ -751,7 +751,7 @@ export default function FormationView() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Age Groups</SelectItem>
-                          {uniqueAgeGroups.map(ag => (
+                          {uniqueAgeGroups?.map(ag => (
                             <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                           ))}
                         </SelectContent>
@@ -760,7 +760,7 @@ export default function FormationView() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Birth Year" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Birth Years</SelectItem>
-                          {uniqueBirthYears.map(year => (
+                          {uniqueBirthYears?.map(year => (
                             <SelectItem key={year} value={year}>{year}</SelectItem>
                           ))}
                         </SelectContent>
@@ -769,7 +769,7 @@ export default function FormationView() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Branches</SelectItem>
-                          {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield'].map(branch => (
+                          {['CW3', 'Dearborn', 'Downriver', 'Genesee', 'Huron Valley', 'Jackson', 'Lansing', 'Marshall', 'Northville', 'Novi', 'Rochester Romeo', 'West Bloomfield']?.map(branch => (
                             <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                           ))}
                         </SelectContent>
@@ -778,7 +778,7 @@ export default function FormationView() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Team Role" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Roles</SelectItem>
-                          {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation'].map(role => (
+                          {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation']?.map(role => (
                             <SelectItem key={role} value={role}>{role}</SelectItem>
                           ))}
                           <SelectItem value="none">No Data</SelectItem>
@@ -788,7 +788,7 @@ export default function FormationView() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Current Team" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Teams</SelectItem>
-                          {uniqueCurrentTeams.map(teamName => (
+                          {uniqueCurrentTeams?.map(teamName => (
                             <SelectItem key={teamName} value={teamName}>{teamName}</SelectItem>
                           ))}
                         </SelectContent>
@@ -832,7 +832,7 @@ export default function FormationView() {
                   </CollapsibleContent>
                 </Collapsible>
                 <div className="space-y-1.5 p-2.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'calc(100vh - 450px)' }}>
-                  {unassignedPlayers.map((player, index) => {
+                  {unassignedPlayers?.map((player, index) => {
                     const team = teams.find(t => t.id === player.team_id);
                     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
                     const isTrapped = player.date_of_birth ? (() => {

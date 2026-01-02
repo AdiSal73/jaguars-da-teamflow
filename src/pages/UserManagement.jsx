@@ -358,7 +358,7 @@ export default function UserManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map(user => {
+                  {users?.map(user => {
                     const userRole = getUserRole(user);
                     return (
                       <TableRow key={user.id}>
@@ -375,7 +375,7 @@ export default function UserManagement() {
                           </Badge>
                           {userRole === 'parent' && (user.player_ids || []).length > 0 && (
                             <span className="ml-2 text-xs text-slate-500">
-                              → {(user.player_ids || []).map(pid => players.find(p => p.id === pid)?.full_name).filter(Boolean).join(', ') || 'Unknown'}
+                              → {(user.player_ids || [])?.map(pid => players?.find(p => p.id === pid)?.full_name).filter(Boolean).join(', ') || 'Unknown'}
                             </span>
                           )}
                         </TableCell>
@@ -408,7 +408,7 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
 
-        {['admin', 'coach', 'user', 'parent'].map(role => (
+        {['admin', 'coach', 'user', 'parent']?.map(role => (
           <TabsContent key={role} value={role}>
             <Card className="border-none shadow-lg">
               <CardHeader>
@@ -416,7 +416,7 @@ export default function UserManagement() {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {Object.keys(permissionLabels).map(permission => (
+                  {Object.keys(permissionLabels)?.map(permission => (
                     <div key={permission} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                       <label htmlFor={`${role}-${permission}`} className="font-medium text-slate-900 cursor-pointer">
                         {permissionLabels[permission]}
@@ -496,7 +496,7 @@ export default function UserManagement() {
               <div>
                 <Label className="mb-2 block">Assigned Players (Multiple)</Label>
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
-                  {players.map(player => (
+                  {players?.map(player => (
                     <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
                       <input
                         type="checkbox"
@@ -571,7 +571,7 @@ export default function UserManagement() {
               <div>
                 <Label className="mb-2 block">Assign to Players (Optional)</Label>
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
-                  {players.map(player => (
+                  {players?.map(player => (
                     <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
                       <input
                         type="checkbox"
