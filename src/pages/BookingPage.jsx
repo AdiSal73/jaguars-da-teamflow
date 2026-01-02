@@ -103,7 +103,7 @@ export default function BookingPage() {
       return coach ? [coach] : [];
     }
     
-    if (user && myTeamIds.length > 0) {
+    if (user && myTeamIds?.length > 0) {
       return coaches.filter(c => {
         if (c.booking_enabled === false) return false;
         if (!c.team_ids?.length) return false;
@@ -278,13 +278,13 @@ export default function BookingPage() {
       return;
     }
 
-    if (user && myPlayers.length > 1 && !selectedPlayer) {
+    if (user && myPlayers?.length > 1 && !selectedPlayer) {
       toast.error('Please select a player');
       return;
     }
 
-    const playerName = selectedPlayer?.full_name || myPlayers[0]?.full_name || bookingForm.player_name;
-    const playerId = selectedPlayer?.id || myPlayers[0]?.id || null;
+    const playerName = selectedPlayer?.full_name || myPlayers?.[0]?.full_name || bookingForm.player_name;
+    const playerId = selectedPlayer?.id || myPlayers?.[0]?.id || null;
     const parentEmail = user?.email || bookingForm.parent_email;
 
     createBookingMutation.mutate({
@@ -495,7 +495,7 @@ export default function BookingPage() {
               <DialogTitle>Booking Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              {user && myPlayers.length > 1 && (
+              {user && myPlayers?.length > 1 && (
                 <div>
                   <Label>Select Player *</Label>
                   <Select value={selectedPlayer?.id || ''} onValueChange={(id) => setSelectedPlayer(myPlayers.find(p => p.id === id))}>
@@ -541,7 +541,7 @@ export default function BookingPage() {
                   }}
                   disabled={
                     (!user && (!bookingForm.player_name || !bookingForm.parent_email)) ||
-                    (user && myPlayers.length > 1 && !selectedPlayer)
+                    (user && myPlayers?.length > 1 && !selectedPlayer)
                   }
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 >
@@ -572,7 +572,7 @@ export default function BookingPage() {
                   <div className="bg-emerald-50 p-6 rounded-xl space-y-3">
                     <div className="flex justify-between border-b border-emerald-200 pb-3">
                       <span className="text-slate-600 font-semibold">Player Name</span>
-                      <span className="font-bold">{selectedPlayer?.full_name || myPlayers[0]?.full_name || bookingForm.player_name}</span>
+                      <span className="font-bold">{selectedPlayer?.full_name || myPlayers?.[0]?.full_name || bookingForm.player_name}</span>
                     </div>
                     <div className="flex justify-between border-b border-emerald-200 pb-3">
                       <span className="text-slate-600 font-semibold">Coach</span>
