@@ -140,10 +140,23 @@ export default function BookingsTable() {
     }
   });
 
+  const deleteBookingMutation = useMutation({
+    mutationFn: (id) => base44.entities.Booking.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bookings']);
+      setEditingBooking(null);
+      toast.success('Booking deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Delete booking error:', error);
+      toast.error(`Failed to delete booking: ${error.message}`);
+    }
+  });
+
   const filteredBookings = useMemo(() => {
     let filtered = bookings;
     
-    // Coaches only see their own bookings
+    // Coaches only see their own bookings (admins see all)
     if (currentCoach && !isAdmin) {
       filtered = filtered.filter(b => b.coach_id === currentCoach.id);
     }
@@ -371,29 +384,31 @@ export default function BookingsTable() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingBooking(booking)}
-                            className="h-7 px-2"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          {booking.parent_email && booking.status === 'confirmed' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => sendReminderMutation.mutate(booking)}
-                              className="h-7 px-2"
-                            >
-                              <Mail className="w-3 h-3" />
-                            </Button>
-                          )}
-                          {booking.status === 'confirmed' && (
-                            <BookingCalendarSync booking={booking} coach={coach} location={location} />
-                          )}
-                        </div>
+                       <div className="flex gap-1">
+                         {isAdmin && (
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => setEditingBooking(booking)}
+                             className="h-7 px-2"
+                           >
+                             <Edit className="w-3 h-3" />
+                           </Button>
+                         )}
+                         {booking.parent_email && booking.status === 'confirmed' && (
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => sendReminderMutation.mutate(booking)}
+                             className="h-7 px-2"
+                           >
+                             <Mail className="w-3 h-3" />
+                           </Button>
+                         )}
+                         {booking.status === 'confirmed' && (
+                           <BookingCalendarSync booking={booking} coach={coach} location={location} />
+                         )}
+                       </div>
                       </td>
                     </tr>
                   );
@@ -409,6 +424,15 @@ export default function BookingsTable() {
           </div>
         </CardContent>
       </Card>
+
+      {editingBooking && (
+        <EditBookingDialog
+          booking={editingBooking}
+          onClose={() => setEditingBooking(null)}
+          onSave={(data) => updateBookingMutation.mutate({ id: editingBooking.id, data })}
+          onDelete={isAdmin ? () => deleteBookingMutation.mutate(editingBooking.id) : null}
+        />
+      )}
     </div>
   );
 }

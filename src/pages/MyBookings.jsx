@@ -354,64 +354,66 @@ export default function MyBookings() {
         </Link>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6 border-none shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-4 h-4 text-slate-600" />
-            <span className="font-semibold text-slate-900">Filters</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label className="text-xs">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Filters - Admin Only */}
+      {user?.role === 'admin' && (
+        <Card className="mb-6 border-none shadow-md">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="font-semibold text-slate-900">Filters</span>
             </div>
-            <div>
-              <Label className="text-xs">Coach</Label>
-              <Select value={coachFilter} onValueChange={setCoachFilter}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Coaches</SelectItem>
-                  {coaches.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Coach</Label>
+                <Select value={coachFilter} onValueChange={setCoachFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Coaches</SelectItem>
+                    {coaches.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">From Date</Label>
+                <Input 
+                  type="date" 
+                  value={dateRange.from} 
+                  onChange={e => setDateRange({...dateRange, from: e.target.value})}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">To Date</Label>
+                <Input 
+                  type="date" 
+                  value={dateRange.to} 
+                  onChange={e => setDateRange({...dateRange, to: e.target.value})}
+                  className="h-9"
+                />
+              </div>
             </div>
-            <div>
-              <Label className="text-xs">From Date</Label>
-              <Input 
-                type="date" 
-                value={dateRange.from} 
-                onChange={e => setDateRange({...dateRange, from: e.target.value})}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">To Date</Label>
-              <Input 
-                type="date" 
-                value={dateRange.to} 
-                onChange={e => setDateRange({...dateRange, to: e.target.value})}
-                className="h-9"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="upcoming">
         <TabsList className="mb-6 bg-slate-100">

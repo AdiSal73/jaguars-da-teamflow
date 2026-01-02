@@ -64,22 +64,25 @@ export default function Layout({ children, currentPageName }) {
   const currentCoach = typeof userRole === 'object' ? userRole : null;
   const roleType = currentCoach ? 'coach' : userRole;
 
-  // For parents, ensure players are loaded before creating menu
+  // Get all player IDs for parents
+  const parentPlayerIds = user?.player_ids || [];
+
+  // For parents, create menu items for each player
   const parentPlayerMenuItems = React.useMemo(() => {
-    if (roleType !== 'parent' || !user?.player_ids || players.length === 0) return [];
-    return user.player_ids
+    if (roleType !== 'parent' || !parentPlayerIds.length || players.length === 0) return [];
+    return parentPlayerIds
       .map(playerId => {
         const player = players.find(p => p.id === playerId);
         if (!player) return null;
         return {
-          title: player.full_name,
+          title: `${player.full_name}'s Dashboard`,
           url: `${createPageUrl('PlayerDashboard')}?id=${playerId}`,
           icon: Activity,
           roles: ["parent"]
         };
       })
       .filter(Boolean);
-  }, [roleType, user, players]);
+  }, [roleType, parentPlayerIds, players]);
 
   React.useEffect(() => {
     if (roleType && location.pathname === '/') {
@@ -141,7 +144,6 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
-        { title: "My Account", url: createPageUrl("UserDashboard") },
         { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "My Availability", url: createPageUrl("coachAvailability") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
@@ -178,6 +180,12 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("MyBookings"),
       icon: Clock,
       roles: ["user", "parent", "coach"]
+    },
+    {
+      title: "My Account",
+      url: createPageUrl("UserDashboard"),
+      icon: UserIcon,
+      roles: ["coach"]
     },
     {
       title: "Communications",
