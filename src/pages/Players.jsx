@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { isTrappedPlayer } from '../components/utils/trappedPlayer';
-import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 import {
   Dialog,
   DialogContent,
