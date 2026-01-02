@@ -4,6 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Search, ChevronDown, Users, Shield, Calendar, TrendingUp, HelpCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
+const colorMap = {
+  emerald: 'from-emerald-600 to-green-600',
+  blue: 'from-blue-600 to-cyan-600',
+  purple: 'from-purple-600 to-pink-600',
+  orange: 'from-orange-600 to-red-600',
+  cyan: 'from-cyan-600 to-blue-600',
+};
+
 export default function FAQ() {
   const [search, setSearch] = useState('');
 
