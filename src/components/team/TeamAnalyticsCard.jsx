@@ -27,7 +27,7 @@ export default function TeamAnalyticsCard({ teamId, teamName, onClose }) {
     queryKey: ['teamEvaluations', teamId],
     queryFn: async () => {
       const all = await base44.entities.Evaluation.list();
-      const playerIds = players.map(p => p.id);
+      const playerIds = players?.map(p => p.id) || [];
       return all.filter(e => playerIds.includes(e.player_id));
     },
     enabled: players.length > 0
@@ -88,7 +88,7 @@ export default function TeamAnalyticsCard({ teamId, teamName, onClose }) {
   );
 
   // Calculate comparison data
-  const comparisonData = sameClubTeams.slice(0, 4).map(team => {
+  const comparisonData = sameClubTeams?.slice(0, 4)?.map(team => {
     const teamAssess = allAssessments.filter(a => a.team_id === team.id);
     const avgScore = teamAssess.length > 0
       ? Math.round(teamAssess.reduce((sum, a) => sum + (a.overall_score || 0), 0) / teamAssess.length)

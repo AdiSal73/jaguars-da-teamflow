@@ -327,7 +327,7 @@ export default function TryoutPlayers() {
                 </div>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTryout.map(player => (
+                {filteredTryout?.map(player => (
                   <PlayerCard
                     key={player.id}
                     player={player}
@@ -368,7 +368,7 @@ export default function TryoutPlayers() {
                 </div>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredScouted.map(player => (
+                {filteredScouted?.map(player => (
                   <PlayerCard
                     key={player.id}
                     player={player}
@@ -436,7 +436,7 @@ export default function TryoutPlayers() {
                 <Select value={tryoutForm.primary_position} onValueChange={v => setTryoutForm({...tryoutForm, primary_position: v})}>
                   <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                   <SelectContent>
-                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                       <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                     ))}
                   </SelectContent>
@@ -448,7 +448,7 @@ export default function TryoutPlayers() {
                   <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                       <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                     ))}
                   </SelectContent>
@@ -529,7 +529,7 @@ export default function TryoutPlayers() {
                 <Select value={scoutForm.primary_position} onValueChange={v => setScoutForm({...scoutForm, primary_position: v})}>
                   <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                   <SelectContent>
-                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                       <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                     ))}
                   </SelectContent>
@@ -541,7 +541,7 @@ export default function TryoutPlayers() {
                   <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                    {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                       <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                     ))}
                   </SelectContent>

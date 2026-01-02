@@ -252,7 +252,7 @@ export default function ScoutingPipeline() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {PIPELINE_STAGES.map(stage => {
+          {PIPELINE_STAGES?.map(stage => {
             const stagePlayers = scoutedPlayers.filter(p => (p.pipeline_stage || 'New Lead') === stage.id);
             
             return (
@@ -273,7 +273,7 @@ export default function ScoutingPipeline() {
                       className={`p-3 min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto ${stage.bgColor}`}
                     >
                       <div className="space-y-3">
-                        {stagePlayers.map((player, index) => (
+                        {stagePlayers?.map((player, index) => (
                           <Draggable key={player.id} draggableId={player.id} index={index}>
                             {(dragProvided, dragSnapshot) => (
                               <PlayerCard player={player} provided={dragProvided} snapshot={dragSnapshot} />
@@ -334,7 +334,7 @@ export default function ScoutingPipeline() {
                     <Select value={playerForm.pipeline_stage} onValueChange={v => setPlayerForm({...playerForm, pipeline_stage: v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {PIPELINE_STAGES.map(s => (
+                        {PIPELINE_STAGES?.map(s => (
                           <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -371,7 +371,7 @@ export default function ScoutingPipeline() {
                     <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}>
                       <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                       <SelectContent>
-                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                           <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                         ))}
                       </SelectContent>
@@ -383,7 +383,7 @@ export default function ScoutingPipeline() {
                       <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value={null}>None</SelectItem>
-                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                           <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                         ))}
                       </SelectContent>
@@ -424,7 +424,7 @@ export default function ScoutingPipeline() {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  {(playerForm.video_links || []).map((video, idx) => (
+                  {(playerForm.video_links || [])?.map((video, idx) => (
                     <Card key={video.id} className="bg-slate-50">
                       <CardContent className="p-3">
                         <div className="grid md:grid-cols-2 gap-3">
@@ -463,7 +463,7 @@ export default function ScoutingPipeline() {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  {(playerForm.scouting_reports || []).map((report, idx) => (
+                  {(playerForm.scouting_reports || [])?.map((report, idx) => (
                     <Card key={report.id} className="bg-slate-50">
                       <CardContent className="p-3">
                         <div className="grid md:grid-cols-2 gap-3">
@@ -575,7 +575,7 @@ export default function ScoutingPipeline() {
                       Video Links
                     </h4>
                     <div className="space-y-2">
-                      {selectedPlayer.video_links.map(video => (
+                      {selectedPlayer.video_links?.map(video => (
                         <Card key={video.id} className="bg-blue-50">
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between">
@@ -603,7 +603,7 @@ export default function ScoutingPipeline() {
                       Scouting Reports
                     </h4>
                     <div className="space-y-2">
-                      {selectedPlayer.scouting_reports.map(report => (
+                      {selectedPlayer.scouting_reports?.map(report => (
                         <Card key={report.id} className="bg-purple-50">
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">

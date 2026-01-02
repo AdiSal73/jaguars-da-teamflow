@@ -120,10 +120,10 @@ export default function EvaluationsNew() {
     teams
   );
 
-  const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))];
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))];
-  const uniqueBirthYears = [...new Set(players.map(p => getBirthYear(p.date_of_birth)).filter(Boolean))].sort((a, b) => b - a);
+  const uniqueTeams = [...new Set(teams?.map(t => t.name).filter(Boolean) || [])];
+  const uniqueLeagues = [...new Set(teams?.map(t => t.league).filter(Boolean) || [])];
+  const uniqueAgeGroups = [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])];
+  const uniqueBirthYears = [...new Set(players?.map(p => getBirthYear(p.date_of_birth)).filter(Boolean) || [])]?.sort((a, b) => b - a) || [];
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
   const searchablePlayers = sortPlayers(
@@ -160,7 +160,7 @@ export default function EvaluationsNew() {
               <SelectTrigger className="h-10"><SelectValue placeholder="All Teams" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {uniqueTeams.map(team => (
+                {uniqueTeams?.map(team => (
                   <SelectItem key={team} value={teams.find(t => t.name === team)?.id}>{team}</SelectItem>
                 ))}
               </SelectContent>
@@ -169,7 +169,7 @@ export default function EvaluationsNew() {
               <SelectTrigger className="h-10"><SelectValue placeholder="All Leagues" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Leagues</SelectItem>
-                {uniqueLeagues.map(league => (
+                {uniqueLeagues?.map(league => (
                   <SelectItem key={league} value={league}>{league}</SelectItem>
                 ))}
               </SelectContent>
@@ -178,7 +178,7 @@ export default function EvaluationsNew() {
               <SelectTrigger className="h-10"><SelectValue placeholder="All Ages" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Age Groups</SelectItem>
-                {uniqueAgeGroups.map(ag => (
+                {uniqueAgeGroups?.map(ag => (
                   <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                 ))}
               </SelectContent>
@@ -187,7 +187,7 @@ export default function EvaluationsNew() {
               <SelectTrigger className="h-10"><SelectValue placeholder="Birth Year" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Years</SelectItem>
-                {uniqueBirthYears.map(year => (
+                {uniqueBirthYears?.map(year => (
                   <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                 ))}
               </SelectContent>
@@ -196,7 +196,7 @@ export default function EvaluationsNew() {
               <SelectTrigger className="h-10"><SelectValue placeholder="Position" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Positions</SelectItem>
-                {POSITIONS.map(pos => (
+                {POSITIONS?.map(pos => (
                   <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                 ))}
               </SelectContent>
@@ -259,7 +259,7 @@ export default function EvaluationsNew() {
       </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredPlayers.map(player => {
+        {filteredPlayers?.map(player => {
           const team = teams.find(t => t.id === player.team_id);
           const tryout = tryouts.find(t => t.player_id === player.id);
           const latestEval = getPlayerLatestEval(player.id);
@@ -407,7 +407,7 @@ export default function EvaluationsNew() {
               />
             </div>
             <div className="max-h-[400px] overflow-y-auto space-y-2">
-              {searchablePlayers.map(p => {
+              {searchablePlayers?.map(p => {
                 const team = teams.find(t => t.id === p.team_id);
                 return (
                   <div
