@@ -194,10 +194,16 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Communications")
     },
     {
+      title: "Parent Portal",
+      url: createPageUrl("ParentPortal"),
+      icon: UserIcon,
+      roles: ["parent"]
+    },
+    {
       title: "My Account",
       url: createPageUrl("UserDashboard"),
       icon: UserIcon,
-      roles: ["user", "parent"]
+      roles: ["user"]
     },
     {
       title: "About",
