@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Edit2, Save, X } from 'lucide-react';
 import { getPositionBorderColor } from './positionColors';
-import { TeamRoleBadge } from '../utils/teamRoleBadge';
+import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 
 export default function EditablePlayerCard({ 
   player, 

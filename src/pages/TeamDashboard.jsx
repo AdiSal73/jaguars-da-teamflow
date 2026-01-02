@@ -15,7 +15,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import EditablePlayerCard from '../components/player/EditablePlayerCard';
-import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 import TeamAnalyticsDashboard from '../components/team/TeamAnalyticsDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddPlayerDialog from '../components/team/AddPlayerDialog';

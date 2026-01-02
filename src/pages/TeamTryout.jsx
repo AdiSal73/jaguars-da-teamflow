@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
-import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
+import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function TeamTryout() {
