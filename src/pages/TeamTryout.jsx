@@ -105,11 +105,11 @@ export default function TeamTryout() {
     return match ? parseInt(match[1]) : 0;
   };
 
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(ag => ag && typeof ag === 'string'))].sort((a, b) => extractAge(b) - extractAge(a));
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))];
-  const uniqueBirthYears = [...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean))].sort((a, b) => b - a);
-  const uniqueCurrentTeams = [...new Set(players.map(p => teams.find(t => t.id === p.team_id)?.name).filter(Boolean))].sort();
-  const uniqueSeasons = [...new Set(teams.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean))].sort().reverse();
+  const uniqueAgeGroups = [...new Set(teams?.map(t => t.age_group).filter(ag => ag && typeof ag === 'string') || [])].sort((a, b) => extractAge(b) - extractAge(a));
+  const uniqueLeagues = [...new Set(teams?.map(t => t.league).filter(l => l && typeof l === 'string') || [])];
+  const uniqueBirthYears = [...new Set(players?.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean) || [])].sort((a, b) => b - a);
+  const uniqueCurrentTeams = [...new Set(players?.map(p => teams?.find(t => t.id === p.team_id)?.name).filter(Boolean) || [])].sort();
+  const uniqueSeasons = [...new Set(teams?.map(t => t.season || (t.name?.includes('26/27') ? '26/27' : t.name?.includes('25/26') ? '25/26' : null)).filter(Boolean) || [])].sort().reverse();
 
   const getPlayerWithTryoutData = (playerId) => {
     const player = players.find(p => p.id === playerId);
@@ -331,7 +331,7 @@ export default function TeamTryout() {
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Ages</SelectItem>
-                    {uniqueAgeGroups.map(ag => (
+                    {uniqueAgeGroups?.map(ag => (
                       <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                     ))}
                   </SelectContent>
@@ -340,7 +340,7 @@ export default function TeamTryout() {
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="League" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Leagues</SelectItem>
-                    {uniqueLeagues.map(league => (
+                    {uniqueLeagues?.map(league => (
                       <SelectItem key={league} value={league}>{league}</SelectItem>
                     ))}
                   </SelectContent>
@@ -349,7 +349,7 @@ export default function TeamTryout() {
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Branches</SelectItem>
-                    {BRANCH_OPTIONS.map(branch => (
+                    {BRANCH_OPTIONS?.map(branch => (
                       <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                     ))}
                   </SelectContent>
@@ -358,7 +358,7 @@ export default function TeamTryout() {
                   <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Season" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Seasons</SelectItem>
-                    {uniqueSeasons.map(season => (
+                    {uniqueSeasons?.map(season => (
                       <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>
@@ -368,7 +368,7 @@ export default function TeamTryout() {
             </Card>
 
             <div className="grid md:grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
-            {nextYearTeams.map(team => {
+            {nextYearTeams?.map(team => {
               const teamPlayers = getTeamPlayers(team.name);
               return (
                 <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
@@ -397,7 +397,7 @@ export default function TeamTryout() {
                           {...provided.droppableProps}
                           className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                         >
-                          {teamPlayers.map((player, index) => (
+                          {teamPlayers?.map((player, index) => (
                             <Draggable key={player.id} draggableId={player.id} index={index}>
                               {(provided, snapshot) => (
                                 <div
@@ -470,7 +470,7 @@ export default function TeamTryout() {
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Birth Year" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Birth Years</SelectItem>
-                  {uniqueBirthYears.map(year => (
+                  {uniqueBirthYears?.map(year => (
                     <SelectItem key={year} value={year}>{year}</SelectItem>
                   ))}
                 </SelectContent>
@@ -488,7 +488,7 @@ export default function TeamTryout() {
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Team Role" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
-                  {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation'].map(role => (
+                  {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation']?.map(role => (
                     <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
                   <SelectItem value="none">No Data</SelectItem>
@@ -498,7 +498,7 @@ export default function TeamTryout() {
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Current Team" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {uniqueCurrentTeams.map(teamName => (
+                  {uniqueCurrentTeams?.map(teamName => (
                     <SelectItem key={teamName} value={teamName}>{teamName}</SelectItem>
                   ))}
                 </SelectContent>
@@ -553,7 +553,7 @@ export default function TeamTryout() {
                       <SelectValue placeholder="Select team" />
                     </SelectTrigger>
                     <SelectContent>
-                      {nextYearTeams.map(team => (
+                      {nextYearTeams?.map(team => (
                         <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -576,7 +576,7 @@ export default function TeamTryout() {
                   className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                   style={{ maxHeight: 'calc(100vh - 580px)' }}
                 >
-                  {unassignedPlayers.map((player, index) => (
+                  {unassignedPlayers?.map((player, index) => (
                     <Draggable key={player.id} draggableId={player.id} index={index}>
                       {(provided, snapshot) => (
                         <div
@@ -631,7 +631,7 @@ export default function TeamTryout() {
                   <SelectValue placeholder="Select age group" />
                 </SelectTrigger>
                 <SelectContent>
-                  {['U-19', 'U-17', 'U-16', 'U-15', 'U-14', 'U-13', 'U-12', 'U-11', 'U-10', 'U-9'].map(ag => (
+                  {['U-19', 'U-17', 'U-16', 'U-15', 'U-14', 'U-13', 'U-12', 'U-11', 'U-10', 'U-9']?.map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>

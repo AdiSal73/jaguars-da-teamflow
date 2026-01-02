@@ -23,7 +23,7 @@ export default function HistoricalTrendAnalytics({ teams, assessments, players }
     if (!selectedTeamId) return [];
     
     const teamPlayers = players.filter(p => p.team_id === selectedTeamId);
-    const playerIds = teamPlayers.map(p => p.id);
+    const playerIds = teamPlayers?.map(p => p.id) || [];
     const teamAssessments = assessments
       .filter(a => playerIds.includes(a.player_id))
       .filter(a => isAfter(new Date(a.assessment_date), getDateRange()))
@@ -79,7 +79,7 @@ export default function HistoricalTrendAnalytics({ teams, assessments, players }
                 <SelectValue placeholder="Choose a team" />
               </SelectTrigger>
               <SelectContent>
-                {teams.map(team => (
+                {teams?.map(team => (
                   <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                 ))}
               </SelectContent>

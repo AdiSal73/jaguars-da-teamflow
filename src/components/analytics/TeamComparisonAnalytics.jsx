@@ -10,7 +10,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
 
   const getTeamStats = (teamId) => {
     const teamPlayers = players.filter(p => p.team_id === teamId);
-    const teamPlayerIds = teamPlayers.map(p => p.id);
+    const teamPlayerIds = teamPlayers?.map(p => p.id) || [];
     const teamAssessments = assessments.filter(a => teamPlayerIds.includes(a.player_id));
     const teamEvaluations = evaluations.filter(e => teamPlayerIds.includes(e.player_id));
 
@@ -50,7 +50,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
     };
   };
 
-  const comparisonData = selectedTeams.map(teamId => {
+  const comparisonData = selectedTeams?.map(teamId => {
     const team = teams.find(t => t.id === teamId);
     const stats = getTeamStats(teamId);
     return {
@@ -84,7 +84,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
             <div>
               <label className="text-sm font-medium mb-2 block">Select Teams to Compare (max 5)</label>
               <div className="space-y-2">
-                {teams.filter(t => t.name && typeof t.name === 'string').slice(0, 10).map(team => (
+                {teams?.filter(t => t.name && typeof t.name === 'string')?.slice(0, 10)?.map(team => (
                   <label key={team.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
                     <input
                       type="checkbox"
@@ -130,7 +130,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
                         <PolarGrid stroke="#e2e8f0" />
                         <PolarAngleAxis dataKey="attribute" tick={{ fontSize: 11 }} />
                         <PolarRadiusAxis domain={[0, comparisonMetric === 'physical' ? 100 : 10]} tick={{ fontSize: 10 }} />
-                        {selectedTeams.map((teamId, idx) => {
+                        {selectedTeams?.map((teamId, idx) => {
                           const team = teams.find(t => t.id === teamId);
                           return (
                             <Radar
@@ -188,7 +188,7 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
                         </tr>
                       </thead>
                       <tbody>
-                        {comparisonData.map((data, idx) => (
+                        {comparisonData?.map((data, idx) => (
                           <tr key={idx} className="border-b hover:bg-slate-50">
                             <td className="px-3 py-2 font-medium">{data.name}</td>
                             <td className="px-3 py-2 text-center">{data.playerCount}</td>
