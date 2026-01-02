@@ -69,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
 
   // For parents, create menu items for each player
   const parentPlayerMenuItems = React.useMemo(() => {
-    if (roleType !== 'parent' || !parentPlayerIds.length || players.length === 0) return [];
+    if (roleType !== 'parent' || !parentPlayerIds?.length || !players?.length) return [];
     return parentPlayerIds
       .map(playerId => {
         const player = players.find(p => p.id === playerId);
@@ -261,7 +261,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
-                      {item.submenu.map((subItem) => (
+                      {item.submenu?.map((subItem) => (
                         <DropdownMenuItem key={subItem.title} asChild>
                           <Link
                             to={subItem.url}
@@ -376,7 +376,7 @@ export default function Layout({ children, currentPageName }) {
                     </button>
                     {expandedMobileMenus[item.title] && (
                       <div className="ml-6 pb-2 space-y-1">
-                        {item.submenu.map((subItem) => (
+                        {item.submenu?.map((subItem) => (
                           <Link
                             key={subItem.title || subItem.url}
                             to={subItem.url}
