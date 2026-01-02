@@ -154,8 +154,8 @@ export default function EvaluationAnalytics() {
     ];
   }, [filteredEvaluations]);
 
-  const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))];
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))];
+  const uniqueTeams = [...new Set(teams?.map(t => t.name).filter(Boolean) || [])];
+  const uniqueAgeGroups = [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])];
   const POSITIONS = ['GK', 'Right Outside Back', 'Left Outside Back', 'Right Centerback', 'Left Centerback', 'Defensive Midfielder', 'Right Winger', 'Center Midfielder', 'Forward', 'Attacking Midfielder', 'Left Winger'];
 
   const avgGreatRating = filteredEvaluations.length > 0
@@ -182,7 +182,7 @@ export default function EvaluationAnalytics() {
                 <SelectTrigger><SelectValue placeholder="All Teams" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {uniqueTeams.map(team => (
+                  {uniqueTeams?.map(team => (
                     <SelectItem key={team} value={teams.find(t => t.name === team)?.id}>{team}</SelectItem>
                   ))}
                 </SelectContent>
@@ -191,7 +191,7 @@ export default function EvaluationAnalytics() {
                 <SelectTrigger><SelectValue placeholder="All Age Groups" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Age Groups</SelectItem>
-                  {uniqueAgeGroups.map(ag => (
+                  {uniqueAgeGroups?.map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>
@@ -200,7 +200,7 @@ export default function EvaluationAnalytics() {
                 <SelectTrigger><SelectValue placeholder="All Positions" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Positions</SelectItem>
-                  {POSITIONS.map(pos => (
+                  {POSITIONS?.map(pos => (
                     <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                   ))}
                 </SelectContent>
@@ -312,7 +312,7 @@ export default function EvaluationAnalytics() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-3">
-                {topPerformers.map((p, idx) => (
+                {topPerformers?.map((p, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
@@ -347,7 +347,7 @@ export default function EvaluationAnalytics() {
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {positionComparison.map((p, idx) => (
+                {positionComparison?.map((p, idx) => (
                   <div key={idx} className="p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-semibold text-slate-900">{p.position}</div>

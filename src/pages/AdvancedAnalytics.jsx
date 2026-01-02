@@ -53,7 +53,7 @@ export default function AdvancedAnalytics() {
   };
 
   const playerPerformanceData = useMemo(() => {
-    return selectedPlayers.map(playerId => {
+    return selectedPlayers?.map(playerId => {
       const player = players.find(p => p.id === playerId);
       const playerAssessments = assessments.filter(a => a.player_id === playerId);
       const playerEvaluations = evaluations.filter(e => e.player_id === playerId);
@@ -171,7 +171,7 @@ export default function AdvancedAnalytics() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Positions</SelectItem>
-              {POSITIONS.map(pos => (
+              {POSITIONS?.map(pos => (
                 <SelectItem key={pos} value={pos}>{pos}</SelectItem>
               ))}
             </SelectContent>
@@ -185,7 +185,7 @@ export default function AdvancedAnalytics() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Teams</SelectItem>
-              {teams.filter(team => team.name && typeof team.name === 'string').map(team => (
+              {teams?.filter(team => team.name && typeof team.name === 'string')?.map(team => (
                 <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
               ))}
             </SelectContent>
@@ -202,7 +202,7 @@ export default function AdvancedAnalytics() {
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto">
-            {filteredPlayers.map(player => {
+            {filteredPlayers?.map(player => {
               const team = teams.find(t => t.id === player.team_id);
               const isSelected = selectedPlayers.includes(player.id);
               return (
@@ -245,7 +245,7 @@ export default function AdvancedAnalytics() {
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  {playerPerformanceData.map((playerData, idx) => (
+                  {playerPerformanceData?.map((playerData, idx) => (
                     <React.Fragment key={playerData.player.id}>
                       <Line 
                         data={playerData.data}
@@ -266,7 +266,7 @@ export default function AdvancedAnalytics() {
                   <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  {playerPerformanceData.map((playerData, idx) => (
+                  {playerPerformanceData?.map((playerData, idx) => (
                     <React.Fragment key={playerData.player.id}>
                       <Line 
                         data={playerData.data}
@@ -311,7 +311,7 @@ export default function AdvancedAnalytics() {
                 </tr>
               </thead>
               <tbody>
-                {positionHeatmapData.map(pos => (
+                {positionHeatmapData?.map(pos => (
                   <tr key={pos.position} className="border-b hover:bg-slate-50">
                     <td className="p-3 font-semibold text-sm text-slate-900">{pos.position}</td>
                     <td className="p-3 text-center">
@@ -389,7 +389,7 @@ export default function AdvancedAnalytics() {
 
       {selectedPlayers.length > 0 && metricType === 'physical' && (
         <div className="grid md:grid-cols-2 gap-6">
-          {['speed', 'power', 'endurance', 'agility'].map(metric => (
+          {['speed', 'power', 'endurance', 'agility']?.map(metric => (
             <Card key={metric} className="border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="text-base capitalize">{metric} Comparison</CardTitle>
@@ -407,7 +407,7 @@ export default function AdvancedAnalytics() {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    {playerPerformanceData.map((pd, idx) => (
+                    {playerPerformanceData?.map((pd, idx) => (
                       <Bar 
                         key={pd.player.id}
                         data={pd.data}

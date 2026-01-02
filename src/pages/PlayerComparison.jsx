@@ -52,7 +52,7 @@ export default function PlayerComparison() {
     queryFn: () => base44.entities.PlayerTryout.list()
   });
 
-  const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+  const uniqueAgeGroups = [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort((a, b) => {
     const extractAge = (ag) => {
       const match = ag?.match(/U-?(\d+)/i);
       return match ? parseInt(match[1]) : 0;
@@ -60,7 +60,7 @@ export default function PlayerComparison() {
     return extractAge(b) - extractAge(a);
   });
 
-  const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueLeagues = [...new Set(teams?.map(t => t.league).filter(Boolean) || [])];
 
   const getFilteredPlayers = (index) => {
     let filtered = [...players];
@@ -181,7 +181,7 @@ export default function PlayerComparison() {
 
       {/* Player Selection Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[0, 1, 2, 3].map(index => (
+        {[0, 1, 2, 3]?.map(index => (
           <Card key={index} className="border-2" style={{ borderColor: selectedPlayers[index] ? COLORS[index] : '#e2e8f0' }}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
@@ -223,14 +223,14 @@ export default function PlayerComparison() {
                       <SelectTrigger className="h-7 text-[10px]"><SelectValue placeholder="Age" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Ages</SelectItem>
-                        {uniqueAgeGroups.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}
+                        {uniqueAgeGroups?.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <Select value={filters[index].league} onValueChange={v => updateFilter(index, 'league', v)}>
                       <SelectTrigger className="h-7 text-[10px]"><SelectValue placeholder="League" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Leagues</SelectItem>
-                        {uniqueLeagues.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        {uniqueLeagues?.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -256,7 +256,7 @@ export default function PlayerComparison() {
                   </div>
                   {searchTerms[index] && (
                     <div className="max-h-32 overflow-y-auto border rounded-lg">
-                      {getFilteredPlayers(index).slice(0, 10).map(player => (
+                      {getFilteredPlayers(index)?.slice(0, 10)?.map(player => (
                         <button
                           key={player.id}
                           onClick={() => selectPlayer(index, player)}
@@ -269,7 +269,7 @@ export default function PlayerComparison() {
                   )}
                   {!searchTerms[index] && (
                     <div className="max-h-32 overflow-y-auto border rounded-lg">
-                      {getFilteredPlayers(index).slice(0, 8).map(player => (
+                      {getFilteredPlayers(index)?.slice(0, 8)?.map(player => (
                         <button
                           key={player.id}
                           onClick={() => selectPlayer(index, player)}
@@ -304,7 +304,7 @@ export default function PlayerComparison() {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    {selectedPlayersData.map((pd, idx) => (
+                    {selectedPlayersData?.map((pd, idx) => (
                       <Bar key={idx} dataKey={`player${idx}`} name={pd.player.full_name} fill={COLORS[idx]} />
                     ))}
                   </BarChart>
@@ -322,7 +322,7 @@ export default function PlayerComparison() {
                     <PolarGrid />
                     <PolarAngleAxis dataKey="attribute" tick={{ fontSize: 10 }} />
                     <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8 }} />
-                    {selectedPlayersData.map((pd, idx) => (
+                    {selectedPlayersData?.map((pd, idx) => (
                       <Radar key={idx} name={pd.player.full_name} dataKey={`player${idx}`} stroke={COLORS[idx]} fill={COLORS[idx]} fillOpacity={0.2} />
                     ))}
                   </RadarChart>
@@ -366,7 +366,7 @@ export default function PlayerComparison() {
                     <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    {selectedPlayersData.map((pd, idx) => (
+                    {selectedPlayersData?.map((pd, idx) => (
                       <Bar key={idx} dataKey={`player${idx}`} name={pd.player.full_name} fill={COLORS[idx]} />
                     ))}
                   </BarChart>
@@ -386,7 +386,7 @@ export default function PlayerComparison() {
                     <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    {selectedPlayersData.map((pd, idx) => (
+                    {selectedPlayersData?.map((pd, idx) => (
                       <Bar key={idx} dataKey={`player${idx}`} name={pd.player.full_name} fill={COLORS[idx]} />
                     ))}
                   </BarChart>
@@ -405,7 +405,7 @@ export default function PlayerComparison() {
                 <thead className="bg-slate-100">
                   <tr>
                     <th className="p-2 text-left">Metric</th>
-                    {selectedPlayersData.map((pd, idx) => (
+                    {selectedPlayersData?.map((pd, idx) => (
                       <th key={idx} className="p-2 text-center" style={{ color: COLORS[idx] }}>{pd.player.full_name}</th>
                     ))}
                   </tr>

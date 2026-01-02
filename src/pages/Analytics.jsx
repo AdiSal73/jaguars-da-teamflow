@@ -57,7 +57,7 @@ export default function Analytics() {
   });
 
   // Get unique values for filters
-  const ageGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+  const ageGroups = [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort((a, b) => {
     const extractAge = (ag) => {
       const match = ag?.match(/U-?(\d+)/i);
       return match ? parseInt(match[1]) : 0;
@@ -65,8 +65,8 @@ export default function Analytics() {
     return extractAge(b) - extractAge(a);
   });
   
-  const leagues = [...new Set(teams.map(t => t.league).filter(Boolean))];
-  const positions = [...new Set(players.map(p => p.primary_position).filter(Boolean))];
+  const leagues = [...new Set(teams?.map(t => t.league).filter(Boolean) || [])];
+  const positions = [...new Set(players?.map(p => p.primary_position).filter(Boolean) || [])];
 
   // Filter data based on selections
   const filteredTeams = teams.filter(t => {
@@ -83,7 +83,7 @@ export default function Analytics() {
     return true;
   });
 
-  const filteredPlayerIds = filteredPlayers.map(p => p.id);
+  const filteredPlayerIds = filteredPlayers?.map(p => p.id) || [];
   const filteredAssessments = assessments.filter(a => filteredPlayerIds.includes(a.player_id));
   const filteredEvaluations = evaluations.filter(e => filteredPlayerIds.includes(e.player_id));
   const filteredTryouts = tryouts.filter(t => filteredPlayerIds.includes(t.player_id));
@@ -99,7 +99,7 @@ export default function Analytics() {
   };
 
   // Assessment analytics by age group
-  const assessmentsByAgeGroup = ageGroups.map(ag => {
+  const assessmentsByAgeGroup = ageGroups?.map(ag => {
     const agTeams = teams.filter(t => t.age_group === ag);
     const agPlayerIds = players.filter(p => agTeams.some(t => t.id === p.team_id)).map(p => p.id);
     const agAssessments = assessments.filter(a => agPlayerIds.includes(a.player_id));
@@ -129,7 +129,7 @@ export default function Analytics() {
   }).filter(d => d.players > 0);
 
   // Evaluation analytics by age group
-  const evaluationsByAgeGroup = ageGroups.map(ag => {
+  const evaluationsByAgeGroup = ageGroups?.map(ag => {
     const agTeams = teams.filter(t => t.age_group === ag);
     const agPlayerIds = players.filter(p => agTeams.some(t => t.id === p.team_id)).map(p => p.id);
     const agEvaluations = evaluations.filter(e => agPlayerIds.includes(e.player_id));
@@ -178,7 +178,7 @@ export default function Analytics() {
   };
 
   // Position breakdown
-  const positionBreakdown = positions.map(pos => ({
+  const positionBreakdown = positions?.map(pos => ({
     position: pos,
     count: filteredPlayers.filter(p => p.primary_position === pos).length
   })).sort((a, b) => b.count - a.count);
@@ -191,11 +191,11 @@ export default function Analytics() {
     }
   });
 
-  const registrationPieData = Object.entries(tryoutBreakdown.registration).map(([name, value], idx) => ({
+  const registrationPieData = Object.entries(tryoutBreakdown.registration)?.map(([name, value], idx) => ({
     name, value, color: ['#10b981', '#3b82f6', '#ef4444'][idx]
   })).filter(d => d.value > 0);
 
-  const recommendationPieData = Object.entries(tryoutBreakdown.recommendation).map(([name, value], idx) => ({
+  const recommendationPieData = Object.entries(tryoutBreakdown.recommendation)?.map(([name, value], idx) => ({
     name, value, color: COLORS[idx]
   })).filter(d => d.value > 0);
 
@@ -305,7 +305,7 @@ export default function Analytics() {
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie data={registrationPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                        {registrationPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                        {registrationPieData?.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -317,7 +317,7 @@ export default function Analytics() {
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie data={recommendationPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                        {recommendationPieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                        {recommendationPieData?.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -329,7 +329,7 @@ export default function Analytics() {
             <Card><CardHeader><CardTitle className="text-sm">Team Role Distribution</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {Object.entries(roleBreakdown).map(([role, count], idx) => (
+                  {Object.entries(roleBreakdown)?.map(([role, count], idx) => (
                     <div key={role} className="p-3 bg-slate-50 rounded-lg text-center">
                       <div className="text-lg font-bold" style={{ color: COLORS[idx % COLORS.length] }}>{count}</div>
                       <div className="text-[10px] text-slate-600">{role}</div>
@@ -400,21 +400,21 @@ export default function Analytics() {
               <SelectTrigger className="h-10"><SelectValue placeholder="Age Group" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Age Groups</SelectItem>
-                {ageGroups.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}
+                {ageGroups?.map(ag => <SelectItem key={ag} value={ag}>{ag}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={selectedLeague} onValueChange={setSelectedLeague}>
               <SelectTrigger className="h-10"><SelectValue placeholder="League" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Leagues</SelectItem>
-                {leagues.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                {leagues?.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={selectedPosition} onValueChange={setSelectedPosition}>
               <SelectTrigger className="h-10"><SelectValue placeholder="Position" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Positions</SelectItem>
-                {positions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                {positions?.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -535,12 +535,12 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {positionBreakdown.slice(0, 5).map((p, idx) => (
+              {positionBreakdown?.slice(0, 5)?.map((p, idx) => (
                 <div key={p.position} className="flex items-center justify-between">
                   <span className="text-xs text-slate-600 truncate max-w-[100px]">{p.position}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(p.count / Math.max(...positionBreakdown.map(x => x.count))) * 100}%` }} />
+                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(p.count / Math.max(...(positionBreakdown?.map(x => x.count) || [1]))) * 100}%` }} />
                     </div>
                     <span className="text-xs font-bold text-slate-700 w-6 text-right">{p.count}</span>
                   </div>
