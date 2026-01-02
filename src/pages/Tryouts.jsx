@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import PlayerInfoTooltip, { PlayerHoverTooltip } from '../components/player/PlayerInfoTooltip';
 import { getPositionBorderColor } from '../components/player/positionColors';
 import { isTrappedPlayer } from '../components/utils/trappedPlayer';
-import { TeamRoleBadge, getRoleBadgeColor } from '../components/utils/teamRoleBadge';
+import { TeamRoleBadge, getRoleBadgeColor } from '../components/utils/teamRoleBadge.jsx';
 import { RotateCcw } from 'lucide-react';
 
 export default function Tryouts() {
