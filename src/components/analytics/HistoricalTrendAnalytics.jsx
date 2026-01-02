@@ -22,7 +22,7 @@ export default function HistoricalTrendAnalytics({ teams, assessments, players }
   const generateTrendData = () => {
     if (!selectedTeamId) return [];
     
-    const teamPlayers = players.filter(p => p.team_id === selectedTeamId);
+    const teamPlayers = players?.filter(p => p.team_id === selectedTeamId) || [];
     const playerIds = teamPlayers?.map(p => p.id) || [];
     const teamAssessments = assessments
       .filter(a => playerIds.includes(a.player_id))

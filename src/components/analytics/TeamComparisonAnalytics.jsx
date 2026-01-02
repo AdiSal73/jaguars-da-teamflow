@@ -60,15 +60,15 @@ export default function TeamComparisonAnalytics({ teams, assessments, evaluation
   });
 
   const radarData = comparisonMetric === 'physical' ? [
-    { attribute: 'Speed', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgSpeed || 0 }), {}) },
-    { attribute: 'Power', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgPower || 0 }), {}) },
-    { attribute: 'Endurance', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgEndurance || 0 }), {}) },
-    { attribute: 'Agility', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAgility || 0 }), {}) },
+    { attribute: 'Speed', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgSpeed || 0 }), {}) },
+    { attribute: 'Power', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgPower || 0 }), {}) },
+    { attribute: 'Endurance', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgEndurance || 0 }), {}) },
+    { attribute: 'Agility', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAgility || 0 }), {}) },
   ] : [
-    { attribute: 'Mental', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgMental || 0 }), {}) },
-    { attribute: 'Defending', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgDefending || 0 }), {}) },
-    { attribute: 'Attacking', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAttacking || 0 }), {}) },
-    { attribute: 'Athleticism', ...selectedTeams.reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAthleticism || 0 }), {}) },
+    { attribute: 'Mental', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgMental || 0 }), {}) },
+    { attribute: 'Defending', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgDefending || 0 }), {}) },
+    { attribute: 'Attacking', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAttacking || 0 }), {}) },
+    { attribute: 'Athleticism', ...(selectedTeams || []).reduce((acc, teamId, idx) => ({ ...acc, [`team${idx}`]: comparisonData[idx]?.avgAthleticism || 0 }), {}) },
   ];
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];

@@ -89,11 +89,11 @@ export default function PlayerRoleAssignment() {
 
   const roles = getRolesForGender(filterGender);
   const uniqueAgeGroups = useMemo(() => {
-    return [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
+    return [...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort();
   }, [teams]);
   
   const uniqueLeagues = useMemo(() => {
-    return [...new Set(teams.map(t => t.league).filter(Boolean))];
+    return [...new Set(teams?.map(t => t.league).filter(Boolean) || [])];
   }, [teams]);
 
   const filteredPlayers = useMemo(() => {
@@ -196,7 +196,7 @@ export default function PlayerRoleAssignment() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {teams.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string').map(t => (
+                  {teams?.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string')?.map(t => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -207,7 +207,7 @@ export default function PlayerRoleAssignment() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Ages</SelectItem>
-                  {uniqueAgeGroups.map(ag => (
+                  {uniqueAgeGroups?.map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>
@@ -227,7 +227,7 @@ export default function PlayerRoleAssignment() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {roles.map(role => (
+            {roles?.map(role => (
               <Droppable key={role} droppableId={role}>
                 {(provided, snapshot) => (
                   <Card className={`border-2 ${roleColors[role] || 'border-slate-200'} ${snapshot.isDraggingOver ? 'ring-2 ring-emerald-400' : ''}`}>
@@ -242,7 +242,7 @@ export default function PlayerRoleAssignment() {
                       {...provided.droppableProps}
                       className="p-2 min-h-[120px] space-y-1"
                     >
-                      {(playersByRole[role] || []).map((player, index) => (
+                      {(playersByRole[role] || [])?.map((player, index) => (
                         <Draggable key={player.id} draggableId={player.id} index={index}>
                           {(provided, snapshot) => (
                             <div
@@ -317,7 +317,7 @@ export default function PlayerRoleAssignment() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Teams</SelectItem>
-                      {teams.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string').map(t => (
+                      {teams?.filter(t => (t.gender === filterGender || !t.gender) && t.name && typeof t.name === 'string')?.map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -328,7 +328,7 @@ export default function PlayerRoleAssignment() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Ages</SelectItem>
-                      {uniqueAgeGroups.map(ag => (
+                      {uniqueAgeGroups?.map(ag => (
                         <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                       ))}
                     </SelectContent>
@@ -357,7 +357,7 @@ export default function PlayerRoleAssignment() {
                       {...provided.droppableProps}
                       className="p-2 space-y-1 min-h-full"
                     >
-                      {unassignedFilteredPlayers.map((player, index) => {
+                      {unassignedFilteredPlayers?.map((player, index) => {
                         const tryout = tryouts.find(t => t.player_id === player.id);
                         return (
                           <Draggable key={player.id} draggableId={player.id} index={index}>

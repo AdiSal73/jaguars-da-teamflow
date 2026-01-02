@@ -103,8 +103,8 @@ export default function CoachDashboard() {
   }, [currentCoach, teams]);
 
   const coachPlayers = useMemo(() => {
-    const teamIds = coachTeams.map(t => t.id);
-    return allPlayers.filter(p => teamIds.includes(p.team_id));
+    const teamIds = coachTeams?.map(t => t.id) || [];
+    return allPlayers?.filter(p => teamIds.includes(p.team_id)) || [];
   }, [coachTeams, allPlayers]);
 
   const coachBookings = useMemo(() => {
@@ -117,8 +117,8 @@ export default function CoachDashboard() {
     .slice(0, 5);
 
   const teamPerformance = coachTeams
-    .filter(team => team.name && typeof team.name === 'string')
-    .map(team => {
+    ?.filter(team => team.name && typeof team.name === 'string')
+    ?.map(team => {
     const teamAssessments = assessments.filter(a => a.team_id === team.id);
     const avgOverall = teamAssessments.length > 0
       ? Math.round(teamAssessments.reduce((sum, a) => sum + (a.overall_score || 0), 0) / teamAssessments.length)
@@ -257,7 +257,7 @@ export default function CoachDashboard() {
           {/* Teams with Rosters */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-slate-900">My Teams & Rosters</h2>
-            {coachTeams.filter(team => team.name && typeof team.name === 'string').map(team => {
+            {coachTeams?.filter(team => team.name && typeof team.name === 'string')?.map(team => {
               const teamPlayers = allPlayers.filter(p => p.team_id === team.id);
               const isExpanded = expandedTeams[team.id];
               const isMaleTeam = team.gender === 'Male';
@@ -304,7 +304,7 @@ export default function CoachDashboard() {
                   {isExpanded && (
                     <CardContent className="p-4">
                       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                        {teamPlayers.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')).map(player => {
+                        {teamPlayers?.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))?.map(player => {
                           const tryout = tryouts.find(t => t.player_id === player.id);
                           return (
                             <div 
@@ -368,7 +368,7 @@ export default function CoachDashboard() {
                   <SelectValue placeholder="Select a team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {coachTeams.map(team => (
+                  {coachTeams?.map(team => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -378,7 +378,7 @@ export default function CoachDashboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(formations).map(f => (
+                  {Object.keys(formations)?.map(f => (
                     <SelectItem key={f} value={f}>{f}</SelectItem>
                   ))}
                 </SelectContent>
@@ -402,7 +402,7 @@ export default function CoachDashboard() {
                         <circle cx="50" cy="50" r="8" fill="none" stroke="white" strokeWidth="0.3" opacity="0.6" />
                       </svg>
 
-                      {formations[selectedFormation].positions.map(position => {
+                      {formations[selectedFormation]?.positions?.map(position => {
                         const positionPlayers = getPlayersForPosition(fieldViewTeam, position.id);
                         return (
                           <Droppable key={position.id} droppableId={`position-${position.id}`}>
@@ -422,7 +422,7 @@ export default function CoachDashboard() {
                                     {position.label}
                                   </div>
                                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                                    {positionPlayers.length > 0 ? positionPlayers.map((player, idx) => (
+                                    {positionPlayers.length > 0 ? positionPlayers?.map((player, idx) => (
                                       <Draggable key={player.id} draggableId={`player-${player.id}`} index={idx}>
                                         {(provided) => (
                                           <div

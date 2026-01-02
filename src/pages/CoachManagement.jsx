@@ -158,7 +158,7 @@ export default function CoachManagement() {
     return teams.filter(t => coach.team_ids?.includes(t.id));
   };
 
-  const uniqueBranches = [...new Set(coaches.map(c => c.branch).filter(Boolean))];
+  const uniqueBranches = [...new Set(coaches?.map(c => c.branch).filter(Boolean) || [])];
 
   const filteredCoaches = useMemo(() => {
     return coaches.filter(coach => {
@@ -174,7 +174,7 @@ export default function CoachManagement() {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedCoaches(filteredCoaches.map(c => c.id));
+      setSelectedCoaches(filteredCoaches?.map(c => c.id) || []);
     } else {
       setSelectedCoaches([]);
     }
@@ -212,7 +212,7 @@ export default function CoachManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  {uniqueBranches.map(b => (
+                  {uniqueBranches?.map(b => (
                     <SelectItem key={b} value={b}>{b}</SelectItem>
                   ))}
                 </SelectContent>
@@ -243,7 +243,7 @@ export default function CoachManagement() {
       <Tabs value={viewMode} onValueChange={setViewMode}>
         <TabsContent value="cards">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCoaches.map(coach => {
+            {filteredCoaches?.map(coach => {
               const coachTeams = getCoachTeams(coach);
               return (
                 <Card key={coach.id} className="border-none shadow-lg hover:shadow-xl transition-all">
@@ -271,7 +271,7 @@ export default function CoachManagement() {
                           {coachTeams.length === 0 ? (
                             <span className="text-xs italic text-slate-400">No teams assigned</span>
                           ) : (
-                            coachTeams.filter(t => t.name && typeof t.name === 'string').map(t => (
+                            coachTeams?.filter(t => t.name && typeof t.name === 'string')?.map(t => (
                               <Button
                                 key={t.id}
                                 variant="outline"
@@ -354,7 +354,7 @@ export default function CoachManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCoaches.map((coach, idx) => {
+                    {filteredCoaches?.map((coach, idx) => {
                       const coachTeams = getCoachTeams(coach);
                       return (
                         <tr key={coach.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
@@ -381,7 +381,7 @@ export default function CoachManagement() {
                           </td>
                           <td className="px-4 py-3">
                            <div className="flex flex-wrap gap-1">
-                             {coachTeams.filter(t => t.name && typeof t.name === 'string').slice(0, 2).map(t => (
+                             {coachTeams?.filter(t => t.name && typeof t.name === 'string')?.slice(0, 2)?.map(t => (
                                <Badge key={t.id} variant="outline" className="text-[10px]">{t.name}</Badge>
                              ))}
                              {coachTeams.length > 2 && <Badge variant="outline" className="text-[10px]">+{coachTeams.length - 2}</Badge>}

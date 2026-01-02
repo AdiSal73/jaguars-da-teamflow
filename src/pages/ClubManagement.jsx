@@ -195,9 +195,9 @@ export default function ClubManagement() {
     return Math.round(((5 * speed) + agility + (3 * power) + (6 * endurance)) / 60);
   };
 
-  const teamStats = teams.map(team => {
-    const teamPlayers = players.filter(p => p.team_id === team.id);
-    const teamPlayerIds = teamPlayers.map(p => p.id);
+  const teamStats = teams?.map(team => {
+    const teamPlayers = players?.filter(p => p.team_id === team.id) || [];
+    const teamPlayerIds = teamPlayers?.map(p => p.id) || [];
     const teamAssessments = assessments.filter(a => teamPlayerIds.includes(a.player_id));
     const teamEvaluations = evaluations.filter(e => teamPlayerIds.includes(e.player_id));
 
@@ -231,16 +231,16 @@ export default function ClubManagement() {
   };
 
   const comparisonData = teamStats
-    .filter(team => team.name && typeof team.name === 'string')
-    .slice(0, 8)
-    .map(team => ({
+    ?.filter(team => team.name && typeof team.name === 'string')
+    ?.slice(0, 8)
+    ?.map(team => ({
       name: team.name.substring(0, 10),
       players: team.playerCount,
       physical: team.avgPhysical,
       rating: team.avgRating
     }));
 
-  const uniqueClubs = [...new Set(teams.map(t => t.league).filter(Boolean))];
+  const uniqueClubs = [...new Set(teams?.map(t => t.league).filter(Boolean) || [])];
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -360,13 +360,13 @@ export default function ClubManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Age Groups</SelectItem>
-                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                  {[...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort((a, b) => {
                     const extractAge = (ag) => {
                       const match = ag?.match(/U-?(\d+)/i);
                       return match ? parseInt(match[1]) : 0;
                     };
                     return extractAge(b) - extractAge(a);
-                  }).map(ag => (
+                  })?.map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>
@@ -380,7 +380,7 @@ export default function ClubManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Coaches</SelectItem>
-                  {coaches.map(c => (
+                  {coaches?.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -394,7 +394,7 @@ export default function ClubManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Clubs</SelectItem>
-                  {uniqueClubs.map(club => (
+                  {uniqueClubs?.map(club => (
                     <SelectItem key={club} value={club}>{club}</SelectItem>
                   ))}
                 </SelectContent>

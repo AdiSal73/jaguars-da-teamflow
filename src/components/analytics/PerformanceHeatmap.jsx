@@ -9,7 +9,7 @@ export default function PerformanceHeatmap({ players, assessments, evaluations, 
   ];
 
   const getPositionPerformance = (position) => {
-    const positionPlayers = players.filter(p => p.primary_position === position);
+    const positionPlayers = players?.filter(p => p.primary_position === position) || [];
     const playerIds = positionPlayers?.map(p => p.id) || [];
     
     if (metric === 'overall' || metric === 'physical') {
@@ -67,7 +67,7 @@ export default function PerformanceHeatmap({ players, assessments, evaluations, 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
           {positions?.map(position => {
             const score = getPositionPerformance(position);
-            const playerCount = players.filter(p => p.primary_position === position).length;
+            const playerCount = players?.filter(p => p.primary_position === position)?.length || 0;
             return (
               <div
                 key={position}
