@@ -386,7 +386,7 @@ export default function MyBookings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map(c => (
+                    {coaches?.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -439,7 +439,7 @@ export default function MyBookings() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {upcomingBookings.map(booking => (
+              {upcomingBookings?.map(booking => (
                 <BookingCard key={booking.id} booking={booking} />
               ))}
             </div>
@@ -456,7 +456,7 @@ export default function MyBookings() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {pastBookings.map(booking => (
+              {pastBookings?.map(booking => (
                 <BookingCard key={booking.id} booking={booking} />
               ))}
             </div>
