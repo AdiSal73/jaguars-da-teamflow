@@ -5,9 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Save, Trash2, Mail } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
-export default function EditBookingDialog({ open, onClose, booking, onSave, onDelete, locations }) {
+export default function EditBookingDialog({ open, onClose, booking, onSave, onDelete, locations, coaches }) {
   const [form, setForm] = useState({
     booking_date: booking?.booking_date || '',
     start_time: booking?.start_time || '',
@@ -17,6 +20,7 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
     notes: booking?.notes || '',
     status: booking?.status || 'confirmed'
   });
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   React.useEffect(() => {
     if (booking) {
@@ -39,6 +43,38 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this booking?')) {
       onDelete(booking.id);
+    }
+  };
+
+  const handleSendReminder = async () => {
+    setSendingReminder(true);
+    try {
+      const location = (locations || []).find(l => l.id === booking.location_id);
+      const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
+      
+      const recipients = [];
+      if (booking.parent_email) recipients.push({ email: booking.parent_email, role: 'parent' });
+      
+      const coach = (coaches || []).find(c => c.id === booking.coach_id);
+      if (coach?.email) recipients.push({ email: coach.email, role: 'coach' });
+
+      for (const recipient of recipients) {
+        await base44.functions.invoke('sendBookingEmail', {
+          to: recipient.email,
+          subject: `Reminder: Upcoming Session - ${booking.service_name}`,
+          booking: {
+            ...booking,
+            location_info: locationInfo
+          },
+          type: recipient.role === 'coach' ? 'confirmation_coach' : 'confirmation_client'
+        });
+      }
+      
+      toast.success('Reminders sent successfully');
+    } catch (error) {
+      toast.error('Failed to send reminders');
+    } finally {
+      setSendingReminder(false);
     }
   };
 
@@ -121,7 +157,7 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
             <Select value={form.location_id} onValueChange={(v) => setForm({...form, location_id: v})}>
               <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
               <SelectContent>
-                {locations.map(loc => (
+                {(locations || []).map(loc => (
                   <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -138,16 +174,28 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
             />
           </div>
 
-          <div className="flex gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} className="flex-1">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+          <div className="pt-4 border-t">
+            <Button 
+              onClick={handleSendReminder} 
+              disabled={sendingReminder}
+              variant="outline"
+              className="w-full mb-3 border-blue-300 hover:bg-blue-50"
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              {sendingReminder ? 'Sending...' : 'Send Reminder to Parent & Coach'}
             </Button>
-            <Button onClick={handleSubmit} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
+            
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+              <Button variant="destructive" onClick={handleDelete} className="flex-1">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+              <Button onClick={handleSubmit} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                <Save className="w-4 h-4 mr-2" />
+                Save
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

@@ -295,7 +295,7 @@ export default function CoachAvailability() {
     setShowSlotDialog(true);
   };
 
-  const bookingPageUrl = `${window.location.origin}${window.location.pathname}#/PublicCoachBooking?coach=${currentCoach?.id}`;
+  const bookingPageUrl = `${window.location.origin}/#/PublicCoachBooking?coach=${currentCoach?.id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingPageUrl);

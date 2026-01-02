@@ -416,8 +416,10 @@ export default function BookingsTable() {
         <EditBookingDialog
           booking={editingBooking}
           onClose={() => setEditingBooking(null)}
-          onSave={(data) => updateBookingMutation.mutate({ id: editingBooking.id, data })}
-          onDelete={isAdmin ? () => deleteBookingMutation.mutate(editingBooking.id) : null}
+          onSave={(id, data) => updateBookingMutation.mutate({ id, data })}
+          onDelete={isAdmin ? (id) => deleteBookingMutation.mutate(id) : null}
+          locations={locations}
+          coaches={coaches}
         />
       )}
     </div>
