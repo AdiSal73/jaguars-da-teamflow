@@ -142,7 +142,7 @@ export default function TeamTryout() {
   // Filter teams - Remove duplicates by team name
   const nextYearTeams = useMemo(() => {
     const seen = new Set();
-    return teams.filter(t => {
+    return (teams || []).filter(t => {
       if (!t.name || typeof t.name !== 'string') return false;
       
       // Filter by season
@@ -179,13 +179,13 @@ export default function TeamTryout() {
 
   // Get unassigned players with comprehensive filtering
   const unassignedPlayers = useMemo(() => {
-    return players.map(p => getPlayerWithTryoutData(p.id))
+    return (players || []).map(p => getPlayerWithTryoutData(p.id))
       .filter(p => p && (!p.tryout?.next_year_team || !nextYearTeams.some(t => t.name && typeof t.name === 'string' && t.name === p.tryout?.next_year_team)))
       .filter(p => {
       const matchesSearch = p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
       const matchesBranch = playerFilterBranch === 'all' || p.branch === playerFilterBranch;
       
-      const playerTeam = teams.find(t => t.id === p.team_id);
+      const playerTeam = (teams || []).find(t => t.id === p.team_id);
       const matchesAgeGroup = playerFilterAgeGroup === 'all' || playerTeam?.age_group === playerFilterAgeGroup;
       const matchesCurrentTeam = playerFilterCurrentTeam === 'all' || playerTeam?.name === playerFilterCurrentTeam;
       
@@ -213,7 +213,7 @@ export default function TeamTryout() {
 
   const getTeamPlayers = (teamName) => {
     if (!teamName || typeof teamName !== 'string') return [];
-    return players.map(p => getPlayerWithTryoutData(p.id))
+    return (players || []).map(p => getPlayerWithTryoutData(p.id))
       .filter(p => p && p.tryout?.next_year_team === teamName)
       .sort((a, b) => {
         if (!a.date_of_birth) return 1;
@@ -244,7 +244,7 @@ export default function TeamTryout() {
   };
 
   const PlayerCard = ({ player, isDragging }) => {
-    const team = teams.find(t => t.id === player.team_id);
+    const team = (teams || []).find(t => t.id === player.team_id);
     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
     const isTrapped = player.date_of_birth ? (() => {
       const dob = new Date(player.date_of_birth);
