@@ -47,7 +47,7 @@ export default function BookingsTable() {
     queryFn: () => base44.entities.Location.list()
   });
 
-  const currentCoach = coaches.find(c => c.email === user?.email);
+  const currentCoach = (coaches || []).find(c => c.email === user?.email);
   const isAdmin = user?.role === 'admin';
 
   const updateBookingMutation = useMutation({
@@ -158,9 +158,9 @@ export default function BookingsTable() {
       const matchesDate = !filterDate || booking.booking_date === filterDate;
       
       // Admin filters
-      const coach = coaches.find(c => c.id === booking.coach_id);
+      const coach = (coaches || []).find(c => c.id === booking.coach_id);
       const teamIds = coach?.team_ids || [];
-      const coachTeams = teams.filter(t => teamIds.includes(t.id));
+      const coachTeams = (teams || []).filter(t => teamIds.includes(t.id));
       const matchesAgeGroup = filterAgeGroup === 'all' || coachTeams.some(t => t.age_group === filterAgeGroup);
       const matchesBranch = filterBranch === 'all' || coachTeams.some(t => t.branch === filterBranch) || coach?.branch === filterBranch;
       const matchesLeague = filterLeague === 'all' || coachTeams.some(t => t.league === filterLeague);
@@ -325,9 +325,9 @@ export default function BookingsTable() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings?.map((booking, idx) => {
-                  const coach = coaches.find(c => c.id === booking.coach_id);
-                  const location = locations.find(l => l.id === booking.location_id);
+                {(filteredBookings || []).map((booking, idx) => {
+                  const coach = (coaches || []).find(c => c.id === booking.coach_id);
+                  const location = (locations || []).find(l => l.id === booking.location_id);
                   
                   return (
                     <tr key={booking.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
