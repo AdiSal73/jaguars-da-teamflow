@@ -816,7 +816,7 @@ export default function CoachAvailability() {
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
-                    {locations.map(loc => (
+                    {locations?.map(loc => (
                       <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -938,7 +938,7 @@ export default function CoachAvailability() {
               <div>
                 <Label>Services</Label>
                 <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
-                  {services.map(service => (
+                  {services?.map(service => (
                     <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer">
                       <Checkbox
                         checked={slotToEdit.service_names?.includes(service.name)}
