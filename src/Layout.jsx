@@ -130,6 +130,7 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Team Assignments", url: createPageUrl("TeamTryout") },
+          { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "Outside Players", url: createPageUrl("TryoutPlayers") },
         { title: "Scouting Pipeline", url: createPageUrl("ScoutingPipeline") },
         { title: "Role Assignment", url: createPageUrl("PlayerRoleAssignment") },
@@ -144,7 +145,6 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach"],
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
-        { title: "All Bookings", url: createPageUrl("BookingsTable") },
         { title: "My Availability", url: createPageUrl("coachAvailability") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
         { title: "Assessments", url: createPageUrl("Assessments") },
