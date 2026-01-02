@@ -409,7 +409,7 @@ export default function Communications() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All contacts</SelectItem>
-                        {uniqueSenders.map(([email, name]) => (
+                        {uniqueSenders?.map(([email, name]) => (
                           <SelectItem key={email} value={email}>{name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -581,7 +581,7 @@ export default function Communications() {
               </CardContent>
             </Card>
           ) : (
-            relevantAnnouncements.map(announcement => (
+            relevantAnnouncements?.map(announcement => (
               <Card key={announcement.id} className={`border-l-4 ${
                 announcement.priority === 'urgent' ? 'border-l-red-500 bg-red-50/50' :
                 announcement.priority === 'high' ? 'border-l-orange-500 bg-orange-50/50' :
@@ -634,7 +634,7 @@ export default function Communications() {
               </CardContent>
             </Card>
           ) : (
-            notifications.map(notification => (
+            notifications?.map(notification => (
               <Card 
                 key={notification.id} 
                 className={`${notification.read ? 'bg-slate-50' : 'bg-white border-l-4 border-l-emerald-500 shadow-md'} cursor-pointer hover:shadow-lg transition-shadow`}
@@ -730,9 +730,9 @@ export default function Communications() {
               <div>
                 <Label>Select Teams</Label>
                 <div className="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-                  {(isAdmin ? teams : teams.filter(t => currentCoach?.team_ids?.includes(t.id)))
-                    .filter(team => team.name && typeof team.name === 'string')
-                    .map(team => (
+                  {(isAdmin ? teams : teams?.filter(t => currentCoach?.team_ids?.includes(t.id)))
+                    ?.filter(team => team.name && typeof team.name === 'string')
+                    ?.map(team => (
                     <label key={team.id} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
