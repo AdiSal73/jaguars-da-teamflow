@@ -79,11 +79,19 @@ export default function BookingPage() {
 
   const myPlayers = useMemo(() => {
     if (!user) return [];
+    // Parents have player_ids array
     if (user.player_ids?.length > 0) {
       return players.filter(p => user.player_ids.includes(p.id));
     }
+    // Regular users linked by email
     return players.filter(p => p.email === user.email);
   }, [players, user]);
+
+  React.useEffect(() => {
+    if (!selectedPlayer && myPlayers.length === 1) {
+      setSelectedPlayer(myPlayers[0]);
+    }
+  }, [myPlayers, selectedPlayer]);
 
   const myTeamIds = useMemo(() => {
     return [...new Set(myPlayers.map(p => p.team_id).filter(Boolean))];

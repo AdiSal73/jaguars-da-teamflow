@@ -201,7 +201,14 @@ export default function UserDashboard() {
               <Label className="text-sm font-medium text-slate-700">Account Role</Label>
               <div className="mt-2">
                 <Badge className="bg-emerald-100 text-emerald-800 capitalize">
-                  {user?.role || 'user'}
+                  {(() => {
+                    if (!user) return 'User';
+                    if (user.role === 'admin') return 'Admin';
+                    const isCoach = coaches.find((c) => c.email === user.email);
+                    if (isCoach) return 'Coach';
+                    if (user.player_ids && user.player_ids.length > 0) return 'Parent';
+                    return 'User';
+                  })()}
                 </Badge>
               </div>
             </div>
