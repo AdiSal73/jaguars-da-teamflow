@@ -639,7 +639,7 @@ export default function Tryouts() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map((coach) =>
+                    {coaches?.map((coach) =>
                     <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
                     )}
                   </SelectContent>
@@ -741,7 +741,7 @@ export default function Tryouts() {
 
           <TabsContent value="cards">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {getAllPlayersWithTryout().map((player) => {
+              {getAllPlayersWithTryout()?.map((player) => {
                 const team = teams.find((t) => t.id === player.team_id);
                 return (
                   <Card 
@@ -942,7 +942,7 @@ export default function Tryouts() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                  {teams.filter(team => team.name && typeof team.name === 'string').map((team) =>
+                  {teams?.filter(team => team.name && typeof team.name === 'string')?.map((team) =>
                   <button
                     key={team.id}
                     onClick={() => navigate(`${createPageUrl('FormationView')}?teamId=${team.id}`)}

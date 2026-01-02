@@ -343,7 +343,7 @@ export default function BookingPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {availableCoaches.map(coach => (
+                {availableCoaches?.map(coach => (
                   <button
                     key={coach.id}
                     onClick={() => {
@@ -393,11 +393,11 @@ export default function BookingPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-7 gap-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']?.map(day => (
                     <div key={day} className="text-center text-xs font-semibold text-slate-600 py-2">{day}</div>
                   ))}
                   
-                  {calendarDays.map((day, idx) => {
+                  {calendarDays?.map((day, idx) => {
                     const daySlots = getSlotsForDate(day);
                     const isCurrentMonth = isSameMonth(day, currentMonth);
                     const isToday = isSameDay(day, new Date());
@@ -449,7 +449,7 @@ export default function BookingPage() {
                     {getSlotsForDate(selectedDate).length === 0 ? (
                       <p className="text-center text-slate-500 py-8">No slots available</p>
                     ) : (
-                      getSlotsForDate(selectedDate).map((bookableSlot, idx) => (
+                      getSlotsForDate(selectedDate)?.map((bookableSlot, idx) => (
                         <button
                           key={idx}
                           onClick={() => !bookableSlot.isBooked && handleSlotClick(bookableSlot)}
@@ -503,7 +503,7 @@ export default function BookingPage() {
                       <SelectValue placeholder="Choose which player to book for" />
                     </SelectTrigger>
                     <SelectContent>
-                      {myPlayers.map(player => (
+                      {myPlayers?.map(player => (
                         <SelectItem key={player.id} value={player.id}>
                           {player.full_name}
                         </SelectItem>
