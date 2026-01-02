@@ -44,6 +44,7 @@ export default function UserManagement() {
   const [editUserForm, setEditUserForm] = useState({ full_name: '', display_name: '', email: '', role: '', player_ids: [] });
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'user', player_ids: [] });
+  const [messageSearchTerm, setMessageSearchTerm] = useState('');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
