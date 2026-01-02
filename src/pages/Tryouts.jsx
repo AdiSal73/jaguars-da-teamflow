@@ -113,9 +113,9 @@ export default function Tryouts() {
     });
   };
 
-  const gaTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string')))))));
-  const aspireTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string')))))));
-  const otherTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague(teams.filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string')))))));
+  const gaTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string')))))));
+  const aspireTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string')))))));
+  const otherTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string')))))));
 
   const getTeamPlayers = (team) => {
     let teamPlayers = players.filter((p) => p.team_id === team.id);
