@@ -141,7 +141,7 @@ export default function BookingsTable() {
   });
 
   const filteredBookings = useMemo(() => {
-    let filtered = bookings;
+    let filtered = bookings || [];
     
     // Coaches only see their own bookings (admins see all)
     if (currentCoach && !isAdmin) {
@@ -186,7 +186,7 @@ export default function BookingsTable() {
 
   const exportToCSV = () => {
     const headers = ['Date', 'Time', 'Coach', 'Player', 'Service', 'Location', 'Status', 'Notes'];
-    const rows = filteredBookings.map(b => {
+    const rows = (filteredBookings || []).map(b => {
       const location = locations.find(l => l.id === b.location_id);
       return [
         b.booking_date,
