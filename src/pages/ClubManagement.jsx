@@ -512,7 +512,7 @@ export default function ClubManagement() {
               {duplicateReport.players.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Players ({duplicateReport.players.length})</h3>
-                  {duplicateReport.players.map((dup, i) => (
+                  {duplicateReport.players?.map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.name}</div>
                       <div className="text-slate-600">{dup.count} duplicates found</div>
@@ -523,7 +523,7 @@ export default function ClubManagement() {
               {duplicateReport.teams.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Teams ({duplicateReport.teams.length})</h3>
-                  {duplicateReport.teams.map((dup, i) => (
+                  {duplicateReport.teams?.map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.name}</div>
                       <div className="text-slate-600">{dup.count} duplicates found</div>
@@ -534,7 +534,7 @@ export default function ClubManagement() {
               {duplicateReport.assessments.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Assessments ({duplicateReport.assessments.length})</h3>
-                  {duplicateReport.assessments.slice(0, 5).map((dup, i) => (
+                  {duplicateReport.assessments?.slice(0, 5)?.map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.playerName}</div>
                       <div className="text-slate-600">
@@ -550,7 +550,7 @@ export default function ClubManagement() {
               {duplicateReport.evaluations.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-2 text-red-600">Duplicate Evaluations ({duplicateReport.evaluations.length})</h3>
-                  {duplicateReport.evaluations.slice(0, 5).map((dup, i) => (
+                  {duplicateReport.evaluations?.slice(0, 5)?.map((dup, i) => (
                     <div key={i} className="p-3 bg-red-50 rounded text-sm mb-2 border border-red-200">
                       <div className="font-medium">{dup.playerName}</div>
                       <div className="text-slate-600">

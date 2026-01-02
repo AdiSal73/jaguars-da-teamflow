@@ -218,7 +218,7 @@ export default function PlayerRoleAssignment() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Leagues</SelectItem>
-                  {uniqueLeagues.map(l => (
+                  {uniqueLeagues?.map(l => (
                     <SelectItem key={l} value={l}>{l}</SelectItem>
                   ))}
                 </SelectContent>
