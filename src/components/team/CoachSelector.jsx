@@ -13,12 +13,12 @@ export default function CoachSelector({ coaches, selectedCoachIds, onCoachesChan
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedCoaches = coaches.filter(c => selectedCoachIds.includes(c.id));
-  const availableCoaches = coaches.filter(c => 
-    !selectedCoachIds.includes(c.id) && 
+  const selectedCoaches = coaches?.filter(c => selectedCoachIds?.includes(c.id)) || [];
+  const availableCoaches = coaches?.filter(c => 
+    !selectedCoachIds?.includes(c.id) && 
     (c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
      c.specialization?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) || [];
 
   const addCoach = (coachId) => {
     onCoachesChange([...selectedCoachIds, coachId]);
@@ -32,7 +32,7 @@ export default function CoachSelector({ coaches, selectedCoachIds, onCoachesChan
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {selectedCoaches.map(coach => (
+        {selectedCoaches?.map(coach => (
           <Badge key={coach.id} className="bg-emerald-100 text-emerald-800 px-3 py-1 flex items-center gap-2">
             {coach.full_name}
             <button onClick={() => removeCoach(coach.id)} className="hover:text-emerald-900">
@@ -67,7 +67,7 @@ export default function CoachSelector({ coaches, selectedCoachIds, onCoachesChan
                 {searchTerm ? 'No coaches found' : 'All coaches selected'}
               </div>
             ) : (
-              availableCoaches.map(coach => (
+              availableCoaches?.map(coach => (
                 <button
                   key={coach.id}
                   onClick={() => {

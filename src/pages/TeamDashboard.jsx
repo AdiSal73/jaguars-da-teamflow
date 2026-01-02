@@ -153,10 +153,10 @@ export default function TeamDashboard() {
     return acc;
   }, {});
 
-  const positionData = Object.keys(positionDistribution).map(pos => ({
+  const positionData = Object.keys(positionDistribution)?.map(pos => ({
     position: pos,
     count: positionDistribution[pos]
-  }));
+  })) || [];
 
   const depthChartByPosition = {};
   players.forEach(p => {
@@ -561,7 +561,7 @@ Format with clear headers and structure.`;
           <CardContent className="p-4">
             <DragDropContext onDragEnd={handleDepthChartDragEnd}>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.keys(depthChartByPosition).map(position => (
+                {Object.keys(depthChartByPosition)?.map(position => (
                   <div key={position} className="bg-white rounded-xl border-2 border-slate-200 p-3">
                     <div className="text-sm font-bold text-slate-900 mb-2 pb-2 border-b">{position}</div>
                     <Droppable droppableId={position}>
@@ -571,7 +571,7 @@ Format with clear headers and structure.`;
                           ref={provided.innerRef}
                           className={`space-y-2 min-h-[40px] ${snapshot.isDraggingOver ? 'bg-emerald-50 rounded-lg p-2' : ''}`}
                         >
-                          {depthChartByPosition[position].map((player, idx) => (
+                          {depthChartByPosition[position]?.map((player, idx) => (
                             <Draggable key={player.id} draggableId={player.id} index={idx}>
                               {(provided, snapshot) => (
                                 <div 
@@ -630,7 +630,7 @@ Format with clear headers and structure.`;
           </CardHeader>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {players.map(player => {
+              {players?.map(player => {
                 const playerTryout = tryouts.find(t => t.player_id === player.id);
                 const playerTeam = allTeams.find(t => t.id === player.team_id);
                 return (

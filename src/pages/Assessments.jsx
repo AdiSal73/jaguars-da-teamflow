@@ -267,7 +267,7 @@ export default function Assessments() {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedAssessments(filteredAssessments.map(a => a.id));
+      setSelectedAssessments(filteredAssessments?.map(a => a.id) || []);
     } else {
       setSelectedAssessments([]);
     }
@@ -370,7 +370,7 @@ export default function Assessments() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Years</SelectItem>
-                  {[...new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null).filter(Boolean))].sort((a, b) => b - a).map(year => (
+                  {[...new Set(players?.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null).filter(Boolean) || [])]?.sort((a, b) => b - a)?.map(year => (
                     <SelectItem key={year} value={String(year)}>{year}</SelectItem>
                   ))}
                 </SelectContent>
@@ -384,7 +384,7 @@ export default function Assessments() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Age Groups</SelectItem>
-                  {[...new Set(teams.map((t) => t.age_group).filter(Boolean))].sort((a, b) => {
+                  {[...new Set(teams?.map((t) => t.age_group).filter(Boolean) || [])]?.sort((a, b) => {
                     const extractAge = (ag) => {
                       const match = ag?.match(/U-?(\d+)/i);
                       return match ? parseInt(match[1]) : 0;
@@ -404,7 +404,7 @@ export default function Assessments() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Leagues</SelectItem>
-                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
+                  {[...new Set(teams?.map(t => t.league).filter(Boolean) || [])]?.map(league => (
                     <SelectItem key={league} value={league}>{league}</SelectItem>
                   ))}
                 </SelectContent>
@@ -418,7 +418,7 @@ export default function Assessments() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Teams</SelectItem>
-                  {teams.map(team => (
+                  {teams?.map(team => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -565,7 +565,7 @@ export default function Assessments() {
                       <SelectValue placeholder="Select team to assign" />
                     </SelectTrigger>
                     <SelectContent>
-                      {teams.map(team => (
+                      {teams?.map(team => (
                         <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -641,7 +641,7 @@ export default function Assessments() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAssessments.map(assessment => {
+                    {filteredAssessments?.map(assessment => {
                       const player = players.find(p => p.id === assessment.player_id);
                       const team = teams.find(t => t.id === assessment.team_id);
                       return (
@@ -751,7 +751,7 @@ export default function Assessments() {
               <Select value={newAssessment.player_id} onValueChange={(value) => setNewAssessment({...newAssessment, player_id: value})}>
                 <SelectTrigger><SelectValue placeholder="Select player" /></SelectTrigger>
                 <SelectContent>
-                  {players.map(player => <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>)}
+                  {players?.map(player => <SelectItem key={player.id} value={player.id}>{player.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
