@@ -203,7 +203,7 @@ export default function TeamDashboard() {
 
 Team Stats:
 - Total Players: ${players.length}
-- Position Distribution: ${Object.keys(positionDistribution).map(pos => `${pos}: ${positionDistribution[pos]}`).join(', ')}
+- Position Distribution: ${Object.keys(positionDistribution)?.map(pos => `${pos}: ${positionDistribution[pos]}`).join(', ') || 'N/A'}
 - Average Physical Scores: Speed ${avgPhysicalScores.speed}, Power ${avgPhysicalScores.power}, Endurance ${avgPhysicalScores.endurance}, Agility ${avgPhysicalScores.agility}
 
 ${latestTeamEval ? `Latest Team Evaluation:

@@ -474,7 +474,7 @@ export default function Assessments() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAssessments.map(assessment => {
+              {filteredAssessments?.map(assessment => {
                 const player = players.find(p => p.id === assessment.player_id);
                 const team = teams.find(t => t.id === assessment.team_id);
                 
