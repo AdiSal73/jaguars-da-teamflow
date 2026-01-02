@@ -833,7 +833,7 @@ export default function Players() {
                    <SelectValue placeholder="Assign to team..." />
                  </SelectTrigger>
                  <SelectContent>
-                   {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
+                   {teams?.filter(t => t.name && typeof t.name === 'string')?.map(team => (
                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                    ))}
                  </SelectContent>
@@ -895,7 +895,7 @@ export default function Players() {
                         <Select value={player.primary_position || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'primary_position', v)}>
                           <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Position" /></SelectTrigger>
                           <SelectContent>
-                            {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                            {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                               <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                             ))}
                           </SelectContent>
@@ -903,19 +903,19 @@ export default function Players() {
                       </td>
                       <td className="px-4 py-2">
                        <Select value={player.team_id || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'team_id', v)}>
-                         <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Team" /></SelectTrigger>
-                         <SelectContent>
-                           {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
-                             <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                           ))}
-                         </SelectContent>
+                       <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Team" /></SelectTrigger>
+                       <SelectContent>
+                         {teams?.filter(t => t.name && typeof t.name === 'string')?.map(team => (
+                           <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                         ))}
+                       </SelectContent>
                        </Select>
                       </td>
                       <td className="px-4 py-2">
                         <Select value={player.branch || ''} onValueChange={(v) => handleFieldUpdate(player.id, 'branch', v)}>
                           <SelectTrigger className="h-8 text-xs w-28"><SelectValue placeholder="Branch" /></SelectTrigger>
                           <SelectContent>
-                            {BRANCH_OPTIONS.map(branch => (
+                            {BRANCH_OPTIONS?.map(branch => (
                               <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                             ))}
                           </SelectContent>
