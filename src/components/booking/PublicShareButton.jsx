@@ -9,7 +9,7 @@ export default function PublicShareButton({ coachId, coachName }) {
   const [showDialog, setShowDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  const publicUrl = `${window.location.origin}${window.location.pathname.replace(/\/app\/.*/, '')}/public-booking?coach=${coachId}`;
+  const publicUrl = `${window.location.origin}/#/PublicCoachBooking?coach=${coachId}`;
   
   const handleCopy = () => {
     navigator.clipboard.writeText(publicUrl);

@@ -495,25 +495,37 @@ export default function UserManagement() {
             {editUserForm.role === 'parent' && (
               <div>
                 <Label className="mb-2 block">Assigned Players (Multiple)</Label>
+                <Input
+                  placeholder="Search players..."
+                  value={messageSearchTerm}
+                  onChange={(e) => setMessageSearchTerm(e.target.value)}
+                  className="mb-2 h-8 text-xs"
+                />
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
-                  {players?.map(player => (
-                    <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(editUserForm.player_ids || []).includes(player.id)}
-                        onChange={(e) => {
-                          const currentIds = editUserForm.player_ids || [];
-                          if (e.target.checked) {
-                            setEditUserForm({ ...editUserForm, player_ids: [...currentIds, player.id] });
-                          } else {
-                            setEditUserForm({ ...editUserForm, player_ids: currentIds.filter(id => id !== player.id) });
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{player.full_name}</span>
-                    </label>
-                  ))}
+                  {[...players]
+                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+                    .filter(p => 
+                      !messageSearchTerm || 
+                      p.full_name?.toLowerCase().includes(messageSearchTerm.toLowerCase())
+                    )
+                    .map(player => (
+                      <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(editUserForm.player_ids || []).includes(player.id)}
+                          onChange={(e) => {
+                            const currentIds = editUserForm.player_ids || [];
+                            if (e.target.checked) {
+                              setEditUserForm({ ...editUserForm, player_ids: [...currentIds, player.id] });
+                            } else {
+                              setEditUserForm({ ...editUserForm, player_ids: currentIds.filter(id => id !== player.id) });
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{player.full_name}</span>
+                      </label>
+                    ))}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Parent will be able to view these players' dashboards</p>
               </div>
