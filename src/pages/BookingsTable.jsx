@@ -140,19 +140,6 @@ export default function BookingsTable() {
     }
   });
 
-  const deleteBookingMutation = useMutation({
-    mutationFn: (id) => base44.entities.Booking.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['bookings']);
-      setEditingBooking(null);
-      toast.success('Booking deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Delete booking error:', error);
-      toast.error(`Failed to delete booking: ${error.message}`);
-    }
-  });
-
   const filteredBookings = useMemo(() => {
     let filtered = bookings;
     
