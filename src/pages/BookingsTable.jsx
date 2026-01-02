@@ -263,7 +263,7 @@ export default function BookingsTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Coaches</SelectItem>
-                  {coaches.map(coach => (
+                  {coaches?.map(coach => (
                     <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -274,7 +274,7 @@ export default function BookingsTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Age Groups</SelectItem>
-                  {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort().map(ag => (
+                  {[...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])].sort().map(ag => (
                     <SelectItem key={ag} value={ag}>{ag}</SelectItem>
                   ))}
                 </SelectContent>
@@ -285,7 +285,7 @@ export default function BookingsTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  {[...new Set([...teams.map(t => t.branch), ...coaches.map(c => c.branch)].filter(Boolean))].map(branch => (
+                  {[...new Set([...teams?.map(t => t.branch) || [], ...coaches?.map(c => c.branch) || []].filter(Boolean))].map(branch => (
                     <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                   ))}
                 </SelectContent>
@@ -296,7 +296,7 @@ export default function BookingsTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Leagues</SelectItem>
-                  {[...new Set(teams.map(t => t.league).filter(Boolean))].map(league => (
+                  {[...new Set(teams?.map(t => t.league).filter(Boolean) || [])].map(league => (
                     <SelectItem key={league} value={league}>{league}</SelectItem>
                   ))}
                 </SelectContent>
@@ -325,7 +325,7 @@ export default function BookingsTable() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking, idx) => {
+                {filteredBookings?.map((booking, idx) => {
                   const coach = coaches.find(c => c.id === booking.coach_id);
                   const location = locations.find(l => l.id === booking.location_id);
                   
