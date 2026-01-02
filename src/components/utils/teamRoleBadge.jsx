@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
-const colorMap = {
+export const colorMap = {
   'Indispensable Player': 'bg-purple-600 text-white border-purple-700',
   'GA Starter': 'bg-emerald-600 text-white border-emerald-700',
   'GA Rotation': 'bg-emerald-400 text-white border-emerald-500',
