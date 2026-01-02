@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
 import EditEvaluationDialog from '../components/evaluation/EditEvaluationDialog';
 import { Label } from '@/components/ui/label';
-import { TeamRoleBadge } from '../components/utils/teamRoleBadge.jsx';
+import { TeamRoleBadge } from '../components/utils/teamRoleBadge';
 import { RotateCcw } from 'lucide-react';
 
 export default function EvaluationsNew() {
