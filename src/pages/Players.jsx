@@ -276,8 +276,8 @@ export default function Players() {
     }
   };
 
-  const uniqueLeagues = useMemo(() => [...new Set(teams.map(t => t.league).filter(l => l && typeof l === 'string'))], [teams]);
-  const uniqueBranches = useMemo(() => [...new Set([...teams.map(t => t.branch), ...players.map(p => p.branch)].filter(b => b && typeof b === 'string'))], [teams, players]);
+  const uniqueLeagues = useMemo(() => [...new Set(teams?.map(t => t.league).filter(l => l && typeof l === 'string') || [])], [teams]);
+  const uniqueBranches = useMemo(() => [...new Set([...(teams?.map(t => t.branch) || []), ...(players?.map(p => p.branch) || [])].filter(b => b && typeof b === 'string'))], [teams, players]);
 
   const resetForm = () => {
     setPlayerForm({
@@ -352,7 +352,7 @@ export default function Players() {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedPlayers(filteredPlayers.map(p => p.id));
+      setSelectedPlayers(filteredPlayers?.map(p => p.id) || []);
     } else {
       setSelectedPlayers([]);
     }
@@ -510,7 +510,7 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
+                {teams?.filter(t => t.name && typeof t.name === 'string')?.map(team => (
                   <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -524,13 +524,13 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                {[...new Set(teams?.map(t => t.age_group).filter(Boolean) || [])]?.sort((a, b) => {
                   const extractAge = (ag) => {
                     const match = ag?.match(/U-?(\d+)/i);
                     return match ? parseInt(match[1]) : 0;
                   };
                   return extractAge(b) - extractAge(a);
-                }).map(ageGroup => (
+                })?.map(ageGroup => (
                   <SelectItem key={ageGroup} value={ageGroup}>{ageGroup}</SelectItem>
                 ))}
               </SelectContent>
