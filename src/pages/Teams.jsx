@@ -302,7 +302,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Leagues</SelectItem>
-                    {uniqueLeagues.map(league => (
+                    {uniqueLeagues?.map(league => (
                       <SelectItem key={league} value={league}>{league}</SelectItem>
                     ))}
                   </SelectContent>
@@ -330,7 +330,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map(c => (
+                    {coaches?.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -344,7 +344,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Seasons</SelectItem>
-                    {uniqueSeasons.map(season => (
+                    {uniqueSeasons?.map(season => (
                       <SelectItem key={season} value={season}>{season}</SelectItem>
                     ))}
                   </SelectContent>
@@ -365,7 +365,7 @@ export default function Teams() {
 
       {viewMode === 'cards' ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTeams.map(team => {
+          {filteredTeams?.map(team => {
             const teamPlayers = players.filter(p => p.team_id === team.id);
             const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
             const isMaleTeam = team.gender === 'Male';
@@ -422,7 +422,7 @@ export default function Teams() {
                     <div className={`pt-2 border-t ${isMaleTeam ? 'border-slate-700' : 'border-slate-100'}`}>
                       <div className={`text-[10px] mb-1 ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>Coaches:</div>
                       {teamCoaches.length > 0 ? (
-                        teamCoaches.slice(0, 2).map(coach => (
+                        teamCoaches?.slice(0, 2)?.map(coach => (
                           <div key={coach.id} className="flex items-center gap-1 text-xs mb-1">
                             <User className={`w-3 h-3 ${isMaleTeam ? 'text-emerald-400' : 'text-emerald-600'}`} />
                             <span className={`truncate ${isMaleTeam ? 'text-slate-300' : 'text-slate-700'}`}>{coach.full_name}</span>
@@ -476,7 +476,7 @@ export default function Teams() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTeams.map((team, idx) => {
+                  {filteredTeams?.map((team, idx) => {
                     const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
                     const teamPlayers = players.filter(p => p.team_id === team.id);
                     const leagueOptions = getLeaguesForGender(team.gender);
@@ -507,7 +507,7 @@ export default function Teams() {
                           <Select value={team.league || ''} onValueChange={(v) => updateTeamFieldMutation.mutate({ id: team.id, field: 'league', value: v })}>
                             <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Select league" /></SelectTrigger>
                             <SelectContent>
-                              {leagueOptions.map(league => (
+                              {leagueOptions?.map(league => (
                                 <SelectItem key={league} value={league}>{league}</SelectItem>
                               ))}
                             </SelectContent>
@@ -517,7 +517,7 @@ export default function Teams() {
                           <Select value={team.branch || ''} onValueChange={(v) => updateTeamFieldMutation.mutate({ id: team.id, field: 'branch', value: v })}>
                             <SelectTrigger className="h-8 text-xs w-32"><SelectValue placeholder="Select branch" /></SelectTrigger>
                             <SelectContent>
-                              {BRANCH_OPTIONS.map(branch => (
+                              {BRANCH_OPTIONS?.map(branch => (
                                 <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                               ))}
                             </SelectContent>
@@ -528,7 +528,7 @@ export default function Teams() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {teamCoaches.slice(0, 2).map(coach => (
+                            {teamCoaches?.slice(0, 2)?.map(coach => (
                               <span key={coach.id} className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">{coach.full_name}</span>
                             ))}
                           </div>
@@ -579,7 +579,7 @@ export default function Teams() {
               <Select value={teamForm.league} onValueChange={(v) => setTeamForm({...teamForm, league: v})}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select league" /></SelectTrigger>
                 <SelectContent>
-                  {getLeaguesForGender(teamForm.gender).map(league => (
+                  {getLeaguesForGender(teamForm.gender)?.map(league => (
                     <SelectItem key={league} value={league}>{league}</SelectItem>
                   ))}
                 </SelectContent>
@@ -590,7 +590,7 @@ export default function Teams() {
               <Select value={teamForm.branch} onValueChange={(v) => setTeamForm({...teamForm, branch: v})}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select branch" /></SelectTrigger>
                 <SelectContent>
-                  {BRANCH_OPTIONS.map(branch => (
+                  {BRANCH_OPTIONS?.map(branch => (
                     <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                   ))}
                 </SelectContent>

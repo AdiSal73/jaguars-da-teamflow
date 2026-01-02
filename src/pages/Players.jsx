@@ -557,7 +557,7 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                {uniqueLeagues.map(league => (
+                {uniqueLeagues?.map(league => (
                   <SelectItem key={league} value={league}>{league}</SelectItem>
                 ))}
               </SelectContent>
@@ -730,7 +730,7 @@ export default function Players() {
 
       {viewMode === 'cards' ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPlayers.map(player => {
+            {filteredPlayers?.map(player => {
               const team = teams.find(t => t.id === player.team_id);
               const tryout = tryouts.find(t => t.player_id === player.id);
               const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
@@ -871,7 +871,7 @@ export default function Players() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPlayers.map((player, idx) => (
+                  {filteredPlayers?.map((player, idx) => (
                     <tr key={player.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                       <td className="px-4 py-2">
                         <Checkbox 
@@ -1083,7 +1083,7 @@ export default function Players() {
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.filter(t => t.name && typeof t.name === 'string').map(team => (
+                  {teams?.filter(t => t.name && typeof t.name === 'string')?.map(team => (
                     <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
                   ))}
                 </SelectContent>
