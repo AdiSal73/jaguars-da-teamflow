@@ -571,7 +571,7 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                {BRANCH_OPTIONS.map(branch => (
+                {BRANCH_OPTIONS?.map(branch => (
                   <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                 ))}
               </SelectContent>
@@ -599,7 +599,7 @@ export default function Players() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Positions</SelectItem>
-                {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger']?.map(pos => (
                   <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                 ))}
               </SelectContent>

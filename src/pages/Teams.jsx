@@ -316,7 +316,7 @@ export default function Teams() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Branches</SelectItem>
-                    {BRANCH_OPTIONS.map(branch => (
+                    {BRANCH_OPTIONS?.map(branch => (
                       <SelectItem key={branch} value={branch}>{branch}</SelectItem>
                     ))}
                   </SelectContent>
