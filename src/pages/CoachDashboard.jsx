@@ -66,6 +66,7 @@ export default function CoachDashboard() {
   });
 
   const currentCoach = coaches.find(c => c.email === user?.email);
+  const services = currentCoach?.services || [];
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ['players'],
