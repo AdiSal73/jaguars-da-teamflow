@@ -45,6 +45,11 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const { data: player, isLoading: playerLoading } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
@@ -56,6 +61,7 @@ export default function PlayerDashboard() {
   });
 
   const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
+  const parentUsers = users.filter(u => u.player_ids?.includes(playerId)) || [];
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
