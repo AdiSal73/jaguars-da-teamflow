@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Users, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, Search, Mail } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
+import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
 
 export default function ContactsManager() {
   const [search, setSearch] = useState('');
@@ -13,6 +15,7 @@ export default function ContactsManager() {
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
+  const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -122,11 +125,17 @@ export default function ContactsManager() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Parent Contacts Manager
-          </h1>
-          <p className="text-slate-600 mt-1">Manage all parent contacts, send invitations, and communicate</p>
+        <div className="mb-6 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Parent Contacts Manager
+            </h1>
+            <p className="text-slate-600 mt-1">Manage all parent contacts, send invitations, and communicate</p>
+          </div>
+          <Button onClick={() => setShowInviteNewParentDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Mail className="w-4 h-4 mr-2" />
+            Invite New Parent
+          </Button>
         </div>
 
         <Card className="border-none shadow-lg mb-6">
@@ -197,6 +206,12 @@ export default function ContactsManager() {
             />
           </CardContent>
         </Card>
+
+        <InviteNewParentDialog
+          open={showInviteNewParentDialog}
+          onClose={() => setShowInviteNewParentDialog(false)}
+          players={players}
+        />
       </div>
     </div>
   );

@@ -264,8 +264,20 @@ export default function PlayerDashboard() {
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Status</div>
                   <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
-                </div>
-              </div>
+                  </div>
+                  </div>
+                  {parentUsers.length > 0 && (
+                  <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="text-xs text-slate-400 mb-2">Parents</div>
+                  <div className="flex flex-wrap gap-2">
+                    {parentUsers.map(parent => (
+                      <Badge key={parent.id} className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        {parent.full_name || parent.email}
+                      </Badge>
+                    ))}
+                  </div>
+                  </div>
+                  )}
               {parentUsers.length > 0 && (
                 <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400 mb-2">Parents</div>
@@ -297,9 +309,14 @@ export default function PlayerDashboard() {
                   </h3>
                   <div className="flex gap-1">
                     {isAdminOrCoach && (
-                      <button onClick={() => setShowCreateAssessmentDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button onClick={() => setShowCreateAssessmentDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => {/* TODO: Edit assessment */}} className="p-1 hover:bg-white/10 rounded text-blue-400">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                     {assessments.length > 1 && (
                       <>
@@ -396,9 +413,14 @@ export default function PlayerDashboard() {
                   </h3>
                   <div className="flex gap-1">
                     {isAdminOrCoach && (
-                      <button onClick={() => setShowCreateEvaluationDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button onClick={() => setShowCreateEvaluationDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => {/* TODO: Edit evaluation */}} className="p-1 hover:bg-white/10 rounded text-blue-400">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                     {evaluations.length > 1 && (
                       <>
