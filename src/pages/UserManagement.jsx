@@ -515,9 +515,10 @@ export default function UserManagement() {
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="director">Director</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-500 mt-1">Base44 role: 'user' or 'admin'. App roles (coach/parent) are determined by other data.</p>
+              <p className="text-xs text-slate-500 mt-1">Base44 role: 'user', 'admin', or 'director'. App roles (coach/parent) are determined by other data.</p>
             </div>
             
             <div>
