@@ -139,7 +139,7 @@ export default function Landing() {
                   onClick={() => base44.auth.redirectToLogin()} 
                   className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-semibold py-6 text-lg shadow-lg"
                 >
-                  Login with Base44
+                  Member Portal
                 </Button>
 
                 <div className="relative">
