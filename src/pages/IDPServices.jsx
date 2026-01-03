@@ -108,7 +108,7 @@ export default function IDPServices() {
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20">
               <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <span className="text-white font-medium">Real Results</span>
+              <span className="text-white font-medium">Scenario Specific Training</span>
             </div>
           </div>
         </div>
