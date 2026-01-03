@@ -3,12 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award } from 'lucide-react';
+import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
+import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
+import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
 
 export default function PlayerDashboard() {
   const navigate = useNavigate();
@@ -18,6 +22,8 @@ export default function PlayerDashboard() {
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [playerForm, setPlayerForm] = useState({});
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -67,6 +73,57 @@ export default function PlayerDashboard() {
     enabled: !!playerId
   });
 
+  const { data: pathway } = useQuery({
+    queryKey: ['pathway', playerId],
+    queryFn: async () => {
+      const pathways = await base44.entities.DevelopmentPathway.filter({ player_id: playerId });
+      return pathways[0] || null;
+    },
+    enabled: !!playerId
+  });
+
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['allPlayers'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
+  React.useEffect(() => {
+    if (player) {
+      setPlayerForm({
+        full_name: player.full_name || '',
+        jersey_number: player.jersey_number || '',
+        primary_position: player.primary_position || '',
+        team_id: player.team_id || '',
+        status: player.status || 'Active'
+      });
+    }
+  }, [player]);
+
+  const updatePlayerMutation = useMutation({
+    mutationFn: (data) => base44.entities.Player.update(playerId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['player', playerId]);
+      setIsEditing(false);
+      toast.success('Player updated');
+    }
+  });
+
+  const updatePathwayMutation = useMutation({
+    mutationFn: (data) => {
+      if (pathway?.id) {
+        return base44.entities.DevelopmentPathway.update(pathway.id, data);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries(['pathway', playerId])
+  });
+
+  const handleSave = () => {
+    updatePlayerMutation.mutate({
+      ...playerForm,
+      jersey_number: playerForm.jersey_number ? Number(playerForm.jersey_number) : null
+    });
+  };
+
   const currentAssessment = assessments[assessmentIndex] || null;
   const currentEvaluation = evaluations[evaluationIndex] || null;
   const team = teams.find(t => t.id === player?.team_id);
@@ -109,6 +166,11 @@ export default function PlayerDashboard() {
                 <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">{team?.name || 'No Team'}</Badge>
                 {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
               </div>
+              {isAdminOrCoach && (
+                <Button onClick={() => isEditing ? handleSave() : setIsEditing(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                  {isEditing ? <><Save className="w-3 h-3 mr-1" />Save</> : <><Edit className="w-3 h-3 mr-1" />Edit</>}
+                </Button>
+              )}
               <div className="grid grid-cols-4 gap-4 mt-4">
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">DOB</div>
@@ -116,7 +178,20 @@ export default function PlayerDashboard() {
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Position</div>
-                  <div className="font-bold">{player.primary_position}</div>
+                  {isEditing ? (
+                    <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}>
+                      <SelectTrigger className="h-7 text-xs bg-white/10 border-white/20 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
+                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="font-bold">{player.primary_position}</div>
+                  )}
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Team</div>
@@ -139,10 +214,10 @@ export default function PlayerDashboard() {
           {currentAssessment && (
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <Activity className="w-5 h-5 text-emerald-400" />
-                    Physical Assessment
+                    Physical
                   </h3>
                   {assessments.length > 1 && (
                     <div className="flex gap-1">
@@ -154,6 +229,12 @@ export default function PlayerDashboard() {
                       </button>
                     </div>
                   )}
+                </div>
+                <p className="text-xs text-slate-400 mb-4">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</p>
+                
+                <div className="mb-4 text-center">
+                  <div className="text-5xl font-bold text-emerald-400">{currentAssessment.overall_score || 0}</div>
+                  <div className="text-xs text-slate-400">OVERALL SCORE</div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3 mb-4">
@@ -216,10 +297,10 @@ export default function PlayerDashboard() {
           {currentEvaluation && (
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md md:col-span-2">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <Target className="w-5 h-5 text-emerald-400" />
-                    Technical Evaluation
+                    Evaluation
                   </h3>
                   {evaluations.length > 1 && (
                     <div className="flex gap-1">
@@ -232,6 +313,7 @@ export default function PlayerDashboard() {
                     </div>
                   )}
                 </div>
+                <p className="text-xs text-slate-400 mb-4">{new Date(currentEvaluation.created_date).toLocaleDateString()}</p>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -244,39 +326,67 @@ export default function PlayerDashboard() {
                     </ResponsiveContainer>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {[
                       { label: 'Growth Mindset', value: currentEvaluation.growth_mindset, color: 'purple' },
                       { label: 'Resilience', value: currentEvaluation.resilience, color: 'pink' },
+                      { label: 'Efficiency', value: currentEvaluation.efficiency_in_execution, color: 'orange' },
                       { label: 'Athleticism', value: currentEvaluation.athleticism, color: 'emerald' },
+                      { label: 'Team Focus', value: currentEvaluation.team_focus, color: 'blue' },
                       { label: 'Def. Organized', value: currentEvaluation.defending_organized, color: 'red' },
-                      { label: 'Att. Organized', value: currentEvaluation.attacking_organized, color: 'blue' }
+                      { label: 'Def. Final Third', value: currentEvaluation.defending_final_third, color: 'red' },
+                      { label: 'Att. Organized', value: currentEvaluation.attacking_organized, color: 'blue' },
+                      { label: 'Att. Final Third', value: currentEvaluation.attacking_final_third, color: 'blue' }
                     ].map((item, i) => (
                       <div key={i}>
-                        <div className="flex justify-between text-sm mb-1">
+                        <div className="flex justify-between text-xs mb-1">
                           <span className="text-slate-300">{item.label}</span>
                           <span className={`text-${item.color}-400 font-bold`}>{item.value || 0}/10</span>
                         </div>
-                        <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
                           <div className={`h-full bg-${item.color}-500 rounded-full transition-all`} style={{ width: `${(item.value || 0) * 10}%` }}></div>
                         </div>
                       </div>
                     ))}
+
+                    {/* Position Roles */}
+                    {currentEvaluation.position_role_1_label && (
+                      <div className="pt-3 mt-3 border-t border-slate-700">
+                        <div className="text-xs text-slate-400 mb-2">Position Roles</div>
+                        {[1,2,3,4].map(i => currentEvaluation[`position_role_${i}_label`] && (
+                          <div key={i} className="mb-2">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-slate-300">{currentEvaluation[`position_role_${i}_label`]}</span>
+                              <span className="text-indigo-400 font-bold">{currentEvaluation[`position_role_${i}`] || 0}/10</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${(currentEvaluation[`position_role_${i}`] || 0) * 10}%` }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {(currentEvaluation.player_strengths || currentEvaluation.areas_of_growth) && (
-                  <div className="grid md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-700">
+                {(currentEvaluation.player_strengths || currentEvaluation.areas_of_growth || currentEvaluation.training_focus) && (
+                  <div className="grid md:grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-700">
                     {currentEvaluation.player_strengths && (
-                      <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/30">
+                      <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/30">
                         <div className="text-xs text-emerald-400 font-semibold mb-2">💪 STRENGTHS</div>
-                        <p className="text-sm text-slate-300">{currentEvaluation.player_strengths}</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{currentEvaluation.player_strengths}</p>
                       </div>
                     )}
                     {currentEvaluation.areas_of_growth && (
-                      <div className="bg-orange-500/10 rounded-lg p-4 border border-orange-500/30">
+                      <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30">
                         <div className="text-xs text-orange-400 font-semibold mb-2">📈 AREAS OF GROWTH</div>
-                        <p className="text-sm text-slate-300">{currentEvaluation.areas_of_growth}</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{currentEvaluation.areas_of_growth}</p>
+                      </div>
+                    )}
+                    {currentEvaluation.training_focus && (
+                      <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
+                        <div className="text-xs text-blue-400 font-semibold mb-2">🎯 TRAINING FOCUS</div>
+                        <p className="text-xs text-slate-300 leading-relaxed">{currentEvaluation.training_focus}</p>
                       </div>
                     )}
                   </div>
@@ -285,6 +395,27 @@ export default function PlayerDashboard() {
             </Card>
           )}
         </div>
+
+        {/* Development Pathway */}
+        {pathway?.training_modules?.length > 0 && (
+          <div className="mt-6">
+            <PlayerDevelopmentDisplay
+              player={player}
+              pathway={pathway}
+              assessments={assessments}
+              onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+              onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
+              isAdminOrCoach={isAdminOrCoach}
+            />
+          </div>
+        )}
+
+        {/* Position Knowledge Bank */}
+        {player.primary_position && (
+          <div className="mt-6">
+            <PositionKnowledgeBank position={player.primary_position} />
+          </div>
+        )}
 
         {/* Tryout Info Footer - Admin/Coach Only */}
         {isAdminOrCoach && tryout && (

@@ -456,15 +456,67 @@ export default function CoachDashboard() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card className="border-none shadow-xl bg-white">
-            <CardContent className="p-0">
-              <iframe
-                src={`${window.location.origin}/#${createPageUrl('CoachProfile')}?id=${currentCoach.id}`}
-                className="w-full h-[calc(100vh-300px)] border-0"
-                title="Coach Profile"
-              />
-            </CardContent>
-          </Card>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="border-none shadow-xl bg-gradient-to-br from-white to-emerald-50">
+              <CardHeader className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+                <CardTitle>My Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <div className="text-sm text-slate-600">Name</div>
+                  <div className="text-lg font-bold">{currentCoach.full_name}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-600">Email</div>
+                  <div className="text-lg">{currentCoach.email}</div>
+                </div>
+                {currentCoach.phone && (
+                  <div>
+                    <div className="text-sm text-slate-600">Phone</div>
+                    <div className="text-lg">{currentCoach.phone}</div>
+                  </div>
+                )}
+                {currentCoach.branch && (
+                  <div>
+                    <div className="text-sm text-slate-600">Branch</div>
+                    <Badge className="mt-1">{currentCoach.branch}</Badge>
+                  </div>
+                )}
+                {currentCoach.bio && (
+                  <div>
+                    <div className="text-sm text-slate-600">Bio</div>
+                    <div className="text-sm text-slate-700 mt-1">{currentCoach.bio}</div>
+                  </div>
+                )}
+                <Button onClick={() => navigate(`${createPageUrl('CoachProfile')}?id=${currentCoach.id}`)} className="w-full bg-emerald-600">
+                  View Public Profile
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-gradient-to-br from-white to-blue-50">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                <CardTitle>My Services</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {services.length > 0 ? (
+                  <div className="space-y-3">
+                    {services.map((service, idx) => (
+                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: service.color }}></div>
+                          <span className="font-semibold">{service.name}</span>
+                        </div>
+                        <span className="text-sm text-slate-600">{service.duration} min</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-sm">No services configured</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

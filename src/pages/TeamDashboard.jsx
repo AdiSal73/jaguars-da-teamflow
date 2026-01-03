@@ -332,8 +332,9 @@ Format with clear headers and structure.`;
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md mb-6">
-            <TabsTrigger value="roster">Team Roster</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl mb-6">
+            <TabsTrigger value="roster">Roster Cards</TabsTrigger>
+            <TabsTrigger value="table">Roster Table</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
           </TabsList>
@@ -607,7 +608,7 @@ Format with clear headers and structure.`;
           </TabsContent>
 
           <TabsContent value="roster">
-        <Card className="border-none shadow-2xl bg-white">
+        <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-emerald-50">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -619,6 +620,42 @@ Format with clear headers and structure.`;
                   <Plus className="w-4 h-4 mr-1" />Add Player
                 </Button>
               </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {players?.map(player => {
+                const playerTryout = tryouts.find(t => t.player_id === player.id);
+                const playerTeam = allTeams.find(t => t.id === player.team_id);
+                return (
+                  <EditablePlayerCard
+                    key={player.id}
+                    player={player}
+                    tryout={playerTryout}
+                    team={playerTeam}
+                    teams={allTeams}
+                    clubSettings={clubSettings}
+                  />
+                );
+              })}
+            </div>
+            {players.length === 0 && (
+              <div className="text-center py-12 text-slate-500">
+                No players assigned to this team
+              </div>
+            )}
+          </CardContent>
+        </Card>
+          </TabsContent>
+
+          <TabsContent value="table">
+        <Card className="border-none shadow-2xl bg-white">
+          <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Roster Table
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-0">
