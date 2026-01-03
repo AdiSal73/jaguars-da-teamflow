@@ -55,6 +55,12 @@ export default function PlayerDashboard() {
     enabled: !!playerId
   });
 
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['allPlayers'],
+    queryFn: () => base44.entities.Player.list(),
+    enabled: !!playerId
+  });
+
   const { data: player, isLoading: playerLoading } = useQuery({
     queryKey: ['player', playerId],
     queryFn: async () => {
@@ -69,7 +75,7 @@ export default function PlayerDashboard() {
   
   // Get all parent info - both registered users and emails from player record
   const allParentInfo = React.useMemo(() => {
-    if (!player) return [];
+    if (!player || !allPlayers || !users) return [];
     
     const parentMap = new Map();
     
@@ -87,8 +93,7 @@ export default function PlayerDashboard() {
     // Add parent_emails from player record (if not already registered)
     (player.parent_emails || []).forEach(email => {
       if (!parentMap.has(email)) {
-        // Find player info that might have name/phone for this email
-        const playerWithInfo = allPlayers.find(p => p.email === email || p.parent_emails?.includes(email));
+        const playerWithInfo = allPlayers.find(p => (p.parent_emails || []).includes(email));
         parentMap.set(email, {
           name: playerWithInfo?.parent_name || email,
           email: email,
@@ -144,11 +149,6 @@ export default function PlayerDashboard() {
       return pathways[0] || null;
     },
     enabled: !!playerId
-  });
-
-  const { data: allPlayers = [] } = useQuery({
-    queryKey: ['allPlayers'],
-    queryFn: () => base44.entities.Player.list()
   });
 
   const updatePlayerMutation = useMutation({
@@ -213,42 +213,22 @@ export default function PlayerDashboard() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message) => {
-      // Send to player if they have email
-      if (player.player_email) {
+      const recipientEmails = new Set();
+      if (player.player_email) recipientEmails.add(player.player_email);
+      allParentInfo.forEach(parent => recipientEmails.add(parent.email));
+
+      for (const email of Array.from(recipientEmails)) {
+        const parent = allParentInfo.find(p => p.email === email);
+        const recipientName = parent ? parent.name : player.full_name;
+
         await base44.entities.Message.create({
           sender_email: currentUser.email,
           sender_name: currentUser.full_name,
-          recipient_email: player.player_email,
-          recipient_name: player.full_name,
-          subject: `Message from ${currentUser.full_name}`,
+          recipient_email: email,
+          recipient_name: recipientName,
+          subject: `Message about ${player.full_name} from ${currentUser.full_name}`,
           content: message
         });
-      }
-      
-      // Send to all parent emails for safety
-      for (const parent of parentUsers) {
-        await base44.entities.Message.create({
-          sender_email: currentUser.email,
-          sender_name: currentUser.full_name,
-          recipient_email: parent.email,
-          recipient_name: parent.full_name || parent.email,
-          subject: `Message about ${player.full_name}`,
-          content: message
-        });
-      }
-      
-      // Also send to parent_emails array if exists
-      if (player.parent_emails?.length > 0) {
-        for (const email of player.parent_emails) {
-          await base44.entities.Message.create({
-            sender_email: currentUser.email,
-            sender_name: currentUser.full_name,
-            recipient_email: email,
-            recipient_name: email,
-            subject: `Message about ${player.full_name}`,
-            content: message
-          });
-        }
       }
     },
     onSuccess: () => {
@@ -329,10 +309,10 @@ export default function PlayerDashboard() {
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Status</div>
                   <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
-                  </div>
-                  </div>
-                  {allParentInfo.length > 0 && (
-                  <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
+                </div>
+              </div>
+              {allParentInfo.length > 0 && (
+                <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
                   <div className="text-xs text-slate-400 mb-3 font-semibold">Parent Contacts</div>
                   <div className="space-y-2">
                     {allParentInfo.map((parent, idx) => (
@@ -350,18 +330,6 @@ export default function PlayerDashboard() {
                           <div className="text-xs text-slate-400">{parent.phone}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  </div>
-                  )}
-              {parentUsers.length > 0 && (
-                <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400 mb-2">Parents</div>
-                  <div className="flex flex-wrap gap-2">
-                    {parentUsers.map(parent => (
-                      <Badge key={parent.id} className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                        {parent.full_name || parent.email}
-                      </Badge>
                     ))}
                   </div>
                 </div>
