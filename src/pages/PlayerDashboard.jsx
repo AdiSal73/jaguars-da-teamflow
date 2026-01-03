@@ -18,6 +18,8 @@ import EditTryoutDialog from '../components/player/EditTryoutDialog';
 import CreateAssessmentDialog from '../components/player/CreateAssessmentDialog';
 import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
 import AddParentDialog from '../components/player/AddParentDialog';
+import EditPhysicalAssessmentDialog from '../components/player/EditPhysicalAssessmentDialog';
+import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
 
 export default function PlayerDashboard() {
   const navigate = useNavigate();
@@ -34,6 +36,8 @@ export default function PlayerDashboard() {
   const [showAddParentDialog, setShowAddParentDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [messageContent, setMessageContent] = useState('');
+  const [showEditAssessmentDialog, setShowEditAssessmentDialog] = useState(false);
+  const [showEditEvaluationDialog, setShowEditEvaluationDialog] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -61,8 +65,51 @@ export default function PlayerDashboard() {
     enabled: !!playerId
   });
 
-  const isAdminOrCoach = currentUser?.role === 'admin' || coaches.some(c => c.email === currentUser?.email);
-  const parentUsers = users.filter(u => u.player_ids?.includes(playerId)) || [];
+  const isAdminOrCoach = currentUser?.role === 'admin' || currentUser?.role === 'director' || coaches.some(c => c.email === currentUser?.email);
+  
+  // Get all parent info - both registered users and emails from player record
+  const allParentInfo = React.useMemo(() => {
+    if (!player) return [];
+    
+    const parentMap = new Map();
+    
+    // Add registered users who have this player in their player_ids
+    users.filter(u => u.player_ids?.includes(playerId)).forEach(user => {
+      parentMap.set(user.email, {
+        name: user.full_name || user.email,
+        email: user.email,
+        phone: user.phone || 'N/A',
+        isRegistered: true,
+        userId: user.id
+      });
+    });
+    
+    // Add parent_emails from player record (if not already registered)
+    (player.parent_emails || []).forEach(email => {
+      if (!parentMap.has(email)) {
+        // Find player info that might have name/phone for this email
+        const playerWithInfo = allPlayers.find(p => p.email === email || p.parent_emails?.includes(email));
+        parentMap.set(email, {
+          name: playerWithInfo?.parent_name || email,
+          email: email,
+          phone: playerWithInfo?.phone || 'N/A',
+          isRegistered: false
+        });
+      }
+    });
+    
+    // Legacy: Check player.email field
+    if (player.email && !parentMap.has(player.email)) {
+      parentMap.set(player.email, {
+        name: player.parent_name || player.email,
+        email: player.email,
+        phone: player.phone || 'N/A',
+        isRegistered: users.some(u => u.email === player.email)
+      });
+    }
+    
+    return Array.from(parentMap.values());
+  }, [player, users, playerId, allPlayers]);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -143,6 +190,24 @@ export default function PlayerDashboard() {
       queryClient.invalidateQueries(['assessments', playerId]);
       setShowCreateAssessmentDialog(false);
       toast.success('Assessment created');
+    }
+  });
+
+  const updateAssessmentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.PhysicalAssessment.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['assessments', playerId]);
+      setShowEditAssessmentDialog(false);
+      toast.success('Assessment updated');
+    }
+  });
+
+  const updateEvaluationMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Evaluation.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['evaluations', playerId]);
+      setShowEditEvaluationDialog(false);
+      toast.success('Evaluation updated');
     }
   });
 
@@ -266,14 +331,25 @@ export default function PlayerDashboard() {
                   <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
                   </div>
                   </div>
-                  {parentUsers.length > 0 && (
-                  <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400 mb-2">Parents</div>
-                  <div className="flex flex-wrap gap-2">
-                    {parentUsers.map(parent => (
-                      <Badge key={parent.id} className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                        {parent.full_name || parent.email}
-                      </Badge>
+                  {allParentInfo.length > 0 && (
+                  <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="text-xs text-slate-400 mb-3 font-semibold">Parent Contacts</div>
+                  <div className="space-y-2">
+                    {allParentInfo.map((parent, idx) => (
+                      <div key={idx} className="bg-white/5 rounded-lg p-2 flex items-start justify-between border border-white/5">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-white">{parent.name}</span>
+                            {parent.isRegistered && (
+                              <Badge className="bg-green-500/20 text-green-300 border border-green-500/30 text-xs">
+                                ✓ Registered
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">{parent.email}</div>
+                          <div className="text-xs text-slate-400">{parent.phone}</div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                   </div>
@@ -313,17 +389,17 @@ export default function PlayerDashboard() {
                         <button onClick={() => setShowCreateAssessmentDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
                           <Plus className="w-4 h-4" />
                         </button>
-                        <button onClick={() => {/* TODO: Edit assessment */}} className="p-1 hover:bg-white/10 rounded text-blue-400">
+                        <button onClick={() => setShowEditAssessmentDialog(true)} className="p-1 hover:bg-white/10 rounded text-blue-400">
                           <Edit className="w-4 h-4" />
                         </button>
                       </>
                     )}
                     {assessments.length > 1 && (
                       <>
-                        <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                        <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30 text-white">
                           <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setAssessmentIndex(Math.min(assessments.length - 1, assessmentIndex + 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                        <button onClick={() => setAssessmentIndex(Math.min(assessments.length - 1, assessmentIndex + 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30 text-white">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </>
@@ -417,17 +493,17 @@ export default function PlayerDashboard() {
                         <button onClick={() => setShowCreateEvaluationDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
                           <Plus className="w-4 h-4" />
                         </button>
-                        <button onClick={() => {/* TODO: Edit evaluation */}} className="p-1 hover:bg-white/10 rounded text-blue-400">
+                        <button onClick={() => setShowEditEvaluationDialog(true)} className="p-1 hover:bg-white/10 rounded text-blue-400">
                           <Edit className="w-4 h-4" />
                         </button>
                       </>
                     )}
                     {evaluations.length > 1 && (
                       <>
-                        <button onClick={() => setEvaluationIndex(Math.max(0, evaluationIndex - 1))} disabled={evaluationIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                        <button onClick={() => setEvaluationIndex(Math.max(0, evaluationIndex - 1))} disabled={evaluationIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30 text-white">
                           <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setEvaluationIndex(Math.min(evaluations.length - 1, evaluationIndex + 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                        <button onClick={() => setEvaluationIndex(Math.min(evaluations.length - 1, evaluationIndex + 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30 text-white">
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </>
@@ -438,6 +514,10 @@ export default function PlayerDashboard() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
+                    <div className="text-center mb-4">
+                      <div className="text-4xl font-bold text-emerald-400">{currentEvaluation.overall_score?.toFixed(1) || 'N/A'}</div>
+                      <div className="text-xs text-slate-400">OVERALL SCORE</div>
+                    </div>
                     <ResponsiveContainer width="100%" height={250}>
                       <RadarChart data={radarData}>
                         <PolarGrid stroke="#475569" />
@@ -647,6 +727,26 @@ export default function PlayerDashboard() {
             open={showAddParentDialog}
             onClose={() => setShowAddParentDialog(false)}
             player={player}
+          />
+        )}
+
+        {showEditAssessmentDialog && currentAssessment && (
+          <EditPhysicalAssessmentDialog
+            open={showEditAssessmentDialog}
+            onClose={() => setShowEditAssessmentDialog(false)}
+            assessment={currentAssessment}
+            onSave={(id, data) => updateAssessmentMutation.mutate({ id, data })}
+            isPending={updateAssessmentMutation.isPending}
+          />
+        )}
+
+        {showEditEvaluationDialog && currentEvaluation && (
+          <EditEvaluationDialog
+            open={showEditEvaluationDialog}
+            onClose={() => setShowEditEvaluationDialog(false)}
+            evaluation={currentEvaluation}
+            onSave={(id, data) => updateEvaluationMutation.mutate({ id, data })}
+            isPending={updateEvaluationMutation.isPending}
           />
         )}
 

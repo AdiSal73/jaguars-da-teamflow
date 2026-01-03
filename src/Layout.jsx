@@ -320,49 +320,54 @@ export default function Layout({ children, currentPageName }) {
                 <Search className="w-5 h-5" />
               </Button>
               {user && <NotificationCenter />}
-              
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 px-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {user?.full_name?.charAt(0) || 'U'}
-                      </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
+                    </div>
+                    {user && (
                       <div className="hidden md:block text-left">
                         <p className="text-sm font-medium text-slate-900">{user?.full_name || 'User'}</p>
                         <p className="text-xs text-slate-500 capitalize">{roleType}</p>
                       </div>
-                      <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    {roleType === 'admin' && (
-                      <DropdownMenuItem
-                        onClick={() => navigate(createPageUrl('UserManagement'))}
-                        className="text-slate-600"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
                     )}
-                    <DropdownMenuSeparator />
+                    <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {user ? (
+                    <>
+                      {roleType === 'admin' && (
+                        <DropdownMenuItem
+                          onClick={() => navigate(createPageUrl('UserManagement'))}
+                          className="text-slate-600"
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Settings
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => base44.auth.logout()}
+                        className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
                     <DropdownMenuItem
-                      onClick={() => base44.auth.logout()}
-                      className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                      onClick={() => base44.auth.redirectToLogin()}
+                      className="text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
+                      <UserIcon className="w-4 h-4 mr-2" />
+                      Login / Register
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button 
-                  onClick={() => base44.auth.redirectToLogin()} 
-                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
-                >
-                  Sign In
-                </Button>
-              )}
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Button
                 variant="ghost"
