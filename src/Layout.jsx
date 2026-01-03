@@ -184,6 +184,12 @@ export default function Layout({ children, currentPageName }) {
       roles: ["user", "parent"]
     },
     {
+      title: "IDP Services",
+      url: createPageUrl("IDPServices"),
+      icon: TrendingUp,
+      roles: ["user", "parent"]
+    },
+    {
       title: "My Bookings",
       url: createPageUrl("MyBookings"),
       icon: Clock,

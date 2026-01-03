@@ -2,8 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
-    const url = new URL(req.url);
-    const coachId = url.searchParams.get('coach_id');
+    const body = await req.json();
+    const coachId = body.coach_id;
     
     if (!coachId) {
       return Response.json({ error: 'coach_id parameter is required' }, { status: 400 });
