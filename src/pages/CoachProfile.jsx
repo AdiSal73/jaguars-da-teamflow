@@ -99,6 +99,28 @@ export default function CoachProfile() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* IDP Services Direct Booking */}
+        <Card className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 border-none shadow-2xl">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-bold text-white mb-4">Book IDP Services</h2>
+            <p className="text-white/90 mb-6">Individual development programs tailored to your needs</p>
+            <div className="grid md:grid-cols-3 gap-4">
+              {services.filter(s => s.name.includes('IDP') || s.name.includes('Video Analysis') || s.name.includes('Functional') || s.name.includes('Position')).map((service, idx) => (
+                <Button
+                  key={idx}
+                  onClick={() => navigate(`${createPageUrl('Bookingpage')}?service=${encodeURIComponent(service.name)}&coach=${coach.id}`)}
+                  className="bg-white text-purple-600 hover:bg-slate-100 font-semibold h-auto py-4"
+                >
+                  <div className="text-left w-full">
+                    <div className="font-bold">{service.name}</div>
+                    <div className="text-xs opacity-75">{service.duration} min session</div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid md:grid-cols-3 gap-6">
           {/* Teams */}
           {coachTeams.length > 0 && (
@@ -185,6 +207,37 @@ export default function CoachProfile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Testimonials */}
+        <Card className="mb-8 bg-slate-800/50 border-slate-700 backdrop-blur-md">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Award className="w-5 h-5 text-emerald-400" />
+              Success Stories & Testimonials
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {coach.testimonials && coach.testimonials.length > 0 ? (
+              <div className="space-y-4">
+                {coach.testimonials.map((testimonial, idx) => (
+                  <div key={idx} className="p-4 bg-slate-700/50 rounded-lg border-l-4 border-emerald-400">
+                    <p className="text-slate-300 italic mb-2">"{testimonial.quote}"</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-semibold text-sm">- {testimonial.author}</span>
+                      {testimonial.achievement && (
+                        <Badge className="bg-emerald-500 text-white">{testimonial.achievement}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-slate-400">No testimonials yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Book Now */}
         <div className="mt-8">
