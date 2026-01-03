@@ -1,74 +1,153 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, Target, Users, Calendar, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Video, Target, Users, Calendar, CheckCircle, ArrowRight, Sparkles, Edit, Trash2, Plus } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 
-const idpServices = [
-  {
-    id: 'video-analysis',
-    name: 'Individual Video Analysis',
-    icon: Video,
-    color: 'from-purple-600 to-pink-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    duration: 60,
-    description: 'Elevate your game through personalized video analysis',
-    fullDescription: 'Join us for an in-depth online/Zoom session where we break down match footage and training clips together. We\'ll analyze your positioning, decision-making, and technique in real game scenarios. You\'ll learn how to self-evaluate using professional analysis methods, identify key moments for improvement, and develop a tactical understanding that translates directly to match performance.',
-    benefits: [
-      'One-on-one Zoom session with professional analysis',
-      'Review of your match and training footage',
-      'Tactical insights and positioning feedback',
-      'Personalized action plan for improvement',
-      'Access to recording for future reference'
-    ],
-    image: 'https://images.unsplash.com/photo-1461897104016-0b3b00cc81ee?w=800&q=80'
-  },
-  {
-    id: 'functional-skills',
-    name: 'Functional Skill Building',
-    icon: Target,
-    color: 'from-emerald-600 to-teal-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    duration: 90,
-    description: 'Master specific skills for real-game scenarios',
-    fullDescription: 'Build confidence and competence through focused, scenario-based training. Each session targets specific skills you need to execute successfully in match situations. We create realistic game scenarios where you\'ll practice decision-making under pressure, develop muscle memory for key techniques, and learn to apply skills in the heat of competition.',
-    benefits: [
-      'Scenario-based skill development',
-      'High-repetition technical training',
-      'Game-realistic pressure situations',
-      'Progressive skill mastery approach',
-      'Immediate feedback and correction'
-    ],
-    image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80'
-  },
-  {
-    id: 'position-training',
-    name: 'Position-Specific Training',
-    icon: Users,
-    color: 'from-blue-600 to-indigo-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    duration: 90,
-    description: 'Tactical excellence for your position',
-    fullDescription: 'Unlock the secrets of your position through tactical training and small-group sessions. Learn the nuances of playing in a team structure, recognize game patterns and visual cues, and develop the spatial awareness that separates good players from great ones. Training includes position-specific movements, communication patterns, and tactical combinations with teammates.',
-    benefits: [
-      'Position-specific tactical education',
-      'Small-group training scenarios',
-      'Pattern recognition development',
-      'Team integration skills',
-      'Advanced positional play concepts'
-    ],
-    image: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80'
-  }
-];
+const iconMap = {
+  'Video Analysis': Video,
+  'Skill Building': Target,
+  'Position Training': Users,
+  'Other': Target
+};
 
 export default function IDPServices() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    description: '',
+    full_description: '',
+    category: 'Other',
+    duration: 60,
+    price: 0,
+    image_url: '',
+    location: '',
+    benefits: [],
+    color: 'from-emerald-600 to-teal-600',
+    is_active: true
+  });
+  const [benefitInput, setBenefitInput] = useState('');
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    retry: false
+  });
+
+  const isAdmin = user?.role === 'admin';
+
+  const { data: idpServices = [] } = useQuery({
+    queryKey: ['idpServices'],
+    queryFn: () => base44.entities.IDPService.filter({ is_active: true })
+  });
+
+  const createServiceMutation = useMutation({
+    mutationFn: (data) => base44.entities.IDPService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['idpServices']);
+      setShowEditDialog(false);
+      resetForm();
+      toast.success('Service created');
+    }
+  });
+
+  const updateServiceMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.IDPService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['idpServices']);
+      setShowEditDialog(false);
+      resetForm();
+      toast.success('Service updated');
+    }
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: (id) => base44.entities.IDPService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['idpServices']);
+      toast.success('Service deleted');
+    }
+  });
+
+  const resetForm = () => {
+    setServiceForm({
+      name: '',
+      description: '',
+      full_description: '',
+      category: 'Other',
+      duration: 60,
+      price: 0,
+      image_url: '',
+      location: '',
+      benefits: [],
+      color: 'from-emerald-600 to-teal-600',
+      is_active: true
+    });
+    setEditingService(null);
+    setBenefitInput('');
+  };
+
+  const handleEdit = (service) => {
+    setEditingService(service);
+    setServiceForm({
+      name: service.name || '',
+      description: service.description || '',
+      full_description: service.full_description || '',
+      category: service.category || 'Other',
+      duration: service.duration || 60,
+      price: service.price || 0,
+      image_url: service.image_url || '',
+      location: service.location || '',
+      benefits: service.benefits || [],
+      color: service.color || 'from-emerald-600 to-teal-600',
+      is_active: service.is_active !== false
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSave = () => {
+    if (!serviceForm.name || !serviceForm.description) {
+      toast.error('Please fill required fields');
+      return;
+    }
+
+    if (editingService) {
+      updateServiceMutation.mutate({ id: editingService.id, data: serviceForm });
+    } else {
+      createServiceMutation.mutate(serviceForm);
+    }
+  };
+
+  const addBenefit = () => {
+    if (benefitInput.trim()) {
+      setServiceForm({
+        ...serviceForm,
+        benefits: [...serviceForm.benefits, benefitInput.trim()]
+      });
+      setBenefitInput('');
+    }
+  };
+
+  const removeBenefit = (index) => {
+    setServiceForm({
+      ...serviceForm,
+      benefits: serviceForm.benefits.filter((_, i) => i !== index)
+    });
+  };
 
   const handleBookService = (service) => {
     navigate(`${createPageUrl('Bookingpage')}?service=${encodeURIComponent(service.name)}`);
@@ -116,31 +195,70 @@ export default function IDPServices() {
 
       {/* Services Grid */}
       <div className="max-w-7xl mx-auto px-6 pb-24">
+        {isAdmin && (
+          <div className="flex justify-end mb-6">
+            <Button onClick={() => { resetForm(); setShowEditDialog(true); }} className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Service
+            </Button>
+          </div>
+        )}
+        
         <div className="grid md:grid-cols-3 gap-8">
           {idpServices.map((service, idx) => {
-            const Icon = service.icon;
+            const Icon = iconMap[service.category] || Target;
             const isSelected = selectedService?.id === service.id;
             
             return (
               <Card 
                 key={service.id}
                 className={`group relative overflow-hidden border-2 transition-all duration-500 cursor-pointer ${
-                  isSelected ? service.borderColor + ' shadow-2xl scale-105' : 'border-slate-700 hover:border-slate-600'
+                  isSelected ? 'border-emerald-400 shadow-2xl scale-105' : 'border-slate-700 hover:border-slate-600 hover:scale-105'
                 } bg-slate-800/50 backdrop-blur-md`}
                 onClick={() => setSelectedService(isSelected ? null : service)}
               >
+                {isAdmin && (
+                  <div className="absolute top-2 left-2 z-10 flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => { e.stopPropagation(); handleEdit(service); }}
+                      className="h-7 px-2 bg-white/90 hover:bg-white"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Delete this service?')) {
+                          deleteServiceMutation.mutate(service.id);
+                        }
+                      }}
+                      className="h-7 px-2 bg-white/90 hover:bg-white text-red-600"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
                 {/* Image */}
                 <div className="relative h-48 overflow-hidden">
                   <img 
-                    src={service.image} 
+                    src={service.image_url || 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80'} 
                     alt={service.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className={`absolute inset-0 bg-gradient-to-t ${service.color} opacity-60`}></div>
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-4 right-4 flex gap-2">
                     <Badge className="bg-white/90 text-slate-900 font-bold">
                       {service.duration} min
                     </Badge>
+                    {service.price > 0 && (
+                      <Badge className="bg-emerald-500 text-white font-bold">
+                        ${service.price}
+                      </Badge>
+                    )}
                   </div>
                   <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
                     isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -165,18 +283,26 @@ export default function IDPServices() {
                   {isSelected && (
                     <>
                       <p className="text-slate-300 text-sm leading-relaxed">
-                        {service.fullDescription}
+                        {service.full_description || service.description}
                       </p>
                       
-                      <div className="space-y-2 pt-4 border-t border-slate-700">
-                        <p className="text-white font-semibold text-sm">What You'll Get:</p>
-                        {service.benefits.map((benefit, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                            <span className="text-slate-300 text-xs">{benefit}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {service.location && (
+                        <div className="mt-2 text-sm text-slate-400">
+                          📍 {service.location}
+                        </div>
+                      )}
+                      
+                      {service.benefits && service.benefits.length > 0 && (
+                        <div className="space-y-2 pt-4 border-t border-slate-700">
+                          <p className="text-white font-semibold text-sm">What You'll Get:</p>
+                          {service.benefits.map((benefit, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                              <span className="text-slate-300 text-xs">{benefit}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -219,6 +345,94 @@ export default function IDPServices() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingService ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Name *</Label>
+                <Input value={serviceForm.name} onChange={e => setServiceForm({...serviceForm, name: e.target.value})} />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select value={serviceForm.category} onValueChange={v => setServiceForm({...serviceForm, category: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Video Analysis">Video Analysis</SelectItem>
+                    <SelectItem value="Skill Building">Skill Building</SelectItem>
+                    <SelectItem value="Position Training">Position Training</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Short Description *</Label>
+              <Input value={serviceForm.description} onChange={e => setServiceForm({...serviceForm, description: e.target.value})} />
+            </div>
+
+            <div>
+              <Label>Full Description</Label>
+              <Textarea value={serviceForm.full_description} onChange={e => setServiceForm({...serviceForm, full_description: e.target.value})} rows={4} />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Duration (min)</Label>
+                <Input type="number" value={serviceForm.duration} onChange={e => setServiceForm({...serviceForm, duration: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <Label>Price ($)</Label>
+                <Input type="number" value={serviceForm.price} onChange={e => setServiceForm({...serviceForm, price: parseFloat(e.target.value)})} />
+              </div>
+              <div>
+                <Label>Color Gradient</Label>
+                <Input value={serviceForm.color} onChange={e => setServiceForm({...serviceForm, color: e.target.value})} placeholder="from-purple-600 to-pink-600" />
+              </div>
+            </div>
+
+            <div>
+              <Label>Location</Label>
+              <Input value={serviceForm.location} onChange={e => setServiceForm({...serviceForm, location: e.target.value})} placeholder="e.g., Zoom, CW3 Branch" />
+            </div>
+
+            <div>
+              <Label>Image URL</Label>
+              <Input value={serviceForm.image_url} onChange={e => setServiceForm({...serviceForm, image_url: e.target.value})} placeholder="https://..." />
+            </div>
+
+            <div>
+              <Label>Benefits</Label>
+              <div className="flex gap-2 mb-2">
+                <Input value={benefitInput} onChange={e => setBenefitInput(e.target.value)} placeholder="Add a benefit" onKeyDown={e => e.key === 'Enter' && addBenefit()} />
+                <Button onClick={addBenefit} size="sm"><Plus className="w-4 h-4" /></Button>
+              </div>
+              <div className="space-y-1">
+                {serviceForm.benefits.map((benefit, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span className="flex-1 text-sm">{benefit}</span>
+                    <Button variant="ghost" size="sm" onClick={() => removeBenefit(i)}><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)} className="flex-1">Cancel</Button>
+              <Button onClick={handleSave} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                {editingService ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

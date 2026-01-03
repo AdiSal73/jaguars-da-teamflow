@@ -24,6 +24,7 @@ import Features from './pages/Features';
 import FitnessResources from './pages/FitnessResources';
 import FormationView from './pages/FormationView';
 import Home from './pages/Home';
+import IDPServices from './pages/IDPServices';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import Landing from './pages/Landing';
 import MyBookings from './pages/MyBookings';
@@ -45,7 +46,7 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import IDPServices from './pages/IDPServices';
+import CoachProfile from './pages/CoachProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -76,6 +77,7 @@ export const PAGES = {
     "FitnessResources": FitnessResources,
     "FormationView": FormationView,
     "Home": Home,
+    "IDPServices": IDPServices,
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "Landing": Landing,
     "MyBookings": MyBookings,
@@ -97,7 +99,7 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "IDPServices": IDPServices,
+    "CoachProfile": CoachProfile,
 }
 
 export const pagesConfig = {
