@@ -115,7 +115,7 @@ export default function UserManagement() {
 
   const getUserRole = (user) => {
     if (user.role === 'admin') return 'admin';
-    if (user.role === 'parent') return 'parent';
+    if (user.player_ids && user.player_ids.length > 0) return 'parent';
     const isCoach = coaches.find(c => c.email === user.email);
     if (isCoach) return 'coach';
     return 'user';
@@ -483,22 +483,21 @@ export default function UserManagement() {
               <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
             </div>
             <div>
-              <Label className="mb-2 block">Role</Label>
+              <Label className="mb-2 block">Base Role</Label>
               <Select value={editUserForm.role} onValueChange={(v) => setEditUserForm({ ...editUserForm, role: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Player</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-slate-500 mt-1">Base44 role: 'user' or 'admin'. App roles (coach/parent) are determined by other data.</p>
             </div>
             
-            {editUserForm.role === 'parent' && (
-              <div>
-                <Label className="mb-2 block">Assigned Players (Multiple)</Label>
+            <div>
+              <Label className="mb-2 block">Assigned Players (for Parents)</Label>
                 <Input
                   placeholder="Search players..."
                   value={messageSearchTerm}
@@ -531,9 +530,8 @@ export default function UserManagement() {
                       </label>
                     ))}
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Parent will be able to view these players' dashboards</p>
-              </div>
-            )}
+              <p className="text-xs text-slate-500 mt-1">If players are assigned, this user becomes a 'parent' in the app.</p>
+            </div>
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>Cancel</Button>
@@ -570,20 +568,19 @@ export default function UserManagement() {
               />
             </div>
             <div>
-              <Label className="mb-2 block">Role</Label>
+              <Label className="mb-2 block">Base Role</Label>
               <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Player</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {inviteForm.role === 'parent' && (
+            {inviteForm.role !== 'admin' && (
               <div>
                 <Label className="mb-2 block">Assign to Players (Optional)</Label>
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
@@ -606,6 +603,7 @@ export default function UserManagement() {
                     </label>
                   ))}
                 </div>
+                <p className="text-xs text-slate-500 mt-1">If players are assigned, this user becomes a 'parent' in the app.</p>
               </div>
             )}
 

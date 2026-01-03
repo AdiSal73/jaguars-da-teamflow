@@ -38,9 +38,13 @@ export default function Layout({ children, currentPageName }) {
 
   React.useEffect(() => {
     if (isError && !isPublicPage) {
-      base44.auth.redirectToLogin();
+      const currentPath = location.pathname;
+      const publicPaths = [createPageUrl('PublicCoachBooking'), createPageUrl('Landing')];
+      if (!publicPaths.some(path => currentPath.startsWith(path))) {
+        base44.auth.redirectToLogin();
+      }
     }
-  }, [isError, isPublicPage]);
+  }, [isError, isPublicPage, location.pathname]);
 
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
@@ -326,14 +330,9 @@ export default function Layout({ children, currentPageName }) {
               >
                 <Search className="w-5 h-5" />
               </Button>
-              {!user && (
-                <Button onClick={() => base44.auth.redirectToLogin()} className="bg-emerald-600 hover:bg-emerald-700">
-                  Login / Register
-                </Button>
-              )}
               {user && <NotificationCenter />}
               
-              {user && (
+              {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center gap-2 px-2">
@@ -367,6 +366,13 @@ export default function Layout({ children, currentPageName }) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              ) : (
+                <Button 
+                  onClick={() => base44.auth.redirectToLogin()} 
+                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
+                >
+                  Sign In
+                </Button>
               )}
 
               <Button
