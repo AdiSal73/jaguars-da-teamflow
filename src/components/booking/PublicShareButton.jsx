@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Share2, Copy, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { createPageUrl } from '@/utils';
 
 export default function PublicShareButton({ coachId, coachName }) {
   const [showDialog, setShowDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  const publicUrl = `${window.location.origin}/#/PublicCoachBooking?coach=${coachId}`;
+  const publicUrl = `${window.location.origin}${createPageUrl('PublicCoachBooking')}?coach=${coachId}`;
   
   const handleCopy = () => {
     navigator.clipboard.writeText(publicUrl);

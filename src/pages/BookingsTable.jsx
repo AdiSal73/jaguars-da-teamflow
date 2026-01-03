@@ -377,8 +377,22 @@ export default function BookingsTable() {
                            variant="ghost"
                            onClick={() => setEditingBooking(booking)}
                            className="h-7 px-2"
+                           title="Edit booking"
                          >
                            <Edit className="w-3 h-3" />
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="ghost"
+                           onClick={() => {
+                             if (confirm('Are you sure you want to delete this booking?')) {
+                               deleteBookingMutation.mutate(booking.id);
+                             }
+                           }}
+                           className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                           title="Delete booking"
+                         >
+                           <Trash2 className="w-3 h-3" />
                          </Button>
                          {booking.parent_email && booking.status === 'confirmed' && (
                            <Button

@@ -169,15 +169,22 @@ export default function UserManagement() {
     }
   });
 
-  const handleSaveUser = () => {
-    updateUserMutation.mutate({
-      userId: editingUser.id,
-      data: {
+  const handleSaveUser = async () => {
+    try {
+      await base44.entities.User.update(editingUser.id, {
         display_name: editUserForm.display_name,
         role: editUserForm.role,
         player_ids: editUserForm.player_ids
-      }
-    });
+      });
+      
+      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['currentUser']);
+      setShowEditUserDialog(false);
+      setEditingUser(null);
+      toast.success('User updated successfully');
+    } catch (error) {
+      toast.error('Failed to update user: ' + error.message);
+    }
   };
 
   const toggleCoachRole = async (user) => {
