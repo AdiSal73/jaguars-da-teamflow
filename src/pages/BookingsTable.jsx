@@ -372,22 +372,21 @@ export default function BookingsTable() {
                       </td>
                       <td className="px-4 py-3">
                        <div className="flex gap-1">
-                         {isAdmin && (
-                           <Button
-                             size="sm"
-                             variant="ghost"
-                             onClick={() => setEditingBooking(booking)}
-                             className="h-7 px-2"
-                           >
-                             <Edit className="w-3 h-3" />
-                           </Button>
-                         )}
+                         <Button
+                           size="sm"
+                           variant="ghost"
+                           onClick={() => setEditingBooking(booking)}
+                           className="h-7 px-2"
+                         >
+                           <Edit className="w-3 h-3" />
+                         </Button>
                          {booking.parent_email && booking.status === 'confirmed' && (
                            <Button
                              size="sm"
                              variant="ghost"
                              onClick={() => sendReminderMutation.mutate(booking)}
                              className="h-7 px-2"
+                             title="Send reminder"
                            >
                              <Mail className="w-3 h-3" />
                            </Button>

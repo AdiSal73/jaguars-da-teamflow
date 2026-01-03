@@ -158,10 +158,8 @@ export default function NewMessageDialog({ open, onClose, user }) {
     }
 
     sendMessageMutation.mutate({
-      sender_id: user?.id,
       sender_name: user?.full_name,
       sender_email: user?.email,
-      recipient_id: null,
       recipient_email: recipientEmail,
       recipient_name: recipientName,
       content: messageContent,
