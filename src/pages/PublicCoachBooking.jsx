@@ -31,111 +31,29 @@ export default function PublicCoachBooking() {
     notes: ''
   });
 
-  const { data: coach, isLoading: coachLoading } = useQuery({
-    queryKey: ['coach', coachId],
+  const { data: publicData, isLoading: coachLoading } = useQuery({
+    queryKey: ['publicCoachData', coachId],
     queryFn: async () => {
       if (!coachId) return null;
-      const response = await fetch(`${base44.apiUrl}/api/entities/Coach/${coachId}`, {
-        headers: { 'x-app-id': base44.appId }
-      });
-      if (!response.ok) return null;
-      return await response.json();
+      const response = await base44.functions.invoke('getPublicCoachData', { coach_id: coachId });
+      return response.data;
     },
     enabled: !!coachId
   });
 
-  const { data: timeSlots = [] } = useQuery({
-    queryKey: ['timeSlots', coachId],
-    queryFn: async () => {
-      const response = await fetch(`${base44.apiUrl}/api/entities/TimeSlot?coach_id=${coachId}`, {
-        headers: { 'x-app-id': base44.appId }
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    },
-    enabled: !!coachId
-  });
-
-  const { data: bookings = [] } = useQuery({
-    queryKey: ['bookings'],
-    queryFn: async () => {
-      const response = await fetch(`${base44.apiUrl}/api/entities/Booking`, {
-        headers: { 'x-app-id': base44.appId }
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    }
-  });
-
-  const { data: locations = [] } = useQuery({
-    queryKey: ['locations'],
-    queryFn: async () => {
-      const response = await fetch(`${base44.apiUrl}/api/entities/Location`, {
-        headers: { 'x-app-id': base44.appId }
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    }
-  });
+  const coach = publicData?.coach || null;
+  const timeSlots = publicData?.timeSlots || [];
+  const bookings = publicData?.bookings || [];
+  const locations = publicData?.locations || [];
 
   const createBookingMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await fetch(`${base44.apiUrl}/api/entities/Booking`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-app-id': base44.appId
-        },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Failed to create booking');
-      return await response.json();
+      const response = await base44.functions.invoke('createPublicBooking', data);
+      return response.data;
     },
     onSuccess: async (booking) => {
-      queryClient.invalidateQueries(['bookings']);
-      
-      const location = locations.find(l => l.id === booking.location_id);
-      const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
-      
-      try {
-        // Send email to client
-        const response = await fetch(`${base44.apiUrl}/api/functions/sendBookingEmail`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-app-id': base44.appId
-          },
-          body: JSON.stringify({
-            to: booking.parent_email,
-            subject: `Booking Confirmed - ${booking.service_name}`,
-            booking: { ...booking, location_info: locationInfo, booked_by_name: 'Guest' },
-            type: 'confirmation_client'
-          })
-        });
-
-        // Send email to coach
-        if (coach?.email) {
-          await fetch(`${base44.apiUrl}/api/functions/sendBookingEmail`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-app-id': base44.appId
-            },
-            body: JSON.stringify({
-              to: coach.email,
-              subject: `New Booking - ${booking.player_name}`,
-              booking: { ...booking, location_info: locationInfo, booked_by_name: booking.parent_email },
-              type: 'confirmation_coach'
-            })
-          });
-        }
-        
-        toast.success('Booking confirmed!');
-      } catch (error) {
-        console.error('Email error:', error);
-        toast.error('Booking confirmed, but email failed to send');
-      }
-
+      queryClient.invalidateQueries(['publicCoachData']);
+      toast.success('Booking confirmed!');
       setBookingSuccess(true);
       setTimeout(() => {
         setShowConfirmDialog(false);
