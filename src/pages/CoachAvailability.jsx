@@ -829,22 +829,66 @@ export default function CoachAvailability() {
                   {services.length === 0 ? (
                     <p className="text-sm text-slate-500 text-center py-4">No services configured</p>
                   ) : (
-                    services.map(service => (
-                      <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                    <>
+                      {services.map(service => (
+                        <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                          <Checkbox
+                            checked={slotForm.service_names.includes(service.name)}
+                            onCheckedChange={checked => {
+                              const updated = checked
+                                ? [...slotForm.service_names, service.name]
+                                : slotForm.service_names.filter(s => s !== service.name);
+                              setSlotForm({...slotForm, service_names: updated});
+                            }}
+                          />
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: service.color }}></div>
+                          <span className="flex-1">{service.name}</span>
+                          <span className="text-xs text-slate-500">{service.duration} min</span>
+                        </label>
+                      ))}
+                      <label className="flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer border-t pt-3">
                         <Checkbox
-                          checked={slotForm.service_names.includes(service.name)}
+                          checked={slotForm.service_names.includes('Individual Video Analysis')}
                           onCheckedChange={checked => {
                             const updated = checked
-                              ? [...slotForm.service_names, service.name]
-                              : slotForm.service_names.filter(s => s !== service.name);
+                              ? [...slotForm.service_names, 'Individual Video Analysis']
+                              : slotForm.service_names.filter(s => s !== 'Individual Video Analysis');
                             setSlotForm({...slotForm, service_names: updated});
                           }}
                         />
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: service.color }}></div>
-                        <span className="flex-1">{service.name}</span>
-                        <span className="text-xs text-slate-500">{service.duration} min</span>
+                        <div className="w-3 h-3 rounded-full bg-purple-600"></div>
+                        <span className="flex-1">Individual Video Analysis (IDP)</span>
+                        <span className="text-xs text-slate-500">60 min</span>
                       </label>
-                    ))
+                      <label className="flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                        <Checkbox
+                          checked={slotForm.service_names.includes('Functional Skill Building')}
+                          onCheckedChange={checked => {
+                            const updated = checked
+                              ? [...slotForm.service_names, 'Functional Skill Building']
+                              : slotForm.service_names.filter(s => s !== 'Functional Skill Building');
+                            setSlotForm({...slotForm, service_names: updated});
+                          }}
+                        />
+                        <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
+                        <span className="flex-1">Functional Skill Building (IDP)</span>
+                        <span className="text-xs text-slate-500">90 min</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-2 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                        <Checkbox
+                          checked={slotForm.service_names.includes('Position-Specific Training')}
+                          onCheckedChange={checked => {
+                            const updated = checked
+                              ? [...slotForm.service_names, 'Position-Specific Training']
+                              : slotForm.service_names.filter(s => s !== 'Position-Specific Training');
+                            setSlotForm({...slotForm, service_names: updated});
+                          }}
+                        />
+                        <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                        <span className="flex-1">Position-Specific Training (IDP)</span>
+                        <span className="text-xs text-slate-500">90 min</span>
+                      </label>
+                    </>
                   )}
                 </div>
               </div>
