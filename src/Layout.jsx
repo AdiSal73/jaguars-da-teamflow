@@ -238,7 +238,7 @@ export default function Layout({ children, currentPageName }) {
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to={createPageUrl("About")} className="flex items-center gap-3 group">
+            <Link to={createPageUrl("landing")} className="flex items-center gap-3 group">
               <img 
                 src="https://ssprodst.blob.core.windows.net/logos/58/2821a300-9ff6-46d2-a00b-73be4dc4f316-04-02-2025-07-54-52-995.png" 
                 alt="Michigan Jaguars" 
