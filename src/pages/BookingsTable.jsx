@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, Download, Filter, Edit, Mail } from 'lucide-react';
+import { Calendar, Search, Download, Filter, Edit, Mail, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
 import EditBookingDialog from '../components/booking/EditBookingDialog';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function BookingsTable() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCoach, setFilterCoach] = useState('all');
@@ -26,6 +29,15 @@ export default function BookingsTable() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
+
+  const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      navigate(createPageUrl('Home'));
+      toast.error('Admin access required');
+    }
+  }, [user, isAdmin, navigate]);
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['bookings'],
@@ -48,7 +60,6 @@ export default function BookingsTable() {
   });
 
   const currentCoach = (coaches || []).find(c => c.email === user?.email);
-  const isAdmin = user?.role === 'admin';
 
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, data, sendCancellationEmail }) => {
@@ -381,19 +392,7 @@ export default function BookingsTable() {
                          >
                            <Edit className="w-3 h-3" />
                          </Button>
-                         <Button
-                           size="sm"
-                           variant="ghost"
-                           onClick={() => {
-                             if (confirm('Are you sure you want to delete this booking?')) {
-                               deleteBookingMutation.mutate(booking.id);
-                             }
-                           }}
-                           className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                           title="Delete booking"
-                         >
-                           <Trash2 className="w-3 h-3" />
-                         </Button>
+
                          {booking.parent_email && booking.status === 'confirmed' && (
                            <Button
                              size="sm"
@@ -427,10 +426,11 @@ export default function BookingsTable() {
 
       {editingBooking && (
         <EditBookingDialog
+          open={!!editingBooking}
           booking={editingBooking}
           onClose={() => setEditingBooking(null)}
           onSave={(id, data) => updateBookingMutation.mutate({ id, data })}
-          onDelete={isAdmin ? (id) => deleteBookingMutation.mutate(id) : null}
+          onDelete={(id) => deleteBookingMutation.mutate(id)}
           locations={locations}
           coaches={coaches}
         />
