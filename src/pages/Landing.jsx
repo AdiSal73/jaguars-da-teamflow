@@ -63,7 +63,7 @@ export default function Landing() {
                 </Card>
               </Link>
 
-              <Link to={createPageUrl('Features')}>
+              <Link to={createPageUrl('IDPServices')}>
                 <Card className="border-2 border-slate-200 hover:border-blue-400 hover:shadow-xl transition-all cursor-pointer group">
                   <CardContent className="p-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -71,8 +71,8 @@ export default function Landing() {
                         <Target className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-lg">Features</h3>
-                        <p className="text-sm text-slate-600">Explore our comprehensive platform</p>
+                        <h3 className="font-bold text-slate-900 text-lg">IDP Services</h3>
+                        <p className="text-sm text-slate-600">Individual development programs</p>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
