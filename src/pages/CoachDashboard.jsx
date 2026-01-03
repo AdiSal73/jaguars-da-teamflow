@@ -179,33 +179,21 @@ export default function CoachDashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-[1800px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Coach Dashboard</h1>
-          <p className="text-slate-600 mt-1">Welcome back, {currentCoach.full_name}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'overview' ? 'default' : 'outline'}
-            onClick={() => setViewMode('overview')}
-            className={viewMode === 'overview' ? 'bg-emerald-600' : ''}
-          >
-            <LayoutGrid className="w-4 h-4 mr-2" />
-            Overview
-          </Button>
-          <Button
-            variant={viewMode === 'field' ? 'default' : 'outline'}
-            onClick={() => setViewMode('field')}
-            className={viewMode === 'field' ? 'bg-emerald-600' : ''}
-          >
-            <List className="w-4 h-4 mr-2" />
-            Field View
-          </Button>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Coach Dashboard</h1>
+        <p className="text-slate-600 mt-1">Welcome back, {currentCoach.full_name}</p>
       </div>
 
-      {viewMode === 'overview' && (
-        <>
+      <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-md mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="field">Field View</TabsTrigger>
+          <TabsTrigger value="profile">My Profile</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+
+
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card className="border-none shadow-lg">
@@ -356,10 +344,9 @@ export default function CoachDashboard() {
               </CardContent>
             </Card>
           )}
-        </>
-      )}
+        </TabsContent>
 
-      {viewMode === 'field' && (
+        <TabsContent value="field">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
@@ -466,7 +453,20 @@ export default function CoachDashboard() {
             )}
           </div>
         </DragDropContext>
-      )}
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <Card className="border-none shadow-xl bg-white">
+            <CardContent className="p-0">
+              <iframe
+                src={`${window.location.origin}/#${createPageUrl('CoachProfile')}?id=${currentCoach.id}`}
+                className="w-full h-[calc(100vh-300px)] border-0"
+                title="Coach Profile"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -607,8 +607,7 @@ Format with clear headers and structure.`;
           </TabsContent>
 
           <TabsContent value="roster">
-        {/* Team Roster */}
-        <Card className="border-none shadow-2xl bg-gradient-to-br from-white to-emerald-50">
+        <Card className="border-none shadow-2xl bg-white">
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -619,37 +618,68 @@ Format with clear headers and structure.`;
                 <Button variant="ghost" size="sm" onClick={() => setShowAddPlayerDialog(true)} className="text-white hover:bg-white/20">
                   <Plus className="w-4 h-4 mr-1" />Add Player
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowAddTryoutDialog(true)} className="text-white hover:bg-white/20">
-                  <UserPlus className="w-4 h-4 mr-1" />Add Tryout
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowAssignCoachDialog(true)} className="text-white hover:bg-white/20">
-                  Assign Coach
-                </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {players?.map(player => {
-                const playerTryout = tryouts.find(t => t.player_id === player.id);
-                const playerTeam = allTeams.find(t => t.id === player.team_id);
-                return (
-                  <EditablePlayerCard
-                    key={player.id}
-                    player={player}
-                    tryout={playerTryout}
-                    team={playerTeam}
-                    teams={allTeams}
-                    clubSettings={clubSettings}
-                  />
-                );
-              })}
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-900 text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Jersey</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">DOB</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Recommendation</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')).map((player, idx) => {
+                    const playerTryout = tryouts.find(t => t.player_id === player.id);
+                    return (
+                      <tr 
+                        key={player.id} 
+                        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
+                        className={`border-b hover:bg-emerald-50 cursor-pointer ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                      >
+                        <td className="px-4 py-3 text-sm font-bold">{player.jersey_number || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-medium">{player.full_name}</td>
+                        <td className="px-4 py-3 text-sm">{player.primary_position || '-'}</td>
+                        <td className="px-4 py-3 text-sm">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : '-'}</td>
+                        <td className="px-4 py-3 text-xs">{player.email || player.player_email || '-'}</td>
+                        <td className="px-4 py-3 text-xs">{player.phone || player.player_phone || '-'}</td>
+                        <td className="px-4 py-3">
+                          <Badge className="text-xs">{playerTryout?.team_role || '-'}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={`text-xs ${
+                            playerTryout?.recommendation === 'Move up' ? 'bg-green-100 text-green-800' :
+                            playerTryout?.recommendation === 'Move down' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {playerTryout?.recommendation || '-'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={`text-xs ${player.status === 'Active' ? 'bg-green-500 text-white' : 'bg-slate-300'}`}>
+                            {player.status || 'Active'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {players.length === 0 && (
+                <div className="text-center py-12 text-slate-500">
+                  No players assigned to this team
+                </div>
+              )}
             </div>
-            {players.length === 0 && (
-              <div className="text-center py-12 text-slate-500">
-                No players assigned to this team
-              </div>
-            )}
           </CardContent>
         </Card>
           </TabsContent>
