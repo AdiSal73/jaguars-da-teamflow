@@ -11,6 +11,7 @@ import ClubSettingsAdmin from './pages/ClubSettingsAdmin';
 import CoachAvailability from './pages/CoachAvailability';
 import CoachDashboard from './pages/CoachDashboard';
 import CoachManagement from './pages/CoachManagement';
+import CoachProfile from './pages/CoachProfile';
 import CoachingResources from './pages/CoachingResources';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import Communications from './pages/Communications';
@@ -46,7 +47,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import CoachProfile from './pages/CoachProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +64,7 @@ export const PAGES = {
     "CoachAvailability": CoachAvailability,
     "CoachDashboard": CoachDashboard,
     "CoachManagement": CoachManagement,
+    "CoachProfile": CoachProfile,
     "CoachingResources": CoachingResources,
     "CommunicationPreferences": CommunicationPreferences,
     "Communications": Communications,
@@ -99,7 +100,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "CoachProfile": CoachProfile,
 }
 
 export const pagesConfig = {

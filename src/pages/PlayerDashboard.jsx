@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit } from 'lucide-react';
+import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
 import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
+import EditPlayerInfoDialog from '../components/player/EditPlayerInfoDialog';
+import EditTryoutDialog from '../components/player/EditTryoutDialog';
+import CreateAssessmentDialog from '../components/player/CreateAssessmentDialog';
+import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDialog';
+import AddParentDialog from '../components/player/AddParentDialog';
 
 export default function PlayerDashboard() {
   const navigate = useNavigate();
@@ -22,8 +27,13 @@ export default function PlayerDashboard() {
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
-  const [playerForm, setPlayerForm] = useState({});
+  const [showEditInfoDialog, setShowEditInfoDialog] = useState(false);
+  const [showEditTryoutDialog, setShowEditTryoutDialog] = useState(false);
+  const [showCreateAssessmentDialog, setShowCreateAssessmentDialog] = useState(false);
+  const [showCreateEvaluationDialog, setShowCreateEvaluationDialog] = useState(false);
+  const [showAddParentDialog, setShowAddParentDialog] = useState(false);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [messageContent, setMessageContent] = useState('');
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -87,23 +97,11 @@ export default function PlayerDashboard() {
     queryFn: () => base44.entities.Player.list()
   });
 
-  React.useEffect(() => {
-    if (player) {
-      setPlayerForm({
-        full_name: player.full_name || '',
-        jersey_number: player.jersey_number || '',
-        primary_position: player.primary_position || '',
-        team_id: player.team_id || '',
-        status: player.status || 'Active'
-      });
-    }
-  }, [player]);
-
   const updatePlayerMutation = useMutation({
     mutationFn: (data) => base44.entities.Player.update(playerId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['player', playerId]);
-      setIsEditing(false);
+      setShowEditInfoDialog(false);
       toast.success('Player updated');
     }
   });
@@ -117,12 +115,76 @@ export default function PlayerDashboard() {
     onSuccess: () => queryClient.invalidateQueries(['pathway', playerId])
   });
 
-  const handleSave = () => {
-    updatePlayerMutation.mutate({
-      ...playerForm,
-      jersey_number: playerForm.jersey_number ? Number(playerForm.jersey_number) : null
-    });
-  };
+  const saveTryoutMutation = useMutation({
+    mutationFn: ({ id, data }) => {
+      if (id) {
+        return base44.entities.PlayerTryout.update(id, data);
+      } else {
+        return base44.entities.PlayerTryout.create(data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryout', playerId]);
+      setShowEditTryoutDialog(false);
+      toast.success('Tryout info saved');
+    }
+  });
+
+  const createAssessmentMutation = useMutation({
+    mutationFn: (data) => base44.entities.PhysicalAssessment.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['assessments', playerId]);
+      setShowCreateAssessmentDialog(false);
+      toast.success('Assessment created');
+    }
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message) => {
+      // Send to player if they have email
+      if (player.player_email) {
+        await base44.entities.Message.create({
+          sender_email: currentUser.email,
+          sender_name: currentUser.full_name,
+          recipient_email: player.player_email,
+          recipient_name: player.full_name,
+          subject: `Message from ${currentUser.full_name}`,
+          content: message
+        });
+      }
+      
+      // Send to all parent emails for safety
+      for (const parent of parentUsers) {
+        await base44.entities.Message.create({
+          sender_email: currentUser.email,
+          sender_name: currentUser.full_name,
+          recipient_email: parent.email,
+          recipient_name: parent.full_name || parent.email,
+          subject: `Message about ${player.full_name}`,
+          content: message
+        });
+      }
+      
+      // Also send to parent_emails array if exists
+      if (player.parent_emails?.length > 0) {
+        for (const email of player.parent_emails) {
+          await base44.entities.Message.create({
+            sender_email: currentUser.email,
+            sender_name: currentUser.full_name,
+            recipient_email: email,
+            recipient_name: email,
+            subject: `Message about ${player.full_name}`,
+            content: message
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      setShowMessageDialog(false);
+      setMessageContent('');
+      toast.success('Message sent to player and parents');
+    }
+  });
 
   const currentAssessment = assessments[assessmentIndex] || null;
   const currentEvaluation = evaluations[evaluationIndex] || null;
@@ -167,9 +229,17 @@ export default function PlayerDashboard() {
                 {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
               </div>
               {isAdminOrCoach && (
-                <Button onClick={() => isEditing ? handleSave() : setIsEditing(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                  {isEditing ? <><Save className="w-3 h-3 mr-1" />Save</> : <><Edit className="w-3 h-3 mr-1" />Edit</>}
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowEditInfoDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                    <Edit className="w-3 h-3 mr-1" />Edit Info
+                  </Button>
+                  <Button onClick={() => setShowMessageDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                    <MessageSquare className="w-3 h-3 mr-1" />Message
+                  </Button>
+                  <Button onClick={() => setShowAddParentDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                    <UserPlus className="w-3 h-3 mr-1" />Add Parent
+                  </Button>
+                </div>
               )}
               <div className="grid grid-cols-4 gap-4 mt-4">
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
@@ -178,20 +248,7 @@ export default function PlayerDashboard() {
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Position</div>
-                  {isEditing ? (
-                    <Select value={playerForm.primary_position} onValueChange={v => setPlayerForm({...playerForm, primary_position: v})}>
-                      <SelectTrigger className="h-7 text-xs bg-white/10 border-white/20 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['GK','Right Outside Back','Left Outside Back','Right Centerback','Left Centerback','Defensive Midfielder','Right Winger','Center Midfielder','Forward','Attacking Midfielder','Left Winger'].map(pos => (
-                          <SelectItem key={pos} value={pos}>{pos}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="font-bold">{player.primary_position}</div>
-                  )}
+                  <div className="font-bold">{player.primary_position}</div>
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-xs text-slate-400">Team</div>
@@ -202,6 +259,18 @@ export default function PlayerDashboard() {
                   <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
                 </div>
               </div>
+              {parentUsers.length > 0 && (
+                <div className="mt-4 bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="text-xs text-slate-400 mb-2">Parents</div>
+                  <div className="flex flex-wrap gap-2">
+                    {parentUsers.map(parent => (
+                      <Badge key={parent.id} className="bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        {parent.full_name || parent.email}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -211,7 +280,7 @@ export default function PlayerDashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid md:grid-cols-3 gap-6">
           {/* Physical Stats */}
-          {currentAssessment && (
+          {currentAssessment ? (
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -219,16 +288,23 @@ export default function PlayerDashboard() {
                     <Activity className="w-5 h-5 text-emerald-400" />
                     Physical
                   </h3>
-                  {assessments.length > 1 && (
-                    <div className="flex gap-1">
-                      <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
-                        <ChevronLeft className="w-4 h-4" />
+                  <div className="flex gap-1">
+                    {isAdminOrCoach && (
+                      <button onClick={() => setShowCreateAssessmentDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
+                        <Plus className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setAssessmentIndex(Math.min(assessments.length - 1, assessmentIndex + 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {assessments.length > 1 && (
+                      <>
+                        <button onClick={() => setAssessmentIndex(Math.max(0, assessmentIndex - 1))} disabled={assessmentIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setAssessmentIndex(Math.min(assessments.length - 1, assessmentIndex + 1))} disabled={assessmentIndex >= assessments.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 mb-4">{new Date(currentAssessment.assessment_date).toLocaleDateString()}</p>
                 
@@ -291,10 +367,19 @@ export default function PlayerDashboard() {
                 </div>
               </CardContent>
             </Card>
+          ) : isAdminOrCoach && (
+            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md">
+              <CardContent className="p-6 text-center">
+                <p className="text-slate-400 mb-3">No physical assessment yet</p>
+                <Button onClick={() => setShowCreateAssessmentDialog(true)} size="sm" className="bg-emerald-600">
+                  <Plus className="w-4 h-4 mr-2" />Create Assessment
+                </Button>
+              </CardContent>
+            </Card>
           )}
 
           {/* Evaluation Radar */}
-          {currentEvaluation && (
+          {currentEvaluation ? (
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md md:col-span-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -302,16 +387,23 @@ export default function PlayerDashboard() {
                     <Target className="w-5 h-5 text-emerald-400" />
                     Evaluation
                   </h3>
-                  {evaluations.length > 1 && (
-                    <div className="flex gap-1">
-                      <button onClick={() => setEvaluationIndex(Math.max(0, evaluationIndex - 1))} disabled={evaluationIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
-                        <ChevronLeft className="w-4 h-4" />
+                  <div className="flex gap-1">
+                    {isAdminOrCoach && (
+                      <button onClick={() => setShowCreateEvaluationDialog(true)} className="p-1 hover:bg-white/10 rounded text-emerald-400">
+                        <Plus className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setEvaluationIndex(Math.min(evaluations.length - 1, evaluationIndex + 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {evaluations.length > 1 && (
+                      <>
+                        <button onClick={() => setEvaluationIndex(Math.max(0, evaluationIndex - 1))} disabled={evaluationIndex === 0} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setEvaluationIndex(Math.min(evaluations.length - 1, evaluationIndex + 1))} disabled={evaluationIndex >= evaluations.length - 1} className="p-1 hover:bg-white/10 rounded disabled:opacity-30">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 mb-4">{new Date(currentEvaluation.created_date).toLocaleDateString()}</p>
 
@@ -393,6 +485,15 @@ export default function PlayerDashboard() {
                 )}
               </CardContent>
             </Card>
+          ) : isAdminOrCoach && (
+            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md md:col-span-2">
+              <CardContent className="p-6 text-center">
+                <p className="text-slate-400 mb-3">No evaluation yet</p>
+                <Button onClick={() => setShowCreateEvaluationDialog(true)} size="sm" className="bg-emerald-600">
+                  <Plus className="w-4 h-4 mr-2" />Create Evaluation
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
 
@@ -418,13 +519,19 @@ export default function PlayerDashboard() {
         )}
 
         {/* Tryout Info Footer - Admin/Coach Only */}
-        {isAdminOrCoach && tryout && (
+        {isAdminOrCoach && (
           <Card className="mt-6 bg-slate-800/30 border-slate-700/50 backdrop-blur-md">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Award className="w-4 h-4 text-yellow-400" />
-                <h3 className="text-sm font-bold text-white">Tryout Information (Admin/Coach Only)</h3>
+              <div className="flex items-center gap-2 mb-3 justify-between">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-yellow-400" />
+                  <h3 className="text-sm font-bold text-white">Tryout Information (Admin/Coach Only)</h3>
+                </div>
+                <Button onClick={() => setShowEditTryoutDialog(true)} size="sm" variant="ghost" className="text-white hover:bg-white/10">
+                  <Edit className="w-3 h-3 mr-1" />Edit
+                </Button>
               </div>
+              {tryout ? (
               <div className="grid grid-cols-6 gap-4 text-sm">
                 <div>
                   <div className="text-xs text-slate-400">Role</div>
@@ -457,8 +564,88 @@ export default function PlayerDashboard() {
                   </Badge>
                 </div>
               </div>
+              ) : (
+                <p className="text-slate-400 text-sm">No tryout information yet</p>
+              )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Dialogs */}
+        {showEditInfoDialog && (
+          <EditPlayerInfoDialog
+            open={showEditInfoDialog}
+            onClose={() => setShowEditInfoDialog(false)}
+            player={player}
+            teams={teams}
+            onSave={(data) => updatePlayerMutation.mutate(data)}
+          />
+        )}
+
+        {showEditTryoutDialog && (
+          <EditTryoutDialog
+            open={showEditTryoutDialog}
+            onClose={() => setShowEditTryoutDialog(false)}
+            tryout={tryout}
+            playerId={playerId}
+            playerName={player.full_name}
+            onSave={(id, data) => saveTryoutMutation.mutate({ id, data })}
+          />
+        )}
+
+        {showCreateAssessmentDialog && (
+          <CreateAssessmentDialog
+            open={showCreateAssessmentDialog}
+            onClose={() => setShowCreateAssessmentDialog(false)}
+            playerId={playerId}
+            playerName={player.full_name}
+            teamId={player.team_id}
+            onSave={(data) => createAssessmentMutation.mutate(data)}
+          />
+        )}
+
+        {showCreateEvaluationDialog && (
+          <CreateEvaluationDialog
+            open={showCreateEvaluationDialog}
+            onClose={() => setShowCreateEvaluationDialog(false)}
+            player={player}
+            team={team}
+          />
+        )}
+
+        {showAddParentDialog && (
+          <AddParentDialog
+            open={showAddParentDialog}
+            onClose={() => setShowAddParentDialog(false)}
+            player={player}
+          />
+        )}
+
+        {/* Message Dialog */}
+        {showMessageDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-lg w-full bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Message {player.full_name}</CardTitle>
+                <p className="text-xs text-slate-400">Message will be sent to player and all parents</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <textarea
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  rows={6}
+                  className="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600"
+                  placeholder="Type your message..."
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowMessageDialog(false)}>Cancel</Button>
+                  <Button onClick={() => sendMessageMutation.mutate(messageContent)} disabled={!messageContent} className="bg-emerald-600">
+                    <MessageSquare className="w-4 h-4 mr-2" />Send
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

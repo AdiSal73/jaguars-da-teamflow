@@ -34,6 +34,7 @@ export default function UserManagement() {
 
   const [localPermissions, setLocalPermissions] = useState({
     admin: null,
+    director: null,
     coach: null,
     user: null,
     parent: null
@@ -53,12 +54,14 @@ export default function UserManagement() {
 
   useEffect(() => {
     const adminPerms = permissions.find(p => p.role_name === 'admin');
+    const directorPerms = permissions.find(p => p.role_name === 'director');
     const coachPerms = permissions.find(p => p.role_name === 'coach');
     const userPerms = permissions.find(p => p.role_name === 'user');
     const parentPerms = permissions.find(p => p.role_name === 'parent');
 
     setLocalPermissions({
       admin: adminPerms?.permissions || getDefaultPermissions('admin'),
+      director: directorPerms?.permissions || getDefaultPermissions('director'),
       coach: coachPerms?.permissions || getDefaultPermissions('coach'),
       user: userPerms?.permissions || getDefaultPermissions('user'),
       parent: parentPerms?.permissions || getDefaultPermissions('parent')
@@ -225,6 +228,25 @@ export default function UserManagement() {
         access_club_management: true,
         send_messages: true
       };
+    } else if (role === 'director') {
+      return {
+        view_all_players: true,
+        edit_all_players: true,
+        view_all_teams: true,
+        edit_all_teams: true,
+        view_all_assessments: true,
+        create_assessments: true,
+        view_all_evaluations: true,
+        create_evaluations: true,
+        view_all_bookings: true,
+        manage_bookings: true,
+        view_all_training_plans: true,
+        create_training_plans: true,
+        manage_coaches: false,
+        manage_users: false,
+        access_club_management: false,
+        send_messages: true
+      };
     } else if (role === 'coach') {
       return {
         view_all_players: false,
@@ -314,7 +336,7 @@ export default function UserManagement() {
     });
   };
 
-  if (!localPermissions.admin || !localPermissions.coach || !localPermissions.user || !localPermissions.parent) {
+  if (!localPermissions.admin || !localPermissions.director || !localPermissions.coach || !localPermissions.user || !localPermissions.parent) {
     return <div>Loading...</div>;
   }
 
@@ -335,9 +357,10 @@ export default function UserManagement() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="admin">Admin</TabsTrigger>
+          <TabsTrigger value="director">Director</TabsTrigger>
           <TabsTrigger value="coach">Coach</TabsTrigger>
           <TabsTrigger value="user">Player</TabsTrigger>
           <TabsTrigger value="parent">Parent</TabsTrigger>
@@ -412,7 +435,7 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
 
-        {['admin', 'coach', 'user', 'parent']?.map(role => (
+        {['admin', 'director', 'coach', 'user', 'parent']?.map(role => (
           <TabsContent key={role} value={role}>
             <Card className="border-none shadow-lg">
               <CardHeader>

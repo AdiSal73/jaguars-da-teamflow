@@ -61,6 +61,7 @@ export default function Layout({ children, currentPageName }) {
   const getUserRole = () => {
     if (!user) return null;
     if (user.role === 'admin') return 'admin';
+    if (user.role === 'director') return 'director';
     const isCoach = coaches.find((c) => c.email === user.email);
     if (isCoach) return isCoach;
     // Check if user is a parent (has player_ids array with values)
@@ -126,7 +127,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Teams",
       icon: Users,
-      roles: ["admin", "coach"],
+      roles: ["admin", "coach", "director"],
       submenu: [
         { title: "All Teams", url: createPageUrl("Teams") },
         { title: "All Players", url: createPageUrl("Players") }
@@ -135,7 +136,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Tryouts",
       icon: TrendingUp,
-      roles: ["admin"],
+      roles: ["admin", "director"],
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Team Assignments", url: createPageUrl("TeamTryout") },
@@ -150,7 +151,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Coaching Tools",
       icon: Calendar,
-      roles: ["admin", "coach"],
+      roles: ["admin", "coach", "director"],
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
         { title: "My Availability", url: createPageUrl("coachAvailability") },
@@ -198,7 +199,7 @@ export default function Layout({ children, currentPageName }) {
     {
       title: "Communications",
       icon: MessageSquare,
-      roles: ["admin", "coach", "user", "parent"],
+      roles: ["admin", "coach", "user", "parent", "director"],
       url: createPageUrl("Communications")
     },
     {
