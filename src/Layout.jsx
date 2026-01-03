@@ -184,12 +184,6 @@ export default function Layout({ children, currentPageName }) {
       roles: ["user", "parent"]
     },
     {
-      title: "IDP Services",
-      url: createPageUrl("IDPServices"),
-      icon: TrendingUp,
-      roles: ["user", "parent"]
-    },
-    {
       title: "My Bookings",
       url: createPageUrl("MyBookings"),
       icon: Clock,
@@ -208,22 +202,10 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("Communications")
     },
     {
-      title: "Parent Portal",
-      url: createPageUrl("ParentPortal"),
-      icon: UserIcon,
-      roles: ["parent"]
-    },
-    {
       title: "My Account",
       url: createPageUrl("UserDashboard"),
       icon: UserIcon,
       roles: ["user"]
-    },
-    {
-      title: "About",
-      url: createPageUrl("about"),
-      icon: HelpCircle,
-      roles: ["admin", "coach", "user", "parent"]
     }
   ];
 
