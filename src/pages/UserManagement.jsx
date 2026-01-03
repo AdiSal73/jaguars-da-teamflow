@@ -600,6 +600,7 @@ export default function UserManagement() {
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="director">Director</SelectItem>
                 </SelectContent>
               </Select>
             </div>
