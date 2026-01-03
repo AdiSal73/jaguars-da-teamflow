@@ -118,6 +118,7 @@ export default function UserManagement() {
 
   const getUserRole = (user) => {
     if (user.role === 'admin') return 'admin';
+    if (user.role === 'director') return 'director';
     if (user.player_ids && user.player_ids.length > 0) return 'parent';
     const isCoach = coaches.find(c => c.email === user.email);
     if (isCoach) return 'coach';
