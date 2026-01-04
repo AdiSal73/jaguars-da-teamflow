@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Mail, MessageSquare, Edit2, Trash2, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { Mail, MessageSquare, Edit2, Trash2, Send, CheckCircle2, Loader2, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,8 @@ export default function ParentContactsTable({ contacts, players, teams, users })
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedContacts, setSelectedContacts] = useState([]);
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -185,6 +187,31 @@ export default function ParentContactsTable({ contacts, players, teams, users })
     });
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 inline opacity-50" />;
+    return sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 inline" /> : <ChevronDown className="w-3 h-3 ml-1 inline" />;
+  };
+
+  const sortedContacts = useMemo(() => {
+    return [...contacts].sort((a, b) => {
+      let aVal = a[sortField] || '';
+      let bVal = b[sortField] || '';
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+      return aVal < bVal ? 1 : -1;
+    });
+  }, [contacts, sortField, sortDirection]);
+
   const toggleContact = (contactId) => {
     setSelectedContacts(prev =>
       prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]
@@ -237,17 +264,17 @@ export default function ParentContactsTable({ contacts, players, teams, users })
                   className="w-4 h-4 rounded border-slate-300"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Email</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Phone</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-100" onClick={() => handleSort('name')}>Name <SortIcon field="name" /></th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-100" onClick={() => handleSort('email')}>Email <SortIcon field="email" /></th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-100" onClick={() => handleSort('phone')}>Phone <SortIcon field="phone" /></th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Player(s)</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Team</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600">Branch</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-100" onClick={() => handleSort('team')}>Team <SortIcon field="team" /></th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-100" onClick={() => handleSort('branch')}>Branch <SortIcon field="branch" /></th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 w-48">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {contacts.map((contact) => (
+            {sortedContacts.map((contact) => (
               <tr key={contact.id} className="border-b hover:bg-slate-50">
                 <td className="px-4 py-3">
                   {!contact.has_user_account && (
