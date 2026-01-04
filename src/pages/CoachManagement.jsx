@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Shield, ShieldOff, Edit, Search, Trash2, Table, Grid, Mail } from 'lucide-react';
+import { Plus, Shield, ShieldOff, Edit, Search, Trash2, Table, Grid, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,8 @@ export default function CoachManagement() {
   const [selectedCoaches, setSelectedCoaches] = useState([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(null);
+  const [sortField, setSortField] = useState('full_name');
+  const [sortDirection, setSortDirection] = useState('asc');
   const [coachForm, setCoachForm] = useState({
     full_name: '',
     email: '',
@@ -179,6 +181,31 @@ export default function CoachManagement() {
       setSelectedCoaches([]);
     }
   };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 inline opacity-50" />;
+    return sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 inline" /> : <ChevronDown className="w-3 h-3 ml-1 inline" />;
+  };
+
+  const sortedCoaches = useMemo(() => {
+    return [...filteredCoaches].sort((a, b) => {
+      let aVal = a[sortField] || '';
+      let bVal = b[sortField] || '';
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+      return aVal < bVal ? 1 : -1;
+    });
+  }, [filteredCoaches, sortField, sortDirection]);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -344,17 +371,17 @@ export default function CoachManagement() {
                       <th className="px-4 py-3 text-left">
                         <Checkbox checked={selectedCoaches.length === filteredCoaches.length && filteredCoaches.length > 0} onCheckedChange={handleSelectAll} />
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold">Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold">Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold">Phone</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold">Branch</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('full_name')}>Name <SortIcon field="full_name" /></th>
+                      <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('email')}>Email <SortIcon field="email" /></th>
+                      <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('phone')}>Phone <SortIcon field="phone" /></th>
+                      <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('branch')}>Branch <SortIcon field="branch" /></th>
                       <th className="px-4 py-3 text-left text-xs font-bold">Teams</th>
                       <th className="px-4 py-3 text-left text-xs font-bold">Admin</th>
                       <th className="px-4 py-3 text-center text-xs font-bold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCoaches?.map((coach, idx) => {
+                    {sortedCoaches?.map((coach, idx) => {
                       const coachTeams = getCoachTeams(coach);
                       return (
                         <tr key={coach.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>

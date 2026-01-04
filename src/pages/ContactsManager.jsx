@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Users, Search, Mail } from 'lucide-react';
+import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
 import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
@@ -16,6 +16,8 @@ export default function ContactsManager() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -103,8 +105,22 @@ export default function ContactsManager() {
     });
   }, [players, teams, users]);
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 inline opacity-50" />;
+    return sortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 inline" /> : <ChevronDown className="w-3 h-3 ml-1 inline" />;
+  };
+
   const filteredContacts = useMemo(() => {
-    return contacts.filter(c => {
+    const filtered = contacts.filter(c => {
       const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase()) || 
                            c.email?.toLowerCase().includes(search.toLowerCase()) ||
                            c.player_name?.toLowerCase().includes(search.toLowerCase());
@@ -115,7 +131,16 @@ export default function ContactsManager() {
       
       return matchesSearch && matchesTeam && matchesBranch && matchesAgeGroup && matchesLeague;
     });
-  }, [contacts, search, filterTeam, filterBranch, filterAgeGroup, filterLeague]);
+
+    return filtered.sort((a, b) => {
+      let aVal = a[sortField] || '';
+      let bVal = b[sortField] || '';
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (sortDirection === 'asc') return aVal > bVal ? 1 : -1;
+      return aVal < bVal ? 1 : -1;
+    });
+  }, [contacts, search, filterTeam, filterBranch, filterAgeGroup, filterLeague, sortField, sortDirection]);
 
   const uniqueTeams = [...new Set(teams.map(t => t.name).filter(Boolean))].sort();
   const uniqueBranches = [...new Set(teams.map(t => t.branch).filter(Boolean))].sort();

@@ -388,14 +388,19 @@ export default function Teams() {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <CardHeader className={`border-b p-4 ${isMaleTeam ? 'bg-slate-900 border-slate-700' : 'border-slate-100 bg-gradient-to-r from-slate-50 to-slate-100'}`}>
+                <CardHeader className={`border-b p-4 ${
+                  isMaleTeam ? 'bg-slate-900 border-slate-700' : 
+                  team.league?.toLowerCase().includes('academy') ? 'bg-gradient-to-r from-green-500 to-green-600 border-green-700' :
+                  team.league?.toLowerCase().includes('aspire') ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-700' :
+                  'bg-gradient-to-r from-orange-500 to-orange-600 border-orange-700'
+                }`}>
                   <CardTitle className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform ${isMaleTeam ? 'bg-slate-700 text-white' : 'bg-gradient-to-br from-emerald-500 to-blue-500 text-white'}`}>
                       {team.age_group || team.name?.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-semibold truncate ${isMaleTeam ? 'text-white' : ''}`}>{team.name}</div>
-                      <div className={`text-xs font-normal ${isMaleTeam ? 'text-slate-400' : 'text-slate-600'}`}>{team.age_group}</div>
+                      <div className="text-sm font-semibold truncate text-white">{team.name}</div>
+                      <div className="text-xs font-normal text-white/80">{team.age_group}</div>
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -411,6 +416,12 @@ export default function Teams() {
                       <div className="flex justify-between text-xs">
                         <span className={isMaleTeam ? 'text-slate-400' : 'text-slate-600'}>Branch:</span>
                         <span className={`font-medium ${isMaleTeam ? 'text-white' : 'text-slate-900'}`}>{team.branch}</span>
+                      </div>
+                    )}
+                    {team.season && (
+                      <div className="flex justify-between text-xs">
+                        <span className={isMaleTeam ? 'text-slate-400' : 'text-slate-600'}>Season:</span>
+                        <span className={`font-medium ${isMaleTeam ? 'text-white' : 'text-slate-900'}`}>{team.season}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs">

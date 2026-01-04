@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table as TableIcon, Share2 } from 'lucide-react';
+import { Plus, Search, User, Edit, Users, Trash2, Upload, Grid, Table as TableIcon, Share2, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import SharePlayerDialog from '../components/messaging/SharePlayerDialog';
 import BulkImportPlayers from '../components/players/BulkImportPlayers';
 import { getPositionBorderColor } from '../components/player/positionColors';
@@ -64,6 +64,8 @@ export default function Players() {
   const [birthdayTo, setBirthdayTo] = useState('');
   const [sortBy, setSortBy] = useState('full_name');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [tableSortField, setTableSortField] = useState('full_name');
+  const [tableSortDirection, setTableSortDirection] = useState('asc');
   const [viewMode, setViewMode] = useState('cards');
   const [showAllPlayers, setShowAllPlayers] = useState(false);
   const [showTrappedOnly, setShowTrappedOnly] = useState(false);
@@ -342,6 +344,20 @@ export default function Players() {
     setShowShareDialog(true);
   };
 
+  const handleSort = (field) => {
+    if (tableSortField === field) {
+      setTableSortDirection(tableSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTableSortField(field);
+      setTableSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (tableSortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 inline opacity-50" />;
+    return tableSortDirection === 'asc' ? <ChevronUp className="w-3 h-3 ml-1 inline" /> : <ChevronDown className="w-3 h-3 ml-1 inline" />;
+  };
+
   const handleInvitePlayer = async (email, player) => {
     await base44.integrations.Core.SendEmail({
       to: email,
@@ -366,7 +382,18 @@ export default function Players() {
     }
   };
 
-  const filteredPlayers = players
+  const sortedFilteredPlayers = (field, direction) => {
+    return [...players].sort((a, b) => {
+      let aVal = a[field] || '';
+      let bVal = b[field] || '';
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (direction === 'asc') return aVal > bVal ? 1 : -1;
+      return aVal < bVal ? 1 : -1;
+    });
+  };
+
+  const filteredPlayers = (viewMode === 'table' ? sortedFilteredPlayers(tableSortField, tableSortDirection) : players)
     .filter(player => {
       const matchesSearch = player.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         player.email?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -858,15 +885,15 @@ export default function Players() {
                         onCheckedChange={handleSelectAll}
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Parent</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('full_name')}>Name <SortIcon field="full_name" /></th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('parent_name')}>Parent <SortIcon field="parent_name" /></th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('email')}>Email <SortIcon field="email" /></th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Phone</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('primary_position')}>Position <SortIcon field="primary_position" /></th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Team</th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Branch</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Jersey</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('jersey_number')}>Jersey <SortIcon field="jersey_number" /></th>
+                    <th className="px-4 py-3 text-left text-xs font-bold cursor-pointer hover:bg-slate-700" onClick={() => handleSort('status')}>Status <SortIcon field="status" /></th>
                     <th className="px-4 py-3 text-left text-xs font-bold">Actions</th>
                   </tr>
                 </thead>
