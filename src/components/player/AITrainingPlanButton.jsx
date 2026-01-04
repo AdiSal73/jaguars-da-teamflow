@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Target, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { POSITION_KNOWLEDGE } from '../constants/positionKnowledgeBank';
+import { POSITION_KNOWLEDGE_BANK } from '../constants/positionKnowledgeBank';
 
 export default function AITrainingPlanButton({ player, pathway, evaluations, onUpdatePathway }) {
   const [generating, setGenerating] = useState(false);
@@ -12,7 +12,7 @@ export default function AITrainingPlanButton({ player, pathway, evaluations, onU
     setGenerating(true);
     try {
       const latestEval = evaluations?.[0];
-      const positionKnowledge = POSITION_KNOWLEDGE[player.primary_position] || {};
+      const positionKnowledge = POSITION_KNOWLEDGE_BANK[player.primary_position] || {};
       
       // Build context from PDP and Knowledge Bank
       const pdpContext = `
@@ -79,29 +79,24 @@ Format as JSON array:
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
-          type: "object",
-          properties: {
-            modules: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  training_type: { type: "string" },
-                  priority: { type: "string" },
-                  weekly_sessions: { type: "number" },
-                  number_of_weeks: { type: "number" },
-                  session_duration: { type: "number" },
-                  preventative_measures: { type: "string" }
-                }
-              }
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              description: { type: "string" },
+              training_type: { type: "string" },
+              priority: { type: "string" },
+              weekly_sessions: { type: "number" },
+              number_of_weeks: { type: "number" },
+              session_duration: { type: "number" },
+              preventative_measures: { type: "string" }
             }
           }
         }
       });
 
-      const modules = response.modules.map(m => ({
+      const modules = response.map(m => ({
         id: `module_${Date.now()}_${Math.random()}`,
         ...m,
         completed: false,
