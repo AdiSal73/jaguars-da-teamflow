@@ -574,13 +574,14 @@ export default function PlayerDashboard() {
           )}
         </div>
 
-        {/* Development Pathway */}
-        {pathway?.training_modules?.length > 0 && (
+        {/* Development Pathway - Show when evaluation exists */}
+        {evaluations.length > 0 && (
           <div className="mt-6">
             <PlayerDevelopmentDisplay
               player={player}
               pathway={pathway}
               assessments={assessments}
+              evaluations={evaluations}
               onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
               onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
               isAdminOrCoach={isAdminOrCoach}

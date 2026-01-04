@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { POSITION_KNOWLEDGE, PHYSICAL_ASSESSMENTS } from '../constants/positionKnowledgeBank';
 import AIGoalGenerator from './AIGoalGenerator';
+import AITrainingPlanButton from './AITrainingPlanButton';
 
 export default function PlayerDevelopmentDisplay({ 
   player, 
@@ -21,6 +22,7 @@ export default function PlayerDevelopmentDisplay({
   onUpdatePathway, 
   onProvideFeedback,
   assessments,
+  evaluations,
   isAdminOrCoach
 }) {
   const [showAddGoalDialog, setShowAddGoalDialog] = useState(false);
@@ -248,7 +250,14 @@ export default function PlayerDevelopmentDisplay({
               <p className="text-xs text-slate-600 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
             </div>
             <div className="flex gap-2">
-              {isAdminOrCoach && <AIGoalGenerator player={player} onUpdatePlayer={onUpdatePlayer} assessments={assessments} />}
+              {isAdminOrCoach && (
+                <AIGoalGenerator 
+                  player={player} 
+                  onUpdatePlayer={onUpdatePlayer} 
+                  assessments={assessments}
+                  evaluations={evaluations}
+                />
+              )}
               <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Goal
@@ -398,12 +407,12 @@ export default function PlayerDevelopmentDisplay({
             </div>
             <div className="flex items-center gap-2">
               {isAdminOrCoach && (
-                <Link to={`${createPageUrl('AITrainingPlanGenerator')}?playerId=${player.id}`}>
-                  <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
-                    <Target className="w-4 h-4 mr-1" />
-                   Adil's Recommendations
-                  </Button>
-                </Link>
+                <AITrainingPlanButton 
+                  player={player}
+                  pathway={pathway}
+                  evaluations={evaluations}
+                  onUpdatePathway={onUpdatePathway}
+                />
               )}
               <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-1" />

@@ -21,6 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AddPlayerDialog from '../components/team/AddPlayerDialog';
 import AssignCoachDialog from '../components/team/AssignCoachDialog';
 import AddTryoutPlayerDialog from '../components/team/AddTryoutPlayerDialog';
+import MessageTeamDialog from '../components/team/MessageTeamDialog';
+import { Mail } from 'lucide-react';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export default function TeamDashboard() {
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showAssignCoachDialog, setShowAssignCoachDialog] = useState(false);
   const [showAddTryoutDialog, setShowAddTryoutDialog] = useState(false);
+  const [showMessageTeamDialog, setShowMessageTeamDialog] = useState(false);
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -283,7 +286,7 @@ Format with clear headers and structure.`;
               <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl font-bold">{team.name}</h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className="bg-emerald-500/30 backdrop-blur-sm text-white border-emerald-300/40">
@@ -297,6 +300,13 @@ Format with clear headers and structure.`;
                   </Badge>
                 </div>
               </div>
+              <Button 
+                onClick={() => setShowMessageTeamDialog(true)}
+                className="bg-white/20 hover:bg-white/30 text-white border border-white/30"
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Message Team
+              </Button>
             </div>
           </div>
         </div>
@@ -808,6 +818,13 @@ Format with clear headers and structure.`;
         open={showAddTryoutDialog}
         onClose={() => setShowAddTryoutDialog(false)}
         teamId={teamId}
+      />
+
+      <MessageTeamDialog
+        open={showMessageTeamDialog}
+        onClose={() => setShowMessageTeamDialog(false)}
+        team={team}
+        players={players}
       />
     </div>
   );
