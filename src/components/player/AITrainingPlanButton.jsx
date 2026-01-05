@@ -23,14 +23,25 @@ Michigan Jaguars Player Development Program Context:
 - Age Stage: ${player.grad_year ? `Graduate ${player.grad_year}` : 'Development stage'}
 `;
 
-      const positionContext = positionKnowledge.position_overview ? `
-Position-Specific Knowledge for ${player.primary_position}:
-${positionKnowledge.position_overview}
+      const defendingContext = Object.entries(positionKnowledge.defending || {}).map(([phase, dataArray]) =>
+        `  ${phase}: ${dataArray.map(d => d.points?.slice(0, 3).join(', ')).filter(Boolean).join(', ')}`
+      ).join('\n');
 
-Key Phases of Play:
-${Object.entries(positionKnowledge.categories || {}).map(([phase, data]) => 
-  `${phase}: ${data.points?.slice(0, 3).join(', ') || 'N/A'}`
-).join('\n')}
+      const attackingContext = Object.entries(positionKnowledge.attacking || {}).map(([phase, dataArray]) =>
+        `  ${phase}: ${dataArray.map(d => d.points?.slice(0, 3).join(', ')).filter(Boolean).join(', ')}`
+      ).join('\n');
+
+      const positionContext = (positionKnowledge.defending || positionKnowledge.attacking) ? `
+Position-Specific Knowledge for ${player.primary_position}:
+${positionKnowledge.title ? `Position Title: ${positionKnowledge.title}` : ''}
+${positionKnowledge.role && positionKnowledge.role.length > 0 ? `Key Roles: ${positionKnowledge.role.join(', ')}` : ''}
+${positionKnowledge.traits && positionKnowledge.traits.length > 0 ? `Key Traits: ${positionKnowledge.traits.join(', ')}` : ''}
+
+Defending Phases:
+${defendingContext}
+
+Attacking Phases:
+${attackingContext}
 ` : '';
 
       const evaluationContext = latestEval ? `
@@ -53,27 +64,18 @@ ${evaluationContext}
 Player: ${player.full_name}
 Position: ${player.primary_position}
 
-Based on the PDP philosophy, position-specific knowledge bank, and player evaluation, create 3-4 targeted training modules. Each module should:
+Based on the PDP philosophy, position-specific knowledge bank, and player evaluation, create 3-4 targeted training modules.
 
-1. Title: Clear, specific module name
-2. Description: What the module addresses (50-80 words)
-3. Training Type: Choose from: Mobility Training, Technical Training, Functional Training, Video Analysis/Tactical Training
-4. Priority: High/Medium/Low based on evaluation data
-5. Weekly Sessions: Recommended frequency (1-4)
-6. Number of Weeks: Duration (2-8 weeks)
-7. Session Duration: Minutes per session (30-90)
-8. Preventative Measures: Injury prevention tips specific to this training
-
-Format as JSON array:
+Return ONLY a JSON array with this exact structure:
 [{
-  "title": "...",
-  "description": "...",
-  "training_type": "...",
-  "priority": "...",
+  "title": "specific module name",
+  "description": "what the module addresses in 50-80 words",
+  "training_type": "Mobility Training OR Technical Training OR Functional Training OR Video Analysis/Tactical Training",
+  "priority": "High OR Medium OR Low",
   "weekly_sessions": 2,
   "number_of_weeks": 4,
   "session_duration": 60,
-  "preventative_measures": "..."
+  "preventative_measures": "specific injury prevention tips"
 }]`;
 
       const response = await base44.integrations.Core.InvokeLLM({
@@ -96,7 +98,7 @@ Format as JSON array:
         }
       });
 
-      const modules = response.map(m => ({
+      const modules = (Array.isArray(response) ? response : response.modules || []).map(m => ({
         id: `module_${Date.now()}_${Math.random()}`,
         ...m,
         completed: false,
