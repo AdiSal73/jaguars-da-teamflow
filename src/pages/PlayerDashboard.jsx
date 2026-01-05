@@ -20,6 +20,8 @@ import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDia
 import AddParentDialog from '../components/player/AddParentDialog';
 import EditPhysicalAssessmentDialog from '../components/player/EditPhysicalAssessmentDialog';
 import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
+import PlayerStatsCard from '../components/gamification/PlayerStatsCard';
+import UpcomingBookings from '../components/player/UpcomingBookings';
 
 export default function PlayerDashboard() {
   const navigate = useNavigate();
@@ -67,6 +69,15 @@ export default function PlayerDashboard() {
       if (!playerId) return null;
       const players = await base44.entities.Player.filter({ id: playerId });
       return players[0];
+    },
+    enabled: !!playerId
+  });
+
+  const { data: playerProgress } = useQuery({
+    queryKey: ['playerProgress', playerId],
+    queryFn: async () => {
+      const progress = await base44.entities.PlayerProgress.filter({ player_id: playerId });
+      return progress[0] || null;
     },
     enabled: !!playerId
   });
@@ -268,72 +279,80 @@ export default function PlayerDashboard() {
             Back
           </Button>
           
-          <div className="flex items-start gap-6">
-            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-5xl font-bold shadow-2xl">
-              {player.jersey_number || player.full_name?.charAt(0)}
-            </div>
-            
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold mb-2">{player.full_name}</h1>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{player.primary_position}</Badge>
-                <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">{team?.name || 'No Team'}</Badge>
-                {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 flex items-start gap-6">
+              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-5xl font-bold shadow-2xl">
+                {player.jersey_number || player.full_name?.charAt(0)}
               </div>
-              {isAdminOrCoach && (
-                <div className="flex gap-2">
-                  <Button onClick={() => setShowEditInfoDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                    <Edit className="w-3 h-3 mr-1" />Edit Info
-                  </Button>
-                  <Button onClick={() => setShowMessageDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                    <MessageSquare className="w-3 h-3 mr-1" />Message
-                  </Button>
-                  <Button onClick={() => setShowAddParentDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                    <UserPlus className="w-3 h-3 mr-1" />Add Parent
-                  </Button>
+              
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold mb-2">{player.full_name}</h1>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{player.primary_position}</Badge>
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">{team?.name || 'No Team'}</Badge>
+                  {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
                 </div>
-              )}
-              <div className="grid grid-cols-4 gap-4 mt-4">
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">DOB</div>
-                  <div className="font-bold">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">Position</div>
-                  <div className="font-bold">{player.primary_position}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">Team</div>
-                  <div className="font-bold text-sm">{team?.name || 'N/A'}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">Status</div>
-                  <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
-                </div>
-              </div>
-              {allParentInfo.length > 0 && (
-                <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
-                  <div className="text-xs text-slate-400 mb-3 font-semibold">Parent Contacts</div>
-                  <div className="space-y-2">
-                    {allParentInfo.map((parent, idx) => (
-                      <div key={idx} className="bg-white/5 rounded-lg p-2 flex items-start justify-between border border-white/5">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">{parent.name}</span>
-                            {parent.isRegistered && (
-                              <Badge className="bg-green-500/20 text-green-300 border border-green-500/30 text-xs">
-                                ✓ Registered
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-400 mt-1">{parent.email}</div>
-                          <div className="text-xs text-slate-400">{parent.phone}</div>
-                        </div>
-                      </div>
-                    ))}
+                {isAdminOrCoach && (
+                  <div className="flex gap-2">
+                    <Button onClick={() => setShowEditInfoDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                      <Edit className="w-3 h-3 mr-1" />Edit Info
+                    </Button>
+                    <Button onClick={() => setShowMessageDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                      <MessageSquare className="w-3 h-3 mr-1" />Message
+                    </Button>
+                    <Button onClick={() => setShowAddParentDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                      <UserPlus className="w-3 h-3 mr-1" />Add Parent
+                    </Button>
+                  </div>
+                )}
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">DOB</div>
+                    <div className="font-bold">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">Position</div>
+                    <div className="font-bold">{player.primary_position}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">Team</div>
+                    <div className="font-bold text-sm">{team?.name || 'N/A'}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">Status</div>
+                    <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
                   </div>
                 </div>
-              )}
+                {allParentInfo.length > 0 && (
+                  <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
+                    <div className="text-xs text-slate-400 mb-3 font-semibold">Parent Contacts</div>
+                    <div className="space-y-2">
+                      {allParentInfo.map((parent, idx) => (
+                        <div key={idx} className="bg-white/5 rounded-lg p-2 flex items-start justify-between border border-white/5">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-white">{parent.name}</span>
+                              {parent.isRegistered && (
+                                <Badge className="bg-green-500/20 text-green-300 border border-green-500/30 text-xs">
+                                  ✓ Registered
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-1">{parent.email}</div>
+                            <div className="text-xs text-slate-400">{parent.phone}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Gamification Stats & Upcoming Bookings */}
+            <div className="space-y-4">
+              <PlayerStatsCard progress={playerProgress} player={player} />
+              <UpcomingBookings playerId={playerId} />
             </div>
           </div>
         </div>
