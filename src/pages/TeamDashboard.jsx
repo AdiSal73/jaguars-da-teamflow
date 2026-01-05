@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,8 +27,8 @@ import MessageTeamDialog from '../components/team/MessageTeamDialog';
 export default function TeamDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const teamId = urlParams.get('teamId');
+  const [searchParams] = useSearchParams();
+  const teamId = searchParams.get('teamId');
 
   const [showEvalDialog, setShowEvalDialog] = useState(false);
   const [showGoalsDialog, setShowGoalsDialog] = useState(false);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,10 +23,10 @@ import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
 import UpcomingBookings from '../components/player/UpcomingBookings';
 
 export default function PlayerDashboard() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
-  const playerId = urlParams.get('id');
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+    const playerId = searchParams.get('id');
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
