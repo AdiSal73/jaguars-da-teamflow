@@ -32,7 +32,6 @@ export default function Layout({ children, currentPageName }) {
     retry: false
   });
 
-  // Check if we're on a public page
   const isPublicPage = location.pathname === createPageUrl('PublicCoachBooking') || 
                        location.pathname === createPageUrl('Landing');
 
@@ -64,7 +63,6 @@ export default function Layout({ children, currentPageName }) {
     if (user.role === 'director') return 'director';
     const isCoach = coaches.find((c) => c.email === user.email);
     if (isCoach) return isCoach;
-    // Check if user is a parent (has player_ids array with values)
     if (user.player_ids && user.player_ids.length > 0) return 'parent';
     return 'user';
   };
@@ -73,10 +71,8 @@ export default function Layout({ children, currentPageName }) {
   const currentCoach = typeof userRole === 'object' ? userRole : null;
   const roleType = currentCoach ? 'coach' : userRole;
 
-  // Get all player IDs for parents
   const parentPlayerIds = user?.player_ids || [];
 
-  // For parents, create menu items for each player
   const parentPlayerMenuItems = React.useMemo(() => {
     if (roleType !== 'parent' || !parentPlayerIds?.length || !players?.length) return [];
     return parentPlayerIds
@@ -224,7 +220,6 @@ export default function Layout({ children, currentPageName }) {
   const isActive = (url) => location.pathname === url;
   const isSubmenuActive = (submenu) => submenu?.some((item) => location.pathname === item.url);
 
-  // Allow public pages to render without user
   if ((!user || !roleType) && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -236,7 +231,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Render public pages without full layout
   if (isPublicPage && !user) {
     return children;
   }
@@ -458,6 +452,6 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       <GlobalSearch open={showGlobalSearch} onClose={() => setShowGlobalSearch(false)} />
-      </div>
-      );
-      }
+    </div>
+  );
+}
