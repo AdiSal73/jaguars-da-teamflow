@@ -66,17 +66,15 @@ Position: ${player.primary_position}
 
 Based on the PDP philosophy, position-specific knowledge bank, and player evaluation, create 3-4 targeted training modules.
 
-Return ONLY a JSON array with this exact structure:
-[{
-  "title": "specific module name",
-  "description": "what the module addresses in 50-80 words",
-  "training_type": "Mobility Training OR Technical Training OR Functional Training OR Video Analysis/Tactical Training",
-  "priority": "High OR Medium OR Low",
-  "weekly_sessions": 2,
-  "number_of_weeks": 4,
-  "session_duration": 60,
-  "preventative_measures": "specific injury prevention tips"
-}]`;
+Each module should include:
+- Title: specific module name
+- Description: what the module addresses (50-80 words)
+- Training Type: Mobility Training, Technical Training, Functional Training, or Video Analysis/Tactical Training
+- Priority: High, Medium, or Low
+- Weekly Sessions: 2
+- Number of Weeks: 4
+- Session Duration: 60 minutes
+- Preventative Measures: specific injury prevention tips`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,
