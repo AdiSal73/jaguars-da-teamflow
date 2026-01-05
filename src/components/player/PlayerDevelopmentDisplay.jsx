@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -107,7 +106,6 @@ export default function PlayerDevelopmentDisplay({
 
       if (action === 'goal_completed') achievements.goals_completed = (achievements.goals_completed || 0) + 1;
       if (action === 'module_completed') achievements.modules_completed = (achievements.modules_completed || 0) + 1;
-      // Add other achievement updates here as needed based on 'action'
 
       const updatedProgressData = {
         total_points: newPoints,
@@ -125,9 +123,8 @@ export default function PlayerDevelopmentDisplay({
           earned_date: new Date().toISOString().split('T')[0]
         }));
         updatedProgressData.badges = [...existingBadges, ...badgeWithDate];
-        // If a badge awards points, add them
         updatedProgressData.total_points += newBadges.reduce((sum, b) => sum + (b.points || 0), 0);
-        setEarnedBadge(badgeWithDate[0]); // Show only the first newly earned badge in dialog for simplicity
+        setEarnedBadge(badgeWithDate[0]);
       }
 
       return await base44.entities.PlayerProgress.update(currentProgress.id, updatedProgressData);
@@ -144,7 +141,6 @@ export default function PlayerDevelopmentDisplay({
     
     const allSkills = [];
     
-    // Extract from defending phases
     if (positionKnowledge.defending) {
       Object.values(positionKnowledge.defending).forEach(phaseArray => {
         phaseArray.forEach(item => {
@@ -157,7 +153,6 @@ export default function PlayerDevelopmentDisplay({
       });
     }
     
-    // Extract from attacking phases
     if (positionKnowledge.attacking) {
       Object.values(positionKnowledge.attacking).forEach(phaseArray => {
         phaseArray.forEach(item => {
@@ -218,12 +213,11 @@ export default function PlayerDevelopmentDisplay({
           completion_date: nowCompleted && !g.completion_date ? new Date().toISOString().split('T')[0] : g.completion_date
         };
 
-        // Award points for completion
         if (!wasCompleted && nowCompleted) {
           const points = calculatePoints('goal_completed');
           updateProgressMutation.mutate({ action: 'goal_completed', points });
           toast.success(`+${points} points! Goal completed! 🎉`);
-        } else if (!g.completed && !nowCompleted) { // Only award progress points if goal is not yet completed
+        } else if (!g.completed && !nowCompleted) {
           if (progress === 25 && g.progress < 25) {
             const points = calculatePoints('goal_progress_25');
             updateProgressMutation.mutate({ action: 'goal_progress_25', points });
@@ -316,7 +310,6 @@ export default function PlayerDevelopmentDisplay({
     });
     onUpdatePathway({ training_modules: updatedModules });
 
-    // Award points for completion
     if (!wasCompleted && nowCompleted) {
       const points = calculatePoints('module_completed');
       updateProgressMutation.mutate({ action: 'module_completed', points });
@@ -334,9 +327,8 @@ export default function PlayerDevelopmentDisplay({
     
     const latest = assessments[0];
     const previous = assessments[1];
-    
-    // Check if the goal description relates to physical assessments
     const descriptionLower = goal.description.toLowerCase();
+    
     if (descriptionLower.includes('speed') || descriptionLower.includes('sprint')) {
       if (latest.speed_score > previous.speed_score) {
         return { improved: true, delta: latest.speed_score - previous.speed_score };
@@ -631,134 +623,214 @@ export default function PlayerDevelopmentDisplay({
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Add Goal Dialog */}
-        <Dialog open={showAddGoalDialog} onOpenChange={(open) => !open && resetGoalForm()}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add Development Goal</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
+      {/* Add Goal Dialog */}
+      <Dialog open={showAddGoalDialog} onOpenChange={(open) => !open && resetGoalForm()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Development Goal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Goal Type</Label>
+              <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setSelectedSkill(''); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="skill">Position Skill</SelectItem>
+                  <SelectItem value="physical">Physical Attribute</SelectItem>
+                  <SelectItem value="custom">Custom Goal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedCategory === 'skill' && (
               <div>
-                <Label>Goal Type</Label>
-                <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setSelectedSkill(''); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="skill">Position Skill</SelectItem>
-                    <SelectItem value="physical">Physical Attribute</SelectItem>
-                    <SelectItem value="custom">Custom Goal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedCategory === 'skill' && (
-                <div>
-                  <Label className="mb-3 block">Select Skill from Knowledge Bank {player.primary_position && `(${player.primary_position})`}</Label>
-                  {positionSkills.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg bg-slate-50">
-                      {positionSkills.map((skill, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => { setSelectedSkill(skill.skill_name); setCustomSkill(''); }}
-                          className={`p-3 rounded-lg border-2 text-left text-sm transition-all ${
-                            selectedSkill === skill.skill_name
-                              ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold shadow-md'
-                              : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
-                          }`}
-                        >
-                          {skill.skill_name}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-slate-500 p-4 text-center border rounded-lg bg-amber-50 border-amber-200">
-                      <p className="mb-2">No position-specific skills available.</p>
-                      <p className="text-xs">Use custom skill input below to create your own goals.</p>
-                    </div>
-                  )}
-                  <div className="mt-3">
-                    <Label>Or Create Custom Skill</Label>
-                    <Input 
-                      value={customSkill} 
-                      onChange={e => { setCustomSkill(e.target.value); setSelectedSkill(''); }}
-                      placeholder="e.g., Improve weak foot" 
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {selectedCategory === 'physical' && (
-                <div>
-                  <Label className="mb-3 block">Select Physical Attribute</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {physicalCategories.map(cat => (
+                <Label className="mb-3 block">Select Skill from Knowledge Bank {player.primary_position && `(${player.primary_position})`}</Label>
+                {positionSkills.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg bg-slate-50">
+                    {positionSkills.map((skill, idx) => (
                       <button
-                        key={cat}
+                        key={idx}
                         type="button"
-                        onClick={() => setSelectedSkill(cat)}
-                        className={`p-4 rounded-lg border-2 text-left transition-all ${
-                          selectedSkill === cat
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                        onClick={() => { setSelectedSkill(skill.skill_name); setCustomSkill(''); }}
+                        className={`p-3 rounded-lg border-2 text-left text-sm transition-all ${
+                          selectedSkill === skill.skill_name
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold shadow-md'
+                            : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
                         }`}
                       >
-                        <div className={`font-bold text-sm mb-1 ${selectedSkill === cat ? 'text-blue-900' : 'text-slate-900'}`}>
-                          {cat}
-                        </div>
-                        <div className="text-xs text-slate-600 line-clamp-2">
-                          {PHYSICAL_ASSESSMENTS[cat].description}
-                        </div>
+                        {skill.skill_name}
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {selectedCategory === 'custom' && (
-                <div>
-                  <Label>Goal Description *</Label>
+                ) : (
+                  <div className="text-sm text-slate-500 p-4 text-center border rounded-lg bg-amber-50 border-amber-200">
+                    <p className="mb-2">No position-specific skills available.</p>
+                    <p className="text-xs">Use custom skill input below to create your own goals.</p>
+                  </div>
+                )}
+                <div className="mt-3">
+                  <Label>Or Create Custom Skill</Label>
                   <Input 
                     value={customSkill} 
-                    onChange={e => setCustomSkill(e.target.value)}
-                    placeholder="e.g., Master corner kicks" 
+                    onChange={e => { setCustomSkill(e.target.value); setSelectedSkill(''); }}
+                    placeholder="e.g., Improve weak foot" 
+                    className="mt-1"
                   />
                 </div>
-              )}
+              </div>
+            )}
 
+            {selectedCategory === 'physical' && (
               <div>
-                <Label>Plan of Action</Label>
-                <Textarea 
-                  value={newGoal.plan_of_action} 
-                  onChange={e => setNewGoal({...newGoal, plan_of_action: e.target.value})}
-                  rows={2}
-                  placeholder="How will you achieve this goal?"
+                <Label className="mb-3 block">Select Physical Attribute</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {physicalCategories.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedSkill(cat)}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        selectedSkill === cat
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                      }`}
+                    >
+                      <div className={`font-bold text-sm mb-1 ${selectedSkill === cat ? 'text-blue-900' : 'text-slate-900'}`}>
+                        {cat}
+                      </div>
+                      <div className="text-xs text-slate-600 line-clamp-2">
+                        {PHYSICAL_ASSESSMENTS[cat].description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedCategory === 'custom' && (
+              <div>
+                <Label>Goal Description *</Label>
+                <Input 
+                  value={customSkill} 
+                  onChange={e => setCustomSkill(e.target.value)}
+                  placeholder="e.g., Master corner kicks" 
                 />
               </div>
+            )}
 
+            <div>
+              <Label>Plan of Action</Label>
+              <Textarea 
+                value={newGoal.plan_of_action} 
+                onChange={e => setNewGoal({...newGoal, plan_of_action: e.target.value})}
+                rows={2}
+                placeholder="How will you achieve this goal?"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Start Date</Label>
+                <Input 
+                  type="date" 
+                  value={newGoal.start_date} 
+                  onChange={e => setNewGoal({...newGoal, start_date: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Target Date</Label>
+                <Input 
+                  type="date" 
+                  value={newGoal.suggested_completion_date} 
+                  onChange={e => setNewGoal({...newGoal, suggested_completion_date: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Category</Label>
+              <Select value={newGoal.category} onValueChange={v => setNewGoal({...newGoal, category: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Technical">Technical</SelectItem>
+                  <SelectItem value="Tactical">Tactical</SelectItem>
+                  <SelectItem value="Physical">Physical</SelectItem>
+                  <SelectItem value="Mental">Mental</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={resetGoalForm} className="flex-1">Cancel</Button>
+              <Button 
+                onClick={handleAddGoal} 
+                disabled={!selectedSkill && !customSkill} 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                Add Goal
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Goal Dialog */}
+      <Dialog open={showEditGoalDialog} onOpenChange={setShowEditGoalDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Goal</DialogTitle>
+          </DialogHeader>
+          {editingGoal && (
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>Goal Description *</Label>
+                <Input 
+                  value={editingGoal.description || ''} 
+                  onChange={e => setEditingGoal({...editingGoal, description: e.target.value})}
+                  placeholder="Goal description"
+                />
+              </div>
+              <div>
+                <Label>Progress (%)</Label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  value={editingGoal.progress} 
+                  onChange={e => setEditingGoal({...editingGoal, progress: parseInt(e.target.value)})}
+                />
+              </div>
+              <div>
+                <Label>Action Plan</Label>
+                <Textarea 
+                  value={editingGoal.plan_of_action || ''} 
+                  onChange={e => setEditingGoal({...editingGoal, plan_of_action: e.target.value})}
+                  rows={3}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Start Date</Label>
                   <Input 
                     type="date" 
-                    value={newGoal.start_date} 
-                    onChange={e => setNewGoal({...newGoal, start_date: e.target.value})}
+                    value={editingGoal.start_date || ''} 
+                    onChange={e => setEditingGoal({...editingGoal, start_date: e.target.value})}
                   />
                 </div>
                 <div>
                   <Label>Target Date</Label>
                   <Input 
                     type="date" 
-                    value={newGoal.suggested_completion_date} 
-                    onChange={e => setNewGoal({...newGoal, suggested_completion_date: e.target.value})}
+                    value={editingGoal.suggested_completion_date || ''} 
+                    onChange={e => setEditingGoal({...editingGoal, suggested_completion_date: e.target.value})}
                   />
                 </div>
               </div>
-
               <div>
                 <Label>Category</Label>
-                <Select value={newGoal.category} onValueChange={v => setNewGoal({...newGoal, category: v})}>
+                <Select value={editingGoal.category || 'Technical'} onValueChange={v => setEditingGoal({...editingGoal, category: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Technical">Technical</SelectItem>
@@ -768,209 +840,43 @@ export default function PlayerDevelopmentDisplay({
                   </SelectContent>
                 </Select>
               </div>
-
+              <div>
+                <Label>Notes</Label>
+                <Textarea 
+                  value={editingGoal.notes || ''} 
+                  onChange={e => setEditingGoal({...editingGoal, notes: e.target.value})}
+                  rows={2}
+                />
+              </div>
               <div className="flex gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={resetGoalForm} className="flex-1">Cancel</Button>
-                <Button 
-                  onClick={handleAddGoal} 
-                  disabled={!selectedSkill && !customSkill} 
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  Add Goal
-                </Button>
+                <Button variant="outline" onClick={() => setShowEditGoalDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleUpdateGoal} className="flex-1 bg-emerald-600 hover:bg-emerald-700">Save</Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        {/* Edit Goal Dialog */}
-        <Dialog open={showEditGoalDialog} onOpenChange={setShowEditGoalDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Goal</DialogTitle>
-            </DialogHeader>
-            {editingGoal && (
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label>Goal Description *</Label>
-                  <Input 
-                    value={editingGoal.description || ''} 
-                    onChange={e => setEditingGoal({...editingGoal, description: e.target.value})}
-                    placeholder="Goal description"
-                  />
-                </div>
-                <div>
-                  <Label>Progress (%)</Label>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
-                    value={editingGoal.progress} 
-                    onChange={e => setEditingGoal({...editingGoal, progress: parseInt(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label>Action Plan</Label>
-                  <Textarea 
-                    value={editingGoal.plan_of_action || ''} 
-                    onChange={e => setEditingGoal({...editingGoal, plan_of_action: e.target.value})}
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Start Date</Label>
-                    <Input 
-                      type="date" 
-                      value={editingGoal.start_date || ''} 
-                      onChange={e => setEditingGoal({...editingGoal, start_date: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label>Target Date</Label>
-                    <Input 
-                      type="date" 
-                      value={editingGoal.suggested_completion_date || ''} 
-                      onChange={e => setEditingGoal({...editingGoal, suggested_completion_date: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Category</Label>
-                  <Select value={editingGoal.category || 'Technical'} onValueChange={v => setEditingGoal({...editingGoal, category: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Technical">Technical</SelectItem>
-                      <SelectItem value="Tactical">Tactical</SelectItem>
-                      <SelectItem value="Physical">Physical</SelectItem>
-                      <SelectItem value="Mental">Mental</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Notes</Label>
-                  <Textarea 
-                    value={editingGoal.notes || ''} 
-                    onChange={e => setEditingGoal({...editingGoal, notes: e.target.value})}
-                    rows={2}
-                  />
-                </div>
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowEditGoalDialog(false)} className="flex-1">Cancel</Button>
-                  <Button onClick={handleUpdateGoal} className="flex-1 bg-emerald-600 hover:bg-emerald-700">Save</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Module Dialog */}
-        <Dialog open={showEditModuleDialog} onOpenChange={setShowEditModuleDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Training Module</DialogTitle>
-            </DialogHeader>
-            {editingModule && (
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label>Title *</Label>
-                  <Input value={editingModule.title} onChange={e => setEditingModule({...editingModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <Textarea value={editingModule.description} onChange={e => setEditingModule({...editingModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Training Type *</Label>
-                    <Select value={editingModule.training_type} onValueChange={v => setEditingModule({...editingModule, training_type: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Mobility Training">Mobility Training</SelectItem>
-                        <SelectItem value="Technical Training">Technical Training</SelectItem>
-                        <SelectItem value="Functional Training">Functional Training</SelectItem>
-                        <SelectItem value="Video Analysis/Tactical Training">Video Analysis/Tactical</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Priority</Label>
-                    <Select value={editingModule.priority} onValueChange={v => setEditingModule({...editingModule, priority: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="High">High</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="Low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Sessions/Week</Label>
-                    <Input type="number" min="1" max="7" value={editingModule.weekly_sessions} onChange={e => setEditingModule({...editingModule, weekly_sessions: parseInt(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Number of Weeks</Label>
-                    <Input type="number" min="1" value={editingModule.number_of_weeks} onChange={e => setEditingModule({...editingModule, number_of_weeks: parseInt(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Duration (min)</Label>
-                    <Input type="number" min="15" step="15" value={editingModule.session_duration} onChange={e => setEditingModule({...editingModule, session_duration: parseInt(e.target.value)})} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Start Date</Label>
-                    <Input type="date" value={editingModule.start_date} onChange={e => setEditingModule({...editingModule, start_date: e.target.value})} />
-                  </div>
-                  <div>
-                    <Label>End Date</Label>
-                    <Input type="date" value={editingModule.end_date} onChange={e => setEditingModule({...editingModule, end_date: e.target.value})} />
-                  </div>
-                </div>
-                <div>
-                  <Label>Resource Link</Label>
-                  <Input value={editingModule.resource_link} onChange={e => setEditingModule({...editingModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
-                </div>
-                <div>
-                  <Label>Injury Prevention Measures (Optional)</Label>
-                  <Textarea 
-                    value={editingModule.preventative_measures} 
-                    onChange={e => setEditingModule({...editingModule, preventative_measures: e.target.value})} 
-                    rows={2} 
-                    placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
-                  />
-                </div>
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowEditModuleDialog(false)} className="flex-1">Cancel</Button>
-                  <Button onClick={handleUpdateModule} disabled={!editingModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Save</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Add Module Dialog */}
-        <Dialog open={showAddModuleDialog} onOpenChange={setShowAddModuleDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add Training Module</DialogTitle>
-            </DialogHeader>
+      {/* Edit Module Dialog */}
+      <Dialog open={showEditModuleDialog} onOpenChange={setShowEditModuleDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Training Module</DialogTitle>
+          </DialogHeader>
+          {editingModule && (
             <div className="space-y-4 mt-4">
               <div>
                 <Label>Title *</Label>
-                <Input value={newModule.title} onChange={e => setNewModule({...newModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
+                <Input value={editingModule.title} onChange={e => setEditingModule({...editingModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea value={newModule.description} onChange={e => setNewModule({...newModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
+                <Textarea value={editingModule.description} onChange={e => setEditingModule({...editingModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Training Type *</Label>
-                  <Select value={newModule.training_type} onValueChange={v => setNewModule({...newModule, training_type: v})}>
+                  <Select value={editingModule.training_type} onValueChange={v => setEditingModule({...editingModule, training_type: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Mobility Training">Mobility Training</SelectItem>
@@ -983,7 +889,7 @@ export default function PlayerDevelopmentDisplay({
                 </div>
                 <div>
                   <Label>Priority</Label>
-                  <Select value={newModule.priority} onValueChange={v => setNewModule({...newModule, priority: v})}>
+                  <Select value={editingModule.priority} onValueChange={v => setEditingModule({...editingModule, priority: v})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="High">High</SelectItem>
@@ -996,48 +902,134 @@ export default function PlayerDevelopmentDisplay({
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Sessions/Week</Label>
-                  <Input type="number" min="1" max="7" value={newModule.weekly_sessions} onChange={e => setNewModule({...newModule, weekly_sessions: parseInt(e.target.value)})} />
+                  <Input type="number" min="1" max="7" value={editingModule.weekly_sessions} onChange={e => setEditingModule({...editingModule, weekly_sessions: parseInt(e.target.value)})} />
                 </div>
                 <div>
                   <Label>Number of Weeks</Label>
-                  <Input type="number" min="1" value={newModule.number_of_weeks} onChange={e => setNewModule({...newModule, number_of_weeks: parseInt(e.target.value)})} />
+                  <Input type="number" min="1" value={editingModule.number_of_weeks} onChange={e => setEditingModule({...editingModule, number_of_weeks: parseInt(e.target.value)})} />
                 </div>
                 <div>
                   <Label>Duration (min)</Label>
-                  <Input type="number" min="15" step="15" value={newModule.session_duration} onChange={e => setNewModule({...newModule, session_duration: parseInt(e.target.value)})} />
+                  <Input type="number" min="15" step="15" value={editingModule.session_duration} onChange={e => setEditingModule({...editingModule, session_duration: parseInt(e.target.value)})} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Start Date</Label>
-                  <Input type="date" value={newModule.start_date} onChange={e => setNewModule({...newModule, start_date: e.target.value})} />
+                  <Input type="date" value={editingModule.start_date} onChange={e => setEditingModule({...editingModule, start_date: e.target.value})} />
                 </div>
                 <div>
                   <Label>End Date</Label>
-                  <Input type="date" value={newModule.end_date} onChange={e => setNewModule({...newModule, end_date: e.target.value})} />
+                  <Input type="date" value={editingModule.end_date} onChange={e => setEditingModule({...editingModule, end_date: e.target.value})} />
                 </div>
               </div>
               <div>
                 <Label>Resource Link</Label>
-                <Input value={newModule.resource_link} onChange={e => setNewModule({...newModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
+                <Input value={editingModule.resource_link} onChange={e => setEditingModule({...editingModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
               </div>
               <div>
                 <Label>Injury Prevention Measures (Optional)</Label>
                 <Textarea 
-                  value={newModule.preventative_measures} 
-                  onChange={e => setNewModule({...newModule, preventative_measures: e.target.value})} 
+                  value={editingModule.preventative_measures} 
+                  onChange={e => setEditingModule({...editingModule, preventative_measures: e.target.value})} 
                   rows={2} 
                   placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
                 />
               </div>
               <div className="flex gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowAddModuleDialog(false)} className="flex-1">Cancel</Button>
-                <Button onClick={handleAddModule} disabled={!newModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Add Module</Button>
+                <Button variant="outline" onClick={() => setShowEditModuleDialog(false)} className="flex-1">Cancel</Button>
+                <Button onClick={handleUpdateModule} disabled={!editingModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Save</Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Module Dialog */}
+      <Dialog open={showAddModuleDialog} onOpenChange={setShowAddModuleDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Training Module</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Title *</Label>
+              <Input value={newModule.title} onChange={e => setNewModule({...newModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea value={newModule.description} onChange={e => setNewModule({...newModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Training Type *</Label>
+                <Select value={newModule.training_type} onValueChange={v => setNewModule({...newModule, training_type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mobility Training">Mobility Training</SelectItem>
+                    <SelectItem value="Technical Training">Technical Training</SelectItem>
+                    <SelectItem value="Functional Training">Functional Training</SelectItem>
+                    <SelectItem value="Video Analysis/Tactical Training">Video Analysis/Tactical</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Priority</Label>
+                <Select value={newModule.priority} onValueChange={v => setNewModule({...newModule, priority: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Sessions/Week</Label>
+                <Input type="number" min="1" max="7" value={newModule.weekly_sessions} onChange={e => setNewModule({...newModule, weekly_sessions: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <Label>Number of Weeks</Label>
+                <Input type="number" min="1" value={newModule.number_of_weeks} onChange={e => setNewModule({...newModule, number_of_weeks: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <Label>Duration (min)</Label>
+                <Input type="number" min="15" step="15" value={newModule.session_duration} onChange={e => setNewModule({...newModule, session_duration: parseInt(e.target.value)})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Start Date</Label>
+                <Input type="date" value={newModule.start_date} onChange={e => setNewModule({...newModule, start_date: e.target.value})} />
+              </div>
+              <div>
+                <Label>End Date</Label>
+                <Input type="date" value={newModule.end_date} onChange={e => setNewModule({...newModule, end_date: e.target.value})} />
+              </div>
+            </div>
+            <div>
+              <Label>Resource Link</Label>
+              <Input value={newModule.resource_link} onChange={e => setNewModule({...newModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
+            </div>
+            <div>
+              <Label>Injury Prevention Measures (Optional)</Label>
+              <Textarea 
+                value={newModule.preventative_measures} 
+                onChange={e => setNewModule({...newModule, preventative_measures: e.target.value})} 
+                rows={2} 
+                placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
+              />
+            </div>
+            <div className="flex gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowAddModuleDialog(false)} className="flex-1">Cancel</Button>
+              <Button onClick={handleAddModule} disabled={!newModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Add Module</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BadgeEarnedDialog 
         badge={earnedBadge} 
