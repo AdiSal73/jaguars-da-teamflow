@@ -25,8 +25,12 @@ import UpcomingBookings from '../components/player/UpcomingBookings';
 export default function PlayerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Support both query params (old) and path params (new) for backward compatibility
   const urlParams = new URLSearchParams(window.location.search);
-  const playerId = urlParams.get('id');
+  const queryPlayerId = urlParams.get('id');
+  const pathPlayerId = window.location.pathname.split('/').pop();
+  const playerId = pathPlayerId && pathPlayerId !== 'PlayerDashboard' ? pathPlayerId : queryPlayerId;
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
@@ -267,6 +271,19 @@ export default function PlayerDashboard() {
     { attribute: 'Def. Organized', value: currentEvaluation.defending_organized || 0 },
     { attribute: 'Att. Organized', value: currentEvaluation.attacking_organized || 0 }
   ] : [];
+
+  if (!playerId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center text-white">
+          <p className="text-lg mb-4">No player selected</p>
+          <Button onClick={() => navigate(-1)} className="bg-emerald-600">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (playerLoading) {
     return (

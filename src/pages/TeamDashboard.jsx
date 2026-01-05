@@ -27,8 +27,12 @@ import { Mail } from 'lucide-react';
 export default function TeamDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Support both query params (old) and path params (new) for backward compatibility
   const urlParams = new URLSearchParams(window.location.search);
-  const teamId = urlParams.get('teamId');
+  const queryTeamId = urlParams.get('teamId');
+  const pathTeamId = window.location.pathname.split('/').pop();
+  const teamId = pathTeamId && pathTeamId !== 'TeamDashboard' ? pathTeamId : queryTeamId;
 
   const [showEvalDialog, setShowEvalDialog] = useState(false);
   const [showGoalsDialog, setShowGoalsDialog] = useState(false);
