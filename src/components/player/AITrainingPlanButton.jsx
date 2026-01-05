@@ -3,14 +3,27 @@ import { Button } from '@/components/ui/button';
 import { Target, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { POSITION_KNOWLEDGE_BANK } from '../constants/positionKnowledgeBank';
 
 export default function AITrainingPlanButton({ player, pathway, evaluations, onUpdatePathway }) {
   const [generating, setGenerating] = useState(false);
+  const queryClient = useQueryClient();
 
   const generateTrainingModules = async () => {
     setGenerating(true);
     try {
+      // Ensure pathway exists before generating modules
+      let currentPathway = pathway;
+      if (!currentPathway) {
+        // Create a new pathway first
+        currentPathway = await base44.entities.DevelopmentPathway.create({
+          player_id: player.id,
+          position: player.primary_position || 'Unknown',
+          training_modules: []
+        });
+        queryClient.invalidateQueries(['pathway', player.id]);
+      }
       const latestEval = evaluations?.[0];
       const positionKnowledge = POSITION_KNOWLEDGE_BANK[player.primary_position] || {};
       
