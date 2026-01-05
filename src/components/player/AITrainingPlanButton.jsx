@@ -81,24 +81,29 @@ Return ONLY a JSON array with this exact structure:
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              description: { type: "string" },
-              training_type: { type: "string" },
-              priority: { type: "string" },
-              weekly_sessions: { type: "number" },
-              number_of_weeks: { type: "number" },
-              session_duration: { type: "number" },
-              preventative_measures: { type: "string" }
+          type: "object",
+          properties: {
+            modules: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  training_type: { type: "string" },
+                  priority: { type: "string" },
+                  weekly_sessions: { type: "number" },
+                  number_of_weeks: { type: "number" },
+                  session_duration: { type: "number" },
+                  preventative_measures: { type: "string" }
+                }
+              }
             }
           }
         }
       });
 
-      const modules = (Array.isArray(response) ? response : response.modules || []).map(m => ({
+      const modules = (response.modules || []).map(m => ({
         id: `module_${Date.now()}_${Math.random()}`,
         ...m,
         completed: false,
