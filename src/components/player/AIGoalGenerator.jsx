@@ -151,8 +151,8 @@ For each goal, provide:
         onClick={() => setShowDialog(true)}
         size="sm"
         variant="outline"
-        className="border-purple-300 text-purple-700 hover:bg-purple-50">
-        
+        className="border-purple-300 text-purple-700 hover:bg-purple-50"
+      >
         <Sparkles className="w-4 h-4 mr-1" />
         Adil's Goals
       </Button>
@@ -160,44 +160,43 @@ For each goal, provide:
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">Adil's Generated Goals
-
-
+            <DialogTitle className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
+              Adil's Generated Goals
             </DialogTitle>
           </DialogHeader>
 
-          {generatedGoals.length === 0 ?
-          <div className="py-8 text-center">
+          {generatedGoals.length === 0 ? (
+            <div className="py-8 text-center">
               <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-600" />
               <h3 className="text-lg font-bold text-slate-900 mb-2">Generate Personalized Goals</h3>
               <p className="text-slate-600 mb-6">
                 Adil will analyze {player.full_name}'s evaluations, assessments, and position to create tailored development goals.
               </p>
-              {!latestEvaluation &&
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              {!latestEvaluation && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                   ⚠️ No evaluation data available. Goals will be based on position and physical data only.
                 </div>
-            }
+              )}
               <Button
-              onClick={handleGenerateGoals}
-              disabled={generating}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-              
-                {generating ?
-              <>
+                onClick={handleGenerateGoals}
+                disabled={generating}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {generating ? (
+                  <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Generating Goals...
-                  </> :
-
-              <>
+                  </>
+                ) : (
+                  <>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate Goals
                   </>
-              }
+                )}
               </Button>
-            </div> :
-
-          <div className="space-y-4 mt-4">
+            </div>
+          ) : (
+            <div className="space-y-4 mt-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -209,19 +208,19 @@ For each goal, provide:
               </div>
 
               <div className="space-y-3">
-                {generatedGoals.map((goal) =>
-              <div key={goal.id} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200">
+                {generatedGoals.map((goal) => (
+                  <div key={goal.id} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <h4 className="font-bold text-slate-900">{goal.description}</h4>
                         <p className="text-sm text-slate-600 mt-1">{goal.plan_of_action}</p>
                       </div>
                       <Badge className={`ml-2 ${
-                  goal.category === 'Technical' ? 'bg-blue-100 text-blue-800' :
-                  goal.category === 'Tactical' ? 'bg-purple-100 text-purple-800' :
-                  goal.category === 'Physical' ? 'bg-red-100 text-red-800' :
-                  'bg-green-100 text-green-800'}`
-                  }>
+                        goal.category === 'Technical' ? 'bg-blue-100 text-blue-800' :
+                        goal.category === 'Tactical' ? 'bg-purple-100 text-purple-800' :
+                        goal.category === 'Physical' ? 'bg-red-100 text-red-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
                         {goal.category}
                       </Badge>
                     </div>
@@ -231,7 +230,7 @@ For each goal, provide:
                       </span>
                     </div>
                   </div>
-              )}
+                ))}
               </div>
 
               <div className="flex gap-3 pt-4 border-t">
@@ -241,9 +240,9 @@ For each goal, provide:
                 </Button>
               </div>
             </div>
-          }
+          )}
         </DialogContent>
       </Dialog>
-    </>);
-
+    </>
+  );
 }
