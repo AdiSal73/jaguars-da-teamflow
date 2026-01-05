@@ -30,17 +30,14 @@ import IDPServices from './pages/IDPServices';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import Landing from './pages/Landing';
 import Leaderboard from './pages/Leaderboard';
-import MyBookings from './pages/MyBookings';
 import PDPViewer from './pages/PDPViewer';
 import ParentPortal from './pages/ParentPortal';
 import PlayerComparison from './pages/PlayerComparison';
-import PlayerDashboard from './pages/PlayerDashboard';
 import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
 import Players from './pages/Players';
 import PublicCoachBooking from './pages/PublicCoachBooking';
 import ResetPassword from './pages/ResetPassword';
 import ScoutingPipeline from './pages/ScoutingPipeline';
-import TeamDashboard from './pages/TeamDashboard';
 import TeamReports from './pages/TeamReports';
 import TeamRoster from './pages/TeamRoster';
 import TeamTryout from './pages/TeamTryout';
@@ -49,6 +46,9 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
+import MyBookings from './pages/MyBookings';
+import PlayerDashboard from './pages/PlayerDashboard';
+import TeamDashboard from './pages/TeamDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -85,17 +85,14 @@ export const PAGES = {
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "Landing": Landing,
     "Leaderboard": Leaderboard,
-    "MyBookings": MyBookings,
     "PDPViewer": PDPViewer,
     "ParentPortal": ParentPortal,
     "PlayerComparison": PlayerComparison,
-    "PlayerDashboard": PlayerDashboard,
     "PlayerRoleAssignment": PlayerRoleAssignment,
     "Players": Players,
     "PublicCoachBooking": PublicCoachBooking,
     "ResetPassword": ResetPassword,
     "ScoutingPipeline": ScoutingPipeline,
-    "TeamDashboard": TeamDashboard,
     "TeamReports": TeamReports,
     "TeamRoster": TeamRoster,
     "TeamTryout": TeamTryout,
@@ -104,6 +101,9 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
+    "MyBookings": MyBookings,
+    "PlayerDashboard": PlayerDashboard,
+    "TeamDashboard": TeamDashboard,
 }
 
 export const pagesConfig = {

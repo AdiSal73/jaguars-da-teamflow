@@ -696,7 +696,7 @@ Format with clear headers and structure.`;
                         <td className="px-4 py-3 text-sm font-bold">{player.jersey_number || '-'}</td>
                         <td className="px-4 py-3 text-sm font-medium">{player.full_name}</td>
                         <td className="px-4 py-3 text-sm">{player.primary_position || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : '-'}</td>
+                        <td className="px-4 py-3 text-sm">{player.date_of_birth ? new Date(player.date_of_birth + 'T12:00:00').toLocaleDateString() : '-'}</td>
                         <td className="px-4 py-3 text-xs">{player.email || player.player_email || '-'}</td>
                         <td className="px-4 py-3 text-xs">{player.phone || player.player_phone || '-'}</td>
                         <td className="px-4 py-3">
