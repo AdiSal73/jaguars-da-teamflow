@@ -268,10 +268,23 @@ export default function PlayerDashboard() {
     { attribute: 'Att. Organized', value: currentEvaluation.attacking_organized || 0 }
   ] : [];
 
-  if (playerLoading || !player) {
+  if (playerLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!player) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center text-white">
+          <p className="text-lg mb-4">Player not found</p>
+          <Button onClick={() => navigate(-1)} className="bg-emerald-600">
+            Go Back
+          </Button>
+        </div>
       </div>
     );
   }
