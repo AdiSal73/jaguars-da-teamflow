@@ -20,7 +20,6 @@ import CreateEvaluationDialog from '../components/evaluation/CreateEvaluationDia
 import AddParentDialog from '../components/player/AddParentDialog';
 import EditPhysicalAssessmentDialog from '../components/player/EditPhysicalAssessmentDialog';
 import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
-import PlayerStatsCard from '../components/gamification/PlayerStatsCard';
 import UpcomingBookings from '../components/player/UpcomingBookings';
 
 export default function PlayerDashboard() {
@@ -349,9 +348,8 @@ export default function PlayerDashboard() {
               </div>
             </div>
 
-            {/* Gamification Stats & Upcoming Bookings */}
-            <div className="space-y-4">
-              <PlayerStatsCard progress={playerProgress} player={player} />
+            {/* Upcoming Bookings */}
+            <div>
               <UpcomingBookings playerId={playerId} />
             </div>
           </div>

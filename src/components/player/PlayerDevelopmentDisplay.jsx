@@ -14,11 +14,9 @@ import { createPageUrl } from '@/utils';
 import { POSITION_KNOWLEDGE_BANK, PHYSICAL_ASSESSMENTS } from '../constants/positionKnowledgeBank';
 import AIGoalGenerator from './AIGoalGenerator';
 import AITrainingPlanButton from './AITrainingPlanButton';
-import { calculatePoints, checkBadgeEarned } from '../gamification/BadgeSystem';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import BadgeEarnedDialog from '../gamification/BadgeEarnedDialog';
 
 export default function PlayerDevelopmentDisplay({ 
   player, 
@@ -41,7 +39,6 @@ export default function PlayerDevelopmentDisplay({
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
   const [expandedGoals, setExpandedGoals] = useState(new Set());
-  const [earnedBadge, setEarnedBadge] = useState(null);
   
   const [newGoal, setNewGoal] = useState({
     description: '',
@@ -68,71 +65,7 @@ export default function PlayerDevelopmentDisplay({
     preventative_measures: ''
   });
 
-  // Fetch player progress
-  const { data: playerProgress } = useQuery({
-    queryKey: ['playerProgress', player.id],
-    queryFn: async () => {
-      const progress = await base44.entities.PlayerProgress.filter({ player_id: player.id });
-      return progress[0] || null;
-    }
-  });
 
-  const updateProgressMutation = useMutation({
-    mutationFn: async ({ action, points }) => {
-      let currentProgress = playerProgress;
-
-      if (!currentProgress) {
-        // Create initial progress if none exists
-        currentProgress = await base44.entities.PlayerProgress.create({
-          player_id: player.id,
-          total_points: 0,
-          level: 1,
-          badges: [],
-          achievements: {
-            goals_completed: 0,
-            modules_completed: 0,
-            assessments_taken: 0,
-            evaluations_received: 0,
-            streak_days: 0,
-            longest_streak: 0
-          },
-          last_activity_date: new Date().toISOString().split('T')[0]
-        });
-      }
-
-      const newPoints = (currentProgress.total_points || 0) + points;
-      const newLevel = Math.floor(newPoints / 100) + 1;
-      const achievements = { ...(currentProgress.achievements || {}) };
-
-      if (action === 'goal_completed') achievements.goals_completed = (achievements.goals_completed || 0) + 1;
-      if (action === 'module_completed') achievements.modules_completed = (achievements.modules_completed || 0) + 1;
-
-      const updatedProgressData = {
-        total_points: newPoints,
-        level: newLevel,
-        achievements,
-        last_activity_date: new Date().toISOString().split('T')[0]
-      };
-
-      const existingBadges = currentProgress.badges || [];
-      const newBadges = checkBadgeEarned({ ...currentProgress, ...updatedProgressData }, action, existingBadges);
-      
-      if (newBadges.length > 0) {
-        const badgeWithDate = newBadges.map(b => ({
-          ...b,
-          earned_date: new Date().toISOString().split('T')[0]
-        }));
-        updatedProgressData.badges = [...existingBadges, ...badgeWithDate];
-        updatedProgressData.total_points += newBadges.reduce((sum, b) => sum + (b.points || 0), 0);
-        setEarnedBadge(badgeWithDate[0]);
-      }
-
-      return await base44.entities.PlayerProgress.update(currentProgress.id, updatedProgressData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['playerProgress', player.id]);
-    }
-  });
 
   const getPositionSkills = () => {
     if (!player.primary_position) return [];
@@ -203,7 +136,6 @@ export default function PlayerDevelopmentDisplay({
   const handleProgressChange = (goalId, progress) => {
     const updatedGoals = player.goals.map(g => {
       if (g.id === goalId) {
-        const wasCompleted = g.completed;
         const nowCompleted = progress >= 100;
         
         const updated = { 
@@ -213,25 +145,10 @@ export default function PlayerDevelopmentDisplay({
           completion_date: nowCompleted && !g.completion_date ? new Date().toISOString().split('T')[0] : g.completion_date
         };
 
-        if (!wasCompleted && nowCompleted) {
-          const points = calculatePoints('goal_completed');
-          updateProgressMutation.mutate({ action: 'goal_completed', points });
-          toast.success(`+${points} points! Goal completed! 🎉`);
-        } else if (!g.completed && !nowCompleted) {
-          if (progress === 25 && g.progress < 25) {
-            const points = calculatePoints('goal_progress_25');
-            updateProgressMutation.mutate({ action: 'goal_progress_25', points });
-            toast.success(`+${points} points for reaching 25% progress!`);
-          } else if (progress === 50 && g.progress < 50) {
-            const points = calculatePoints('goal_progress_50');
-            updateProgressMutation.mutate({ action: 'goal_progress_50', points });
-            toast.success(`+${points} points for reaching 50% progress!`);
-          } else if (progress === 75 && g.progress < 75) {
-            const points = calculatePoints('goal_progress_75');
-            updateProgressMutation.mutate({ action: 'goal_progress_75', points });
-            toast.success(`+${points} points for reaching 75% progress!`);
-          }
+        if (nowCompleted && !g.completed) {
+          toast.success('Goal completed! 🎉');
         }
+        
         return updated;
       }
       return g;
@@ -299,8 +216,7 @@ export default function PlayerDevelopmentDisplay({
 
   const handleToggleModule = (moduleId) => {
     const module = pathway.training_modules.find(m => m.id === moduleId);
-    const wasCompleted = module?.completed;
-    const nowCompleted = !wasCompleted;
+    const nowCompleted = !module?.completed;
 
     const updatedModules = pathway.training_modules.map(m => {
       if (m.id === moduleId) {
@@ -310,10 +226,8 @@ export default function PlayerDevelopmentDisplay({
     });
     onUpdatePathway({ training_modules: updatedModules });
 
-    if (!wasCompleted && nowCompleted) {
-      const points = calculatePoints('module_completed');
-      updateProgressMutation.mutate({ action: 'module_completed', points });
-      toast.success(`+${points} points! Training module completed! 💪`);
+    if (nowCompleted && !module?.completed) {
+      toast.success('Training module completed! 💪');
     }
   };
 
@@ -1031,11 +945,6 @@ export default function PlayerDevelopmentDisplay({
         </DialogContent>
       </Dialog>
 
-      <BadgeEarnedDialog 
-        badge={earnedBadge} 
-        open={!!earnedBadge} 
-        onClose={() => setEarnedBadge(null)} 
-      />
     </>
   );
 }

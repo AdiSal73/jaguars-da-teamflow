@@ -28,6 +28,7 @@ import Home from './pages/Home';
 import IDPServices from './pages/IDPServices';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import Landing from './pages/Landing';
+import Leaderboard from './pages/Leaderboard';
 import MyBookings from './pages/MyBookings';
 import PDPViewer from './pages/PDPViewer';
 import ParentPortal from './pages/ParentPortal';
@@ -47,7 +48,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import Leaderboard from './pages/Leaderboard';
 import __Layout from './Layout.jsx';
 
 
@@ -82,6 +82,7 @@ export const PAGES = {
     "IDPServices": IDPServices,
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "Landing": Landing,
+    "Leaderboard": Leaderboard,
     "MyBookings": MyBookings,
     "PDPViewer": PDPViewer,
     "ParentPortal": ParentPortal,
@@ -101,7 +102,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "Leaderboard": Leaderboard,
 }
 
 export const pagesConfig = {
