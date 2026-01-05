@@ -341,7 +341,7 @@ export default function PlayerDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-4">
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">DOB</div>
-                    <div className="font-bold text-sm sm:text-base">{player.date_of_birth ? new Date(player.date_of_birth + 'T12:00:00').toLocaleDateString() : 'N/A'}</div>
+                    <div className="font-bold text-sm sm:text-base">{player.date_of_birth ? moment(player.date_of_birth).format('MM/DD/YYYY') : 'N/A'}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Position</div>

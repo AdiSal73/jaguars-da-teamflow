@@ -111,17 +111,21 @@ export default function Players() {
     queryFn: () => base44.auth.me()
   });
 
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list(),
+    enabled: !!user
+  });
+
+  const currentCoach = coaches.find(c => c.email === user?.email);
+
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: async () => {
       const allPlayers = await base44.entities.Player.list('-created_date');
-      if (user?.role === 'admin') return allPlayers;
-      if (user?.role === 'coach') {
-        const coaches = await base44.entities.Coach.list();
-        const currentCoach = coaches.find(c => c.email === user.email);
-        if (currentCoach?.team_ids) {
-          return allPlayers.filter(p => currentCoach.team_ids.includes(p.team_id));
-        }
+      if (user?.role === 'admin' || user?.role === 'director') return allPlayers;
+      if (currentCoach?.team_ids) {
+        return allPlayers.filter(p => currentCoach.team_ids.includes(p.team_id));
       }
       return [];
     },
@@ -132,13 +136,9 @@ export default function Players() {
     queryKey: ['teams'],
     queryFn: async () => {
       const allTeams = await base44.entities.Team.list();
-      if (user?.role === 'admin') return allTeams;
-      if (user?.role === 'coach') {
-        const coaches = await base44.entities.Coach.list();
-        const currentCoach = coaches.find(c => c.email === user.email);
-        if (currentCoach?.team_ids) {
-          return allTeams.filter(t => currentCoach.team_ids.includes(t.id));
-        }
+      if (user?.role === 'admin' || user?.role === 'director') return allTeams;
+      if (currentCoach?.team_ids) {
+        return allTeams.filter(t => currentCoach.team_ids.includes(t.id));
       }
       return [];
     },
