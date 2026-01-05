@@ -27,17 +27,8 @@ import { Mail } from 'lucide-react';
 export default function TeamDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
-  // Get teamId from URL params
-  const [teamId, setTeamId] = useState(null);
-
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('teamId');
-    if (id) {
-      setTeamId(id);
-    }
-  }, []);
+  const urlParams = new URLSearchParams(window.location.search);
+  const teamId = urlParams.get('teamId');
 
   const [showEvalDialog, setShowEvalDialog] = useState(false);
   const [showGoalsDialog, setShowGoalsDialog] = useState(false);

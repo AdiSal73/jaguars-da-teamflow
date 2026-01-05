@@ -25,17 +25,8 @@ import UpcomingBookings from '../components/player/UpcomingBookings';
 export default function PlayerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
-  // Get playerId from URL params
-  const [playerId, setPlayerId] = useState(null);
-
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    if (id) {
-      setPlayerId(id);
-    }
-  }, []);
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerId = urlParams.get('id');
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
