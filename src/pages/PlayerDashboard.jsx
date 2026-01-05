@@ -171,12 +171,20 @@ export default function PlayerDashboard() {
   });
 
   const updatePathwayMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       if (pathway?.id) {
         return base44.entities.DevelopmentPathway.update(pathway.id, data);
+      } else {
+        return base44.entities.DevelopmentPathway.create({
+          player_id: playerId,
+          ...data
+        });
       }
     },
-    onSuccess: () => queryClient.invalidateQueries(['pathway', playerId])
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pathway', playerId]);
+      toast.success('Training plan updated');
+    }
   });
 
   const saveTryoutMutation = useMutation({
