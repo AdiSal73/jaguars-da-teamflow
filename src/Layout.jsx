@@ -238,17 +238,17 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to={createPageUrl("landing")} className="flex items-center gap-3 group">
+        <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <Link to={createPageUrl("landing")} className="flex items-center gap-2 sm:gap-3 group">
               <img 
                 src="https://ssprodst.blob.core.windows.net/logos/58/2821a300-9ff6-46d2-a00b-73be4dc4f316-04-02-2025-07-54-52-995.png" 
                 alt="Michigan Jaguars" 
-                className="w-10 h-10 rounded-xl shadow-lg group-hover:shadow-emerald-200 transition-all object-contain"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg group-hover:shadow-emerald-200 transition-all object-contain"
               />
               <div className="hidden sm:block">
-                <h1 className="font-bold text-slate-900 text-lg">Michigan Jaguars</h1>
-                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development</p>
+                <h1 className="font-bold text-slate-900 text-base sm:text-lg">Michigan Jaguars</h1>
+                <p className="text-[9px] sm:text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development</p>
               </div>
             </Link>
 

@@ -3,6 +3,7 @@ import About from './pages/About';
 import AdminDataManagement from './pages/AdminDataManagement';
 import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import Analytics from './pages/Analytics';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import Assessments from './pages/Assessments';
 import BookingPage from './pages/BookingPage';
 import BookingsTable from './pages/BookingsTable';
@@ -48,7 +49,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +58,7 @@ export const PAGES = {
     "AdminDataManagement": AdminDataManagement,
     "AdvancedAnalytics": AdvancedAnalytics,
     "Analytics": Analytics,
+    "AnalyticsDashboard": AnalyticsDashboard,
     "Assessments": Assessments,
     "BookingPage": BookingPage,
     "BookingsTable": BookingsTable,
@@ -103,7 +104,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "AnalyticsDashboard": AnalyticsDashboard,
 }
 
 export const pagesConfig = {

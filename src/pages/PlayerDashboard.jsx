@@ -280,56 +280,56 @@ export default function PlayerDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <Button onClick={() => navigate(-1)} variant="ghost" className="text-white hover:bg-white/10 mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 flex items-start gap-6">
-              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-5xl font-bold shadow-2xl">
+
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-2 flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-4xl sm:text-5xl font-bold shadow-2xl flex-shrink-0">
                 {player.jersey_number || player.full_name?.charAt(0)}
               </div>
               
-              <div className="flex-1">
-                <h1 className="text-4xl font-bold mb-2">{player.full_name}</h1>
-                <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{player.full_name}</h1>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
                   <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{player.primary_position}</Badge>
                   <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">{team?.name || 'No Team'}</Badge>
                   {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
                 </div>
                 {isAdminOrCoach && (
-                  <div className="flex gap-2">
-                    <Button onClick={() => setShowEditInfoDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                      <Edit className="w-3 h-3 mr-1" />Edit Info
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => setShowEditInfoDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm">
+                      <Edit className="w-3 h-3 sm:mr-1" /><span className="hidden sm:inline">Edit Info</span>
                     </Button>
-                    <Button onClick={() => setShowMessageDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                      <MessageSquare className="w-3 h-3 mr-1" />Message
+                    <Button onClick={() => setShowMessageDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm">
+                      <MessageSquare className="w-3 h-3 sm:mr-1" /><span className="hidden sm:inline">Message</span>
                     </Button>
-                    <Button onClick={() => setShowAddParentDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                      <UserPlus className="w-3 h-3 mr-1" />Add Parent
+                    <Button onClick={() => setShowAddParentDialog(true)} size="sm" className="bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm">
+                      <UserPlus className="w-3 h-3 sm:mr-1" /><span className="hidden sm:inline">Add Parent</span>
                     </Button>
                   </div>
                 )}
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-4">
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">DOB</div>
-                    <div className="font-bold">{player.date_of_birth ? new Date(player.date_of_birth).toLocaleDateString() : 'N/A'}</div>
+                    <div className="font-bold text-sm sm:text-base">{player.date_of_birth ? new Date(player.date_of_birth + 'T12:00:00').toLocaleDateString() : 'N/A'}</div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Position</div>
-                    <div className="font-bold">{player.primary_position}</div>
+                    <div className="font-bold text-sm sm:text-base">{player.primary_position}</div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Team</div>
-                    <div className="font-bold text-sm">{team?.name || 'N/A'}</div>
+                    <div className="font-bold text-xs sm:text-sm">{team?.name || 'N/A'}</div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Status</div>
-                    <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'}`}>{player.status || 'Active'}</Badge>
+                    <Badge className={`${player.status === 'Active' ? 'bg-green-500' : 'bg-red-500'} text-xs`}>{player.status || 'Active'}</Badge>
                   </div>
-                </div>
+                  </div>
                 {allParentInfo.length > 0 && (
                   <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
                     <div className="text-xs text-slate-400 mb-3 font-semibold">Parent Contacts</div>
@@ -365,8 +365,8 @@ export default function PlayerDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Physical Stats */}
           {currentAssessment ? (
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md">
@@ -473,7 +473,7 @@ export default function PlayerDashboard() {
 
           {/* Evaluation Radar */}
           {currentEvaluation ? (
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md md:col-span-2">
+            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md lg:col-span-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -588,7 +588,7 @@ export default function PlayerDashboard() {
               </CardContent>
             </Card>
           ) : isAdminOrCoach && (
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md md:col-span-2">
+            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md lg:col-span-2">
               <CardContent className="p-6 text-center">
                 <p className="text-slate-400 mb-3">No evaluation yet</p>
                 <Button onClick={() => setShowCreateEvaluationDialog(true)} size="sm" className="bg-emerald-600">

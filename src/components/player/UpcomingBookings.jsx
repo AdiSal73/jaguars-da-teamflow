@@ -103,7 +103,7 @@ export default function UpcomingBookings({ playerId }) {
                 <div className="flex items-center gap-3 text-xs text-slate-300">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3 text-emerald-400" />
-                    {format(new Date(booking.booking_date), 'MMM d')}
+                    {format(new Date(booking.booking_date + 'T12:00:00'), 'MMM d')}
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-emerald-400" />
