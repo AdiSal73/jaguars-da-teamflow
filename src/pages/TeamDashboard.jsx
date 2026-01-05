@@ -28,11 +28,16 @@ export default function TeamDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  // Support both query params (old) and path params (new) for backward compatibility
-  const urlParams = new URLSearchParams(window.location.search);
-  const queryTeamId = urlParams.get('teamId');
-  const pathTeamId = window.location.pathname.split('/').pop();
-  const teamId = pathTeamId && pathTeamId !== 'TeamDashboard' ? pathTeamId : queryTeamId;
+  // Get teamId from URL params
+  const [teamId, setTeamId] = useState(null);
+
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('teamId');
+    if (id) {
+      setTeamId(id);
+    }
+  }, []);
 
   const [showEvalDialog, setShowEvalDialog] = useState(false);
   const [showGoalsDialog, setShowGoalsDialog] = useState(false);

@@ -26,11 +26,16 @@ export default function PlayerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  // Support both query params (old) and path params (new) for backward compatibility
-  const urlParams = new URLSearchParams(window.location.search);
-  const queryPlayerId = urlParams.get('id');
-  const pathPlayerId = window.location.pathname.split('/').pop();
-  const playerId = pathPlayerId && pathPlayerId !== 'PlayerDashboard' ? pathPlayerId : queryPlayerId;
+  // Get playerId from URL params
+  const [playerId, setPlayerId] = useState(null);
+
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    if (id) {
+      setPlayerId(id);
+    }
+  }, []);
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
