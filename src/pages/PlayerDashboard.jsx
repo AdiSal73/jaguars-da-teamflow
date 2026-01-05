@@ -177,13 +177,13 @@ export default function PlayerDashboard() {
       } else {
         return base44.entities.DevelopmentPathway.create({
           player_id: playerId,
+          position: player?.primary_position || 'Unknown',
           ...data
         });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['pathway', playerId]);
-      toast.success('Training plan updated');
     }
   });
 
