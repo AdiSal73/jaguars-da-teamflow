@@ -290,6 +290,6 @@ Be specific and actionable.`,
           }
         </CardContent>
       </Card>
-    </div>);
-
+    </div>
+  );
 }
