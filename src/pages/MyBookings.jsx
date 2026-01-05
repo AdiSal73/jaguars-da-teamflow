@@ -627,6 +627,6 @@ export default function MyBookings() {
         recipients={[sendRecipient]}
         isLoading={sendMessageMutation.isPending}
       />
-      </div>
-      );
-      }
+    </div>
+  );
+}
