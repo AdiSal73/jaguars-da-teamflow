@@ -123,8 +123,17 @@ Each module should include:
         start_date: new Date().toISOString().split('T')[0]
       }));
 
-      const existingModules = pathway?.training_modules || [];
-      onUpdatePathway({ training_modules: [...existingModules, ...modules] });
+      const existingModules = currentPathway?.training_modules || [];
+      
+      // Update the pathway (which now definitely exists)
+      if (currentPathway?.id) {
+        await base44.entities.DevelopmentPathway.update(currentPathway.id, {
+          training_modules: [...existingModules, ...modules]
+        });
+        queryClient.invalidateQueries(['pathway', player.id]);
+      } else {
+        onUpdatePathway({ training_modules: [...existingModules, ...modules] });
+      }
       
       toast.success(`Generated ${modules.length} training modules`);
     } catch (error) {
