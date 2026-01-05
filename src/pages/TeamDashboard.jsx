@@ -269,6 +269,19 @@ Format with clear headers and structure.`;
     </div>
   );
 
+  if (!teamId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-slate-600">
+          <p className="text-lg mb-4">No team selected</p>
+          <Button onClick={() => navigate(-1)} className="bg-emerald-600">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!team) {
     return (
       <div className="flex items-center justify-center min-h-screen">
