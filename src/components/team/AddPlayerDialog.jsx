@@ -7,19 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { User, Users } from 'lucide-react';
 
 export default function AddPlayerDialog({ open, onClose, teamId, teamName }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     full_name: '',
-    email: '',
-    phone: '',
+    player_email: '',
+    player_phone: '',
     date_of_birth: '',
     grad_year: '',
     gender: '',
     primary_position: '',
     branch: '',
-    team_id: teamId
+    team_id: teamId,
+    parent_name: '',
+    parent_email: '',
+    parent_phone: ''
   });
 
   const createPlayerMutation = useMutation({
