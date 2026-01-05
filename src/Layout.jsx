@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   LayoutDashboard, Users, Shield, Calendar, Activity, LogOut,
   ChevronDown, ChevronUp, Clock, BarChart3, UserCog, MessageSquare,
-  TrendingUp, Settings, Menu, X, HelpCircle, User as UserIcon, Search } from
+  TrendingUp, Settings, Menu, X, HelpCircle, User as UserIcon, Search, Trophy } from
 "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -130,7 +130,8 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "coach", "director"],
       submenu: [
         { title: "All Teams", url: createPageUrl("Teams") },
-        { title: "All Players", url: createPageUrl("Players") }
+        { title: "All Players", url: createPageUrl("Players") },
+        { title: "Leaderboards", url: createPageUrl("Leaderboard") }
       ]
     },
     {
@@ -201,6 +202,12 @@ export default function Layout({ children, currentPageName }) {
       icon: MessageSquare,
       roles: ["admin", "coach", "user", "parent", "director"],
       url: createPageUrl("Communications")
+    },
+    {
+      title: "Leaderboards",
+      url: createPageUrl("Leaderboard"),
+      icon: Trophy,
+      roles: ["user", "parent"]
     },
     {
       title: "My Account",
