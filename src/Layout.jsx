@@ -248,7 +248,7 @@ export default function Layout({ children, currentPageName }) {
               />
               <div className="hidden sm:block">
                 <h1 className="font-bold text-slate-900 text-lg">Michigan Jaguars</h1>
-                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development </p>
+                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development</p>
               </div>
             </Link>
 
