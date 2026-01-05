@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,10 +23,10 @@ import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
 import UpcomingBookings from '../components/player/UpcomingBookings';
 
 export default function PlayerDashboard() {
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
-    const [searchParams] = useSearchParams();
-    const playerId = searchParams.get('id');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  const playerId = urlParams.get('id');
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
@@ -178,8 +178,6 @@ export default function PlayerDashboard() {
         return base44.entities.DevelopmentPathway.create({
           player_id: playerId,
           position: player?.primary_position || 'Unknown',
-          skill_matrix: [],
-          training_modules: [],
           ...data
         });
       }
@@ -270,21 +268,10 @@ export default function PlayerDashboard() {
     { attribute: 'Att. Organized', value: currentEvaluation.attacking_organized || 0 }
   ] : [];
 
-  if (!playerId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="text-white">No player selected</div>
-      </div>
-    );
-  }
-
   if (playerLoading || !player) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="animate-pulse flex items-center gap-3 text-white">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-lg">Loading Player Dashboard...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-white">Loading...</div>
       </div>
     );
   }
