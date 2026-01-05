@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -341,7 +342,7 @@ export default function PlayerDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-4">
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">DOB</div>
-                    <div className="font-bold text-sm sm:text-base">{player.date_of_birth ? moment(player.date_of_birth).format('MM/DD/YYYY') : 'N/A'}</div>
+                    <div className="font-bold text-sm sm:text-base">{player.date_of_birth ? moment(player.date_of_birth, ["MM/DD/YYYY", "YYYY-MM-DD"]).format('MM/DD/YYYY') : 'N/A'}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Position</div>
