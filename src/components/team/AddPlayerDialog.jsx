@@ -33,7 +33,20 @@ export default function AddPlayerDialog({ open, onClose, teamId, teamName }) {
       queryClient.invalidateQueries(['players']);
       toast.success('Player added successfully');
       onClose();
-      setFormData({ full_name: '', email: '', phone: '', date_of_birth: '', grad_year: '', gender: '', primary_position: '', branch: '', team_id: teamId });
+      setFormData({ 
+        full_name: '', 
+        player_email: '', 
+        player_phone: '', 
+        date_of_birth: '', 
+        grad_year: '', 
+        gender: '', 
+        primary_position: '', 
+        branch: '', 
+        team_id: teamId,
+        parent_name: '',
+        parent_email: '',
+        parent_phone: ''
+      });
     },
     onError: () => {
       toast.error('Failed to add player');
@@ -45,10 +58,23 @@ export default function AddPlayerDialog({ open, onClose, teamId, teamName }) {
       toast.error('Name and gender are required');
       return;
     }
-    createPlayerMutation.mutate({
-      ...formData,
-      grad_year: formData.grad_year ? Number(formData.grad_year) : undefined
-    });
+    
+    const playerData = {
+      full_name: formData.full_name,
+      gender: formData.gender,
+      team_id: teamId,
+      date_of_birth: formData.date_of_birth || undefined,
+      grad_year: formData.grad_year ? Number(formData.grad_year) : undefined,
+      primary_position: formData.primary_position || undefined,
+      branch: formData.branch || undefined,
+      player_email: formData.player_email || undefined,
+      player_phone: formData.player_phone || undefined,
+      parent_name: formData.parent_name || undefined,
+      phone: formData.parent_phone || undefined,
+      parent_emails: formData.parent_email ? [formData.parent_email] : undefined
+    };
+    
+    createPlayerMutation.mutate(playerData);
   };
 
   return (
