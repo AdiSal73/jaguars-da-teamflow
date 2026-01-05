@@ -14,16 +14,43 @@ export default function CreateAssessmentDialog({ open, onClose, playerId, player
     shuttle: ''
   });
 
+  const calculateScores = (sprint, vertical, yirt, shuttle) => {
+    // Speed score: Lower sprint time is better (inverse relationship)
+    const speed_score = Math.round(Math.max(0, Math.min(100, 100 - (sprint - 2.5) * 20)));
+    
+    // Power score: Higher vertical jump is better
+    const power_score = Math.round(Math.max(0, Math.min(100, (vertical / 30) * 100)));
+    
+    // Endurance score: Higher YIRT level is better
+    const endurance_score = Math.round(Math.max(0, Math.min(100, (yirt / 20) * 100)));
+    
+    // Agility score: Lower shuttle time is better (inverse relationship)
+    const agility_score = Math.round(Math.max(0, Math.min(100, 100 - (shuttle - 4) * 15)));
+    
+    // Overall score: Average of all scores
+    const overall_score = Math.round((speed_score + power_score + endurance_score + agility_score) / 4);
+    
+    return { speed_score, power_score, endurance_score, agility_score, overall_score };
+  };
+
   const handleSave = () => {
+    const sprint = parseFloat(form.sprint);
+    const vertical = parseFloat(form.vertical);
+    const yirt = parseFloat(form.yirt);
+    const shuttle = parseFloat(form.shuttle);
+    
+    const scores = calculateScores(sprint, vertical, yirt, shuttle);
+    
     const data = {
       player_id: playerId,
       player_name: playerName,
       team_id: teamId,
       assessment_date: form.assessment_date,
-      sprint: parseFloat(form.sprint),
-      vertical: parseFloat(form.vertical),
-      yirt: parseFloat(form.yirt),
-      shuttle: parseFloat(form.shuttle)
+      sprint,
+      vertical,
+      yirt,
+      shuttle,
+      ...scores
     };
     onSave(data);
   };
