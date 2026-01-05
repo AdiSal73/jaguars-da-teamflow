@@ -454,12 +454,17 @@ export default function MyBookings() {
         <TabsContent value="upcoming">
           {/* Today & Tomorrow Section */}
           {todayAndTomorrowBookings.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-emerald-600" />
-                Today & Tomorrow
-              </h2>
-              <div className="grid gap-4 mb-6">
+            <div className="mb-8 p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border-2 border-emerald-200 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-emerald-900">Today & Tomorrow</h2>
+                  <p className="text-sm text-emerald-700">Your upcoming sessions</p>
+                </div>
+              </div>
+              <div className="grid gap-4">
                 {todayAndTomorrowBookings.map(booking => (
                   <BookingCard key={booking.id} booking={booking} />
                 ))}

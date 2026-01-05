@@ -150,24 +150,26 @@ export default function TeamDashboard() {
     { category: 'Technical', value: latestTeamEval.efficiency_in_execution || 0 }
   ] : [];
 
-  const positionDistribution = players.reduce((acc, p) => {
+  const positionDistribution = players?.reduce((acc, p) => {
     const pos = p.primary_position || 'Unassigned';
     acc[pos] = (acc[pos] || 0) + 1;
     return acc;
-  }, {});
+  }, {}) || {};
 
-  const positionData = Object.keys(positionDistribution)?.map(pos => ({
+  const positionData = Object.keys(positionDistribution).map(pos => ({
     position: pos,
     count: positionDistribution[pos]
-  })) || [];
+  }));
 
   const depthChartByPosition = {};
-  players.forEach(p => {
-    const pos = p.primary_position || 'Unassigned';
-    if (!depthChartByPosition[pos]) depthChartByPosition[pos] = [];
-    const tryout = tryouts.find(t => t.player_id === p.id);
-    depthChartByPosition[pos].push({ ...p, tryout });
-  });
+  if (players) {
+    players.forEach(p => {
+      const pos = p.primary_position || 'Unassigned';
+      if (!depthChartByPosition[pos]) depthChartByPosition[pos] = [];
+      const tryout = tryouts.find(t => t.player_id === p.id);
+      depthChartByPosition[pos].push({ ...p, tryout });
+    });
+  }
 
   Object.keys(depthChartByPosition).forEach(pos => {
     depthChartByPosition[pos].sort((a, b) => {
@@ -269,10 +271,21 @@ Format with clear headers and structure.`;
     </div>
   );
 
+  if (!teamId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-blue-50">
+        <div className="text-slate-500">No team selected</div>
+      </div>
+    );
+  }
+
   if (!team) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse text-slate-500">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-blue-50">
+        <div className="animate-pulse flex items-center gap-3 text-slate-700">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-lg">Loading Team Dashboard...</span>
+        </div>
       </div>
     );
   }

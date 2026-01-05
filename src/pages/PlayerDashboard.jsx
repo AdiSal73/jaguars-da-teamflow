@@ -178,6 +178,8 @@ export default function PlayerDashboard() {
         return base44.entities.DevelopmentPathway.create({
           player_id: playerId,
           position: player?.primary_position || 'Unknown',
+          skill_matrix: [],
+          training_modules: [],
           ...data
         });
       }
@@ -268,10 +270,21 @@ export default function PlayerDashboard() {
     { attribute: 'Att. Organized', value: currentEvaluation.attacking_organized || 0 }
   ] : [];
 
+  if (!playerId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="text-white">No player selected</div>
+      </div>
+    );
+  }
+
   if (playerLoading || !player) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="animate-pulse flex items-center gap-3 text-white">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-lg">Loading Player Dashboard...</span>
+        </div>
       </div>
     );
   }
