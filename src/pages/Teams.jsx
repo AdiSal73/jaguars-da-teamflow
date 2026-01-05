@@ -44,13 +44,7 @@ export default function Teams() {
     coach_ids: []
   });
 
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const genderParam = params.get('gender');
-    if (genderParam) {
-      setFilterGender(genderParam);
-    }
-  }, []);
+
 
   const queryClient = useQueryClient();
 

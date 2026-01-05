@@ -11,30 +11,8 @@ import { Shield, Users, TrendingUp, BookOpen, ChevronRight, Trophy, Target, BarC
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <img 
-                src="https://ssprodst.blob.core.windows.net/logos/58/2821a300-9ff6-46d2-a00b-73be4dc4f316-04-02-2025-07-54-52-995.png" 
-                alt="Michigan Jaguars" 
-                className="w-10 h-10 rounded-xl shadow-lg object-contain"
-              />
-              <div>
-                <h1 className="font-bold text-slate-900 text-lg">Michigan Jaguars</h1>
-                <p className="text-[10px] text-emerald-600 font-medium -mt-1">Player and Team Development</p>
-              </div>
-            </div>
-            <Button onClick={() => base44.auth.redirectToLogin()} className="bg-emerald-600 hover:bg-emerald-700">
-              Login / Register
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Split Screen */}
-      <div className="grid lg:grid-cols-2 min-h-[calc(100vh-64px)]">
+      <div className="grid lg:grid-cols-2 min-h-screen">
         {/* Left Side - Links */}
         <div className="flex flex-col justify-center p-8 lg:p-16">
           <div className="max-w-xl mx-auto w-full">
