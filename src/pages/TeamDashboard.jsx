@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ import AddPlayerDialog from '../components/team/AddPlayerDialog';
 import AssignCoachDialog from '../components/team/AssignCoachDialog';
 import AddTryoutPlayerDialog from '../components/team/AddTryoutPlayerDialog';
 import MessageTeamDialog from '../components/team/MessageTeamDialog';
-import { Mail } from 'lucide-react';
+
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
