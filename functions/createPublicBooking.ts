@@ -5,8 +5,42 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     
-    // Create the booking using service role
-    const booking = await base44.asServiceRole.entities.Booking.create(body);
+    // Try to match email with existing player or parent
+    let matchedPlayerId = null;
+    let matchedParentId = null;
+    
+    if (body.parent_email) {
+      // Check if email matches a registered user
+      const users = await base44.asServiceRole.entities.User.filter({ email: body.parent_email });
+      if (users.length > 0) {
+        matchedParentId = users[0].id;
+        // If user has player_ids, use the first one
+        if (users[0].player_ids && users[0].player_ids.length > 0) {
+          matchedPlayerId = users[0].player_ids[0];
+        }
+      }
+      
+      // Check if email matches a player directly
+      const players = await base44.asServiceRole.entities.Player.list();
+      const matchingPlayer = players.find(p => 
+        p.player_email === body.parent_email || 
+        (p.parent_emails && p.parent_emails.includes(body.parent_email)) ||
+        p.email === body.parent_email
+      );
+      
+      if (matchingPlayer && !matchedPlayerId) {
+        matchedPlayerId = matchingPlayer.id;
+      }
+    }
+    
+    // Create the booking with matched IDs
+    const bookingData = {
+      ...body,
+      player_id: matchedPlayerId || body.player_id,
+      parent_id: matchedParentId || body.parent_id
+    };
+    
+    const booking = await base44.asServiceRole.entities.Booking.create(bookingData);
     
     // Get location for email
     const locations = await base44.asServiceRole.entities.Location.list();

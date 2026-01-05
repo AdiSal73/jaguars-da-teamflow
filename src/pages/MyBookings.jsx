@@ -38,7 +38,7 @@ export default function MyBookings() {
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => base44.entities.Booking.list('-booking_date')
+    queryFn: () => base44.entities.Booking.list('booking_date,start_time')
   });
 
   const { data: coaches = [] } = useQuery({
@@ -69,36 +69,46 @@ export default function MyBookings() {
       const coach = coaches.find(c => c.id === booking.coach_id);
       const player = players.find(p => p.id === booking.player_id);
 
-      // Gather all recipients
-      const allRecipients = [];
-      if (booking.parent_email) allRecipients.push(booking.parent_email);
-      if (coach?.email) allRecipients.push(coach.email);
+      // Gather all recipients - coach, player, and all parents
+      const allRecipients = new Set();
+      
+      // Add coach
+      if (coach?.email) allRecipients.add(coach.email);
+      
+      // Add parent who booked
+      if (booking.parent_email) allRecipients.add(booking.parent_email);
+      
+      // Add player email
+      if (player?.player_email) allRecipients.add(player.player_email);
+      
+      // Add all parent emails from player record
       if (player?.parent_emails?.length > 0) {
-        player.parent_emails.forEach(email => {
-          if (!allRecipients.includes(email)) allRecipients.push(email);
-        });
-      }
-      if (player?.player_email && !allRecipients.includes(player.player_email)) {
-        allRecipients.push(player.player_email);
+        player.parent_emails.forEach(email => allRecipients.add(email));
       }
 
       // Send cancellation email to all parties
-      if (allRecipients.length > 0) {
+      const recipientArray = Array.from(allRecipients);
+      if (recipientArray.length > 0) {
         await base44.functions.invoke('sendBookingEmail', {
-          to: allRecipients[0],
-          additionalRecipients: allRecipients.slice(1),
+          to: recipientArray[0],
+          additionalRecipients: recipientArray.slice(1),
           subject: `Booking Cancelled - ${booking.service_name}`,
-          booking: { ...booking, location_info: locationInfo, booked_by_name: user?.full_name || 'Guest' },
+          booking: { 
+            ...booking, 
+            location_info: locationInfo, 
+            booked_by_name: user?.full_name || 'Guest',
+            cancelled_by: user?.full_name || user?.email || 'User'
+          },
           type: 'cancellation'
         });
 
         // Create notifications for all
-        for (const email of allRecipients) {
+        for (const email of recipientArray) {
           await base44.entities.Notification.create({
             user_email: email,
             type: 'training',
             title: 'Booking Cancelled',
-            message: `Session on ${new Date(booking.booking_date).toLocaleDateString()} at ${booking.start_time} has been cancelled.`,
+            message: `Session on ${new Date(booking.booking_date + 'T12:00:00').toLocaleDateString()} at ${booking.start_time} has been cancelled by ${user?.full_name || 'a user'}.`,
             priority: 'high'
           });
         }
@@ -211,7 +221,18 @@ export default function MyBookings() {
     if (user?.role === 'admin') return true;
     const coach = coaches.find(c => c.email === user?.email);
     if (coach) return b.coach_id === coach.id;
-    return b.parent_id === user?.id || b.created_by === user?.email;
+    
+    // Match by parent_id, created_by, or parent_email
+    if (b.parent_id === user?.id || b.created_by === user?.email || b.parent_email === user?.email) {
+      return true;
+    }
+    
+    // Check if user's player_ids match the booking
+    if (user?.player_ids && user.player_ids.length > 0) {
+      if (user.player_ids.includes(b.player_id)) return true;
+    }
+    
+    return false;
   });
 
   // Apply filters
@@ -224,7 +245,12 @@ export default function MyBookings() {
   });
 
   const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  
   const upcomingBookings = filteredBookings.filter(b => b.booking_date >= today && b.status !== 'cancelled');
+  const todayAndTomorrowBookings = upcomingBookings.filter(b => b.booking_date === today || b.booking_date === tomorrowStr);
   const pastBookings = filteredBookings.filter(b => b.booking_date < today || b.status === 'cancelled');
 
   const formatTimeDisplay = (timeStr) => {
@@ -291,7 +317,7 @@ export default function MyBookings() {
             <p className="mt-3 text-sm text-slate-500 bg-slate-50 p-2 rounded">{booking.notes}</p>
           )}
           
-          {booking.status === 'confirmed' && booking.booking_date >= today && (
+          {(booking.status === 'confirmed' || booking.status === 'pending') && booking.booking_date >= today && (
             <div className="mt-4 flex flex-wrap gap-2">
               <BookingCalendarSync booking={booking} coach={coach} location={location} />
               <Button 
@@ -426,6 +452,23 @@ export default function MyBookings() {
         </TabsList>
 
         <TabsContent value="upcoming">
+          {/* Today & Tomorrow Section */}
+          {todayAndTomorrowBookings.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-emerald-600" />
+                Today & Tomorrow
+              </h2>
+              <div className="grid gap-4 mb-6">
+                {todayAndTomorrowBookings.map(booking => (
+                  <BookingCard key={booking.id} booking={booking} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Upcoming Section */}
+          <h2 className="text-lg font-semibold text-slate-900 mb-3">All Upcoming Sessions</h2>
           {upcomingBookings.length === 0 ? (
             <Card className="border-none shadow-lg">
               <CardContent className="p-12 text-center">
