@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail } from 'lucide-react';
+import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail, UserCog } from 'lucide-react';
+import ActAsUserDialog from '../components/admin/ActAsUserDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -46,11 +47,51 @@ export default function UserManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'user', player_ids: [] });
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
+  const [actingAsUser, setActingAsUser] = useState(null);
+  const [showActAsDialog, setShowActAsDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list()
   });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  // Check if we're already acting as someone
+  useEffect(() => {
+    const actingAs = localStorage.getItem('actingAsUser');
+    if (actingAs) {
+      try {
+        const userData = JSON.parse(actingAs);
+        setActingAsUser(userData);
+        setShowActAsDialog(true);
+      } catch (e) {
+        localStorage.removeItem('actingAsUser');
+      }
+    }
+  }, []);
+
+  const handleActAsUser = (user) => {
+    if (window.confirm(`Act as ${user.full_name || user.email}? You will see the app as this user sees it.`)) {
+      // Store original admin info
+      localStorage.setItem('actingAsUser', JSON.stringify(user));
+      setActingAsUser(user);
+      setShowActAsDialog(true);
+      
+      // Force reload to apply the new user context
+      window.location.reload();
+    }
+  };
+
+  const handleStopActing = () => {
+    localStorage.removeItem('actingAsUser');
+    setActingAsUser(null);
+    setShowActAsDialog(false);
+    window.location.reload();
+  };
 
   useEffect(() => {
     const adminPerms = permissions.find(p => p.role_name === 'admin');
@@ -119,11 +160,21 @@ export default function UserManagement() {
   const getUserRole = (user) => {
     if (user.role === 'admin') return 'admin';
     if (user.role === 'director') return 'director';
-    if (user.player_ids && user.player_ids.length > 0) return 'parent';
     const isCoach = coaches.find(c => c.email === user.email);
     if (isCoach) return 'coach';
+    if (user.player_ids && user.player_ids.length > 0) return 'parent';
     return 'user';
   };
+
+  const autoAssignParentRole = useMutation({
+    mutationFn: async (userId) => {
+      return base44.entities.User.update(userId, { role: 'parent' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users']);
+      toast.success('User role updated to parent');
+    }
+  });
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, data }) => {
@@ -175,11 +226,18 @@ export default function UserManagement() {
 
   const handleSaveUser = async () => {
     try {
-      await base44.entities.User.update(editingUser.id, {
+      const updateData = {
         display_name: editUserForm.display_name,
         role: editUserForm.role,
         player_ids: editUserForm.player_ids
-      });
+      };
+
+      // Auto-assign parent role if player_ids are present
+      if (editUserForm.player_ids && editUserForm.player_ids.length > 0) {
+        updateData.role = 'parent';
+      }
+
+      await base44.entities.User.update(editingUser.id, updateData);
       
       queryClient.invalidateQueries(['users']);
       queryClient.invalidateQueries(['currentUser']);
@@ -408,7 +466,7 @@ export default function UserManagement() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
@@ -425,6 +483,17 @@ export default function UserManagement() {
                             >
                               {userRole === 'coach' ? 'Remove Coach' : 'Make Coach'}
                             </Button>
+                            {currentUser?.role === 'admin' && user.id !== currentUser.id && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleActAsUser(user)}
+                                className="border-purple-300 text-purple-600 hover:bg-purple-50"
+                              >
+                                <UserCog className="w-3 h-3 mr-1" />
+                                Act As
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -650,7 +719,15 @@ export default function UserManagement() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
-      </div>
-      );
-      }
+        </Dialog>
+
+        {/* Act As User Floating Dialog */}
+        <ActAsUserDialog
+        open={showActAsDialog}
+        onClose={() => {}}
+        actingAsUser={actingAsUser}
+        onStopActing={handleStopActing}
+        />
+        </div>
+        );
+        }
