@@ -483,6 +483,9 @@ export default function Tryouts() {
                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
                                          <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 flex gap-1 items-center truncate">
                                            <span>{player.primary_position}</span>
+                                           {player.age_group && (
+                                             <Badge className="bg-purple-100 text-purple-800 text-[8px] md:text-[10px] px-1.5 py-0.5 font-semibold">{player.age_group}</Badge>
+                                           )}
                                            {player.grad_year && (
                                              <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
                                            )}
@@ -758,6 +761,9 @@ export default function Tryouts() {
                           <CardTitle className="text-base md:text-lg truncate">{player.full_name}</CardTitle>
                           <div className="text-xs text-slate-600 mt-1 flex gap-1 items-center flex-wrap">
                             <span>{team?.name} • {team?.age_group}</span>
+                            {player.age_group && (
+                              <Badge className="bg-purple-100 text-purple-800 text-[10px] md:text-xs px-2 py-0.5 font-semibold">{player.age_group}</Badge>
+                            )}
                             {player.grad_year && (
                               <Badge className="bg-slate-600 text-white text-[9px] px-1.5 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
                             )}

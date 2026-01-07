@@ -268,6 +268,7 @@ export default function TeamTryout() {
             {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
             <div className="flex flex-wrap gap-0.5 mt-1.5">
               {isTrapped && <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5 font-bold">TRAPPED</Badge>}
+              {player.age_group && <Badge className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-800 font-semibold">{player.age_group}</Badge>}
               {team?.age_group && <Badge className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
               {age && <Badge className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
               {player.tryout?.team_role && <TeamRoleBadge role={player.tryout.team_role} size="default" />}
