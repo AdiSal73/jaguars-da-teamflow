@@ -196,17 +196,17 @@ export default function PositionAssignments() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-2 bg-white rounded-lg border shadow-sm cursor-move hover:shadow-md transition-all ${
+                              className={`p-3 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
                                 snapshot.isDragging ? 'ring-2 ring-orange-500 shadow-lg' : ''
                               }`}
                             >
-                              <div className="font-medium text-sm truncate">{player.full_name}</div>
-                              <div className="flex gap-1 flex-wrap mt-1">
+                              <div className="font-bold text-sm truncate">{player.full_name}</div>
+                              <div className="flex gap-1 flex-wrap mt-1.5">
                                 {player.age_group && (
-                                  <Badge className="bg-purple-100 text-purple-800 text-[8px] px-1">{player.age_group}</Badge>
+                                  <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
                                 )}
                                 {teams.find(t => t.id === player.team_id) && (
-                                  <Badge variant="outline" className="text-[8px] px-1">{teams.find(t => t.id === player.team_id)?.name}</Badge>
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{teams.find(t => t.id === player.team_id)?.name}</Badge>
                                 )}
                               </div>
                             </div>
@@ -257,19 +257,19 @@ export default function PositionAssignments() {
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className={`p-2 bg-white rounded-lg border shadow-sm cursor-move hover:shadow-md transition-all ${
+                                    className={`p-3 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
                                       snapshot.isDragging ? 'ring-2 ring-emerald-500 shadow-lg' : ''
                                     }`}
                                   >
-                                    <div className="font-medium text-sm truncate">{player.full_name}</div>
-                                    <div className="flex gap-1 flex-wrap mt-1">
+                                    <div className="font-bold text-sm truncate">{player.full_name}</div>
+                                    <div className="flex gap-1 flex-wrap mt-1.5">
                                       {player.age_group && (
-                                        <Badge className="bg-purple-100 text-purple-800 text-[8px] px-1">{player.age_group}</Badge>
+                                        <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
                                       )}
                                       {teams.find(t => t.id === player.team_id) && (
-                                        <Badge variant="outline" className="text-[8px] px-1">{teams.find(t => t.id === player.team_id)?.name}</Badge>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{teams.find(t => t.id === player.team_id)?.name}</Badge>
                                       )}
-                                      {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="small" />}
+                                      {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="default" />}
                                     </div>
                                   </div>
                                 )}

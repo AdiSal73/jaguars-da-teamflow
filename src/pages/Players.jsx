@@ -778,6 +778,9 @@ export default function Players() {
                              {team?.league && <span> • {team.league}</span>}
                            </div>
                            <div className="flex flex-wrap gap-1">
+                             {player.age_group && (
+                               <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
+                             )}
                              {player.grad_year && (
                                <Badge className="bg-slate-600 text-white text-[10px] font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
                              )}
