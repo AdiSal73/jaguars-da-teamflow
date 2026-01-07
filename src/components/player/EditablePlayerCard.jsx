@@ -109,6 +109,12 @@ export default function EditablePlayerCard({
   };
 
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
+  const isTrapped = player.date_of_birth ? (() => {
+    const dob = new Date(player.date_of_birth);
+    const month = dob.getMonth();
+    const day = dob.getDate();
+    return (month === 7 && day >= 1) || (month >= 8 && month <= 11);
+  })() : false;
 
   return (
     <>

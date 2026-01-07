@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Player.update(player.id, { age_group: ageGroup });
         console.log(`Updated ${player.full_name}: ${player.age_group || 'none'} → ${ageGroup}`);
         updated++;
+        await new Promise(resolve => setTimeout(resolve, 100));
       } else {
         skipped++;
       }
