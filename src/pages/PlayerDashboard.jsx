@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, RadialBarChart, RadialBar, Legend } from 'recharts';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
 import PlayerDevelopmentDisplay from '../components/player/PlayerDevelopmentDisplay';
 import EditPlayerInfoDialog from '../components/player/EditPlayerInfoDialog';
@@ -40,6 +40,14 @@ export default function PlayerDashboard() {
   const [messageContent, setMessageContent] = useState('');
   const [showEditAssessmentDialog, setShowEditAssessmentDialog] = useState(false);
   const [showEditEvaluationDialog, setShowEditEvaluationDialog] = useState(false);
+  const [showAddIDPMeetingDialog, setShowAddIDPMeetingDialog] = useState(false);
+  const [idpMeetingForm, setIdpMeetingForm] = useState({
+    meeting_date: new Date().toISOString().split('T')[0],
+    meeting_time: '10:00',
+    location: '',
+    notes: '',
+    coach_id: ''
+  });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -162,6 +170,12 @@ export default function PlayerDashboard() {
     enabled: !!playerId
   });
 
+  const { data: idpMeetings = [] } = useQuery({
+    queryKey: ['idpMeetings', playerId],
+    queryFn: () => base44.entities.IDPMeeting.filter({ player_id: playerId }, '-meeting_date'),
+    enabled: !!playerId
+  });
+
   const updatePlayerMutation = useMutation({
     mutationFn: (data) => base44.entities.Player.update(playerId, data),
     onSuccess: () => {
@@ -254,6 +268,22 @@ export default function PlayerDashboard() {
       setShowMessageDialog(false);
       setMessageContent('');
       toast.success('Message sent to player and parents');
+    }
+  });
+
+  const createIDPMeetingMutation = useMutation({
+    mutationFn: (data) => base44.entities.IDPMeeting.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['idpMeetings', playerId]);
+      setShowAddIDPMeetingDialog(false);
+      setIdpMeetingForm({
+        meeting_date: new Date().toISOString().split('T')[0],
+        meeting_time: '10:00',
+        location: '',
+        notes: '',
+        coach_id: ''
+      });
+      toast.success('IDP Meeting recorded');
     }
   });
 
@@ -485,6 +515,28 @@ export default function PlayerDashboard() {
                     <div className="h-full bg-pink-500 rounded-full transition-all" style={{ width: `${currentAssessment.agility_score || 0}%` }}></div>
                   </div>
                 </div>
+
+                {/* Radial Chart */}
+                <div className="mt-6 pt-6 border-t border-slate-700">
+                  <h4 className="text-sm font-semibold text-white mb-4 text-center">Performance Overview</h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RadialBarChart 
+                      innerRadius="10%" 
+                      outerRadius="90%" 
+                      data={[
+                        { name: 'Speed', value: currentAssessment.speed_score || 0, fill: '#ef4444' },
+                        { name: 'Power', value: currentAssessment.power_score || 0, fill: '#3b82f6' },
+                        { name: 'Endurance', value: currentAssessment.endurance_score || 0, fill: '#10b981' },
+                        { name: 'Agility', value: currentAssessment.agility_score || 0, fill: '#ec4899' }
+                      ]}
+                      startAngle={180}
+                      endAngle={0}
+                    >
+                      <RadialBar minAngle={15} background clockWise={true} dataKey="value" />
+                      <Legend iconSize={10} layout="horizontal" verticalAlign="bottom" />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           ) : isAdminOrCoach && (
@@ -641,6 +693,45 @@ export default function PlayerDashboard() {
           </div>
         )}
 
+        {/* IDP Meetings */}
+        {isAdminOrCoach && (
+          <Card className="mt-6 bg-slate-800/30 border-slate-700/50 backdrop-blur-md">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <User className="w-5 h-5 text-emerald-400" />
+                  IDP Meetings
+                </h3>
+                <Button onClick={() => setShowAddIDPMeetingDialog(true)} size="sm" className="bg-emerald-600">
+                  <Plus className="w-4 h-4 mr-1" />Add Meeting
+                </Button>
+              </div>
+              {idpMeetings.length === 0 ? (
+                <p className="text-slate-400 text-sm">No IDP meetings recorded yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {idpMeetings.map(meeting => {
+                    const meetingCoach = coaches.find(c => c.id === meeting.coach_id);
+                    return (
+                      <div key={meeting.id} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-semibold text-white">{new Date(meeting.meeting_date).toLocaleDateString()}</p>
+                            <p className="text-sm text-slate-400">Coach: {meetingCoach?.full_name || meeting.coach_name}</p>
+                          </div>
+                          <p className="text-xs text-slate-400">{meeting.meeting_time}</p>
+                        </div>
+                        {meeting.location && <p className="text-xs text-slate-400 mb-2">📍 {meeting.location}</p>}
+                        {meeting.notes && <p className="text-sm text-slate-300 bg-white/5 p-2 rounded mt-2">{meeting.notes}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Position Knowledge Bank */}
         {player.primary_position && (
           <div className="mt-6">
@@ -791,6 +882,93 @@ export default function PlayerDashboard() {
                   <Button variant="outline" onClick={() => setShowMessageDialog(false)}>Cancel</Button>
                   <Button onClick={() => sendMessageMutation.mutate(messageContent)} disabled={!messageContent} className="bg-emerald-600">
                     <MessageSquare className="w-4 h-4 mr-2" />Send
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Add IDP Meeting Dialog */}
+        {showAddIDPMeetingDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="max-w-lg w-full bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Record IDP Meeting</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-slate-300">Date</Label>
+                    <Input 
+                      type="date" 
+                      value={idpMeetingForm.meeting_date} 
+                      onChange={e => setIdpMeetingForm({...idpMeetingForm, meeting_date: e.target.value})}
+                      className="bg-slate-700 text-white border-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-300">Time</Label>
+                    <Input 
+                      type="time" 
+                      value={idpMeetingForm.meeting_time} 
+                      onChange={e => setIdpMeetingForm({...idpMeetingForm, meeting_time: e.target.value})}
+                      className="bg-slate-700 text-white border-slate-600"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-slate-300">Coach</Label>
+                  <Select value={idpMeetingForm.coach_id} onValueChange={v => setIdpMeetingForm({...idpMeetingForm, coach_id: v})}>
+                    <SelectTrigger className="bg-slate-700 text-white border-slate-600">
+                      <SelectValue placeholder="Select coach" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coaches.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-slate-300">Location</Label>
+                  <Input 
+                    value={idpMeetingForm.location} 
+                    onChange={e => setIdpMeetingForm({...idpMeetingForm, location: e.target.value})}
+                    placeholder="Meeting location"
+                    className="bg-slate-700 text-white border-slate-600"
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-300">Notes</Label>
+                  <Textarea 
+                    value={idpMeetingForm.notes} 
+                    onChange={e => setIdpMeetingForm({...idpMeetingForm, notes: e.target.value})}
+                    rows={4}
+                    placeholder="Meeting notes and outcomes..."
+                    className="bg-slate-700 text-white border-slate-600"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowAddIDPMeetingDialog(false)}>Cancel</Button>
+                  <Button 
+                    onClick={() => {
+                      const selectedCoach = coaches.find(c => c.id === idpMeetingForm.coach_id);
+                      createIDPMeetingMutation.mutate({
+                        player_id: playerId,
+                        player_name: player.full_name,
+                        coach_id: idpMeetingForm.coach_id,
+                        coach_name: selectedCoach?.full_name,
+                        meeting_date: idpMeetingForm.meeting_date,
+                        meeting_time: idpMeetingForm.meeting_time,
+                        location: idpMeetingForm.location,
+                        notes: idpMeetingForm.notes
+                      });
+                    }} 
+                    disabled={!idpMeetingForm.coach_id}
+                    className="bg-emerald-600"
+                  >
+                    <Save className="w-4 h-4 mr-2" />Save Meeting
                   </Button>
                 </div>
               </CardContent>

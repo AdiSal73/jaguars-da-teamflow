@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, X, MessageSquare, Send, Filter } from 'lucide-react';
+import { Calendar, Clock, User, X, MessageSquare, Send, Filter, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
@@ -233,6 +233,11 @@ export default function MyBookings() {
     }
     
     return false;
+  }).sort((a, b) => {
+    // Sort by date first, then time
+    const dateCompare = a.booking_date.localeCompare(b.booking_date);
+    if (dateCompare !== 0) return dateCompare;
+    return a.start_time.localeCompare(b.start_time);
   });
 
   // Apply filters
@@ -250,7 +255,8 @@ export default function MyBookings() {
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
   
   const upcomingBookings = filteredBookings.filter(b => b.booking_date >= today && b.status !== 'cancelled');
-  const todayAndTomorrowBookings = upcomingBookings.filter(b => b.booking_date === today || b.booking_date === tomorrowStr);
+  const todayBookings = upcomingBookings.filter(b => b.booking_date === today);
+  const tomorrowBookings = upcomingBookings.filter(b => b.booking_date === tomorrowStr);
   const pastBookings = filteredBookings.filter(b => b.booking_date < today || b.status === 'cancelled');
 
   const formatTimeDisplay = (timeStr) => {
@@ -271,46 +277,59 @@ export default function MyBookings() {
   const BookingCard = ({ booking }) => {
     const coach = coaches.find(c => c.id === booking.coach_id);
     const location = locations.find(l => l.id === booking.location_id);
+    const player = players.find(p => p.id === booking.player_id);
     
     // Parse date correctly to avoid timezone shift
     const [year, month, day] = booking.booking_date.split('-').map(Number);
     const bookingDate = new Date(year, month - 1, day);
     
     return (
-      <Card className="border-none shadow-md hover:shadow-lg transition-all">
-        <CardContent className="p-5">
-          <div className="flex items-start justify-between">
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
+      <Card className="border-none shadow-md hover:shadow-xl transition-all bg-gradient-to-br from-white to-slate-50">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex gap-4 flex-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                 {coach?.full_name?.charAt(0) || 'C'}
               </div>
-              <div>
-                <h3 className="font-semibold text-slate-900">{booking.service_name}</h3>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-slate-900">{booking.service_name}</h3>
                 <p className="text-sm text-slate-600">with {coach?.full_name || booking.coach_name}</p>
-                {booking.player_name && (
-                  <p className="text-xs text-slate-500 mt-1">Player: {booking.player_name}</p>
+                {booking.player_name && player && (
+                  <Link to={`${createPageUrl('PlayerDashboard')}?id=${player.id}`} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium hover:underline mt-1 inline-block">
+                    {booking.player_name} →
+                  </Link>
                 )}
-                {location && (
-                  <p className="text-xs text-slate-500 mt-1">📍 {location.name}</p>
+                {booking.player_name && !player && (
+                  <p className="text-sm text-slate-500 mt-1">{booking.player_name}</p>
                 )}
               </div>
             </div>
-            <Badge className={statusColors[booking.status]}>{booking.status}</Badge>
+            <Badge className={`${statusColors[booking.status]} text-xs px-3 py-1`}>{booking.status}</Badge>
           </div>
           
-          <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {bookingDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+              <div className="flex items-center gap-2 text-emerald-700 mb-1">
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs font-semibold">Date</span>
+              </div>
+              <p className="font-bold text-slate-900">{bookingDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
             </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {formatTimeDisplay(booking.start_time)} - {formatTimeDisplay(booking.end_time)}
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <div className="flex items-center gap-2 text-blue-700 mb-1">
+                <Clock className="w-4 h-4" />
+                <span className="text-xs font-semibold">Time</span>
+              </div>
+              <p className="font-bold text-slate-900">{formatTimeDisplay(booking.start_time)} - {formatTimeDisplay(booking.end_time)}</p>
             </div>
           </div>
           
           {location && (
-            <p className="mt-2 text-xs text-slate-600">{location.address}</p>
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+              <p className="text-xs text-slate-600 mb-1 font-semibold">Location</p>
+              <p className="text-sm text-slate-900 font-medium">{location.name}</p>
+              <p className="text-xs text-slate-600">{location.address}</p>
+            </div>
           )}
           
           {booking.notes && (
@@ -369,16 +388,20 @@ export default function MyBookings() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">My Bookings</h1>
-          <p className="text-slate-600 mt-1">View and manage your scheduled sessions</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">My Bookings</h1>
+            <p className="text-slate-600 mt-2">View and manage your scheduled training sessions</p>
+          </div>
+          <Link to={createPageUrl('Bookingpage')}>
+            <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg">
+              <Plus className="w-4 h-4 mr-2" />
+              Book New Session
+            </Button>
+          </Link>
         </div>
-        <Link to={createPageUrl('Bookingpage')}>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">Book New Session</Button>
-        </Link>
-      </div>
 
       {/* Filters - Admin Only */}
       {user?.role === 'admin' && (
@@ -451,16 +474,35 @@ export default function MyBookings() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming">
-          {/* Today & Tomorrow Section */}
-          {todayAndTomorrowBookings.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-emerald-600" />
-                Today & Tomorrow
+        <TabsContent value="upcoming" className="space-y-8">
+          {/* Today's Sessions */}
+          {todayBookings.length > 0 && (
+            <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl p-6 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                Today's Sessions
               </h2>
-              <div className="grid gap-4 mb-6">
-                {todayAndTomorrowBookings.map(booking => (
+              <div className="grid gap-4">
+                {todayBookings.map(booking => (
+                  <BookingCard key={booking.id} booking={booking} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tomorrow's Sessions */}
+          {tomorrowBookings.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 shadow-xl">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <Clock className="w-6 h-6" />
+                </div>
+                Tomorrow's Sessions
+              </h2>
+              <div className="grid gap-4">
+                {tomorrowBookings.map(booking => (
                   <BookingCard key={booking.id} booking={booking} />
                 ))}
               </div>
@@ -468,25 +510,30 @@ export default function MyBookings() {
           )}
 
           {/* All Upcoming Section */}
-          <h2 className="text-lg font-semibold text-slate-900 mb-3">All Upcoming Sessions</h2>
-          {upcomingBookings.length === 0 ? (
-            <Card className="border-none shadow-lg">
-              <CardContent className="p-12 text-center">
-                <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-slate-700 mb-2">No Upcoming Bookings</h2>
-                <p className="text-slate-500 mb-4">You don't have any scheduled sessions.</p>
-                <Link to={createPageUrl('Bookingpage')}>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700">Book a Session</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {upcomingBookings?.map(booking => (
-                <BookingCard key={booking.id} booking={booking} />
-              ))}
-            </div>
-          )}
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-slate-600" />
+              All Upcoming Sessions
+            </h2>
+            {upcomingBookings.length === 0 ? (
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-12 text-center">
+                  <Calendar className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-slate-700 mb-2">No Upcoming Bookings</h2>
+                  <p className="text-slate-500 mb-4">You don't have any scheduled sessions.</p>
+                  <Link to={createPageUrl('Bookingpage')}>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700">Book a Session</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {upcomingBookings?.map(booking => (
+                  <BookingCard key={booking.id} booking={booking} />
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="past">
