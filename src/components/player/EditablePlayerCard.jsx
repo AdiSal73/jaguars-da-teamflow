@@ -122,6 +122,9 @@ export default function EditablePlayerCard({
             <div className="text-xs text-slate-500 truncate">{player.primary_position}</div>
             <div className="text-xs text-slate-400 flex gap-1 items-center flex-wrap">
               {team && <span>{team.name}</span>}
+              {player.age_group && (
+                <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1.5 py-0.5 font-semibold">{player.age_group}</Badge>
+              )}
               {player.grad_year && (
                 <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
               )}
