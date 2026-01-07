@@ -196,18 +196,29 @@ export default function PositionAssignments() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-3 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
+                              className={`p-4 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
                                 snapshot.isDragging ? 'ring-2 ring-orange-500 shadow-lg' : ''
                               }`}
                             >
-                              <div className="font-bold text-sm truncate">{player.full_name}</div>
-                              <div className="flex gap-1 flex-wrap mt-1.5">
-                                {player.age_group && (
-                                  <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
-                                )}
-                                {teams.find(t => t.id === player.team_id) && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{teams.find(t => t.id === player.team_id)?.name}</Badge>
-                                )}
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                                  {player.jersey_number || player.full_name?.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-sm truncate">{player.full_name}</div>
+                                  <div className="text-xs text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
+                                  {teams.find(t => t.id === player.team_id) && (
+                                    <div className="text-[10px] text-slate-500 mt-0.5">{teams.find(t => t.id === player.team_id)?.name}</div>
+                                  )}
+                                  <div className="flex gap-1 flex-wrap mt-1.5">
+                                    {player.age_group && (
+                                      <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
+                                    )}
+                                    {player.grad_year && (
+                                      <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -257,19 +268,30 @@ export default function PositionAssignments() {
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className={`p-3 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
+                                    className={`p-4 bg-white rounded-lg border-2 shadow-sm cursor-move hover:shadow-md transition-all ${
                                       snapshot.isDragging ? 'ring-2 ring-emerald-500 shadow-lg' : ''
                                     }`}
                                   >
-                                    <div className="font-bold text-sm truncate">{player.full_name}</div>
-                                    <div className="flex gap-1 flex-wrap mt-1.5">
-                                      {player.age_group && (
-                                        <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
-                                      )}
-                                      {teams.find(t => t.id === player.team_id) && (
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{teams.find(t => t.id === player.team_id)?.name}</Badge>
-                                      )}
-                                      {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="default" />}
+                                    <div className="flex items-start gap-3">
+                                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
+                                        {player.jersey_number || player.full_name?.charAt(0)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-sm truncate">{player.full_name}</div>
+                                        <div className="text-xs text-slate-600 font-medium">{player.primary_position}</div>
+                                        {teams.find(t => t.id === player.team_id) && (
+                                          <div className="text-[10px] text-slate-500 mt-0.5">{teams.find(t => t.id === player.team_id)?.name}</div>
+                                        )}
+                                        <div className="flex gap-1 flex-wrap mt-1.5">
+                                          {player.age_group && (
+                                            <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
+                                          )}
+                                          {player.grad_year && (
+                                            <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                                          )}
+                                          {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="default" />}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 )}

@@ -850,35 +850,37 @@ export default function FormationView() {
                             {...dragProvided.draggableProps}
                             {...dragProvided.dragHandleProps}
                             onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-                            className={`p-2.5 border-2 rounded-xl transition-all cursor-pointer ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
+                            className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${dragSnapshot.isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
                           >
-                            <div className="flex items-start gap-2">
-                              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
-                                {player.jersey_number || <User className="w-4 h-4" />}
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md">
+                                {player.jersey_number || <User className="w-6 h-6" />}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
-                                <div className="text-[10px] text-slate-600 font-medium">{player.primary_position || 'No Position'}</div>
-                                {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
-                                <div className="flex flex-wrap gap-0.5 mt-1.5">
+                                <div className="font-bold text-base text-slate-900 truncate">{player.full_name}</div>
+                                <div className="text-sm text-slate-600 font-medium mb-1">{player.primary_position || 'No Position'}</div>
+                                {team?.name && <div className="text-xs text-slate-500 mb-2">Current: {team.name}</div>}
+                                <div className="flex flex-wrap gap-1">
+                                  {player.age_group && (
+                                    <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
+                                  )}
                                   {player.grad_year && (
-                                    <Badge className="bg-slate-600 text-white text-[8px] px-1.5 py-0 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
+                                    <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
                                   )}
-                                  {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
-                                  {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
-                                  {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
-                                  {player.tryout?.team_role && (
-                                    <Badge className="text-[8px] px-1.5 py-0 bg-purple-100 text-purple-800">
-                                      {player.tryout.team_role}
-                                    </Badge>
+                                  {birthYear && (
+                                    <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{birthYear}</Badge>
                                   )}
-                                  {player.tryout?.recommendation && (
-                                    <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
-                                      player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
-                                      player.tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                                  {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">TRAPPED</Badge>}
+                                  {tryout?.team_role && (
+                                    <TeamRoleBadge role={tryout.team_role} size="default" />
+                                  )}
+                                  {tryout?.recommendation && (
+                                    <Badge className={`text-xs px-2 py-1 font-bold ${
+                                      tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                                      tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
                                       'bg-blue-500 text-white'
                                     }`}>
-                                      {player.tryout.recommendation === 'Move up' ? '⬆️' : player.tryout.recommendation === 'Move down' ? '⬇️' : '➡️'}
+                                      {tryout.recommendation}
                                     </Badge>
                                   )}
                                 </div>

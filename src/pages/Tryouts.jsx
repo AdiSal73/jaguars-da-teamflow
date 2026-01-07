@@ -481,16 +481,16 @@ export default function Tryouts() {
                                        </div>
                                        <div className="flex-1 min-w-0">
                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                         <div className="text-[10px] md:text-xs text-slate-600 mt-0.5 flex gap-1 items-center truncate">
+                                         <div className="text-xs md:text-sm text-slate-600 mt-0.5 flex gap-1 items-center truncate">
                                            <span>{player.primary_position}</span>
                                            {player.age_group && (
-                                             <Badge className="bg-purple-100 text-purple-800 text-[8px] md:text-[10px] px-1.5 py-0.5 font-semibold">{player.age_group}</Badge>
+                                             <Badge className="bg-purple-100 text-purple-800 text-xs md:text-sm px-2 py-1 font-bold">{player.age_group}</Badge>
                                            )}
                                            {player.grad_year && (
-                                             <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                                             <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
                                            )}
                                            {player.date_of_birth && (
-                                             <Badge className="bg-slate-400 text-white text-[8px] px-1 py-0">{new Date(player.date_of_birth).getFullYear()}</Badge>
+                                             <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{new Date(player.date_of_birth).getFullYear()}</Badge>
                                            )}
                                          </div>
                                          {(() => {
@@ -518,7 +518,7 @@ export default function Tryouts() {
                                      </div>
                                      <div className="flex flex-col gap-1 items-end flex-shrink-0">
                                        {isTrappedPlayer(player.date_of_birth) && (
-                                         <Badge className="bg-red-500 text-white text-[10px] md:text-xs px-2 py-0.5 h-5 md:h-6 font-bold">
+                                         <Badge className="bg-red-500 text-white text-xs md:text-sm px-2 py-1 font-bold">
                                            TRAPPED
                                          </Badge>
                                        )}
@@ -526,16 +526,15 @@ export default function Tryouts() {
                                          <TeamRoleBadge role={player.tryout.team_role} size="default" />
                                        )}
                                        {player.tryout?.recommendation && (
-                                         <Button 
-                                           size="sm"
-                                           className={`h-5 md:h-6 px-2 text-[10px] md:text-xs rounded-full pointer-events-none ${
-                                             player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
-                                             player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
-                                             'bg-blue-500 hover:bg-blue-600'
+                                         <Badge 
+                                           className={`text-xs px-2 py-1 rounded-full font-bold ${
+                                             player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                                             player.tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                                             'bg-blue-500 text-white'
                                            }`}
                                          >
                                            {player.tryout.recommendation}
-                                         </Button>
+                                         </Badge>
                                        )}
                                      </div>
                                     </div>
@@ -759,21 +758,23 @@ export default function Tryouts() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-base md:text-lg truncate">{player.full_name}</CardTitle>
-                          <div className="text-xs text-slate-600 mt-1 flex gap-1 items-center flex-wrap">
+                          <div className="text-sm text-slate-600 mt-1 flex gap-1 items-center flex-wrap">
                             <span>{team?.name} • {team?.age_group}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-2">
                             {player.age_group && (
-                              <Badge className="bg-purple-100 text-purple-800 text-[10px] md:text-xs px-2 py-0.5 font-semibold">{player.age_group}</Badge>
+                              <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
                             )}
                             {player.grad_year && (
-                              <Badge className="bg-slate-600 text-white text-[9px] px-1.5 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                              <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
                             )}
                             {player.date_of_birth && (
-                              <Badge className="bg-slate-400 text-white text-[9px] px-1.5 py-0">{new Date(player.date_of_birth).getFullYear()}</Badge>
+                              <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{new Date(player.date_of_birth).getFullYear()}</Badge>
                             )}
                           </div>
                         </div>
                         {isTrappedPlayer(player.date_of_birth) &&
-                        <Badge className="bg-red-500 text-white text-xs md:text-sm px-2 py-1 font-bold">
+                        <Badge className="bg-red-500 text-white text-sm px-3 py-1 font-bold">
                             TRAPPED
                           </Badge>
                         }

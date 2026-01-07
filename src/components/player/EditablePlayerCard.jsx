@@ -113,23 +113,54 @@ export default function EditablePlayerCard({
   return (
     <>
       <div 
-        className={`p-2 rounded-lg border-2 bg-white cursor-pointer hover:shadow-md transition-all ${getPositionBorderColor(player.primary_position)} ${className}`}
+        className={`p-4 rounded-lg border-2 bg-white cursor-pointer hover:shadow-md transition-all ${getPositionBorderColor(player.primary_position)} ${className}`}
         onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
       >
-        <div className="flex items-start justify-between gap-1">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md">
+            {player.jersey_number || player.full_name?.charAt(0)}
+          </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">{player.full_name}</div>
-            <div className="text-xs text-slate-500 truncate">{player.primary_position}</div>
-            <div className="text-xs text-slate-400 flex gap-1 items-center flex-wrap">
-              {team && <span>{team.name}</span>}
+            <div className="font-bold text-base text-slate-900 truncate">{player.full_name}</div>
+            <div className="text-sm text-slate-600 font-medium mb-1">{player.primary_position}</div>
+            {team && <div className="text-xs text-slate-500 mb-2">{team.name}</div>}
+            <div className="flex flex-wrap gap-1">
               {player.age_group && (
-                <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1.5 py-0.5 font-semibold">{player.age_group}</Badge>
+                <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>
               )}
               {player.grad_year && (
-                <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>
+                <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>
               )}
               {birthYear && (
-                <Badge className="bg-slate-400 text-white text-[8px] px-1 py-0">{birthYear}</Badge>
+                <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{birthYear}</Badge>
+              )}
+              {latestEvaluation?.overall_score && (
+                <Badge className="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 font-bold">
+                  Eval: {latestEvaluation.overall_score}/10
+                </Badge>
+              )}
+              {latestAssessment?.overall_score && (
+                <Badge className="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 font-bold">
+                  Physical: {latestAssessment.overall_score}
+                </Badge>
+              )}
+              {tryout?.team_role && (
+                <TeamRoleBadge role={tryout.team_role} size="default" />
+              )}
+              {tryout?.recommendation && (
+                <Badge className={`text-xs px-2 py-1 font-bold ${
+                  tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
+                  tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
+                  'bg-blue-500 text-white'
+                }`}>
+                  {tryout.recommendation}
+                </Badge>
+              )}
+              {player.status === 'Injured' && (
+                <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">Injured</Badge>
+              )}
+              {isTrappedPlayer(player.date_of_birth) && (
+                <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">TRAPPED</Badge>
               )}
             </div>
           </div>
@@ -137,41 +168,11 @@ export default function EditablePlayerCard({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-6 w-6 flex-shrink-0 z-10"
+              className="h-8 w-8 flex-shrink-0"
               onClick={handleOpenEdit}
             >
-              <Edit2 className="w-3 h-3" />
+              <Edit2 className="w-4 h-4" />
             </Button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {latestEvaluation?.overall_score && (
-            <Badge className="bg-emerald-100 text-emerald-800 text-[9px] px-1 font-bold">
-              Eval: {latestEvaluation.overall_score}/10
-            </Badge>
-          )}
-          {latestAssessment?.overall_score && (
-            <Badge className="bg-blue-100 text-blue-800 text-[9px] px-1 font-bold">
-              Physical: {latestAssessment.overall_score}
-            </Badge>
-          )}
-          {tryout?.team_role && (
-            <TeamRoleBadge role={tryout.team_role} size="small" />
-          )}
-          {tryout?.recommendation && (
-            <Badge className={`text-[9px] px-1 ${
-              tryout.recommendation === 'Move up' ? 'bg-emerald-100 text-emerald-800' :
-              tryout.recommendation === 'Move down' ? 'bg-orange-100 text-orange-800' :
-              'bg-blue-100 text-blue-800'
-            }`}>
-              {tryout.recommendation}
-            </Badge>
-          )}
-          {player.status === 'Injured' && (
-            <Badge className="bg-red-500 text-white text-[9px] px-1">Injured</Badge>
-          )}
-          {isTrappedPlayer(player.date_of_birth) && (
-            <Badge className="bg-red-500 text-white text-[9px] px-1 font-bold">TRAPPED</Badge>
           )}
         </div>
       </div>

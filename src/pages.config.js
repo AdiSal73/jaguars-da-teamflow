@@ -37,6 +37,7 @@ import PlayerComparison from './pages/PlayerComparison';
 import PlayerDashboard from './pages/PlayerDashboard';
 import PlayerRoleAssignment from './pages/PlayerRoleAssignment';
 import Players from './pages/Players';
+import PositionAssignments from './pages/PositionAssignments';
 import PublicCoachBooking from './pages/PublicCoachBooking';
 import ResetPassword from './pages/ResetPassword';
 import ScoutingPipeline from './pages/ScoutingPipeline';
@@ -49,7 +50,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import PositionAssignments from './pages/PositionAssignments';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +93,7 @@ export const PAGES = {
     "PlayerDashboard": PlayerDashboard,
     "PlayerRoleAssignment": PlayerRoleAssignment,
     "Players": Players,
+    "PositionAssignments": PositionAssignments,
     "PublicCoachBooking": PublicCoachBooking,
     "ResetPassword": ResetPassword,
     "ScoutingPipeline": ScoutingPipeline,
@@ -105,7 +106,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "PositionAssignments": PositionAssignments,
 }
 
 export const pagesConfig = {
