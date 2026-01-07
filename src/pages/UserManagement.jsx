@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail, UserCog } from 'lucide-react';
-import ActAsUserDialog from '../components/admin/ActAsUserDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -47,8 +46,6 @@ export default function UserManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'user', player_ids: [] });
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
-  const [actingAsUser, setActingAsUser] = useState(null);
-  const [showActAsDialog, setShowActAsDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -60,37 +57,11 @@ export default function UserManagement() {
     queryFn: () => base44.auth.me()
   });
 
-  // Check if we're already acting as someone
-  useEffect(() => {
-    const actingAs = localStorage.getItem('actingAsUser');
-    if (actingAs) {
-      try {
-        const userData = JSON.parse(actingAs);
-        setActingAsUser(userData);
-        setShowActAsDialog(true);
-      } catch (e) {
-        localStorage.removeItem('actingAsUser');
-      }
-    }
-  }, []);
-
   const handleActAsUser = (user) => {
     if (window.confirm(`Act as ${user.full_name || user.email}? You will see the app as this user sees it.`)) {
-      // Store original admin info
       localStorage.setItem('actingAsUser', JSON.stringify(user));
-      setActingAsUser(user);
-      setShowActAsDialog(true);
-      
-      // Force reload to apply the new user context
       window.location.reload();
     }
-  };
-
-  const handleStopActing = () => {
-    localStorage.removeItem('actingAsUser');
-    setActingAsUser(null);
-    setShowActAsDialog(false);
-    window.location.reload();
   };
 
   useEffect(() => {
@@ -720,14 +691,6 @@ export default function UserManagement() {
           </div>
         </DialogContent>
         </Dialog>
-
-        {/* Act As User Floating Dialog */}
-        <ActAsUserDialog
-        open={showActAsDialog}
-        onClose={() => {}}
-        actingAsUser={actingAsUser}
-        onStopActing={handleStopActing}
-        />
         </div>
         );
         }

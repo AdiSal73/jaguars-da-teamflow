@@ -323,53 +323,82 @@ export default function Layout({ children, currentPageName }) {
               </Button>
               {user && <NotificationCenter />}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
-                    </div>
-                    {user && (
-                      <div className="hidden md:block text-left">
-                        <p className="text-sm font-medium text-slate-900">{user?.full_name || 'User'}</p>
-                        <p className="text-xs text-slate-500 capitalize">{roleType}</p>
-                      </div>
-                    )}
-                    <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {user ? (
-                    <>
-                      {roleType === 'admin' && (
-                        <DropdownMenuItem
-                          onClick={() => navigate(createPageUrl('UserManagement'))}
-                          className="text-slate-600"
-                        >
-                          <Settings className="w-4 h-4 mr-2" />
-                          Settings
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => base44.auth.logout()}
-                        className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <DropdownMenuItem
-                      onClick={() => base44.auth.redirectToLogin()}
-                      className="text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50"
+              {(() => {
+                const actingAsUser = typeof window !== 'undefined' ? localStorage.getItem('actingAsUser') : null;
+                const isActing = actingAsUser && user?.role === 'admin';
+
+                if (isActing) {
+                  let actingAsData;
+                  try {
+                    actingAsData = JSON.parse(actingAsUser);
+                  } catch (e) {
+                    actingAsData = null;
+                  }
+
+                  return (
+                    <Button
+                      onClick={() => {
+                        localStorage.removeItem('actingAsUser');
+                        window.location.reload();
+                      }}
+                      className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg animate-pulse"
                     >
                       <UserIcon className="w-4 h-4 mr-2" />
-                      Login / Register
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      Stop Acting As {actingAsData?.full_name}
+                    </Button>
+                  );
+                }
+
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex items-center gap-2 px-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {user?.full_name?.charAt(0) || <UserIcon className="w-4 h-4" />}
+                        </div>
+                        {user && (
+                          <div className="hidden md:block text-left">
+                            <p className="text-sm font-medium text-slate-900">{user?.full_name || 'User'}</p>
+                            <p className="text-xs text-slate-500 capitalize">{roleType}</p>
+                          </div>
+                        )}
+                        <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {user ? (
+                        <>
+                          {roleType === 'admin' && (
+                            <DropdownMenuItem
+                              onClick={() => navigate(createPageUrl('UserManagement'))}
+                              className="text-slate-600"
+                            >
+                              <Settings className="w-4 h-4 mr-2" />
+                              Settings
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => base44.auth.logout()}
+                            className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                          >
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Sign Out
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => base44.auth.redirectToLogin()}
+                          className="text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50"
+                        >
+                          <UserIcon className="w-4 h-4 mr-2" />
+                          Login / Register
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
 
               <Button
                 variant="ghost"

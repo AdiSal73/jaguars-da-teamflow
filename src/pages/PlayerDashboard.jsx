@@ -516,26 +516,79 @@ export default function PlayerDashboard() {
                   </div>
                 </div>
 
-                {/* Radial Chart */}
+                {/* Apple Watch Style Radial Chart */}
                 <div className="mt-6 pt-6 border-t border-slate-700">
                   <h4 className="text-sm font-semibold text-white mb-4 text-center">Performance Overview</h4>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <RadialBarChart 
-                      innerRadius="10%" 
-                      outerRadius="90%" 
-                      data={[
-                        { name: 'Speed', value: currentAssessment.speed_score || 0, fill: '#ef4444' },
-                        { name: 'Power', value: currentAssessment.power_score || 0, fill: '#3b82f6' },
-                        { name: 'Endurance', value: currentAssessment.endurance_score || 0, fill: '#10b981' },
-                        { name: 'Agility', value: currentAssessment.agility_score || 0, fill: '#ec4899' }
-                      ]}
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      <RadialBar minAngle={15} background clockWise={true} dataKey="value" />
-                      <Legend iconSize={10} layout="horizontal" verticalAlign="bottom" />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
+                  <div className="flex justify-center items-center" style={{ height: 220 }}>
+                    <div className="relative" style={{ width: 180, height: 180 }}>
+                      {/* Speed Ring - Outermost */}
+                      <svg className="absolute inset-0" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="90" cy="90" r="82" fill="none" stroke="#1e293b" strokeWidth="12" opacity="0.3" />
+                        <circle 
+                          cx="90" cy="90" r="82" 
+                          fill="none" 
+                          stroke="#ef4444" 
+                          strokeWidth="12" 
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 82 * (currentAssessment.speed_score || 0) / 100} ${2 * Math.PI * 82}`}
+                        />
+                      </svg>
+                      {/* Power Ring */}
+                      <svg className="absolute inset-0" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="90" cy="90" r="65" fill="none" stroke="#1e293b" strokeWidth="12" opacity="0.3" />
+                        <circle 
+                          cx="90" cy="90" r="65" 
+                          fill="none" 
+                          stroke="#3b82f6" 
+                          strokeWidth="12" 
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 65 * (currentAssessment.power_score || 0) / 100} ${2 * Math.PI * 65}`}
+                        />
+                      </svg>
+                      {/* Endurance Ring */}
+                      <svg className="absolute inset-0" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="90" cy="90" r="48" fill="none" stroke="#1e293b" strokeWidth="12" opacity="0.3" />
+                        <circle 
+                          cx="90" cy="90" r="48" 
+                          fill="none" 
+                          stroke="#10b981" 
+                          strokeWidth="12" 
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 48 * (currentAssessment.endurance_score || 0) / 100} ${2 * Math.PI * 48}`}
+                        />
+                      </svg>
+                      {/* Agility Ring - Innermost */}
+                      <svg className="absolute inset-0" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="90" cy="90" r="31" fill="none" stroke="#1e293b" strokeWidth="12" opacity="0.3" />
+                        <circle 
+                          cx="90" cy="90" r="31" 
+                          fill="none" 
+                          stroke="#ec4899" 
+                          strokeWidth="12" 
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 31 * (currentAssessment.agility_score || 0) / 100} ${2 * Math.PI * 31}`}
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-slate-300">Speed {currentAssessment.speed_score}%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <span className="text-slate-300">Power {currentAssessment.power_score}%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-slate-300">Endurance {currentAssessment.endurance_score}%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                      <span className="text-slate-300">Agility {currentAssessment.agility_score}%</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
