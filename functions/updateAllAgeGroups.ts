@@ -58,23 +58,58 @@ Deno.serve(async (req) => {
     
     let updated = 0;
     let skipped = 0;
+    const BATCH_SIZE = 10;
+    const BATCH_DELAY = 500; // 500ms between batches
     
-    for (const player of players) {
-      if (!player.date_of_birth) {
-        console.log(`Skipping ${player.full_name} - no date of birth`);
-        skipped++;
-        continue;
-      }
+    // Group players into batches
+    const batches = [];
+    for (let i = 0; i < players.length; i += BATCH_SIZE) {
+      batches.push(players.slice(i, i + BATCH_SIZE));
+    }
+    
+    console.log(`Processing ${batches.length} batches of ${BATCH_SIZE} players each`);
+    
+    // Process each batch
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
       
-      const ageGroup = calculateAgeGroup(player.date_of_birth);
+      // Process all players in the batch in parallel
+      const batchUpdates = batch.map(async (player) => {
+        if (!player.date_of_birth) {
+          console.log(`Skipping ${player.full_name} - no date of birth`);
+          return { type: 'skipped' };
+        }
+        
+        const ageGroup = calculateAgeGroup(player.date_of_birth);
+        
+        if (ageGroup !== player.age_group) {
+          try {
+            await base44.asServiceRole.entities.Player.update(player.id, { age_group: ageGroup });
+            console.log(`Updated ${player.full_name}: ${player.age_group || 'none'} → ${ageGroup}`);
+            return { type: 'updated' };
+          } catch (error) {
+            console.error(`Error updating ${player.full_name}:`, error);
+            return { type: 'error', error: error.message };
+          }
+        } else {
+          return { type: 'skipped' };
+        }
+      });
       
-      if (ageGroup !== player.age_group) {
-        await base44.asServiceRole.entities.Player.update(player.id, { age_group: ageGroup });
-        console.log(`Updated ${player.full_name}: ${player.age_group || 'none'} → ${ageGroup}`);
-        updated++;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } else {
-        skipped++;
+      // Wait for all updates in this batch to complete
+      const results = await Promise.all(batchUpdates);
+      
+      // Count results
+      results.forEach(result => {
+        if (result.type === 'updated') updated++;
+        else if (result.type === 'skipped') skipped++;
+      });
+      
+      // Add delay between batches (except after the last batch)
+      if (batchIndex < batches.length - 1) {
+        console.log(`Waiting ${BATCH_DELAY}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
     }
     

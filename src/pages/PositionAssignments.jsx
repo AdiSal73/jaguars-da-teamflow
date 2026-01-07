@@ -28,6 +28,10 @@ export default function PositionAssignments() {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedBirthYear, setSelectedBirthYear] = useState('all');
+  const [selectedTeamRole, setSelectedTeamRole] = useState('all');
+  const [selectedCurrentTeam, setSelectedCurrentTeam] = useState('all');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -57,15 +61,40 @@ export default function PositionAssignments() {
     return Array.from(groups).sort();
   }, [players]);
 
+  const branches = useMemo(() => {
+    const br = new Set(players.map(p => p.branch).filter(Boolean));
+    return Array.from(br).sort();
+  }, [players]);
+
+  const birthYears = useMemo(() => {
+    const years = new Set(players.map(p => p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null).filter(Boolean));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [players]);
+
+  const teamRoles = useMemo(() => {
+    const roles = new Set(tryouts.map(t => t.team_role).filter(Boolean));
+    return Array.from(roles).sort();
+  }, [tryouts]);
+
+  const currentTeams = useMemo(() => {
+    const ct = new Set(tryouts.map(t => t.current_team).filter(Boolean));
+    return Array.from(ct).sort();
+  }, [tryouts]);
+
   const filteredPlayers = useMemo(() => {
     return players.filter(p => {
       const matchesSearch = !searchTerm || p.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesAgeGroup = selectedAgeGroup === 'all' || p.age_group === selectedAgeGroup;
       const matchesGender = selectedGender === 'all' || p.gender === selectedGender;
       const matchesTeam = selectedTeam === 'all' || p.team_id === selectedTeam;
-      return matchesSearch && matchesAgeGroup && matchesGender && matchesTeam;
+      const matchesBranch = selectedBranch === 'all' || p.branch === selectedBranch;
+      const matchesBirthYear = selectedBirthYear === 'all' || (p.date_of_birth && new Date(p.date_of_birth).getFullYear().toString() === selectedBirthYear);
+      const playerTryout = tryouts.find(t => t.player_id === p.id);
+      const matchesTeamRole = selectedTeamRole === 'all' || playerTryout?.team_role === selectedTeamRole;
+      const matchesCurrentTeam = selectedCurrentTeam === 'all' || playerTryout?.current_team === selectedCurrentTeam;
+      return matchesSearch && matchesAgeGroup && matchesGender && matchesTeam && matchesBranch && matchesBirthYear && matchesTeamRole && matchesCurrentTeam;
     });
-  }, [players, searchTerm, selectedAgeGroup, selectedGender, selectedTeam]);
+  }, [players, searchTerm, selectedAgeGroup, selectedGender, selectedTeam, selectedBranch, selectedBirthYear, selectedTeamRole, selectedCurrentTeam, tryouts]);
 
   const playersByPosition = useMemo(() => {
     const grouped = {};
@@ -108,7 +137,7 @@ export default function PositionAssignments() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
@@ -150,6 +179,50 @@ export default function PositionAssignments() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <SelectTrigger>
+                <SelectValue placeholder="Branch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Branches</SelectItem>
+                {branches.map(b => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedBirthYear} onValueChange={setSelectedBirthYear}>
+              <SelectTrigger>
+                <SelectValue placeholder="Birth Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Birth Years</SelectItem>
+                {birthYears.map(y => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedTeamRole} onValueChange={setSelectedTeamRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Team Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Team Roles</SelectItem>
+                {teamRoles.map(r => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedCurrentTeam} onValueChange={setSelectedCurrentTeam}>
+              <SelectTrigger>
+                <SelectValue placeholder="Current Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Current Teams</SelectItem>
+                {currentTeams.map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               onClick={() => {
@@ -157,6 +230,10 @@ export default function PositionAssignments() {
                 setSelectedAgeGroup('all');
                 setSelectedGender('all');
                 setSelectedTeam('all');
+                setSelectedBranch('all');
+                setSelectedBirthYear('all');
+                setSelectedTeamRole('all');
+                setSelectedCurrentTeam('all');
               }}
             >
               Clear Filters
@@ -236,7 +313,7 @@ export default function PositionAssignments() {
           </div>
 
           {/* Position Containers */}
-          <div className="lg:col-span-3 grid md:grid-cols-2 gap-4">
+          <div className="lg:col-span-3 grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             {POSITIONS.map(position => {
               const positionPlayers = playersByPosition[position.id] || [];
               const tryoutData = tryouts.reduce((acc, t) => ({ ...acc, [t.player_id]: t }), {});
