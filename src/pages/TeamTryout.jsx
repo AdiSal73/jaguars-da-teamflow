@@ -267,12 +267,12 @@ export default function TeamTryout() {
             <div className="text-[10px] text-slate-600 font-medium">{player.primary_position}</div>
             {team?.name && <div className="text-[9px] text-slate-500 truncate">Current: {team.name}</div>}
             <div className="flex flex-wrap gap-0.5 mt-1.5">
-              {isTrapped && <Badge className="bg-red-500 text-white text-[8px] px-1.5 py-0 font-bold">TRAPPED</Badge>}
-              {team?.age_group && <Badge className="text-[8px] px-1.5 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
-              {age && <Badge className="text-[8px] px-1.5 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
-              {player.tryout?.team_role && <TeamRoleBadge role={player.tryout.team_role} size="small" />}
+              {isTrapped && <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5 font-bold">TRAPPED</Badge>}
+              {team?.age_group && <Badge className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold">{team.age_group}</Badge>}
+              {age && <Badge className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-800 font-semibold">{age}y</Badge>}
+              {player.tryout?.team_role && <TeamRoleBadge role={player.tryout.team_role} size="default" />}
               {player.tryout?.recommendation && (
-                <Badge className={`text-[8px] px-1.5 py-0.5 font-bold ${
+                <Badge className={`text-[10px] px-2 py-0.5 font-bold ${
                   player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
                   player.tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
                   'bg-blue-500 text-white'

@@ -515,17 +515,17 @@ export default function Tryouts() {
                                      </div>
                                      <div className="flex flex-col gap-1 items-end flex-shrink-0">
                                        {isTrappedPlayer(player.date_of_birth) && (
-                                         <Badge className="bg-red-500 text-white text-[8px] md:text-[10px] px-1.5 py-0 h-4 md:h-5 font-bold">
+                                         <Badge className="bg-red-500 text-white text-[10px] md:text-xs px-2 py-0.5 h-5 md:h-6 font-bold">
                                            TRAPPED
                                          </Badge>
                                        )}
                                        {player.tryout?.team_role && (
-                                         <TeamRoleBadge role={player.tryout.team_role} size="small" />
+                                         <TeamRoleBadge role={player.tryout.team_role} size="default" />
                                        )}
                                        {player.tryout?.recommendation && (
                                          <Button 
                                            size="sm"
-                                           className={`h-4 md:h-5 px-1.5 text-[8px] md:text-[9px] rounded-full pointer-events-none ${
+                                           className={`h-5 md:h-6 px-2 text-[10px] md:text-xs rounded-full pointer-events-none ${
                                              player.tryout.recommendation === 'Move up' ? 'bg-emerald-500 hover:bg-emerald-600' :
                                              player.tryout.recommendation === 'Move down' ? 'bg-orange-500 hover:bg-orange-600' :
                                              'bg-blue-500 hover:bg-blue-600'
@@ -767,7 +767,7 @@ export default function Tryouts() {
                           </div>
                         </div>
                         {isTrappedPlayer(player.date_of_birth) &&
-                        <Badge className="bg-red-500 text-white text-[10px] px-1.5 font-bold">
+                        <Badge className="bg-red-500 text-white text-xs md:text-sm px-2 py-1 font-bold">
                             TRAPPED
                           </Badge>
                         }
