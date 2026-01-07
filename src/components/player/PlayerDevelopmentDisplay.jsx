@@ -13,7 +13,6 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { POSITION_KNOWLEDGE_BANK, PHYSICAL_ASSESSMENTS } from '../constants/positionKnowledgeBank';
 import AIGoalGenerator from './AIGoalGenerator';
-import AITrainingPlanButton from './AITrainingPlanButton';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -31,10 +30,7 @@ export default function PlayerDevelopmentDisplay({
   const queryClient = useQueryClient();
   const [showAddGoalDialog, setShowAddGoalDialog] = useState(false);
   const [showEditGoalDialog, setShowEditGoalDialog] = useState(false);
-  const [showAddModuleDialog, setShowAddModuleDialog] = useState(false);
-  const [showEditModuleDialog, setShowEditModuleDialog] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
-  const [editingModule, setEditingModule] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('skill');
   const [selectedSkill, setSelectedSkill] = useState('');
   const [customSkill, setCustomSkill] = useState('');
@@ -49,20 +45,6 @@ export default function PlayerDevelopmentDisplay({
     notes: '',
     category: 'Technical',
     completed: false
-  });
-
-  const [newModule, setNewModule] = useState({
-    title: '',
-    description: '',
-    resource_link: '',
-    priority: 'Medium',
-    training_type: 'Technical Training',
-    weekly_sessions: 2,
-    number_of_weeks: 4,
-    session_duration: 60,
-    start_date: '',
-    end_date: '',
-    preventative_measures: ''
   });
 
 
@@ -182,59 +164,7 @@ export default function PlayerDevelopmentDisplay({
     });
   };
 
-  const handleAddModule = () => {
-    const module = {
-      id: `module_${Date.now()}`,
-      ...newModule,
-      completed: false,
-      auto_suggested: false
-    };
-    const updatedModules = [...(pathway.training_modules || []), module];
-    onUpdatePathway({ training_modules: updatedModules });
-    setShowAddModuleDialog(false);
-    setNewModule({
-      title: '',
-      description: '',
-      resource_link: '',
-      priority: 'Medium',
-      training_type: 'Technical Training',
-      weekly_sessions: 2,
-      number_of_weeks: 4,
-      session_duration: 60,
-      start_date: '',
-      end_date: '',
-      preventative_measures: ''
-    });
-  };
 
-  const handleUpdateModule = () => {
-    const updatedModules = pathway.training_modules.map(m => m.id === editingModule.id ? editingModule : m);
-    onUpdatePathway({ training_modules: updatedModules });
-    setEditingModule(null);
-    setShowEditModuleDialog(false);
-  };
-
-  const handleToggleModule = (moduleId) => {
-    const module = pathway.training_modules.find(m => m.id === moduleId);
-    const nowCompleted = !module?.completed;
-
-    const updatedModules = pathway.training_modules.map(m => {
-      if (m.id === moduleId) {
-        return { ...m, completed: nowCompleted };
-      }
-      return m;
-    });
-    onUpdatePathway({ training_modules: updatedModules });
-
-    if (nowCompleted && !module?.completed) {
-      toast.success('Training module completed! 💪');
-    }
-  };
-
-  const handleDeleteModule = (moduleId) => {
-    const updatedModules = pathway.training_modules.filter(m => m.id !== moduleId);
-    onUpdatePathway({ training_modules: updatedModules });
-  };
 
   const getAutoProgress = (goal) => {
     if (!assessments || assessments.length < 2) return null;

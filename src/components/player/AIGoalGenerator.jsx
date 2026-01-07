@@ -88,9 +88,11 @@ Using PDP principles and language (win the challenge, be on the front foot, mean
 4. Mix technical, tactical, physical, and mental development
 5. Include realistic 4-12 week timeframes
 
+CRITICAL: Do NOT include specific percentages or numeric targets in goal descriptions or action plans. Focus on qualitative improvements.
+
 For each goal, provide:
-- description: Clear, actionable goal using PDP language
-- plan_of_action: Specific steps referencing PDP principles
+- description: Clear, actionable goal using PDP language (NO percentages or numbers)
+- plan_of_action: Specific steps referencing PDP principles (NO percentages or numbers)
 - category: Technical, Tactical, Physical, or Mental
 - suggested_weeks: Timeframe in weeks`;
 
