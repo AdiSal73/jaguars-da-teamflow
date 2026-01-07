@@ -240,6 +240,19 @@ export default function AdminDataManagement() {
           <p className="text-slate-600 mt-1">Import/Export data and manage assignments</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={async () => {
+              toast.loading('Calculating age groups...');
+              const response = await base44.functions.invoke('updateAllAgeGroups');
+              queryClient.invalidateQueries(['players']);
+              toast.success(`Updated ${response.data.updated} players with age groups`);
+            }} 
+            variant="outline" 
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Update All Age Groups
+          </Button>
           <Button onClick={() => setShowNextSeasonDialog(true)} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
             <Calendar className="w-4 h-4 mr-2" />
             Create Future Teams
