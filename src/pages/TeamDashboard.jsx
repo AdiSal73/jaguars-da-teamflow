@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Target, Sparkles, Save, Loader2, Edit2, Plus, UserPlus, UserCog, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,6 @@ import AddPlayerDialog from '../components/team/AddPlayerDialog';
 import AssignCoachDialog from '../components/team/AssignCoachDialog';
 import AddTryoutPlayerDialog from '../components/team/AddTryoutPlayerDialog';
 import MessageTeamDialog from '../components/team/MessageTeamDialog';
-import { Mail } from 'lucide-react';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ export default function TeamDashboard() {
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showAssignCoachDialog, setShowAssignCoachDialog] = useState(false);
   const [showAddTryoutDialog, setShowAddTryoutDialog] = useState(false);
-  const [showMessageTeamDialog, setShowMessageTeamDialog] = useState(false);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
 
   const { data: team } = useQuery({
     queryKey: ['team', teamId],
@@ -313,13 +312,7 @@ Format with clear headers and structure.`;
                   </Badge>
                 </div>
               </div>
-              <Button 
-                onClick={() => setShowMessageTeamDialog(true)}
-                className="bg-white/20 hover:bg-white/30 text-white border border-white/30"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Message Team
-              </Button>
+
             </div>
           </div>
         </div>
@@ -639,8 +632,17 @@ Format with clear headers and structure.`;
                 Team Roster
               </CardTitle>
               <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setShowAddPlayerDialog(true)} className="text-white hover:bg-white/20">
-                  <Plus className="w-4 h-4 mr-1" />Add Player
+                <Button onClick={() => setShowAddPlayerDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Player
+                </Button>
+                <Button onClick={() => setShowAssignCoachDialog(true)} size="sm" variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                  <UserCog className="w-4 h-4 mr-1" />
+                  Assign Coach
+                </Button>
+                <Button onClick={() => setShowMessageDialog(true)} size="sm" variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Message Team
                 </Button>
               </div>
             </div>
@@ -833,12 +835,22 @@ Format with clear headers and structure.`;
         teamId={teamId}
       />
 
-      <MessageTeamDialog
-        open={showMessageTeamDialog}
-        onClose={() => setShowMessageTeamDialog(false)}
-        team={team}
-        players={players}
-      />
+      {showMessageDialog && (
+        <MessageTeamDialog
+          open={showMessageDialog}
+          onClose={() => setShowMessageDialog(false)}
+          team={team}
+          players={players}
+        />
+      )}
+
+      {showAssignCoachDialog && (
+        <AssignCoachDialog
+          open={showAssignCoachDialog}
+          onClose={() => setShowAssignCoachDialog(false)}
+          team={team}
+        />
+      )}
     </div>
   );
 }
