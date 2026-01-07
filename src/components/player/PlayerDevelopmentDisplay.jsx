@@ -274,34 +274,33 @@ export default function PlayerDevelopmentDisplay({
 
   return (
     <>
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Player Development Pathway (Goals) */}
-        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Target className="w-5 h-5 text-emerald-600" />
-                  Player Development Pathway ({player.goals?.length || 0})
-                </CardTitle>
-                <p className="text-xs text-slate-600 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
-              </div>
-              <div className="flex gap-2">
-                {isAdminOrCoach && (
-                  <AIGoalGenerator 
-                    player={player} 
-                    onUpdatePlayer={onUpdatePlayer} 
-                    assessments={assessments}
-                    evaluations={evaluations}
-                  />
-                )}
-                <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Goal
-                </Button>
-              </div>
+      {/* Player Development Pathway (Goals) */}
+      <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Target className="w-5 h-5 text-emerald-600" />
+                Player Development Pathway ({player.goals?.length || 0})
+              </CardTitle>
+              <p className="text-xs text-slate-600 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
             </div>
-          </CardHeader>
+            <div className="flex gap-2">
+              {isAdminOrCoach && (
+                <AIGoalGenerator 
+                  player={player} 
+                  onUpdatePlayer={onUpdatePlayer} 
+                  assessments={assessments}
+                  evaluations={evaluations}
+                />
+              )}
+              <Button onClick={() => setShowAddGoalDialog(true)} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Goal
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
           <CardContent className="p-4">
             {sortedGoals.length === 0 ? (
               <div className="text-center py-8">
@@ -430,114 +429,6 @@ export default function PlayerDevelopmentDisplay({
             )}
           </CardContent>
         </Card>
-
-        {/* Training Modules */}
-        <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-purple-50">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
-                  Training Modules
-                </CardTitle>
-                <p className="text-xs text-slate-600 mt-1">Training with intent is the most efficient way to improve. Use your teams sessions or extra practices to work on your game with purpose and intent.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isAdminOrCoach && (
-                  <AITrainingPlanButton 
-                    player={player}
-                    pathway={pathway}
-                    evaluations={evaluations}
-                    onUpdatePathway={onUpdatePathway}
-                  />
-                )}
-                <Button onClick={() => setShowAddModuleDialog(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Module
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4">
-            {!pathway || pathway.training_modules?.length === 0 ? (
-              <div className="text-center py-8">
-                <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 text-sm mb-3">No training modules yet</p>
-                <Link to={createPageUrl('FitnessResources')}>
-                  <Button variant="outline" size="sm">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    View Fitness Resources
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {pathway.training_modules?.map(module => (
-                  <div key={module.id} className={`p-3 rounded-lg border ${module.completed ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2 flex-1">
-                        <button onClick={() => handleToggleModule(module.id)} className="mt-1">
-                          {module.completed ? (
-                            <CheckCircle className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                          )}
-                        </button>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-sm text-slate-900">{module.title}</h4>
-                            {module.auto_suggested && <Badge className="text-[8px] bg-purple-100 text-purple-700">Auto</Badge>}
-                          </div>
-                          <p className="text-xs text-slate-600 mt-1">{module.description}</p>
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                            <Badge className={`text-[9px] ${module.priority === 'High' ? 'bg-red-100 text-red-800' : module.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                              {module.priority}
-                            </Badge>
-                            {module.training_type && (
-                              <Badge className="text-[9px] bg-indigo-100 text-indigo-800">{module.training_type}</Badge>
-                            )}
-                            {module.weekly_sessions && (
-                              <span className="text-xs text-slate-600">{module.weekly_sessions}x/week</span>
-                            )}
-                            {module.number_of_weeks && (
-                              <span className="text-xs text-slate-600">• {module.number_of_weeks} weeks</span>
-                            )}
-                            {module.session_duration && (
-                              <span className="text-xs text-slate-600">• {module.session_duration}min</span>
-                            )}
-                            {module.resource_link && (
-                              <a href={module.resource_link.startsWith('/') ? createPageUrl(module.resource_link.replace('/', '')) : module.resource_link} target={module.resource_link.startsWith('http') ? '_blank' : ''} rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                <ExternalLink className="w-3 h-3" />
-                                Resource
-                              </a>
-                            )}
-                          </div>
-                          {module.preventative_measures && (
-                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="text-[10px] font-semibold text-amber-900 mb-1">🛡️ Injury Prevention:</div>
-                              <p className="text-xs text-amber-800">{module.preventative_measures}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        {isAdminOrCoach && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-blue-50" onClick={() => { setEditingModule(module); setShowEditModuleDialog(true); }}>
-                            <BookOpen className="w-3 h-3" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-red-50 hover:text-red-600" onClick={() => handleDeleteModule(module.id)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Add Goal Dialog */}
       <Dialog open={showAddGoalDialog} onOpenChange={(open) => !open && resetGoalForm()}>
@@ -771,179 +662,7 @@ export default function PlayerDevelopmentDisplay({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Module Dialog */}
-      <Dialog open={showEditModuleDialog} onOpenChange={setShowEditModuleDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Training Module</DialogTitle>
-          </DialogHeader>
-          {editingModule && (
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Title *</Label>
-                <Input value={editingModule.title} onChange={e => setEditingModule({...editingModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea value={editingModule.description} onChange={e => setEditingModule({...editingModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Training Type *</Label>
-                  <Select value={editingModule.training_type} onValueChange={v => setEditingModule({...editingModule, training_type: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mobility Training">Mobility Training</SelectItem>
-                      <SelectItem value="Technical Training">Technical Training</SelectItem>
-                      <SelectItem value="Functional Training">Functional Training</SelectItem>
-                      <SelectItem value="Video Analysis/Tactical Training">Video Analysis/Tactical</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Priority</Label>
-                  <Select value={editingModule.priority} onValueChange={v => setEditingModule({...editingModule, priority: v})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Sessions/Week</Label>
-                  <Input type="number" min="1" max="7" value={editingModule.weekly_sessions} onChange={e => setEditingModule({...editingModule, weekly_sessions: parseInt(e.target.value)})} />
-                </div>
-                <div>
-                  <Label>Number of Weeks</Label>
-                  <Input type="number" min="1" value={editingModule.number_of_weeks} onChange={e => setEditingModule({...editingModule, number_of_weeks: parseInt(e.target.value)})} />
-                </div>
-                <div>
-                  <Label>Duration (min)</Label>
-                  <Input type="number" min="15" step="15" value={editingModule.session_duration} onChange={e => setEditingModule({...editingModule, session_duration: parseInt(e.target.value)})} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Start Date</Label>
-                  <Input type="date" value={editingModule.start_date} onChange={e => setEditingModule({...editingModule, start_date: e.target.value})} />
-                </div>
-                <div>
-                  <Label>End Date</Label>
-                  <Input type="date" value={editingModule.end_date} onChange={e => setEditingModule({...editingModule, end_date: e.target.value})} />
-                </div>
-              </div>
-              <div>
-                <Label>Resource Link</Label>
-                <Input value={editingModule.resource_link} onChange={e => setEditingModule({...editingModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
-              </div>
-              <div>
-                <Label>Injury Prevention Measures (Optional)</Label>
-                <Textarea 
-                  value={editingModule.preventative_measures} 
-                  onChange={e => setEditingModule({...editingModule, preventative_measures: e.target.value})} 
-                  rows={2} 
-                  placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
-                />
-              </div>
-              <div className="flex gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowEditModuleDialog(false)} className="flex-1">Cancel</Button>
-                <Button onClick={handleUpdateModule} disabled={!editingModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Save</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      {/* Add Module Dialog */}
-      <Dialog open={showAddModuleDialog} onOpenChange={setShowAddModuleDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Training Module</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label>Title *</Label>
-              <Input value={newModule.title} onChange={e => setNewModule({...newModule, title: e.target.value})} placeholder="e.g., 90Min Fitness Week 1" />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={newModule.description} onChange={e => setNewModule({...newModule, description: e.target.value})} rows={2} placeholder="Brief overview of the module" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Training Type *</Label>
-                <Select value={newModule.training_type} onValueChange={v => setNewModule({...newModule, training_type: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mobility Training">Mobility Training</SelectItem>
-                    <SelectItem value="Technical Training">Technical Training</SelectItem>
-                    <SelectItem value="Functional Training">Functional Training</SelectItem>
-                    <SelectItem value="Video Analysis/Tactical Training">Video Analysis/Tactical</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Priority</Label>
-                <Select value={newModule.priority} onValueChange={v => setNewModule({...newModule, priority: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Sessions/Week</Label>
-                <Input type="number" min="1" max="7" value={newModule.weekly_sessions} onChange={e => setNewModule({...newModule, weekly_sessions: parseInt(e.target.value)})} />
-              </div>
-              <div>
-                <Label>Number of Weeks</Label>
-                <Input type="number" min="1" value={newModule.number_of_weeks} onChange={e => setNewModule({...newModule, number_of_weeks: parseInt(e.target.value)})} />
-              </div>
-              <div>
-                <Label>Duration (min)</Label>
-                <Input type="number" min="15" step="15" value={newModule.session_duration} onChange={e => setNewModule({...newModule, session_duration: parseInt(e.target.value)})} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Start Date</Label>
-                <Input type="date" value={newModule.start_date} onChange={e => setNewModule({...newModule, start_date: e.target.value})} />
-              </div>
-              <div>
-                <Label>End Date</Label>
-                <Input type="date" value={newModule.end_date} onChange={e => setNewModule({...newModule, end_date: e.target.value})} />
-              </div>
-            </div>
-            <div>
-              <Label>Resource Link</Label>
-              <Input value={newModule.resource_link} onChange={e => setNewModule({...newModule, resource_link: e.target.value})} placeholder="/fitness-resources or https://..." />
-            </div>
-            <div>
-              <Label>Injury Prevention Measures (Optional)</Label>
-              <Textarea 
-                value={newModule.preventative_measures} 
-                onChange={e => setNewModule({...newModule, preventative_measures: e.target.value})} 
-                rows={2} 
-                placeholder="e.g., Include dynamic warm-up, focus on proper landing mechanics, strengthen stabilizing muscles..." 
-              />
-            </div>
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowAddModuleDialog(false)} className="flex-1">Cancel</Button>
-              <Button onClick={handleAddModule} disabled={!newModule.title} className="flex-1 bg-blue-600 hover:bg-blue-700">Add Module</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
     </>
   );
