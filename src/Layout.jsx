@@ -163,7 +163,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       title: "Coaching Resources",
-      icon: Star,
+      icon: Trophy,
       roles: ["admin", "coach", "director", "user", "parent"],
       submenu: [
         { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
