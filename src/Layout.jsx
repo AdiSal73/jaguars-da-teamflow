@@ -159,6 +159,13 @@ export default function Layout({ children, currentPageName }) {
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },
         { title: "Evaluation Analytics", url: createPageUrl("EvaluationAnalytics") },
         { title: "Formation View", url: createPageUrl("FormationView") },
+      ]
+    },
+    {
+      title: "Coaching Resources",
+      icon: Star,
+      roles: ["admin", "coach", "director", "user", "parent"],
+      submenu: [
         { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
         { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },
         { title: "Fitness Resources", url: createPageUrl("FitnessResources") },
@@ -200,12 +207,6 @@ export default function Layout({ children, currentPageName }) {
       icon: MessageSquare,
       roles: ["admin", "coach", "user", "parent", "director"],
       url: createPageUrl("Communications")
-    },
-    {
-      title: "Leaderboards",
-      url: createPageUrl("Leaderboard"),
-      icon: Trophy,
-      roles: ["user", "parent"]
     },
     {
       title: "My Account",
