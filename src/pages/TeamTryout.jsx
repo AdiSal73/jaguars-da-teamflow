@@ -576,7 +576,7 @@ export default function TeamTryout() {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
-                  style={{ maxHeight: 'calc(100vh - 580px)' }}
+                  style={{ maxHeight: 'calc(100vh - 980px)' }}
                 >
                   {unassignedPlayers?.map((player, index) => (
                     <Draggable key={player.id} draggableId={player.id} index={index}>
