@@ -430,7 +430,7 @@ export default function TeamTryout() {
           </div>
 
           {/* Unassigned Players Sidebar */}
-          <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 720px)' }}>
           <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 text-white shadow-md">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
