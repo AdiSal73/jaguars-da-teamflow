@@ -278,7 +278,7 @@ const POSITIONS_DATA_OLD = {
   },
   'Attacking Midfielder': {
     title: 'Attacking Midfielder',
-    icon: '⭐',
+    icon: '🌟',
     role: ['Create chances', 'Advance ball', 'Finish chances', 'Press and win back'],
     traits: [
       'Fast & agile, quick, and fit',
