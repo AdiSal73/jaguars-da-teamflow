@@ -7,19 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, Shield, Filter } from 'lucide-react';
+import { Search, Users, Shield, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 
 const POSITIONS = [
-  { id: 'GK', label: 'Goalkeeper' },
-  { id: 'Outside Back', label: 'Outside Back' },
-  { id: 'Centerback', label: 'Centerback' },
+  { id: 'GK', label: 'GK' },
+  { id: 'Right Outside Back', label: 'Right Outside Back' },
+  { id: 'Left Outside Back', label: 'Left Outside Back' },
+  { id: 'Right Centerback', label: 'Right Centerback' },
+  { id: 'Left Centerback', label: 'Left Centerback' },
   { id: 'Defensive Midfielder', label: 'Defensive Midfielder' },
+  { id: 'Right Winger', label: 'Right Winger' },
   { id: 'Center Midfielder', label: 'Center Midfielder' },
+  { id: 'Forward', label: 'Forward' },
   { id: 'Attacking Midfielder', label: 'Attacking Midfielder' },
-  { id: 'Winger', label: 'Winger' },
-  { id: 'Forward', label: 'Forward' }
+  { id: 'Left Winger', label: 'Left Winger' }
 ];
 
 export default function PositionAssignments() {
@@ -32,6 +36,7 @@ export default function PositionAssignments() {
   const [selectedBirthYear, setSelectedBirthYear] = useState('all');
   const [selectedTeamRole, setSelectedTeamRole] = useState('all');
   const [selectedCurrentTeam, setSelectedCurrentTeam] = useState('all');
+  const [collapsedPositions, setCollapsedPositions] = useState({});
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -319,23 +324,40 @@ export default function PositionAssignments() {
               const tryoutData = tryouts.reduce((acc, t) => ({ ...acc, [t.player_id]: t }), {});
 
               return (
-                <Card key={position.id} className="border-none shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between text-base">
-                      <span>{position.label}</span>
-                      <Badge className="bg-emerald-100 text-emerald-800">{positionPlayers.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Droppable droppableId={position.id}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`space-y-2 min-h-[150px] p-2 rounded-lg border-2 border-dashed transition-all ${
-                            snapshot.isDraggingOver ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'
-                          }`}
-                        >
+                <Collapsible key={position.id} open={!collapsedPositions[position.id]}>
+                  <Card className="border-none shadow-lg">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="pb-3 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <CardTitle className="flex items-center justify-between text-base">
+                          <span>{position.label}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-emerald-100 text-emerald-800">{positionPlayers.length}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCollapsedPositions(prev => ({...prev, [position.id]: !prev[position.id]}));
+                              }}
+                            >
+                              {collapsedPositions[position.id] ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent>
+                        <Droppable droppableId={position.id}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className={`space-y-2 min-h-[150px] p-2 rounded-lg border-2 border-dashed transition-all ${
+                                snapshot.isDraggingOver ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'
+                              }`}
+                            >
                           {positionPlayers.map((player, index) => {
                             const tryout = tryoutData[player.id];
                             return (
@@ -379,11 +401,13 @@ export default function PositionAssignments() {
                           {positionPlayers.length === 0 && (
                             <div className="text-center text-slate-400 text-sm py-8">Drag players here</div>
                           )}
-                        </div>
-                      )}
-                    </Droppable>
-                  </CardContent>
-                </Card>
+                            </div>
+                          )}
+                        </Droppable>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               );
             })}
           </div>

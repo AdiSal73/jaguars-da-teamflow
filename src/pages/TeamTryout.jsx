@@ -305,7 +305,7 @@ export default function TeamTryout() {
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_480px] gap-6">
           {/* Teams Section */}
           <div>
             <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
