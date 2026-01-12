@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, Check, X, Clock } from 'lucide-react';
+import { User, Check, X, Clock, Trash2 } from 'lucide-react';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 
-export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, isDragging }) {
+export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, onRemove, isDragging }) {
   const navigate = useNavigate();
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
   const isTrapped = player.date_of_birth ? (() => {
@@ -36,14 +36,29 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
             className={`transition-all cursor-pointer border ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-1 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
           >
             <CardContent className="p-2">
-              <div className="flex items-start gap-2 mb-2" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}>
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
-                  {player.jersey_number || <User className="w-4 h-4" />}
+              <div className="flex items-start gap-2 mb-2">
+                <div onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)} className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
+                    {player.jersey_number || <User className="w-4 h-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
+                    <div className="text-[10px] text-slate-600 truncate">{player.primary_position}</div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
-                  <div className="text-[10px] text-slate-600 truncate">{player.primary_position}</div>
-                </div>
+                {onRemove && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(player);
+                    }}
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
 
               {/* Badges */}
