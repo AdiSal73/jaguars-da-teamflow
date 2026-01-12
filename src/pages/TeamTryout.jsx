@@ -697,29 +697,29 @@ export default function TeamTryout() {
         </div>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Tabs value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} className="w-full">
-          <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length}, minmax(0, 1fr))` }}>
-            {uniqueAgeGroups.map(age => {
-              const teamsInAge = teams.filter(t => t.age_group === age && (t.season === '26/27' || t.name?.includes('26/27'))).length;
-              const playersInAge = poolPlayers.filter(pp => {
-                const nextYearAge = calculateNextYearAgeGroup(pp.date_of_birth);
-                return nextYearAge === age && !pp.next_year_team;
-              }).length;
-              return (
-                <TabsTrigger key={age} value={age} className="relative">
-                  <div className="flex items-center gap-2">
-                    <span>{age}</span>
-                    <div className="flex gap-1">
-                      <Badge variant="outline" className="text-[10px] px-1">{teamsInAge}T</Badge>
-                      <Badge className="bg-blue-500 text-white text-[10px] px-1">{playersInAge}P</Badge>
-                    </div>
+      <Tabs value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} className="w-full">
+        <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length}, minmax(0, 1fr))` }}>
+          {uniqueAgeGroups.map(age => {
+            const teamsInAge = teams.filter(t => t.age_group === age && (t.season === '26/27' || t.name?.includes('26/27'))).length;
+            const playersInAge = poolPlayers.filter(pp => {
+              const nextYearAge = calculateNextYearAgeGroup(pp.date_of_birth);
+              return nextYearAge === age && !pp.next_year_team;
+            }).length;
+            return (
+              <TabsTrigger key={age} value={age} className="relative">
+                <div className="flex items-center gap-2">
+                  <span>{age}</span>
+                  <div className="flex gap-1">
+                    <Badge variant="outline" className="text-[10px] px-1">{teamsInAge}T</Badge>
+                    <Badge className="bg-blue-500 text-white text-[10px] px-1">{playersInAge}P</Badge>
                   </div>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+                </div>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
+        <DragDropContext onDragEnd={onDragEnd}>
           {uniqueAgeGroups.map(age => (
             <TabsContent key={age} value={age}>
               <div className="grid lg:grid-cols-[1fr_420px] gap-6">
@@ -935,8 +935,8 @@ export default function TeamTryout() {
               </div>
             </TabsContent>
           ))}
-        </Tabs>
-      </DragDropContext>
+        </DragDropContext>
+      </Tabs>
 
       <Dialog open={showCreateTeamDialog} onOpenChange={setShowCreateTeamDialog}>
         <DialogContent className="max-w-lg">
