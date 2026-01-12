@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle } from 'lucide-react';
+import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
@@ -56,6 +56,10 @@ export default function TeamTryout() {
   const [selectedOfferTeam, setSelectedOfferTeam] = useState(null);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [selectedFinalizeTeam, setSelectedFinalizeTeam] = useState(null);
+  const [showAIFormationDialog, setShowAIFormationDialog] = useState(false);
+  const [aiFormParams, setAiFormParams] = useState({ gender: '', age_groups: [], league_preference: '' });
+  const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -180,6 +184,39 @@ export default function TeamTryout() {
     }
   });
 
+  const removeFromTeamMutation = useMutation({
+    mutationFn: async ({ playerId, playerData }) => {
+      // Remove next_year_team assignment
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      if (existingTryout) {
+        await base44.entities.PlayerTryout.update(existingTryout.id, {
+          next_year_team: null,
+          next_season_status: 'N/A'
+        });
+      }
+      
+      // Add back to pool
+      await base44.entities.TryoutPool.create({
+        player_id: playerId,
+        player_name: playerData.full_name,
+        player_email: playerData.email || playerData.player_email,
+        parent_emails: playerData.parent_emails || [],
+        date_of_birth: playerData.date_of_birth,
+        age_group: playerData.age_group,
+        gender: playerData.gender,
+        primary_position: playerData.primary_position,
+        current_team: playerData.tryout?.current_team,
+        branch: playerData.branch,
+        status: 'Pending'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['tryoutPool']);
+      toast.success('Player returned to pool');
+    }
+  });
+
   const finalizeRosterMutation = useMutation({
     mutationFn: async ({ teamId, teamName, playerIds }) => {
       // Update all accepted players to the new team
@@ -253,6 +290,41 @@ export default function TeamTryout() {
     setShowFinalizeDialog(true);
   };
 
+  const handleRemovePlayer = (player) => {
+    removeFromTeamMutation.mutate({ playerId: player.id, playerData: player });
+  };
+
+  const handleGenerateAIFormation = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const response = await base44.functions.invoke('autoFormTeams', aiFormParams);
+      setAiSuggestions(response.data);
+      toast.success('AI suggestions generated');
+    } catch (error) {
+      toast.error('Failed to generate suggestions');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleApplyAISuggestions = async () => {
+    if (!aiSuggestions?.assignments) return;
+    
+    try {
+      await Promise.all(aiSuggestions.assignments.map(assignment =>
+        updateTryoutMutation.mutateAsync({
+          playerId: assignment.player_id,
+          data: { next_year_team: assignment.team_name }
+        })
+      ));
+      setShowAIFormationDialog(false);
+      setAiSuggestions(null);
+      toast.success('AI suggestions applied');
+    } catch (error) {
+      toast.error('Failed to apply suggestions');
+    }
+  };
+
   const handleBulkAssign = async () => {
     if (!bulkAssignTeam || selectedPlayers.length === 0) {
       toast.error('Select team and players');
@@ -300,7 +372,16 @@ export default function TeamTryout() {
       const ageA = extractAge(a.age_group);
       const ageB = extractAge(b.age_group);
       if (ageA !== ageB) return ageB - ageA;
-      const priority = { 'Girls Academy': 1, 'Aspire': 2, 'Green': 3, 'White': 4, 'Pre GA 1': 5, 'Pre GA 2': 6, 'Green White': 7 };
+      const priority = { 
+        'Girls Academy': 1, 
+        'Girls Academy Aspire': 2,
+        'Aspire': 3, 
+        'Green': 4, 
+        'White': 5, 
+        'Pre GA 1': 6, 
+        'Pre GA 2': 7, 
+        'Green White': 8 
+      };
       const getName = (name) => {
         if (!name || typeof name !== 'string') return name;
         for (const key of Object.keys(priority)) {
@@ -445,10 +526,16 @@ export default function TeamTryout() {
           </h1>
           <p className="text-slate-600 mt-2">Drag and drop players to assign them to next year's teams</p>
         </div>
-        <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Team
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowAIFormationDialog(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Auto-Formation
+          </Button>
+          <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg">
+            <Plus className="w-4 h-4 mr-2" />
+            Create Team
+          </Button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
@@ -577,13 +664,14 @@ export default function TeamTryout() {
                                     {...provided.dragHandleProps}
                                   >
                                     <PlayerEvaluationCard 
-                                      player={player}
-                                      team={(teams || []).find(t => t.id === player.team_id)}
-                                      tryout={player.tryout}
-                                      evaluation={player.evaluation}
-                                      assessment={player.assessment}
-                                      onSendOffer={handleSendOffer}
-                                      isDragging={snapshot.isDragging}
+                                     player={player}
+                                     team={(teams || []).find(t => t.id === player.team_id)}
+                                     tryout={player.tryout}
+                                     evaluation={player.evaluation}
+                                     assessment={player.assessment}
+                                     onSendOffer={handleSendOffer}
+                                     onRemove={handleRemovePlayer}
+                                     isDragging={snapshot.isDragging}
                                     />
                                   </div>
                                 )}
@@ -764,6 +852,122 @@ export default function TeamTryout() {
         }}
         isPending={finalizeRosterMutation.isPending}
       />
+
+      <Dialog open={showAIFormationDialog} onOpenChange={setShowAIFormationDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-purple-600" />
+              AI-Powered Team Formation
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <p className="text-sm text-slate-700">
+                Let AI analyze player performance data, coach recommendations, and team balance requirements to suggest optimal team assignments.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="font-semibold">Gender</Label>
+                <Select value={aiFormParams.gender} onValueChange={(v) => setAiFormParams({...aiFormParams, gender: v})}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>All</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Male">Male</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="font-semibold">League Preference</Label>
+                <Select value={aiFormParams.league_preference} onValueChange={(v) => setAiFormParams({...aiFormParams, league_preference: v})}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Any league" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>All</SelectItem>
+                    {uniqueLeagues.map(league => (
+                      <SelectItem key={league} value={league}>{league}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {!aiSuggestions ? (
+              <Button
+                onClick={handleGenerateAIFormation}
+                disabled={isGeneratingAI}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {isGeneratingAI ? 'Generating AI Suggestions...' : 'Generate Team Suggestions'}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h3 className="font-bold text-green-900 mb-2">AI Formation Summary</h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-600">Total Assigned:</span>
+                      <span className="font-bold ml-2">{aiSuggestions.summary?.total_assigned || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-600">Unassigned:</span>
+                      <span className="font-bold ml-2">{aiSuggestions.summary?.unassigned || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-600">Teams:</span>
+                      <span className="font-bold ml-2">{Object.keys(aiSuggestions.summary?.team_sizes || {}).length}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {aiSuggestions.assignments?.map((assignment, idx) => {
+                    const player = players.find(p => p.id === assignment.player_id);
+                    return (
+                      <div key={idx} className="p-3 bg-white rounded-lg border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold">{player?.full_name || 'Unknown'}</div>
+                            <div className="text-xs text-slate-600">{assignment.team_name}</div>
+                          </div>
+                          <Badge className="bg-purple-100 text-purple-800 text-xs">
+                            {player?.primary_position}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">{assignment.reasoning}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setAiSuggestions(null)}
+                    className="flex-1"
+                  >
+                    Regenerate
+                  </Button>
+                  <Button
+                    onClick={handleApplyAISuggestions}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600"
+                  >
+                    Apply All Suggestions
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
