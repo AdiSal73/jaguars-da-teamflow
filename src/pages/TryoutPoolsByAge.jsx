@@ -14,6 +14,7 @@ import { Users, Plus, Upload, Trash2, Search, X, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { sortPlayersByTeamAndName } from '../components/utils/playerSorting';
 
 // Calculate next year's age group based on date of birth
 const calculateNextYearAgeGroup = (dateOfBirth) => {
@@ -111,7 +112,20 @@ export default function TryoutPoolsByAge() {
 
   // Add to pool mutation
   const addToPoolMutation = useMutation({
-    mutationFn: (data) => base44.entities.TryoutPool.create(data),
+    mutationFn: async (data) => {
+      // Check for duplicates
+      const duplicate = poolPlayers.find(pp => 
+        (data.player_id && pp.player_id === data.player_id) ||
+        (data.player_name && pp.player_name === data.player_name && 
+         data.date_of_birth && pp.date_of_birth === data.date_of_birth)
+      );
+      
+      if (duplicate) {
+        throw new Error('This player is already in the tryout pool');
+      }
+      
+      return base44.entities.TryoutPool.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowAddDialog(false);
@@ -125,6 +139,9 @@ export default function TryoutPoolsByAge() {
         notes: ''
       });
       toast.success('Added to tryout pool');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to add player');
     }
   });
 
@@ -190,10 +207,19 @@ export default function TryoutPoolsByAge() {
   const bulkAddFromDatabaseMutation = useMutation({
     mutationFn: async (playerIds) => {
       const playersToAdd = players.filter(p => playerIds.includes(p.id));
-      await Promise.all(playersToAdd.map(p => {
+      const addedCount = { count: 0, skipped: 0 };
+      
+      await Promise.all(playersToAdd.map(async (p) => {
+        // Check for duplicate
+        const duplicate = poolPlayers.find(pp => pp.player_id === p.id);
+        if (duplicate) {
+          addedCount.skipped++;
+          return;
+        }
+        
         const team = teams.find(t => t.id === p.team_id);
         const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-        return base44.entities.TryoutPool.create({
+        await base44.entities.TryoutPool.create({
           player_id: p.id,
           player_name: p.full_name,
           player_email: p.player_email || p.email,
@@ -207,25 +233,46 @@ export default function TryoutPoolsByAge() {
           branch: p.branch,
           status: 'Pending'
         });
+        addedCount.count++;
       }));
+      
+      return addedCount;
     },
-    onSuccess: (_, playerIds) => {
+    onSuccess: (addedCount) => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowBulkFromTeamsDialog(false);
       setSelectedPlayers([]);
-      toast.success(`Added ${playerIds.length} players to pool`);
+      
+      if (addedCount.skipped > 0) {
+        toast.success(`Added ${addedCount.count} players (${addedCount.skipped} already in pool)`);
+      } else {
+        toast.success(`Added ${addedCount.count} players to pool`);
+      }
     }
   });
 
   // Filter players for current age group
   const getFilteredPlayers = (ageGroup) => {
     const playersInAge = ageGroups[ageGroup] || [];
-    return playersInAge.filter(p => {
+    const filtered = playersInAge.filter(p => {
       const matchesSearch = !searchTerm || p.player_name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesGender = filterGender === 'all' || p.gender === filterGender;
       const matchesPosition = filterPosition === 'all' || p.primary_position === filterPosition;
       return matchesSearch && matchesGender && matchesPosition;
     });
+    
+    // Convert to format expected by sorting utility
+    const withPlayerData = filtered.map(p => {
+      const playerData = p.player_id ? players.find(pl => pl.id === p.player_id) : null;
+      return {
+        ...p,
+        full_name: p.player_name,
+        team_id: playerData?.team_id,
+        current_team: p.current_team || playerData?.current_team
+      };
+    });
+    
+    return sortPlayersByTeamAndName(withPlayerData, teams);
   };
 
   const clearFilters = () => {
@@ -657,7 +704,7 @@ export default function TryoutPoolsByAge() {
                 </div>
                 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {availablePlayersForAge.map(player => {
+                  {sortPlayersByTeamAndName(availablePlayersForAge, teams).map(player => {
                     const team = teams.find(t => t.id === player.team_id);
                     const isSelected = selectedPlayers.includes(player.id);
                     
