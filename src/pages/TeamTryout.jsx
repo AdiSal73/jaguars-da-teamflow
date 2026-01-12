@@ -562,29 +562,31 @@ export default function TeamTryout() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[280px] space-y-1.5 p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                          className={`min-h-[280px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                         >
-                          {teamPlayers?.map((player, index) => (
-                            <Draggable key={player.id} draggableId={player.id} index={index}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                >
-                                  <PlayerEvaluationCard 
-                                    player={player}
-                                    team={(teams || []).find(t => t.id === player.team_id)}
-                                    tryout={player.tryout}
-                                    evaluation={player.evaluation}
-                                    assessment={player.assessment}
-                                    onSendOffer={handleSendOffer}
-                                    isDragging={snapshot.isDragging}
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
+                          <div className="grid grid-cols-2 gap-2">
+                            {teamPlayers?.map((player, index) => (
+                              <Draggable key={player.id} draggableId={player.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                  >
+                                    <PlayerEvaluationCard 
+                                      player={player}
+                                      team={(teams || []).find(t => t.id === player.team_id)}
+                                      tryout={player.tryout}
+                                      evaluation={player.evaluation}
+                                      assessment={player.assessment}
+                                      onSendOffer={handleSendOffer}
+                                      isDragging={snapshot.isDragging}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                          </div>
                           {provided.placeholder}
                           {teamPlayers.length === 0 && (
                             <div className="text-center py-12 text-slate-400 text-xs">

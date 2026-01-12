@@ -2,9 +2,10 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, TrendingUp, Activity, Check, X, Clock } from 'lucide-react';
+import { User, Check, X, Clock } from 'lucide-react';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 
 export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, isDragging }) {
@@ -28,121 +29,132 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
   };
 
   return (
-    <Card 
-      className={`transition-all cursor-pointer border-2 ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3 mb-3" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}>
-          <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md">
-            {player.jersey_number || <User className="w-6 h-6" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-base text-slate-900 mb-1">{player.full_name}</div>
-            <div className="text-sm text-slate-600 font-medium">{player.primary_position}</div>
-            {team?.name && <div className="text-xs text-slate-500">Current: {team.name}</div>}
-          </div>
-        </div>
+    <TooltipProvider>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <Card 
+            className={`transition-all cursor-pointer border ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-1 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
+          >
+            <CardContent className="p-2">
+              <div className="flex items-start gap-2 mb-2" onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}>
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
+                  {player.jersey_number || <User className="w-4 h-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
+                  <div className="text-[10px] text-slate-600 truncate">{player.primary_position}</div>
+                </div>
+              </div>
 
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>}
-          {player.grad_year && <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>}
-          {birthYear && <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{birthYear}</Badge>}
-          {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">TRAPPED</Badge>}
-          {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="default" />}
-          {tryout?.recommendation && (
-            <Badge className={`text-xs px-2 py-1 font-bold ${
-              tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
-              tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
-              'bg-blue-500 text-white'
-            }`}>
-              {tryout.recommendation}
-            </Badge>
-          )}
-          {player.is_tryout_player && <Badge className="bg-indigo-500 text-white text-xs px-2 py-1 font-bold">EXTERNAL</Badge>}
-        </div>
+              {/* Badges */}
+              <div className="flex flex-wrap gap-0.5 mb-2">
+                {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1 py-0">{player.age_group}</Badge>}
+                {player.grad_year && <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>}
+                {isTrapped && <Badge className="bg-red-500 text-white text-[9px] px-1 py-0">TRAP</Badge>}
+                {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="small" />}
+                {player.is_tryout_player && <Badge className="bg-indigo-500 text-white text-[9px] px-1 py-0">EXT</Badge>}
+              </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="text-center p-2 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg">
-            <div className="text-xs text-emerald-700 font-semibold">Eval Score</div>
-            <div className="text-2xl font-bold text-emerald-700">{evaluation?.overall_score?.toFixed(1) || '-'}</div>
-          </div>
-          <div className="text-center p-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-            <div className="text-xs text-blue-700 font-semibold">Physical</div>
-            <div className="text-2xl font-bold text-blue-700">{assessment?.overall_score || '-'}</div>
-          </div>
-        </div>
+              {/* Offer Status & Action */}
+              <div className="space-y-1">
+                {tryout?.next_season_status && tryout.next_season_status !== 'N/A' ? (
+                  <Badge className={`w-full justify-center py-1 text-[10px] ${getOfferStatusColor(tryout.next_season_status)}`}>
+                    {tryout.next_season_status === 'Accepted Offer' && <Check className="w-2 h-2 mr-0.5" />}
+                    {tryout.next_season_status === 'Rejected Offer' && <X className="w-2 h-2 mr-0.5" />}
+                    {tryout.next_season_status === 'Considering Offer' && <Clock className="w-2 h-2 mr-0.5" />}
+                    {tryout.next_season_status}
+                  </Badge>
+                ) : tryout?.next_year_team ? (
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSendOffer(player);
+                    }}
+                    size="sm"
+                    className="w-full h-6 text-[10px] bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
+                  >
+                    Send Offer
+                  </Button>
+                ) : null}
+                
+                {tryout?.registration_status && tryout.registration_status !== 'Not Signed' && (
+                  <Badge className={`w-full justify-center text-[9px] py-0.5 ${
+                    tryout.registration_status === 'Signed and Paid' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+                  }`}>
+                    {tryout.registration_status}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs">
+          <div className="space-y-2 p-2">
+            <div className="font-bold text-sm border-b pb-1">{player.full_name}</div>
+            
+            {team?.name && <div className="text-xs text-slate-600">Current: {team.name}</div>}
+            
+            {(evaluation || assessment) && (
+              <div className="space-y-2">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center p-1.5 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded">
+                    <div className="text-[10px] text-emerald-700 font-semibold">Eval Score</div>
+                    <div className="text-lg font-bold text-emerald-700">{evaluation?.overall_score?.toFixed(1) || '-'}</div>
+                  </div>
+                  <div className="text-center p-1.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded">
+                    <div className="text-[10px] text-blue-700 font-semibold">Physical</div>
+                    <div className="text-lg font-bold text-blue-700">{assessment?.overall_score || '-'}</div>
+                  </div>
+                </div>
 
-        {/* Physical Breakdown */}
-        {assessment && (
-          <div className="grid grid-cols-4 gap-1 mb-3 text-xs">
-            <div className="text-center bg-red-50 rounded p-1">
-              <div className="text-[10px] text-red-600">SPD</div>
-              <div className="font-bold text-red-700">{assessment.speed_score}</div>
-            </div>
-            <div className="text-center bg-blue-50 rounded p-1">
-              <div className="text-[10px] text-blue-600">PWR</div>
-              <div className="font-bold text-blue-700">{assessment.power_score}</div>
-            </div>
-            <div className="text-center bg-green-50 rounded p-1">
-              <div className="text-[10px] text-green-600">END</div>
-              <div className="font-bold text-green-700">{assessment.endurance_score}</div>
-            </div>
-            <div className="text-center bg-pink-50 rounded p-1">
-              <div className="text-[10px] text-pink-600">AGI</div>
-              <div className="font-bold text-pink-700">{assessment.agility_score}</div>
-            </div>
-          </div>
-        )}
+                {/* Physical Breakdown */}
+                {assessment && (
+                  <div className="grid grid-cols-4 gap-1 text-xs">
+                    <div className="text-center bg-red-50 rounded p-1">
+                      <div className="text-[9px] text-red-600">SPD</div>
+                      <div className="font-bold text-red-700">{assessment.speed_score}</div>
+                    </div>
+                    <div className="text-center bg-blue-50 rounded p-1">
+                      <div className="text-[9px] text-blue-600">PWR</div>
+                      <div className="font-bold text-blue-700">{assessment.power_score}</div>
+                    </div>
+                    <div className="text-center bg-green-50 rounded p-1">
+                      <div className="text-[9px] text-green-600">END</div>
+                      <div className="font-bold text-green-700">{assessment.endurance_score}</div>
+                    </div>
+                    <div className="text-center bg-pink-50 rounded p-1">
+                      <div className="text-[9px] text-pink-600">AGI</div>
+                      <div className="font-bold text-pink-700">{assessment.agility_score}</div>
+                    </div>
+                  </div>
+                )}
 
-        {/* Evaluation Highlights */}
-        {evaluation && (
-          <div className="mb-3 p-2 bg-slate-50 rounded-lg space-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="text-slate-600">Mindset</span>
-              <span className="font-bold text-purple-600">{evaluation.growth_mindset}/10</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Athleticism</span>
-              <span className="font-bold text-emerald-600">{evaluation.athleticism}/10</span>
-            </div>
+                {/* Evaluation Highlights */}
+                {evaluation && (
+                  <div className="p-1.5 bg-slate-50 rounded space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Mindset</span>
+                      <span className="font-bold text-purple-600">{evaluation.growth_mindset}/10</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Athleticism</span>
+                      <span className="font-bold text-emerald-600">{evaluation.athleticism}/10</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {tryout?.recommendation && (
+              <div className="text-xs">
+                <span className="text-slate-600">Recommendation: </span>
+                <span className="font-bold">{tryout.recommendation}</span>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Offer Status & Action */}
-        <div className="space-y-2">
-          {tryout?.next_season_status && tryout.next_season_status !== 'N/A' ? (
-            <Badge className={`w-full justify-center py-2 ${getOfferStatusColor(tryout.next_season_status)}`}>
-              {tryout.next_season_status === 'Accepted Offer' && <Check className="w-3 h-3 mr-1" />}
-              {tryout.next_season_status === 'Rejected Offer' && <X className="w-3 h-3 mr-1" />}
-              {tryout.next_season_status === 'Considering Offer' && <Clock className="w-3 h-3 mr-1" />}
-              {tryout.next_season_status}
-            </Badge>
-          ) : tryout?.next_year_team ? (
-            <Button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onSendOffer(player);
-              }}
-              size="sm"
-              className="w-full bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
-            >
-              Send Offer
-            </Button>
-          ) : (
-            <Badge className="w-full justify-center py-2 bg-slate-200 text-slate-600">Not Assigned</Badge>
-          )}
-          
-          {tryout?.registration_status && tryout.registration_status !== 'Not Signed' && (
-            <Badge className={`w-full justify-center text-xs ${
-              tryout.registration_status === 'Signed and Paid' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-            }`}>
-              {tryout.registration_status}
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
