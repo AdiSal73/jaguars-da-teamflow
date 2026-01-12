@@ -6,6 +6,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Check, X, AlertTriangle, Users, CheckCircle } from 'lucide-react';
 
 export default function FinalizeRosterDialog({ open, onClose, team, players, onFinalize, isPending }) {
+  if (!team) return null;
+  
   const acceptedPlayers = players.filter(p => p.tryout?.next_season_status === 'Accepted Offer');
   const pendingPlayers = players.filter(p => 
     p.tryout?.next_season_status === 'Considering Offer' || 

@@ -864,7 +864,7 @@ export default function TeamTryout() {
           setSelectedFinalizeTeam(null);
         }}
         team={selectedFinalizeTeam}
-        players={selectedFinalizeTeam ? getTeamPlayers(selectedFinalizeTeam.name) : []}
+        players={selectedFinalizeTeam?.name ? getTeamPlayers(selectedFinalizeTeam.name) : []}
         onFinalize={() => {
           const teamPlayers = getTeamPlayers(selectedFinalizeTeam.name);
           const acceptedPlayerIds = teamPlayers
