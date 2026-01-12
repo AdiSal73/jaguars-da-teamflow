@@ -53,7 +53,7 @@ export default function TeamTryout() {
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [selectedPoolPlayers, setSelectedPoolPlayersForBulk] = useState([]);
+  const [selectedPoolPlayersForBulk, setSelectedPoolPlayersForBulk] = useState([]);
   const [bulkAssignTeam, setBulkAssignTeam] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   
