@@ -760,16 +760,12 @@ export default function TeamTryout() {
                             style={{ maxHeight: 'calc(100vh - 400px)' }}
                           >
                             {filteredPoolPlayers.map((player, index) => (
-                              <Draggable key={player.id} draggableId={player.id} index={index}>
+                              <Draggable key={player.id} draggableId={player.isPoolOnly ? player.id : player.id} index={index}>
                                 {(provided, snapshot) => (
-                                  <Card 
+                                  <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className={`p-2 border transition-all cursor-grab active:cursor-grabbing ${
-                                      snapshot.isDragging ? 'bg-white shadow-2xl scale-105 ring-4 ring-blue-400 border-blue-400' :
-                                      'bg-white border-blue-200 hover:border-blue-400'
-                                    }`}
                                   >
                                     <PlayerEvaluationCard 
                                       player={player}
@@ -778,8 +774,9 @@ export default function TeamTryout() {
                                       evaluation={player.evaluation}
                                       assessment={player.assessment}
                                       isDragging={snapshot.isDragging}
+                                      onRemove={handleRemovePlayer}
                                     />
-                                  </Card>
+                                  </div>
                                 )}
                               </Draggable>
                             ))}
