@@ -87,6 +87,13 @@ export default function TeamTryout() {
     queryFn: () => base44.entities.TryoutPool.list()
   });
 
+  const createPlayerMutation = useMutation({
+    mutationFn: (playerData) => base44.entities.Player.create(playerData),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['players']);
+    }
+  });
+
   const updateTryoutMutation = useMutation({
     mutationFn: async ({ playerId, data }) => {
       const existingTryout = tryouts.find(t => t.player_id === playerId);
@@ -362,42 +369,65 @@ export default function TeamTryout() {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const playerId = draggableId;
-    const isFromPool = source.droppableId === 'tryout-pool';
     const destTeamName = destination.droppableId;
 
     try {
-      if (isFromPool) {
-        // Check if this is a pool-only player or existing player
-        const poolPlayer = poolPlayers.find(pp => pp.id === playerId || pp.player_id === playerId);
+      if (source.droppableId === 'tryout-pool') {
+        // Dragging from pool - draggableId is either player_id or pool entry id
+        const poolEntry = poolPlayers.find(pp => pp.player_id === draggableId || pp.id === draggableId);
         
-        if (poolPlayer?.player_id) {
-          // Existing player in pool - update their tryout
+        if (!poolEntry) {
+          toast.error('Player not found in pool');
+          return;
+        }
+
+        if (poolEntry.player_id) {
+          // Existing player - just update tryout
           await updateTryoutMutation.mutateAsync({
-            playerId: poolPlayer.player_id,
+            playerId: poolEntry.player_id,
             data: { next_year_team: destTeamName }
           });
-        } else if (poolPlayer) {
-          // External pool player - update pool record
-          await base44.entities.TryoutPool.update(poolPlayer.id, {
-            next_year_team: destTeamName,
-            status: 'Invited'
+          // Remove from pool
+          await base44.entities.TryoutPool.delete(poolEntry.id);
+        } else {
+          // New external player - create player entity first
+          const newPlayer = await createPlayerMutation.mutateAsync({
+            full_name: poolEntry.player_name,
+            email: poolEntry.player_email,
+            parent_emails: poolEntry.parent_emails || [],
+            date_of_birth: poolEntry.date_of_birth,
+            age_group: poolEntry.age_group,
+            gender: poolEntry.gender,
+            primary_position: poolEntry.primary_position,
+            branch: poolEntry.branch,
+            is_tryout_player: true,
+            tryout_notes: poolEntry.notes
           });
-          queryClient.invalidateQueries(['tryoutPool']);
+          
+          // Create tryout record
+          await updateTryoutMutation.mutateAsync({
+            playerId: newPlayer.id,
+            data: { next_year_team: destTeamName }
+          });
+          
+          // Remove from pool
+          await base44.entities.TryoutPool.delete(poolEntry.id);
         }
       } else {
-        // Moving between teams - update tryout
+        // Moving between teams
         await updateTryoutMutation.mutateAsync({
-          playerId,
+          playerId: draggableId,
           data: { next_year_team: destTeamName }
         });
       }
       
       queryClient.invalidateQueries(['players']);
       queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['tryoutPool']);
       toast.success(`Assigned to ${destTeamName}`);
     } catch (error) {
-      toast.error('Failed to update player');
+      console.error('Drag error:', error);
+      toast.error('Failed to assign player');
     }
   };
 
@@ -573,27 +603,7 @@ export default function TeamTryout() {
           </div>
 
           {/* Tryout Pool Sidebar */}
-          <TryoutPoolManager
-            onAddToTeam={(poolPlayer) => {
-              if (poolPlayer.player_id) {
-                navigate(`${createPageUrl('PlayerDashboard')}?id=${poolPlayer.player_id}`);
-              } else {
-                toast.info('Drag this player to a team to assign them');
-              }
-            }}
-          />
-
-          {/* Tryout Pool */}
-          <TryoutPoolManager
-            onAddToTeam={(poolPlayer) => {
-              if (poolPlayer.player_id) {
-                // If it's an existing player, just navigate to their dashboard
-                navigate(`${createPageUrl('PlayerDashboard')}?id=${poolPlayer.player_id}`);
-              } else {
-                toast.info('Drag this player to a team to create their profile');
-              }
-            }}
-          />
+          <TryoutPoolManager />
       </div>
       </DragDropContext>
 

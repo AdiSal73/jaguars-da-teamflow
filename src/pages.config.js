@@ -31,6 +31,7 @@ import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import Landing from './pages/Landing';
 import Leaderboard from './pages/Leaderboard';
 import MyBookings from './pages/MyBookings';
+import OfferResponse from './pages/OfferResponse';
 import PDPViewer from './pages/PDPViewer';
 import ParentPortal from './pages/ParentPortal';
 import PlayerComparison from './pages/PlayerComparison';
@@ -47,10 +48,9 @@ import TeamRoster from './pages/TeamRoster';
 import TeamTryout from './pages/TeamTryout';
 import Teams from './pages/Teams';
 import TryoutPlayers from './pages/TryoutPlayers';
+import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import Tryouts from './pages/Tryouts';
-import OfferResponse from './pages/OfferResponse';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +88,7 @@ export const PAGES = {
     "Landing": Landing,
     "Leaderboard": Leaderboard,
     "MyBookings": MyBookings,
+    "OfferResponse": OfferResponse,
     "PDPViewer": PDPViewer,
     "ParentPortal": ParentPortal,
     "PlayerComparison": PlayerComparison,
@@ -104,10 +105,9 @@ export const PAGES = {
     "TeamTryout": TeamTryout,
     "Teams": Teams,
     "TryoutPlayers": TryoutPlayers,
+    "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "Tryouts": Tryouts,
-    "OfferResponse": OfferResponse,
 }
 
 export const pagesConfig = {
