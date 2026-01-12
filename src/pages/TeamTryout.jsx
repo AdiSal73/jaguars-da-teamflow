@@ -22,6 +22,7 @@ import PlayerEvaluationCard from '../components/tryout/PlayerEvaluationCard';
 import SendOfferDialog from '../components/tryout/SendOfferDialog';
 import FinalizeRosterDialog from '../components/tryout/FinalizeRosterDialog';
 import TryoutPoolManager from '../components/tryout/TryoutPoolManager';
+import { sortPlayersByTeamAndName } from '../components/utils/playerSorting';
 
 // Calculate next year's age group based on date of birth
 const calculateNextYearAgeGroup = (dateOfBirth) => {
@@ -342,7 +343,20 @@ export default function TeamTryout() {
 
   // Add to pool mutation
   const addToPoolMutation = useMutation({
-    mutationFn: (data) => base44.entities.TryoutPool.create(data),
+    mutationFn: async (data) => {
+      // Check for duplicates by player_id or name+DOB
+      const duplicate = poolPlayers.find(pp => 
+        (data.player_id && pp.player_id === data.player_id) ||
+        (data.player_name && pp.player_name === data.player_name && 
+         data.date_of_birth && pp.date_of_birth === data.date_of_birth)
+      );
+      
+      if (duplicate) {
+        throw new Error('This player is already in the tryout pool');
+      }
+      
+      return base44.entities.TryoutPool.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowAddDialog(false);
@@ -356,6 +370,9 @@ export default function TeamTryout() {
         notes: ''
       });
       toast.success('Added to tryout pool');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to add player');
     }
   });
 
@@ -372,6 +389,8 @@ export default function TeamTryout() {
         const headers = lines[0].split(',').map(h => h.trim());
         
         const imports = [];
+        let skipped = 0;
+        
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(',').map(v => v.trim());
           if (values.length < 2) continue;
@@ -381,12 +400,25 @@ export default function TeamTryout() {
             playerData[header] = values[index];
           });
 
-          const nextYearAge = calculateNextYearAgeGroup(playerData['date_of_birth']);
+          const playerName = playerData['player_name'] || playerData['name'];
+          const dob = playerData['date_of_birth'];
+          
+          // Check for duplicate
+          const duplicate = poolPlayers.find(pp => 
+            pp.player_name === playerName && pp.date_of_birth === dob
+          );
+          
+          if (duplicate) {
+            skipped++;
+            continue;
+          }
+
+          const nextYearAge = calculateNextYearAgeGroup(dob);
           
           imports.push(base44.entities.TryoutPool.create({
-            player_name: playerData['player_name'] || playerData['name'],
+            player_name: playerName,
             player_email: playerData['player_email'] || '',
-            date_of_birth: playerData['date_of_birth'] || '',
+            date_of_birth: dob || '',
             age_group: nextYearAge || '',
             gender: playerData['gender'] || 'Female',
             primary_position: playerData['primary_position'] || '',
@@ -400,7 +432,12 @@ export default function TeamTryout() {
         await Promise.all(imports);
         queryClient.invalidateQueries(['tryoutPool']);
         setShowImportDialog(false);
-        toast.success(`Imported ${imports.length} players`);
+        
+        if (skipped > 0) {
+          toast.success(`Imported ${imports.length} players (${skipped} duplicates skipped)`);
+        } else {
+          toast.success(`Imported ${imports.length} players`);
+        }
       } catch (error) {
         toast.error('Failed to import CSV');
       }
@@ -412,10 +449,19 @@ export default function TeamTryout() {
   const bulkAddFromDatabaseMutation = useMutation({
     mutationFn: async (playerIds) => {
       const playersToAdd = players.filter(p => playerIds.includes(p.id));
-      await Promise.all(playersToAdd.map(p => {
+      const addedCount = { count: 0, skipped: 0 };
+      
+      await Promise.all(playersToAdd.map(async (p) => {
+        // Check for duplicate
+        const duplicate = poolPlayers.find(pp => pp.player_id === p.id);
+        if (duplicate) {
+          addedCount.skipped++;
+          return;
+        }
+        
         const team = teams.find(t => t.id === p.team_id);
         const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-        return base44.entities.TryoutPool.create({
+        await base44.entities.TryoutPool.create({
           player_id: p.id,
           player_name: p.full_name,
           player_email: p.player_email || p.email,
@@ -429,13 +475,21 @@ export default function TeamTryout() {
           branch: p.branch,
           status: 'Pending'
         });
+        addedCount.count++;
       }));
+      
+      return addedCount;
     },
-    onSuccess: (_, playerIds) => {
+    onSuccess: (addedCount) => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowBulkFromTeamsDialog(false);
       setSelectedDatabasePlayers([]);
-      toast.success(`Added ${playerIds.length} players to tryout pool`);
+      
+      if (addedCount.skipped > 0) {
+        toast.success(`Added ${addedCount.count} players (${addedCount.skipped} already in pool)`);
+      } else {
+        toast.success(`Added ${addedCount.count} players to tryout pool`);
+      }
     }
   });
 
@@ -536,7 +590,7 @@ export default function TeamTryout() {
 
   // Filter pool players by selected age group
   const filteredPoolPlayers = useMemo(() => {
-    return poolPlayers
+    const filtered = poolPlayers
       .filter(pp => {
         // Check not assigned to any team
         if (pp.player_id) {
@@ -559,18 +613,24 @@ export default function TeamTryout() {
         return {
           id: pp.id,
           full_name: pp.player_name,
+          player_name: pp.player_name,
           primary_position: pp.primary_position,
           age_group: pp.age_group,
           gender: pp.gender,
           date_of_birth: pp.date_of_birth,
           grad_year: pp.grad_year,
+          current_team: pp.current_team,
+          team_id: null,
           isPoolOnly: true,
           poolStatus: pp.status,
           tryout: {}
         };
       })
       .filter(Boolean);
-  }, [poolPlayers, players, tryouts, selectedAgeGroup]);
+    
+    // Sort by team priority then last name
+    return sortPlayersByTeamAndName(filtered, teams);
+  }, [poolPlayers, players, tryouts, selectedAgeGroup, teams]);
 
   const getTeamPlayers = (teamName) => {
     if (!teamName || typeof teamName !== 'string') return [];
@@ -1521,7 +1581,7 @@ export default function TeamTryout() {
                   </div>
                   
                   <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                    {availablePlayers.map(player => {
+                    {sortPlayersByTeamAndName(availablePlayers, teams).map(player => {
                       const team = teams.find(t => t.id === player.team_id);
                       const isSelected = selectedDatabasePlayers.includes(player.id);
                       return (
