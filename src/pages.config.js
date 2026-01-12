@@ -50,6 +50,7 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
 import Tryouts from './pages/Tryouts';
+import OfferResponse from './pages/OfferResponse';
 import __Layout from './Layout.jsx';
 
 
@@ -106,6 +107,7 @@ export const PAGES = {
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
     "Tryouts": Tryouts,
+    "OfferResponse": OfferResponse,
 }
 
 export const pagesConfig = {

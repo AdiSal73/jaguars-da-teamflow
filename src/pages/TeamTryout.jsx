@@ -82,6 +82,11 @@ export default function TeamTryout() {
     queryFn: () => base44.entities.PhysicalAssessment.list()
   });
 
+  const { data: poolPlayers = [] } = useQuery({
+    queryKey: ['tryoutPool'],
+    queryFn: () => base44.entities.TryoutPool.list()
+  });
+
   const updateTryoutMutation = useMutation({
     mutationFn: async ({ playerId, data }) => {
       const existingTryout = tryouts.find(t => t.player_id === playerId);
@@ -126,18 +131,26 @@ export default function TeamTryout() {
       
       // Update tryout status
       const existingTryout = tryouts.find(t => t.player_id === playerId);
+      let tryoutRecordId;
+      
       if (existingTryout) {
         await base44.entities.PlayerTryout.update(existingTryout.id, {
           next_season_status: 'Offer Sent'
         });
+        tryoutRecordId = existingTryout.id;
       } else {
-        await base44.entities.PlayerTryout.create({
+        const newTryout = await base44.entities.PlayerTryout.create({
           player_id: playerId,
           player_name: player.full_name,
           next_year_team: teamName,
           next_season_status: 'Offer Sent'
         });
+        tryoutRecordId = newTryout.id;
       }
+
+      // Create response link
+      const responseUrl = `${window.location.origin}${createPageUrl('OfferResponse')}?tryout=${tryoutRecordId}`;
+      const fullMessage = `${message}\n\n---\n\nTo respond to this offer, please click the link below:\n${responseUrl}`;
 
       // Send email to all parent contacts
       for (const email of parentEmails) {
@@ -147,7 +160,7 @@ export default function TeamTryout() {
           recipient_email: email,
           recipient_name: player.full_name,
           subject: `Team Offer for ${player.full_name} - ${teamName}`,
-          content: message
+          content: fullMessage
         });
       }
     },
@@ -292,49 +305,56 @@ export default function TeamTryout() {
     });
   }, [teams, teamSearchTerm, teamFilterGender, teamFilterBranch, teamFilterAgeGroup, teamFilterLeague, teamFilterSeason]);
 
-  // Get unassigned players with comprehensive filtering
-  const unassignedPlayers = useMemo(() => {
-    return (players || []).map(p => getPlayerWithTryoutData(p.id))
-      .filter(p => p && (!p.tryout?.next_year_team || !nextYearTeams.some(t => t.name && typeof t.name === 'string' && t.name === p.tryout?.next_year_team)))
-      .filter(p => {
-      const matchesSearch = p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
-      const matchesBranch = playerFilterBranch === 'all' || p.branch === playerFilterBranch;
-      
-      const playerTeam = (teams || []).find(t => t.id === p.team_id);
-      const matchesAgeGroup = playerFilterAgeGroup === 'all' || playerTeam?.age_group === playerFilterAgeGroup;
-      const matchesCurrentTeam = playerFilterCurrentTeam === 'all' || playerTeam?.name === playerFilterCurrentTeam;
-      
-      const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear().toString() : null;
-      const matchesBirthYear = playerFilterBirthYear === 'all' || birthYear === playerFilterBirthYear;
-      
-      const matchesTeamRole = playerFilterTeamRole === 'all' || 
-        (playerFilterTeamRole === 'none' ? !p.tryout?.team_role : p.tryout?.team_role === playerFilterTeamRole);
-      
-      let matchesBirthdayRange = true;
-      if (birthdayFrom && p.date_of_birth) {
-        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) >= new Date(birthdayFrom);
+  // Get pool players combined with existing players who match pool criteria
+  const poolPlayersEnriched = useMemo(() => {
+    return poolPlayers.map(pp => {
+      if (pp.player_id) {
+        // Existing player - get full data
+        const player = players.find(p => p.id === pp.player_id);
+        if (player) {
+          return getPlayerWithTryoutData(player.id);
+        }
       }
-      if (birthdayTo && p.date_of_birth) {
-        matchesBirthdayRange = matchesBirthdayRange && new Date(p.date_of_birth) <= new Date(birthdayTo);
-      }
-      
-      return matchesSearch && matchesBranch && matchesAgeGroup && matchesBirthYear && matchesTeamRole && matchesCurrentTeam && matchesBirthdayRange;
-    }).sort((a, b) => {
+      // External player - use pool data
+      return {
+        id: pp.id,
+        full_name: pp.player_name,
+        primary_position: pp.primary_position,
+        age_group: pp.age_group,
+        gender: pp.gender,
+        date_of_birth: pp.date_of_birth,
+        isPoolOnly: true,
+        poolStatus: pp.status,
+        tryout: {}
+      };
+    }).filter(Boolean);
+  }, [poolPlayers, players, tryouts]);
+
+  const getTeamPlayers = (teamName) => {
+    if (!teamName || typeof teamName !== 'string') return [];
+    
+    // Get players with tryout data where next_year_team matches
+    const assignedPlayers = (players || []).map(p => getPlayerWithTryoutData(p.id))
+      .filter(p => p && p.tryout?.next_year_team === teamName);
+    
+    // Get pool players assigned to this team (external players not yet in Player entity)
+    const poolAssigned = poolPlayers
+      .filter(pp => !pp.player_id && pp.next_year_team === teamName)
+      .map(pp => ({
+        id: pp.id,
+        full_name: pp.player_name,
+        primary_position: pp.primary_position,
+        age_group: pp.age_group,
+        date_of_birth: pp.date_of_birth,
+        isPoolOnly: true,
+        tryout: { next_season_status: 'Pending', next_year_team: teamName }
+      }));
+    
+    return [...assignedPlayers, ...poolAssigned].sort((a, b) => {
       if (!a.date_of_birth) return 1;
       if (!b.date_of_birth) return -1;
       return new Date(a.date_of_birth) - new Date(b.date_of_birth);
     });
-  }, [players, nextYearTeams, tryouts, teams, playerSearchTerm, playerFilterBranch, playerFilterAgeGroup, playerFilterTeamRole, playerFilterBirthYear, playerFilterCurrentTeam]);
-
-  const getTeamPlayers = (teamName) => {
-    if (!teamName || typeof teamName !== 'string') return [];
-    return (players || []).map(p => getPlayerWithTryoutData(p.id))
-      .filter(p => p && p.tryout?.next_year_team === teamName)
-      .sort((a, b) => {
-        if (!a.date_of_birth) return 1;
-        if (!b.date_of_birth) return -1;
-        return new Date(a.date_of_birth) - new Date(b.date_of_birth);
-      });
   };
 
   const onDragEnd = async (result) => {
@@ -343,16 +363,39 @@ export default function TeamTryout() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId;
-    const destTeamName = destination.droppableId === 'unassigned' ? null : destination.droppableId;
+    const isFromPool = source.droppableId === 'tryout-pool';
+    const destTeamName = destination.droppableId;
 
     try {
-      await updateTryoutMutation.mutateAsync({
-        playerId,
-        data: { next_year_team: destTeamName }
-      });
+      if (isFromPool) {
+        // Check if this is a pool-only player or existing player
+        const poolPlayer = poolPlayers.find(pp => pp.id === playerId || pp.player_id === playerId);
+        
+        if (poolPlayer?.player_id) {
+          // Existing player in pool - update their tryout
+          await updateTryoutMutation.mutateAsync({
+            playerId: poolPlayer.player_id,
+            data: { next_year_team: destTeamName }
+          });
+        } else if (poolPlayer) {
+          // External pool player - update pool record
+          await base44.entities.TryoutPool.update(poolPlayer.id, {
+            next_year_team: destTeamName,
+            status: 'Invited'
+          });
+          queryClient.invalidateQueries(['tryoutPool']);
+        }
+      } else {
+        // Moving between teams - update tryout
+        await updateTryoutMutation.mutateAsync({
+          playerId,
+          data: { next_year_team: destTeamName }
+        });
+      }
+      
       queryClient.invalidateQueries(['players']);
       queryClient.invalidateQueries(['tryouts']);
-      toast.success(destTeamName ? `Assigned to ${destTeamName}` : 'Unassigned player');
+      toast.success(`Assigned to ${destTeamName}`);
     } catch (error) {
       toast.error('Failed to update player');
     }
@@ -376,7 +419,7 @@ export default function TeamTryout() {
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid lg:grid-cols-[1fr_480px_380px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_420px] gap-6">
           {/* Teams Section */}
           <div>
             <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
@@ -529,202 +572,16 @@ export default function TeamTryout() {
           </div>
           </div>
 
-          {/* Unassigned Players Sidebar */}
-          <Card className="border-2 border-emerald-400 shadow-2xl sticky top-4 self-start bg-gradient-to-br from-emerald-50 to-green-50" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-          <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-green-700 text-white shadow-md">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                <span className="font-bold">Unassigned Players</span>
-                <Badge className="bg-white text-emerald-700 text-sm font-bold px-2">{unassignedPlayers.length}</Badge>
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className="text-white hover:bg-white/20 h-7 px-2"
-              >
-                {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3">
-            <Collapsible open={filtersOpen}>
-              <CollapsibleContent>
-            <div className="space-y-2 mb-3">
-              <Label className="text-xs font-bold text-slate-700">Filter Players</Label>
-              <Input
-                placeholder="Search players..."
-                value={playerSearchTerm}
-                onChange={(e) => setPlayerSearchTerm(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Select value={playerFilterAgeGroup} onValueChange={setPlayerFilterAgeGroup}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Age Group" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Age Groups</SelectItem>
-                  {uniqueAgeGroups.map(ag => (
-                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={playerFilterBirthYear} onValueChange={setPlayerFilterBirthYear}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Birth Year" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Birth Years</SelectItem>
-                  {uniqueBirthYears?.map(year => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={playerFilterBranch} onValueChange={setPlayerFilterBranch}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Branch" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Branches</SelectItem>
-                  {BRANCH_OPTIONS.map(branch => (
-                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={playerFilterTeamRole} onValueChange={setPlayerFilterTeamRole}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Team Role" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  {['Indispensable Player', 'GA Starter', 'GA Rotation', 'Aspire Starter', 'Aspire Rotation', 'United Starter', 'United Rotation']?.map(role => (
-                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                  ))}
-                  <SelectItem value="none">No Data</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={playerFilterCurrentTeam} onValueChange={setPlayerFilterCurrentTeam}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Current Team" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Teams</SelectItem>
-                  {uniqueCurrentTeams?.map(teamName => (
-                    <SelectItem key={teamName} value={teamName}>{teamName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div>
-                <Label className="text-[9px] text-slate-600">Birthday From</Label>
-                <Input
-                  type="date"
-                  value={birthdayFrom}
-                  onChange={(e) => setBirthdayFrom(e.target.value)}
-                  className="h-8 text-xs mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-[9px] text-slate-600">Birthday To</Label>
-                <Input
-                  type="date"
-                  value={birthdayTo}
-                  onChange={(e) => setBirthdayTo(e.target.value)}
-                  className="h-8 text-xs mt-1"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setPlayerSearchTerm('');
-                  setPlayerFilterBranch('all');
-                  setPlayerFilterAgeGroup('all');
-                  setPlayerFilterBirthYear('all');
-                  setPlayerFilterTeamRole('all');
-                  setPlayerFilterCurrentTeam('all');
-                  setBirthdayFrom('');
-                  setBirthdayTo('');
-                }}
-                className="h-8 text-xs mt-4"
-              >
-                Reset Filters
-              </Button>
-            </div>
-              </CollapsibleContent>
-            </Collapsible>
-            
-            {selectedPlayers.length > 0 && (
-              <div className="mt-3 p-3 bg-emerald-100 rounded-lg border-2 border-emerald-400">
-                <Label className="text-xs font-bold text-emerald-800 mb-2 block">
-                  Bulk Assign {selectedPlayers.length} Selected Player{selectedPlayers.length > 1 ? 's' : ''}
-                </Label>
-                <div className="flex gap-2">
-                  <Select value={bulkAssignTeam} onValueChange={setBulkAssignTeam}>
-                    <SelectTrigger className="h-8 text-xs flex-1">
-                      <SelectValue placeholder="Select team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {nextYearTeams?.map(team => (
-                        <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleBulkAssign} disabled={!bulkAssignTeam} className="h-8 bg-emerald-600 hover:bg-emerald-700 text-xs">
-                    Assign
-                  </Button>
-                  <Button onClick={() => setSelectedPlayers([])} variant="outline" className="h-8 text-xs">
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            <Droppable droppableId="unassigned">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
-                  style={{ maxHeight: 'calc(100vh - 420px)' }}
-                >
-                  {unassignedPlayers?.map((player, index) => (
-                    <Draggable key={player.id} draggableId={player.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="relative"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedPlayers.includes(player.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              if (e.target.checked) {
-                                setSelectedPlayers([...selectedPlayers, player.id]);
-                              } else {
-                                setSelectedPlayers(selectedPlayers.filter(id => id !== player.id));
-                              }
-                            }}
-                            className="absolute top-2 right-2 w-4 h-4 rounded border-2 border-emerald-600 text-emerald-600 focus:ring-emerald-500 z-10"
-                          />
-                          <PlayerEvaluationCard 
-                            player={player}
-                            team={(teams || []).find(t => t.id === player.team_id)}
-                            tryout={player.tryout}
-                            evaluation={player.evaluation}
-                            assessment={player.assessment}
-                            onSendOffer={handleSendOffer}
-                            isDragging={snapshot.isDragging}
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                  {unassignedPlayers.length === 0 && (
-                    <div className="text-center py-12 text-slate-400 text-xs">
-                      <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                      <p>No unassigned players</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Droppable>
-          </CardContent>
-        </Card>
+          {/* Tryout Pool Sidebar */}
+          <TryoutPoolManager
+            onAddToTeam={(poolPlayer) => {
+              if (poolPlayer.player_id) {
+                navigate(`${createPageUrl('PlayerDashboard')}?id=${poolPlayer.player_id}`);
+              } else {
+                toast.info('Drag this player to a team to assign them');
+              }
+            }}
+          />
 
           {/* Tryout Pool */}
           <TryoutPoolManager

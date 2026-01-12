@@ -11,16 +11,20 @@ import { Upload, Plus, Users, Search, Filter, Trash2, UserPlus } from 'lucide-re
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
 
 export default function TryoutPoolManager({ onAddToTeam }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [showBulkFromTeamsDialog, setShowBulkFromTeamsDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
+  const [bulkTeamFilter, setBulkTeamFilter] = useState('all');
+  const [bulkAgeFilter, setBulkAgeFilter] = useState('all');
   
   const [newPlayer, setNewPlayer] = useState({
     player_name: '',
@@ -40,6 +44,11 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list()
+  });
+
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list()
   });
 
   const addToPoolMutation = useMutation({
@@ -71,8 +80,9 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const bulkAddFromDatabaseMutation = useMutation({
     mutationFn: async (playerIds) => {
       const playersToAdd = players.filter(p => playerIds.includes(p.id));
-      await Promise.all(playersToAdd.map(p => 
-        base44.entities.TryoutPool.create({
+      await Promise.all(playersToAdd.map(p => {
+        const team = teams.find(t => t.id === p.team_id);
+        return base44.entities.TryoutPool.create({
           player_id: p.id,
           player_name: p.full_name,
           player_email: p.player_email || p.email,
@@ -81,17 +91,20 @@ export default function TryoutPoolManager({ onAddToTeam }) {
           age_group: p.age_group,
           gender: p.gender,
           primary_position: p.primary_position,
-          current_team: '',
+          current_team: team?.name || '',
           branch: p.branch,
           status: 'Pending'
-        })
-      ));
+        });
+      }));
     },
-    onSuccess: () => {
+    onSuccess: (_, playerIds) => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowFilterDialog(false);
+      setShowBulkFromTeamsDialog(false);
       setSelectedPoolPlayers([]);
-      toast.success('Added players to pool');
+      setBulkTeamFilter('all');
+      setBulkAgeFilter('all');
+      toast.success(`Added ${playerIds.length} players to tryout pool`);
     }
   });
 
@@ -151,6 +164,16 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     !poolPlayers.some(pp => pp.player_id === p.id)
   );
 
+  const bulkFilteredPlayers = players.filter(p => {
+    if (poolPlayers.some(pp => pp.player_id === p.id)) return false;
+    
+    const team = teams.find(t => t.id === p.team_id);
+    const matchesTeam = bulkTeamFilter === 'all' || team?.id === bulkTeamFilter;
+    const matchesAge = bulkAgeFilter === 'all' || team?.age_group === bulkAgeFilter;
+    
+    return matchesTeam && matchesAge;
+  });
+
   return (
     <Card className="border-2 border-blue-400 shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
       <CardHeader className="pb-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md">
@@ -162,12 +185,12 @@ export default function TryoutPoolManager({ onAddToTeam }) {
           </div>
           <div className="flex gap-1">
             <Button
-              onClick={() => setShowFilterDialog(true)}
+              onClick={() => setShowBulkFromTeamsDialog(true)}
               size="sm"
               className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
             >
-              <Filter className="w-3 h-3 mr-1" />
-              Add from DB
+              <Users className="w-3 h-3 mr-1" />
+              From Teams
             </Button>
             <Button
               onClick={() => setShowImportDialog(true)}
@@ -183,7 +206,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
               className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
             >
               <Plus className="w-3 h-3 mr-1" />
-              Add
+              Manual
             </Button>
           </div>
         </CardTitle>
@@ -211,51 +234,66 @@ export default function TryoutPoolManager({ onAddToTeam }) {
           </Select>
         </div>
 
-        <div className="space-y-1.5 overflow-y-auto" style={{ maxHeight: '400px' }}>
-          {filteredPoolPlayers.map(poolPlayer => (
-            <Card key={poolPlayer.id} className="p-2 bg-white border border-blue-200 hover:border-blue-400 transition-all">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
-                  <div className="flex gap-1 mt-1">
-                    {poolPlayer.age_group && <Badge className="bg-purple-100 text-purple-800 text-[10px]">{poolPlayer.age_group}</Badge>}
-                    {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}
-                    <Badge className={`text-[10px] ${
-                      poolPlayer.status === 'Confirmed' ? 'bg-green-500 text-white' :
-                      poolPlayer.status === 'Invited' ? 'bg-blue-500 text-white' :
-                      'bg-slate-400 text-white'
-                    }`}>{poolPlayer.status}</Badge>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  {onAddToTeam && (
-                    <Button
-                      onClick={() => onAddToTeam(poolPlayer)}
-                      size="sm"
-                      className="h-6 px-2 text-xs bg-emerald-600 hover:bg-emerald-700"
+        <Droppable droppableId="tryout-pool">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`space-y-1.5 overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-blue-200 rounded-xl' : ''}`}
+              style={{ maxHeight: 'calc(100vh - 280px)' }}
+            >
+              {filteredPoolPlayers.map((poolPlayer, index) => (
+                <Draggable key={poolPlayer.id} draggableId={poolPlayer.player_id || poolPlayer.id} index={index}>
+                  {(provided, snapshot) => (
+                    <Card 
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={`p-2 border border-blue-200 transition-all cursor-grab active:cursor-grabbing ${
+                        snapshot.isDragging ? 'bg-white shadow-2xl scale-105 ring-4 ring-blue-400' : 'bg-white hover:border-blue-400'
+                      }`}
                     >
-                      <UserPlus className="w-3 h-3" />
-                    </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {poolPlayer.age_group && <Badge className="bg-purple-100 text-purple-800 text-[10px]">{poolPlayer.age_group}</Badge>}
+                            {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}
+                            {poolPlayer.current_team && <Badge className="bg-slate-200 text-slate-700 text-[10px]">{poolPlayer.current_team}</Badge>}
+                            <Badge className={`text-[10px] ${
+                              poolPlayer.status === 'Confirmed' ? 'bg-green-500 text-white' :
+                              poolPlayer.status === 'Invited' ? 'bg-blue-500 text-white' :
+                              'bg-slate-400 text-white'
+                            }`}>{poolPlayer.status}</Badge>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromPoolMutation.mutate(poolPlayer.id);
+                          }}
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-red-600 hover:text-red-700 flex-shrink-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </Card>
                   )}
-                  <Button
-                    onClick={() => removeFromPoolMutation.mutate(poolPlayer.id)}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              {filteredPoolPlayers.length === 0 && (
+                <div className="text-center py-8 text-slate-400 text-xs">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p>No players in pool</p>
+                  <p className="mt-1">Use buttons above to add players</p>
                 </div>
-              </div>
-            </Card>
-          ))}
-          {filteredPoolPlayers.length === 0 && (
-            <div className="text-center py-8 text-slate-400 text-xs">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p>No players in pool</p>
+              )}
             </div>
           )}
-        </div>
+        </Droppable>
       </CardContent>
 
       {/* Add Player Dialog */}
@@ -351,59 +389,118 @@ export default function TryoutPoolManager({ onAddToTeam }) {
         </DialogContent>
       </Dialog>
 
-      {/* Filter and Add from Database Dialog */}
-      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      {/* Bulk Add from Last Year's Teams Dialog */}
+      <Dialog open={showBulkFromTeamsDialog} onOpenChange={setShowBulkFromTeamsDialog}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Players from Database</DialogTitle>
+            <DialogTitle>Add Players from Last Year's Teams</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-slate-600">Select players to add to the tryout pool</p>
-            {availablePlayers.length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-sm">All players already in pool</p>
+          <div className="space-y-4">
+            <p className="text-xs text-slate-600">Filter by team or age group, then select players to add to tryout pool</p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Filter by Team</Label>
+                <Select value={bulkTeamFilter} onValueChange={setBulkTeamFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All Teams" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Teams</SelectItem>
+                    {teams.filter(t => t.season === '25/26' || t.name?.includes('25/26')).map(team => (
+                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Filter by Age Group</Label>
+                <Select value={bulkAgeFilter} onValueChange={setBulkAgeFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All Ages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Age Groups</SelectItem>
+                    {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                      const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
+                      return extractAge(b) - extractAge(a);
+                    }).map(ag => (
+                      <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {bulkFilteredPlayers.length === 0 ? (
+              <p className="text-center py-8 text-slate-400 text-sm">No players match filters or all already in pool</p>
             ) : (
               <>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <span className="text-sm font-semibold text-blue-900">{bulkFilteredPlayers.length} players available</span>
+                  <Button
+                    onClick={() => {
+                      if (selectedPoolPlayers.length === bulkFilteredPlayers.length) {
+                        setSelectedPoolPlayers([]);
+                      } else {
+                        setSelectedPoolPlayers(bulkFilteredPlayers.map(p => p.id));
+                      }
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                  >
+                    {selectedPoolPlayers.length === bulkFilteredPlayers.length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {availablePlayers.map(player => (
-                    <div
-                      key={player.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                        selectedPoolPlayers.includes(player.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-slate-200 hover:border-blue-300'
-                      }`}
-                      onClick={() => {
-                        if (selectedPoolPlayers.includes(player.id)) {
-                          setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
-                        } else {
-                          setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
-                        }
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold text-sm">{player.full_name}</div>
-                          <div className="flex gap-1 mt-1">
-                            {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs">{player.age_group}</Badge>}
-                            {player.primary_position && <Badge className="bg-blue-100 text-blue-800 text-xs">{player.primary_position}</Badge>}
+                  {bulkFilteredPlayers.map(player => {
+                    const team = teams.find(t => t.id === player.team_id);
+                    return (
+                      <div
+                        key={player.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          selectedPoolPlayers.includes(player.id)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-slate-200 hover:border-blue-300'
+                        }`}
+                        onClick={() => {
+                          if (selectedPoolPlayers.includes(player.id)) {
+                            setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
+                          } else {
+                            setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">{player.full_name}</div>
+                            <div className="flex gap-1 mt-1">
+                              {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs">{player.age_group}</Badge>}
+                              {player.primary_position && <Badge className="bg-blue-100 text-blue-800 text-xs">{player.primary_position}</Badge>}
+                              {team && <Badge className="bg-slate-200 text-slate-700 text-xs">{team.name}</Badge>}
+                            </div>
                           </div>
+                          <input
+                            type="checkbox"
+                            checked={selectedPoolPlayers.includes(player.id)}
+                            onChange={() => {}}
+                            className="w-5 h-5"
+                          />
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={selectedPoolPlayers.includes(player.id)}
-                          onChange={() => {}}
-                          className="w-5 h-5"
-                        />
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="flex gap-2 pt-2 sticky bottom-0 bg-white">
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowFilterDialog(false);
+                      setShowBulkFromTeamsDialog(false);
                       setSelectedPoolPlayers([]);
+                      setBulkTeamFilter('all');
+                      setBulkAgeFilter('all');
                     }}
                     className="flex-1"
                   >
