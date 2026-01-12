@@ -53,8 +53,12 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     player_email: '',
     parent_emails: [],
     date_of_birth: '',
+    age_group: '',
     gender: 'Female',
     primary_position: '',
+    current_club: '',
+    current_team: '',
+    branch: '',
     notes: ''
   });
 
@@ -102,8 +106,12 @@ export default function TryoutPoolManager({ onAddToTeam }) {
         player_email: '',
         parent_emails: [],
         date_of_birth: '',
+        age_group: '',
         gender: 'Female',
         primary_position: '',
+        current_club: '',
+        current_team: '',
+        branch: '',
         notes: ''
       });
       toast.success('Added to tryout pool');
@@ -456,9 +464,40 @@ export default function TryoutPoolManager({ onAddToTeam }) {
             </div>
             <div>
               <Label className="text-xs">Primary Position</Label>
+              <Select value={newPlayer.primary_position} onValueChange={(v) => setNewPlayer({...newPlayer, primary_position: v})}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GK">GK</SelectItem>
+                  <SelectItem value="Right Outside Back">Right Outside Back</SelectItem>
+                  <SelectItem value="Left Outside Back">Left Outside Back</SelectItem>
+                  <SelectItem value="Right Centerback">Right Centerback</SelectItem>
+                  <SelectItem value="Left Centerback">Left Centerback</SelectItem>
+                  <SelectItem value="Defensive Midfielder">Defensive Midfielder</SelectItem>
+                  <SelectItem value="Right Winger">Right Winger</SelectItem>
+                  <SelectItem value="Center Midfielder">Center Midfielder</SelectItem>
+                  <SelectItem value="Forward">Forward</SelectItem>
+                  <SelectItem value="Attacking Midfielder">Attacking Midfielder</SelectItem>
+                  <SelectItem value="Left Winger">Left Winger</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Current Club</Label>
               <Input
-                value={newPlayer.primary_position}
-                onChange={(e) => setNewPlayer({...newPlayer, primary_position: e.target.value})}
+                value={newPlayer.current_club}
+                onChange={(e) => setNewPlayer({...newPlayer, current_club: e.target.value})}
+                placeholder="e.g., Ohio Premier"
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Current Team</Label>
+              <Input
+                value={newPlayer.current_team}
+                onChange={(e) => setNewPlayer({...newPlayer, current_team: e.target.value})}
+                placeholder="e.g., U17 Red"
                 className="h-9"
               />
             </div>

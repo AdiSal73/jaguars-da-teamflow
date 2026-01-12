@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send } from 'lucide-react';
+import { Mail, Send, Sparkles } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 export default function SendOfferDialog({ open, onClose, player, team, onSendOffer, isPending }) {
   const [message, setMessage] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   React.useEffect(() => {
     if (open && player && team) {
@@ -24,6 +27,27 @@ Best regards,
 Michigan Jaguars Coaching Staff`);
     }
   }, [open, player, team]);
+
+  const generateAILetter = async () => {
+    setIsGenerating(true);
+    try {
+      const teamObj = typeof team === 'string' ? { name: team } : team;
+      const response = await base44.functions.invoke('generateOfferLetter', {
+        player_id: player.id,
+        team_name: teamObj.name,
+        team_details: {
+          league: teamObj.league,
+          branch: teamObj.branch
+        }
+      });
+      setMessage(response.data.offer_letter);
+      toast.success('AI letter generated');
+    } catch (error) {
+      toast.error('Failed to generate letter');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSend = () => {
     onSendOffer(message);
@@ -50,7 +74,7 @@ Michigan Jaguars Coaching Staff`);
               <div className="flex-1">
                 <h3 className="font-bold text-lg">{player.full_name}</h3>
                 <div className="flex gap-2 mt-1">
-                  <Badge className="bg-emerald-600 text-white">{team || 'Team'}</Badge>
+                  <Badge className="bg-emerald-600 text-white">{typeof team === 'string' ? team : team?.name || 'Team'}</Badge>
                   <Badge className="bg-blue-600 text-white">{player.primary_position}</Badge>
                   {player.age_group && <Badge className="bg-purple-600 text-white">{player.age_group}</Badge>}
                 </div>
@@ -59,7 +83,19 @@ Michigan Jaguars Coaching Staff`);
           </div>
 
           <div>
-            <Label className="text-sm font-semibold mb-2 block">Offer Message</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-semibold">Offer Message</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={generateAILetter}
+                disabled={isGenerating}
+                className="text-purple-600 border-purple-300 hover:bg-purple-50"
+              >
+                <Sparkles className="w-4 h-4 mr-1" />
+                {isGenerating ? 'Generating...' : 'Generate with AI'}
+              </Button>
+            </div>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}

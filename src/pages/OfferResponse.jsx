@@ -37,6 +37,18 @@ export default function OfferResponse() {
       await base44.entities.PlayerTryout.update(tryoutId, {
         next_season_status: status
       });
+
+      // If accepted, remove from tryout pool
+      if (status === 'Accepted Offer') {
+        try {
+          const poolEntries = await base44.entities.TryoutPool.filter({ player_id: tryout.player_id });
+          if (poolEntries && poolEntries.length > 0) {
+            await base44.entities.TryoutPool.delete(poolEntries[0].id);
+          }
+        } catch (error) {
+          console.error('Error removing from pool:', error);
+        }
+      }
     },
     onSuccess: (_, status) => {
       setResponse(status);
