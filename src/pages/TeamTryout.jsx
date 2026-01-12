@@ -543,9 +543,9 @@ export default function TeamTryout() {
         }
         if (pp.next_year_team) return false;
         
-        // Filter by age group
-        const nextYearAge = calculateNextYearAgeGroup(pp.date_of_birth);
-        return nextYearAge === selectedAgeGroup;
+        // Filter by age group - use stored age_group first, fallback to calculating
+        const effectiveAgeGroup = pp.age_group || calculateNextYearAgeGroup(pp.date_of_birth);
+        return effectiveAgeGroup === selectedAgeGroup;
       })
       .map(pp => {
         if (pp.player_id) {
