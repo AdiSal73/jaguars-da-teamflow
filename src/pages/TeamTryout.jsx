@@ -11,11 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import PlayerEvaluationCard from '../components/tryout/PlayerEvaluationCard';
+import SendOfferDialog from '../components/tryout/SendOfferDialog';
+import FinalizeRosterDialog from '../components/tryout/FinalizeRosterDialog';
 
 export default function TeamTryout() {
   const navigate = useNavigate();
@@ -47,6 +50,11 @@ export default function TeamTryout() {
     branch: '',
     league: ''
   });
+  const [showSendOfferDialog, setShowSendOfferDialog] = useState(false);
+  const [selectedOfferPlayer, setSelectedOfferPlayer] = useState(null);
+  const [selectedOfferTeam, setSelectedOfferTeam] = useState(null);
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [selectedFinalizeTeam, setSelectedFinalizeTeam] = useState(null);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -61,6 +69,16 @@ export default function TeamTryout() {
   const { data: tryouts = [] } = useQuery({
     queryKey: ['tryouts'],
     queryFn: () => base44.entities.PlayerTryout.list()
+  });
+
+  const { data: evaluations = [] } = useQuery({
+    queryKey: ['evaluations'],
+    queryFn: () => base44.entities.Evaluation.list()
+  });
+
+  const { data: assessments = [] } = useQuery({
+    queryKey: ['assessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list()
   });
 
   const updateTryoutMutation = useMutation({
@@ -100,6 +118,88 @@ export default function TeamTryout() {
     }
   });
 
+  const sendOfferMutation = useMutation({
+    mutationFn: async ({ playerId, teamName, message }) => {
+      const player = players.find(p => p.id === playerId);
+      const parentEmails = player.parent_emails || [player.email].filter(Boolean);
+      
+      // Update tryout status
+      const existingTryout = tryouts.find(t => t.player_id === playerId);
+      if (existingTryout) {
+        await base44.entities.PlayerTryout.update(existingTryout.id, {
+          next_season_status: 'Offer Sent'
+        });
+      } else {
+        await base44.entities.PlayerTryout.create({
+          player_id: playerId,
+          player_name: player.full_name,
+          next_year_team: teamName,
+          next_season_status: 'Offer Sent'
+        });
+      }
+
+      // Send email to all parent contacts
+      for (const email of parentEmails) {
+        await base44.entities.Message.create({
+          sender_email: 'tryouts@michiganjaguars.com',
+          sender_name: 'Michigan Jaguars Tryouts',
+          recipient_email: email,
+          recipient_name: player.full_name,
+          subject: `Team Offer for ${player.full_name} - ${teamName}`,
+          content: message
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      setShowSendOfferDialog(false);
+      setSelectedOfferPlayer(null);
+      setSelectedOfferTeam(null);
+      toast.success('Offer sent successfully');
+    }
+  });
+
+  const finalizeRosterMutation = useMutation({
+    mutationFn: async ({ teamId, teamName, playerIds }) => {
+      // Update all accepted players to the new team
+      await Promise.all(playerIds.map(async (playerId) => {
+        await base44.entities.Player.update(playerId, { team_id: teamId });
+        
+        const existingTryout = tryouts.find(t => t.player_id === playerId);
+        if (existingTryout) {
+          await base44.entities.PlayerTryout.update(existingTryout.id, {
+            next_season_status: 'Roster Finalized',
+            registration_status: 'Not Signed'
+          });
+        }
+      }));
+
+      // Send confirmation messages
+      for (const playerId of playerIds) {
+        const player = players.find(p => p.id === playerId);
+        const parentEmails = player.parent_emails || [player.email].filter(Boolean);
+        
+        for (const email of parentEmails) {
+          await base44.entities.Message.create({
+            sender_email: 'registration@michiganjaguars.com',
+            sender_name: 'Michigan Jaguars Registration',
+            recipient_email: email,
+            recipient_name: player.full_name,
+            subject: `Roster Confirmed - ${teamName} Registration`,
+            content: `Congratulations! ${player.full_name} has been confirmed on the ${teamName} roster for the 2026/2027 season.\n\nNext steps:\n1. Complete registration (link will be sent shortly)\n2. Pay team fees\n3. Order uniform\n\nWelcome to the team!`
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['tryouts']);
+      setShowFinalizeDialog(false);
+      setSelectedFinalizeTeam(null);
+      toast.success('Roster finalized successfully');
+    }
+  });
+
   const extractAge = (ag) => {
     const match = ag?.match(/U-?(\d+)/i);
     return match ? parseInt(match[1]) : 0;
@@ -115,7 +215,21 @@ export default function TeamTryout() {
     const player = players.find(p => p.id === playerId);
     if (!player) return null;
     const tryout = tryouts.find(t => t.player_id === playerId);
-    return { ...player, tryout: tryout || {} };
+    const evaluation = evaluations.filter(e => e.player_id === playerId).sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+    const assessment = assessments.filter(a => a.player_id === playerId).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0];
+    return { ...player, tryout: tryout || {}, evaluation, assessment };
+  };
+
+  const handleSendOffer = (player) => {
+    const tryout = tryouts.find(t => t.player_id === player.id);
+    setSelectedOfferPlayer(player);
+    setSelectedOfferTeam(tryout?.next_year_team);
+    setShowSendOfferDialog(true);
+  };
+
+  const handleFinalizeRoster = (team) => {
+    setSelectedFinalizeTeam(team);
+    setShowFinalizeDialog(true);
   };
 
   const handleBulkAssign = async () => {
@@ -243,51 +357,7 @@ export default function TeamTryout() {
     }
   };
 
-  const PlayerCard = ({ player, isDragging }) => {
-    const team = (teams || []).find(t => t.id === player.team_id);
-    const tryout = tryouts.find(t => t.player_id === player.id);
-    const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
-    const isTrapped = player.date_of_birth ? (() => {
-      const dob = new Date(player.date_of_birth);
-      const month = dob.getMonth();
-      const day = dob.getDate();
-      return (month === 7 && day >= 1) || (month >= 8 && month <= 11);
-    })() : false;
-    
-    return (
-      <div 
-        onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)}
-        className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-400' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-2 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
-      >
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md">
-            {player.jersey_number || <User className="w-6 h-6" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-base text-slate-900 truncate">{player.full_name}</div>
-            <div className="text-sm text-slate-600 font-medium mb-1">{player.primary_position}</div>
-            {team?.name && <div className="text-xs text-slate-500 mb-2">Current: {team.name}</div>}
-            <div className="flex flex-wrap gap-1">
-              {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-1 font-bold">{player.age_group}</Badge>}
-              {player.grad_year && <Badge className="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>}
-              {birthYear && <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0.5 font-bold">{birthYear}</Badge>}
-              {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">TRAPPED</Badge>}
-              {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="default" />}
-              {tryout?.recommendation && (
-                <Badge className={`text-xs px-2 py-1 font-bold ${
-                  tryout.recommendation === 'Move up' ? 'bg-emerald-500 text-white' :
-                  tryout.recommendation === 'Move down' ? 'bg-orange-500 text-white' :
-                  'bg-blue-500 text-white'
-                }`}>
-                  {tryout.recommendation}
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+
 
   return (
     <div className="p-4 md:p-6 max-w-[1900px] mx-auto">
@@ -372,6 +442,13 @@ export default function TeamTryout() {
             <div className="space-y-4" style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto' }}>
             {nextYearTeams?.map(team => {
               const teamPlayers = getTeamPlayers(team.name);
+              const acceptedCount = teamPlayers.filter(p => p.tryout?.next_season_status === 'Accepted Offer').length;
+              const pendingCount = teamPlayers.filter(p => 
+                !p.tryout?.next_season_status || 
+                p.tryout?.next_season_status === 'Considering Offer' || 
+                p.tryout?.next_season_status === 'Offer Sent'
+              ).length;
+              
               return (
                 <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
                   <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white shadow-md">
@@ -383,9 +460,23 @@ export default function TeamTryout() {
                           {team.league && <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.league}</Badge>}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
-                        <button onClick={() => deleteTeamMutation.mutate(team.id)} className="ml-1 p-1 hover:bg-white/20 rounded transition-colors">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
+                          {acceptedCount > 0 && <Badge className="bg-green-500 text-white text-xs">{acceptedCount}✓</Badge>}
+                          {pendingCount > 0 && <Badge className="bg-yellow-500 text-white text-xs">{pendingCount}⏱</Badge>}
+                        </div>
+                        {teamPlayers.length > 0 && acceptedCount > 0 && (
+                          <Button
+                            onClick={() => handleFinalizeRoster(team)}
+                            size="sm"
+                            className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
+                          >
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Finalize
+                          </Button>
+                        )}
+                        <button onClick={() => deleteTeamMutation.mutate(team.id)} className="p-1 hover:bg-white/20 rounded transition-colors">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
@@ -407,7 +498,15 @@ export default function TeamTryout() {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                 >
-                                  <PlayerCard player={player} isDragging={snapshot.isDragging} />
+                                  <PlayerEvaluationCard 
+                                    player={player}
+                                    team={(teams || []).find(t => t.id === player.team_id)}
+                                    tryout={player.tryout}
+                                    evaluation={player.evaluation}
+                                    assessment={player.assessment}
+                                    onSendOffer={handleSendOffer}
+                                    isDragging={snapshot.isDragging}
+                                  />
                                 </div>
                               )}
                             </Draggable>
@@ -600,7 +699,15 @@ export default function TeamTryout() {
                             }}
                             className="absolute top-2 right-2 w-4 h-4 rounded border-2 border-emerald-600 text-emerald-600 focus:ring-emerald-500 z-10"
                           />
-                          <PlayerCard player={player} isDragging={snapshot.isDragging} />
+                          <PlayerEvaluationCard 
+                            player={player}
+                            team={(teams || []).find(t => t.id === player.team_id)}
+                            tryout={player.tryout}
+                            evaluation={player.evaluation}
+                            assessment={player.assessment}
+                            onSendOffer={handleSendOffer}
+                            isDragging={snapshot.isDragging}
+                          />
                         </div>
                       )}
                     </Draggable>
@@ -730,6 +837,48 @@ export default function TeamTryout() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SendOfferDialog
+        open={showSendOfferDialog}
+        onClose={() => {
+          setShowSendOfferDialog(false);
+          setSelectedOfferPlayer(null);
+          setSelectedOfferTeam(null);
+        }}
+        player={selectedOfferPlayer}
+        team={selectedOfferTeam}
+        onSendOffer={(message) => {
+          sendOfferMutation.mutate({
+            playerId: selectedOfferPlayer.id,
+            teamName: selectedOfferTeam,
+            message
+          });
+        }}
+        isPending={sendOfferMutation.isPending}
+      />
+
+      <FinalizeRosterDialog
+        open={showFinalizeDialog}
+        onClose={() => {
+          setShowFinalizeDialog(false);
+          setSelectedFinalizeTeam(null);
+        }}
+        team={selectedFinalizeTeam}
+        players={selectedFinalizeTeam ? getTeamPlayers(selectedFinalizeTeam.name) : []}
+        onFinalize={() => {
+          const teamPlayers = getTeamPlayers(selectedFinalizeTeam.name);
+          const acceptedPlayerIds = teamPlayers
+            .filter(p => p.tryout?.next_season_status === 'Accepted Offer')
+            .map(p => p.id);
+          
+          finalizeRosterMutation.mutate({
+            teamId: selectedFinalizeTeam.id,
+            teamName: selectedFinalizeTeam.name,
+            playerIds: acceptedPlayerIds
+          });
+        }}
+        isPending={finalizeRosterMutation.isPending}
+      />
     </div>
   );
 }
