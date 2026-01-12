@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle, Sparkles } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle, Sparkles, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
@@ -72,6 +73,19 @@ export default function TeamTryout() {
   const [aiFormParams, setAiFormParams] = useState({ gender: '', age_groups: [], league_preference: '' });
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showBulkFromTeamsDialog, setShowBulkFromTeamsDialog] = useState(false);
+  const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
+  const [newPoolPlayer, setNewPoolPlayer] = useState({
+    player_name: '',
+    date_of_birth: '',
+    gender: 'Female',
+    primary_position: '',
+    current_club: '',
+    current_team: '',
+    notes: ''
+  });
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -323,6 +337,105 @@ export default function TeamTryout() {
   const handleRemovePlayer = (player) => {
     removeFromTeamMutation.mutate({ playerId: player.id, playerData: player });
   };
+
+  // Add to pool mutation
+  const addToPoolMutation = useMutation({
+    mutationFn: (data) => base44.entities.TryoutPool.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryoutPool']);
+      setShowAddDialog(false);
+      setNewPoolPlayer({
+        player_name: '',
+        date_of_birth: '',
+        gender: 'Female',
+        primary_position: '',
+        current_club: '',
+        current_team: '',
+        notes: ''
+      });
+      toast.success('Added to tryout pool');
+    }
+  });
+
+  // CSV import handler
+  const handleCSVImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const csv = event.target.result;
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        const imports = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          if (values.length < 2) continue;
+          
+          const playerData = {};
+          headers.forEach((header, index) => {
+            playerData[header] = values[index];
+          });
+
+          const nextYearAge = calculateNextYearAgeGroup(playerData['date_of_birth']);
+          
+          imports.push(base44.entities.TryoutPool.create({
+            player_name: playerData['player_name'] || playerData['name'],
+            player_email: playerData['player_email'] || '',
+            date_of_birth: playerData['date_of_birth'] || '',
+            age_group: nextYearAge || '',
+            gender: playerData['gender'] || 'Female',
+            primary_position: playerData['primary_position'] || '',
+            current_club: playerData['current_club'] || '',
+            current_team: playerData['current_team'] || '',
+            notes: playerData['notes'] || '',
+            status: 'Pending'
+          }));
+        }
+
+        await Promise.all(imports);
+        queryClient.invalidateQueries(['tryoutPool']);
+        setShowImportDialog(false);
+        toast.success(`Imported ${imports.length} players`);
+      } catch (error) {
+        toast.error('Failed to import CSV');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Bulk add from teams mutation
+  const bulkAddFromDatabaseMutation = useMutation({
+    mutationFn: async (playerIds) => {
+      const playersToAdd = players.filter(p => playerIds.includes(p.id));
+      await Promise.all(playersToAdd.map(p => {
+        const team = teams.find(t => t.id === p.team_id);
+        const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+        return base44.entities.TryoutPool.create({
+          player_id: p.id,
+          player_name: p.full_name,
+          player_email: p.player_email || p.email,
+          parent_emails: p.parent_emails || [],
+          date_of_birth: p.date_of_birth,
+          age_group: nextYearAge || '',
+          gender: p.gender,
+          primary_position: p.primary_position,
+          current_team: team?.name || '',
+          current_club: p.current_club || '',
+          branch: p.branch,
+          status: 'Pending'
+        });
+      }));
+    },
+    onSuccess: (_, playerIds) => {
+      queryClient.invalidateQueries(['tryoutPool']);
+      setShowBulkFromTeamsDialog(false);
+      setSelectedPoolPlayers([]);
+      toast.success(`Added ${playerIds.length} players to tryout pool`);
+    }
+  });
 
   const handleGenerateAIFormation = async () => {
     setIsGeneratingAI(true);
@@ -1089,6 +1202,252 @@ export default function TeamTryout() {
                   </Button>
                 </div>
               </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Player Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Player to {selectedAgeGroup} Tryout Pool</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Player Name *</Label>
+              <Input
+                value={newPoolPlayer.player_name}
+                onChange={(e) => setNewPoolPlayer({...newPoolPlayer, player_name: e.target.value})}
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Date of Birth</Label>
+              <Input
+                type="date"
+                value={newPoolPlayer.date_of_birth}
+                onChange={(e) => setNewPoolPlayer({...newPoolPlayer, date_of_birth: e.target.value})}
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Gender</Label>
+              <Select value={newPoolPlayer.gender} onValueChange={(v) => setNewPoolPlayer({...newPoolPlayer, gender: v})}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Primary Position</Label>
+              <Select value={newPoolPlayer.primary_position} onValueChange={(v) => setNewPoolPlayer({...newPoolPlayer, primary_position: v})}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="GK">GK</SelectItem>
+                  <SelectItem value="Right Outside Back">Right Outside Back</SelectItem>
+                  <SelectItem value="Left Outside Back">Left Outside Back</SelectItem>
+                  <SelectItem value="Right Centerback">Right Centerback</SelectItem>
+                  <SelectItem value="Left Centerback">Left Centerback</SelectItem>
+                  <SelectItem value="Defensive Midfielder">Defensive Midfielder</SelectItem>
+                  <SelectItem value="Right Winger">Right Winger</SelectItem>
+                  <SelectItem value="Center Midfielder">Center Midfielder</SelectItem>
+                  <SelectItem value="Forward">Forward</SelectItem>
+                  <SelectItem value="Attacking Midfielder">Attacking Midfielder</SelectItem>
+                  <SelectItem value="Left Winger">Left Winger</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Current Club</Label>
+              <Input
+                value={newPoolPlayer.current_club}
+                onChange={(e) => setNewPoolPlayer({...newPoolPlayer, current_club: e.target.value})}
+                placeholder="e.g., Ohio Premier"
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Current Team</Label>
+              <Input
+                value={newPoolPlayer.current_team}
+                onChange={(e) => setNewPoolPlayer({...newPoolPlayer, current_team: e.target.value})}
+                placeholder="e.g., U17 Red"
+                className="h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Textarea
+                value={newPoolPlayer.notes}
+                onChange={(e) => setNewPoolPlayer({...newPoolPlayer, notes: e.target.value})}
+                rows={3}
+                className="text-xs"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const nextYearAge = calculateNextYearAgeGroup(newPoolPlayer.date_of_birth);
+                  addToPoolMutation.mutate({
+                    ...newPoolPlayer,
+                    age_group: nextYearAge || selectedAgeGroup
+                  });
+                }}
+                disabled={!newPoolPlayer.player_name}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Add to Pool
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import Players from CSV</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs text-slate-700 mb-2 font-semibold">CSV Format:</p>
+              <p className="text-xs text-slate-600">player_name, date_of_birth, gender, primary_position, current_club, current_team, notes</p>
+            </div>
+            <Input
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="h-10"
+            />
+            <Button variant="outline" onClick={() => setShowImportDialog(false)} className="w-full">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add from Teams Dialog */}
+      <Dialog open={showBulkFromTeamsDialog} onOpenChange={setShowBulkFromTeamsDialog}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Players from Player Database</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-slate-700">Select players from the database to add to the {selectedAgeGroup} tryout pool</p>
+            </div>
+
+            {players.filter(p => {
+              const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+              return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
+            }).length === 0 ? (
+              <p className="text-center py-8 text-slate-400 text-sm">No players available for {selectedAgeGroup}</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <span className="text-sm font-semibold text-blue-900">
+                    {players.filter(p => {
+                      const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+                      return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
+                    }).length} players available
+                  </span>
+                  <Button
+                    onClick={() => {
+                      const availablePlayers = players.filter(p => {
+                        const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+                        return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
+                      }).map(p => p.id);
+                      
+                      if (selectedPoolPlayers.length === availablePlayers.length) {
+                        setSelectedPoolPlayers([]);
+                      } else {
+                        setSelectedPoolPlayers(availablePlayers);
+                      }
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                  >
+                    {selectedPoolPlayers.length === players.filter(p => {
+                      const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+                      return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
+                    }).length ? 'Deselect All' : 'Select All'}
+                  </Button>
+                </div>
+                
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {players.filter(p => {
+                    const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+                    return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
+                  }).map(player => {
+                    const team = teams.find(t => t.id === player.team_id);
+                    return (
+                      <div
+                        key={player.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          selectedPoolPlayers.includes(player.id)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-slate-200 hover:border-blue-300'
+                        }`}
+                        onClick={() => {
+                          if (selectedPoolPlayers.includes(player.id)) {
+                            setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
+                          } else {
+                            setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedPoolPlayers.includes(player.id)}
+                            onChange={() => {}}
+                            className="w-5 h-5 flex-shrink-0"
+                          />
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm">{player.full_name}</div>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {player.age_group && <Badge className="bg-slate-100 text-slate-700 text-xs">{player.age_group} (now)</Badge>}
+                              {player.primary_position && <Badge className="bg-blue-100 text-blue-800 text-xs">{player.primary_position}</Badge>}
+                              {team && <Badge className="bg-slate-200 text-slate-700 text-xs">{team.name}</Badge>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 pt-2 sticky bottom-0 bg-white">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowBulkFromTeamsDialog(false);
+                      setSelectedPoolPlayers([]);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => bulkAddFromDatabaseMutation.mutate(selectedPoolPlayers)}
+                    disabled={selectedPoolPlayers.length === 0}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    Add {selectedPoolPlayers.length} Player{selectedPoolPlayers.length !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </DialogContent>
