@@ -404,10 +404,13 @@ export default function TeamTryout() {
             tryout_notes: poolEntry.notes
           });
           
-          // Create tryout record
+          // Create tryout record with current team info
           await updateTryoutMutation.mutateAsync({
             playerId: newPlayer.id,
-            data: { next_year_team: destTeamName }
+            data: { 
+              next_year_team: destTeamName,
+              current_team: poolEntry.current_team
+            }
           });
           
           // Remove from pool
