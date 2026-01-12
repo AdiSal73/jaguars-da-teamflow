@@ -49,3 +49,12 @@ export const sortPlayersByTeamAndName = (players, teams = []) => {
     return lastNameA.localeCompare(lastNameB);
   });
 };
+
+// Legacy export for backward compatibility
+export const sortPlayers = sortPlayersByTeamAndName;
+
+export const getBirthYear = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const date = new Date(dateOfBirth);
+  return date.getFullYear();
+};
