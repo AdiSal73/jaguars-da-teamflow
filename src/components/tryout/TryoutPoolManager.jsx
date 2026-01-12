@@ -36,12 +36,15 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showBulkFromTeamsDialog, setShowBulkFromTeamsDialog] = useState(false);
+  const [showBulkAssignDialog, setShowBulkAssignDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterBirthDateFrom, setFilterBirthDateFrom] = useState('');
   const [filterBirthDateTo, setFilterBirthDateTo] = useState('');
   const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
+  const [selectedForBulk, setSelectedForBulk] = useState([]);
+  const [bulkAssignTeam, setBulkAssignTeam] = useState('');
   const [bulkTeamFilter, setBulkTeamFilter] = useState('all');
   const [bulkAgeFilter, setBulkAgeFilter] = useState('all');
   const [bulkBirthDateFrom, setBulkBirthDateFrom] = useState('');
@@ -75,6 +78,11 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
     queryFn: () => base44.entities.Team.list()
+  });
+
+  const { data: tryouts = [] } = useQuery({
+    queryKey: ['tryouts'],
+    queryFn: () => base44.entities.PlayerTryout.list()
   });
 
   // Calculate next year age groups for all pool players
@@ -206,7 +214,14 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   };
 
   const filteredPoolPlayers = poolPlayersWithNextYearAge.filter(p => {
-    const matchesSearch = p.player_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Only show players not assigned to any team
+    if (p.player_id) {
+      const tryout = tryouts.find(t => t.player_id === p.player_id);
+      if (tryout?.next_year_team) return false;
+    }
+    if (p.next_year_team) return false;
+
+    const matchesSearch = !searchTerm || p.player_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGender = filterGender === 'all' || p.gender === filterGender;
     const matchesAgeGroup = filterAgeGroup === 'all' || p.next_year_age_group === filterAgeGroup;
     
@@ -258,14 +273,24 @@ export default function TryoutPoolManager({ onAddToTeam }) {
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
             <span className="font-bold">Tryout Pool</span>
-            <Badge className="bg-white text-blue-700 text-sm font-bold px-2">{poolPlayers.length}</Badge>
-            {filteredPoolPlayers.length !== poolPlayers.length && (
-              <Badge className="bg-yellow-400 text-yellow-900 text-xs px-2">
-                {filteredPoolPlayers.length} shown
+            <Badge className="bg-white text-blue-700 text-sm font-bold px-2">{filteredPoolPlayers.length}</Badge>
+            {selectedForBulk.length > 0 && (
+              <Badge className="bg-green-400 text-green-900 text-xs px-2">
+                {selectedForBulk.length} selected
               </Badge>
             )}
           </div>
           <div className="flex gap-1">
+            {selectedForBulk.length > 0 && (
+              <Button
+                onClick={() => setShowBulkAssignDialog(true)}
+                size="sm"
+                className="h-7 px-2 bg-green-500 hover:bg-green-600 text-white"
+              >
+                <UserPlus className="w-3 h-3 mr-1" />
+                Assign
+              </Button>
+            )}
             <Button
               onClick={() => setShowBulkFromTeamsDialog(true)}
               size="sm"
@@ -368,51 +393,76 @@ export default function TryoutPoolManager({ onAddToTeam }) {
               className={`space-y-1.5 overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-blue-200 rounded-xl' : ''}`}
               style={{ maxHeight: 'calc(100vh - 340px)' }}
             >
-              {filteredPoolPlayers.map((poolPlayer, index) => (
-                <Draggable key={poolPlayer.id} draggableId={poolPlayer.player_id || poolPlayer.id} index={index}>
-                  {(provided, snapshot) => (
-                    <Card 
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className={`p-2 border border-blue-200 transition-all cursor-grab active:cursor-grabbing ${
-                        snapshot.isDragging ? 'bg-white shadow-2xl scale-105 ring-4 ring-blue-400' : 'bg-white hover:border-blue-400'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
-                          <div className="flex gap-1 mt-1 flex-wrap">
-                            {poolPlayer.next_year_age_group && (
-                              <Badge className="bg-purple-100 text-purple-800 text-[10px]">
-                                {poolPlayer.next_year_age_group} (26/27)
-                              </Badge>
-                            )}
-                            {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}
-                            {poolPlayer.current_team && <Badge className="bg-slate-200 text-slate-700 text-[10px]">{poolPlayer.current_team}</Badge>}
-                            <Badge className={`text-[10px] ${
-                              poolPlayer.status === 'Confirmed' ? 'bg-green-500 text-white' :
-                              poolPlayer.status === 'Invited' ? 'bg-blue-500 text-white' :
-                              'bg-slate-400 text-white'
-                            }`}>{poolPlayer.status}</Badge>
+              {filteredPoolPlayers.map((poolPlayer, index) => {
+                const isSelected = selectedForBulk.includes(poolPlayer.id);
+                return (
+                  <Draggable key={poolPlayer.id} draggableId={poolPlayer.player_id || poolPlayer.id} index={index}>
+                    {(provided, snapshot) => (
+                      <Card 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`p-2 border transition-all cursor-grab active:cursor-grabbing ${
+                          snapshot.isDragging ? 'bg-white shadow-2xl scale-105 ring-4 ring-blue-400 border-blue-400' :
+                          isSelected ? 'bg-blue-50 border-blue-400' : 'bg-white border-blue-200 hover:border-blue-400'
+                        }`}
+                        onClick={(e) => {
+                          if (e.target.closest('button')) return;
+                          if (isSelected) {
+                            setSelectedForBulk(selectedForBulk.filter(id => id !== poolPlayer.id));
+                          } else {
+                            setSelectedForBulk([...selectedForBulk, poolPlayer.id]);
+                          }
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              if (isSelected) {
+                                setSelectedForBulk(selectedForBulk.filter(id => id !== poolPlayer.id));
+                              } else {
+                                setSelectedForBulk([...selectedForBulk, poolPlayer.id]);
+                              }
+                            }}
+                            className="w-4 h-4 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {poolPlayer.next_year_age_group && (
+                                <Badge className="bg-purple-100 text-purple-800 text-[10px]">
+                                  {poolPlayer.next_year_age_group} (26/27)
+                                </Badge>
+                              )}
+                              {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}
+                              {poolPlayer.current_team && <Badge className="bg-slate-200 text-slate-700 text-[10px]">{poolPlayer.current_team}</Badge>}
+                              <Badge className={`text-[10px] ${
+                                poolPlayer.status === 'Confirmed' ? 'bg-green-500 text-white' :
+                                poolPlayer.status === 'Invited' ? 'bg-blue-500 text-white' :
+                                'bg-slate-400 text-white'
+                              }`}>{poolPlayer.status}</Badge>
+                            </div>
                           </div>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromPoolMutation.mutate(poolPlayer.id);
+                            }}
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2 text-red-600 hover:text-red-700 flex-shrink-0"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFromPoolMutation.mutate(poolPlayer.id);
-                          }}
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-red-600 hover:text-red-700 flex-shrink-0"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </Card>
-                  )}
-                </Draggable>
-              ))}
+                      </Card>
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
               {filteredPoolPlayers.length === 0 && (
                 <div className="text-center py-8 text-slate-400 text-xs">
@@ -717,6 +767,79 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                 </div>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Assign Dialog */}
+      <Dialog open={showBulkAssignDialog} onOpenChange={setShowBulkAssignDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bulk Assign to Team</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Assign {selectedForBulk.length} selected player{selectedForBulk.length !== 1 ? 's' : ''} to a team
+            </p>
+            <div>
+              <Label className="text-xs">Select Team</Label>
+              <Select value={bulkAssignTeam} onValueChange={setBulkAssignTeam}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Choose a team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.filter(t => t.name?.includes('26/27')).map(team => (
+                    <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBulkAssignDialog(false);
+                  setBulkAssignTeam('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!bulkAssignTeam) {
+                    toast.error('Please select a team');
+                    return;
+                  }
+                  
+                  try {
+                    // Assign all selected players
+                    await Promise.all(selectedForBulk.map(async (poolPlayerId) => {
+                      const poolPlayer = poolPlayers.find(pp => pp.id === poolPlayerId);
+                      if (!poolPlayer) return;
+
+                      // Update pool entry with team assignment
+                      await base44.entities.TryoutPool.update(poolPlayerId, {
+                        next_year_team: bulkAssignTeam,
+                        status: 'Invited'
+                      });
+                    }));
+
+                    queryClient.invalidateQueries(['tryoutPool']);
+                    setShowBulkAssignDialog(false);
+                    setSelectedForBulk([]);
+                    setBulkAssignTeam('');
+                    toast.success(`Assigned ${selectedForBulk.length} players to ${bulkAssignTeam}`);
+                  } catch (error) {
+                    toast.error('Failed to assign players');
+                  }
+                }}
+                disabled={!bulkAssignTeam}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Assign to Team
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

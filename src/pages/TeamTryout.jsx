@@ -395,27 +395,37 @@ export default function TeamTryout() {
 
   // Get pool players combined with existing players who match pool criteria
   const poolPlayersEnriched = useMemo(() => {
-    return poolPlayers.map(pp => {
-      if (pp.player_id) {
-        // Existing player - get full data
-        const player = players.find(p => p.id === pp.player_id);
-        if (player) {
-          return getPlayerWithTryoutData(player.id);
+    // Only show players that are actually in the pool and not assigned to any team
+    return poolPlayers
+      .filter(pp => {
+        // If it's an existing player, check they don't have a next_year_team assignment
+        if (pp.player_id) {
+          const tryout = tryouts.find(t => t.player_id === pp.player_id);
+          return !tryout?.next_year_team;
         }
-      }
-      // External player - use pool data
-      return {
-        id: pp.id,
-        full_name: pp.player_name,
-        primary_position: pp.primary_position,
-        age_group: pp.age_group,
-        gender: pp.gender,
-        date_of_birth: pp.date_of_birth,
-        isPoolOnly: true,
-        poolStatus: pp.status,
-        tryout: {}
-      };
-    }).filter(Boolean);
+        // External players without assignment
+        return !pp.next_year_team;
+      })
+      .map(pp => {
+        if (pp.player_id) {
+          const player = players.find(p => p.id === pp.player_id);
+          if (player) {
+            return getPlayerWithTryoutData(player.id);
+          }
+        }
+        return {
+          id: pp.id,
+          full_name: pp.player_name,
+          primary_position: pp.primary_position,
+          age_group: pp.age_group,
+          gender: pp.gender,
+          date_of_birth: pp.date_of_birth,
+          isPoolOnly: true,
+          poolStatus: pp.status,
+          tryout: {}
+        };
+      })
+      .filter(Boolean);
   }, [poolPlayers, players, tryouts]);
 
   const getTeamPlayers = (teamName) => {
