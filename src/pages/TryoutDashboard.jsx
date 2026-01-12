@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TryoutDashboardDialog from '../components/tryout/TryoutDashboardDialog';
 
 export default function TryoutDashboard() {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ export default function TryoutDashboard() {
   const [filterAgeGroup, setFilterAgeGroup] = React.useState('all');
   const [filterLeague, setFilterLeague] = React.useState('all');
   const [sortBy, setSortBy] = React.useState('age');
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogData, setDialogData] = React.useState({ title: '', data: [], type: '' });
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -141,6 +144,46 @@ export default function TryoutDashboard() {
     return 'bg-slate-500 text-white';
   };
 
+  const openDialog = (title, dataFilter, type) => {
+    let data = [];
+    if (type === 'offered') {
+      data = tryouts.filter(t => t.next_season_status === 'Offer Sent').map(t => ({
+        ...t,
+        player: players.find(p => p.id === t.player_id),
+        team: teams.find(team => team.name === t.next_year_team)
+      }));
+    } else if (type === 'accepted') {
+      data = tryouts.filter(t => t.next_season_status === 'Accepted Offer').map(t => ({
+        ...t,
+        player: players.find(p => p.id === t.player_id),
+        team: teams.find(team => team.name === t.next_year_team)
+      }));
+    } else if (type === 'rejected') {
+      data = tryouts.filter(t => t.next_season_status === 'Rejected Offer').map(t => ({
+        ...t,
+        player: players.find(p => p.id === t.player_id),
+        team: teams.find(team => team.name === t.next_year_team)
+      }));
+    } else if (type === 'finalized') {
+      data = tryouts.filter(t => t.next_season_status === 'Roster Finalized').map(t => ({
+        ...t,
+        player: players.find(p => p.id === t.player_id),
+        team: teams.find(team => team.name === t.next_year_team)
+      }));
+    } else if (type === 'registered') {
+      data = tryouts.filter(t => t.registration_status === 'Signed and Paid' || t.registration_status === 'Signed').map(t => ({
+        ...t,
+        player: players.find(p => p.id === t.player_id),
+        team: teams.find(team => team.name === t.next_year_team)
+      }));
+    } else if (type === 'pool') {
+      data = poolPlayers.filter(pp => !pp.next_year_team);
+    }
+    
+    setDialogData({ title, data, type });
+    setDialogOpen(true);
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-[1800px] mx-auto">
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -251,7 +294,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-yellow-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
+        <Card className="border-2 border-yellow-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Offers Sent', null, 'offered')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-yellow-700">Offers Sent</CardTitle>
           </CardHeader>
@@ -260,7 +303,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-green-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
+        <Card className="border-2 border-green-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Accepted Offers', null, 'accepted')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-green-700">Accepted</CardTitle>
           </CardHeader>
@@ -269,7 +312,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-red-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
+        <Card className="border-2 border-red-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Rejected Offers', null, 'rejected')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-red-700">Rejected</CardTitle>
           </CardHeader>
@@ -278,7 +321,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
+        <Card className="border-2 border-purple-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Finalized Rosters', null, 'finalized')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-purple-700">Finalized</CardTitle>
           </CardHeader>
@@ -287,7 +330,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-blue-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
+        <Card className="border-2 border-blue-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Registered Players', null, 'registered')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-blue-700">Registered</CardTitle>
           </CardHeader>
@@ -296,7 +339,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-indigo-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
+        <Card className="border-2 border-indigo-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => openDialog('Tryout Pool Players', null, 'pool')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-indigo-700">In Pool</CardTitle>
           </CardHeader>
@@ -447,6 +490,15 @@ export default function TryoutDashboard() {
             </Card>
           ))}
       </div>
+
+      {/* Dialog for detailed views */}
+      <TryoutDashboardDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={dialogData.title}
+        data={dialogData.data}
+        type={dialogData.type}
+      />
     </div>
   );
 }

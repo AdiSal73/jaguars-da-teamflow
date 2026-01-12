@@ -19,6 +19,8 @@ export default function OffersManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [showSetExpirationDialog, setShowSetExpirationDialog] = useState(false);
+  const [expirationDate, setExpirationDate] = useState('');
 
   // Fetch all tryouts with pending/sent offers
   const { data: tryouts = [], isLoading } = useQuery({
@@ -36,6 +38,22 @@ export default function OffersManagement() {
     queryFn: () => base44.entities.Team.list()
   });
 
+  // Set expiration mutation
+  const setExpirationMutation = useMutation({
+    mutationFn: async ({ tryoutId, expirationDate }) => {
+      await base44.entities.PlayerTryout.update(tryoutId, {
+        offer_expiration_date: expirationDate
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts-with-offers']);
+      setShowSetExpirationDialog(false);
+      setSelectedOffer(null);
+      setExpirationDate('');
+      toast.success('Expiration date set');
+    }
+  });
+
   // Resend offer mutation
   const resendOfferMutation = useMutation({
     mutationFn: async ({ playerId, tryoutId }) => {
@@ -45,10 +63,14 @@ export default function OffersManagement() {
       // Send email notification
       const offerUrl = `${window.location.origin}${createPageUrl('OfferResponse')}?tryoutId=${tryoutId}`;
       
+      const expirationText = tryout.offer_expiration_date 
+        ? `\n\nThis offer expires on ${moment(tryout.offer_expiration_date).format('MMMM D, YYYY')}.`
+        : '';
+      
       await base44.integrations.Core.SendEmail({
         to: player.email || player.parent_emails?.[0],
         subject: `Team Offer Reminder - ${tryout.next_year_team}`,
-        body: `Hi ${player.full_name},\n\nThis is a reminder about your offer to join ${tryout.next_year_team} for the upcoming season.\n\nPlease respond to your offer: ${offerUrl}\n\nBest regards,\nMichigan Jaguars`
+        body: `Hi ${player.full_name},\n\nThis is a reminder about your offer to join ${tryout.next_year_team} for the upcoming season.${expirationText}\n\nPlease respond to your offer: ${offerUrl}\n\nBest regards,\nMichigan Jaguars`
       });
       
       return tryoutId;
@@ -66,12 +88,15 @@ export default function OffersManagement() {
     .map(tryout => {
       const player = players.find(p => p.id === tryout.player_id);
       const team = teams.find(t => t.name === tryout.next_year_team);
-      return { ...tryout, player, team };
+      const isExpired = tryout.offer_expiration_date && new Date(tryout.offer_expiration_date) < new Date();
+      return { ...tryout, player, team, isExpired };
     })
     .filter(offer => {
       const matchesSearch = offer.player?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            offer.next_year_team?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || offer.next_season_status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || 
+                           (statusFilter === 'Expired' && offer.isExpired) ||
+                           offer.next_season_status === statusFilter;
       return matchesSearch && matchesStatus;
     });
 
@@ -81,7 +106,8 @@ export default function OffersManagement() {
     pending: offersData.filter(o => o.next_season_status === 'Offer Sent').length,
     accepted: offersData.filter(o => o.next_season_status === 'Accepted Offer').length,
     rejected: offersData.filter(o => o.next_season_status === 'Rejected Offer').length,
-    considering: offersData.filter(o => o.next_season_status === 'Considering Offer').length
+    considering: offersData.filter(o => o.next_season_status === 'Considering Offer').length,
+    expired: offersData.filter(o => o.isExpired).length
   };
 
   const getStatusColor = (status) => {
@@ -167,11 +193,31 @@ export default function OffersManagement() {
                   <SelectItem value="Accepted Offer">Accepted</SelectItem>
                   <SelectItem value="Rejected Offer">Rejected</SelectItem>
                   <SelectItem value="Considering Offer">Considering</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
+
+        {/* Expired Offers Alert */}
+        {stats.expired > 0 && (
+          <Card className="border-2 border-red-200 bg-red-50 mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-red-600" />
+                <div>
+                  <div className="font-semibold text-red-900">
+                    {stats.expired} offer{stats.expired !== 1 ? 's have' : ' has'} expired
+                  </div>
+                  <div className="text-sm text-red-700">
+                    Consider following up with these players or withdrawing the offers
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Offers Table */}
         <Card>
@@ -187,6 +233,7 @@ export default function OffersManagement() {
                     <th className="text-left p-3 text-sm font-semibold text-slate-700">Team Offered</th>
                     <th className="text-left p-3 text-sm font-semibold text-slate-700">Status</th>
                     <th className="text-left p-3 text-sm font-semibold text-slate-700">Sent Date</th>
+                    <th className="text-left p-3 text-sm font-semibold text-slate-700">Expires</th>
                     <th className="text-left p-3 text-sm font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
@@ -213,6 +260,30 @@ export default function OffersManagement() {
                         {moment(offer.updated_date).format('MMM D, YYYY')}
                       </td>
                       <td className="p-3">
+                        {offer.offer_expiration_date ? (
+                          <div>
+                            <div className={`text-sm font-medium ${offer.isExpired ? 'text-red-600' : 'text-slate-900'}`}>
+                              {moment(offer.offer_expiration_date).format('MMM D, YYYY')}
+                            </div>
+                            {offer.isExpired && (
+                              <Badge className="bg-red-500 text-white text-xs mt-1">Expired</Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedOffer(offer);
+                              setShowSetExpirationDialog(true);
+                            }}
+                            className="text-xs"
+                          >
+                            Set Date
+                          </Button>
+                        )}
+                      </td>
+                      <td className="p-3">
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -222,14 +293,30 @@ export default function OffersManagement() {
                             View
                           </Button>
                           {offer.next_season_status === 'Offer Sent' && (
-                            <Button
-                              size="sm"
-                              onClick={() => resendOfferMutation.mutate({ playerId: offer.player_id, tryoutId: offer.id })}
-                              disabled={resendOfferMutation.isPending}
-                            >
-                              <Send className="w-3 h-3 mr-1" />
-                              Remind
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => resendOfferMutation.mutate({ playerId: offer.player_id, tryoutId: offer.id })}
+                                disabled={resendOfferMutation.isPending}
+                              >
+                                <Send className="w-3 h-3 mr-1" />
+                                Remind
+                              </Button>
+                              {offer.offer_expiration_date && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedOffer(offer);
+                                    setExpirationDate(offer.offer_expiration_date);
+                                    setShowSetExpirationDialog(true);
+                                  }}
+                                >
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -237,7 +324,7 @@ export default function OffersManagement() {
                   ))}
                   {offersData.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                      <td colSpan={6} className="p-8 text-center text-slate-500">
                         No offers found matching your criteria
                       </td>
                     </tr>
@@ -247,6 +334,57 @@ export default function OffersManagement() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Set Expiration Dialog */}
+        <Dialog open={showSetExpirationDialog} onOpenChange={setShowSetExpirationDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Set Offer Expiration Date</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-slate-600 mb-2">
+                  Player: <span className="font-semibold">{selectedOffer?.player?.full_name}</span>
+                </p>
+                <p className="text-sm text-slate-600">
+                  Team: <span className="font-semibold">{selectedOffer?.next_year_team}</span>
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Expiration Date</label>
+                <Input
+                  type="date"
+                  value={expirationDate}
+                  onChange={(e) => setExpirationDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowSetExpirationDialog(false);
+                    setSelectedOffer(null);
+                    setExpirationDate('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => setExpirationMutation.mutate({
+                    tryoutId: selectedOffer.id,
+                    expirationDate
+                  })}
+                  disabled={!expirationDate || setExpirationMutation.isPending}
+                  className="flex-1"
+                >
+                  Set Expiration
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

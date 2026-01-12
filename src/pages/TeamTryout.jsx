@@ -748,6 +748,32 @@ export default function TeamTryout() {
                           <span className="font-bold">{selectedAgeGroup} Tryout Pool</span>
                           <Badge className="bg-white text-blue-700 text-sm font-bold px-2">{filteredPoolPlayers.length}</Badge>
                         </div>
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={() => setShowBulkFromTeamsDialog(true)}
+                            size="sm"
+                            className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
+                          >
+                            <Users className="w-3 h-3 mr-1" />
+                            From Teams
+                          </Button>
+                          <Button
+                            onClick={() => setShowImportDialog(true)}
+                            size="sm"
+                            className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            CSV
+                          </Button>
+                          <Button
+                            onClick={() => setShowAddDialog(true)}
+                            size="sm"
+                            className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add
+                          </Button>
+                        </div>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3">
