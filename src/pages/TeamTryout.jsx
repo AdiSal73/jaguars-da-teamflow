@@ -195,20 +195,29 @@ export default function TeamTryout() {
         });
       }
       
-      // Add back to pool
-      await base44.entities.TryoutPool.create({
-        player_id: playerId,
-        player_name: playerData.full_name,
-        player_email: playerData.email || playerData.player_email,
-        parent_emails: playerData.parent_emails || [],
-        date_of_birth: playerData.date_of_birth,
-        age_group: playerData.age_group,
-        gender: playerData.gender,
-        primary_position: playerData.primary_position,
-        current_team: playerData.tryout?.current_team,
-        branch: playerData.branch,
-        status: 'Pending'
-      });
+      // Check if already in pool, update instead of create
+      const existingPoolEntry = poolPlayers.find(pp => pp.player_id === playerId);
+      if (existingPoolEntry) {
+        await base44.entities.TryoutPool.update(existingPoolEntry.id, {
+          next_year_team: null,
+          status: 'Pending'
+        });
+      } else {
+        // Add back to pool
+        await base44.entities.TryoutPool.create({
+          player_id: playerId,
+          player_name: playerData.full_name,
+          player_email: playerData.email || playerData.player_email,
+          parent_emails: playerData.parent_emails || [],
+          date_of_birth: playerData.date_of_birth,
+          age_group: playerData.age_group,
+          gender: playerData.gender,
+          primary_position: playerData.primary_position,
+          current_team: playerData.tryout?.current_team,
+          branch: playerData.branch,
+          status: 'Pending'
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tryouts']);
@@ -473,13 +482,16 @@ export default function TeamTryout() {
         }
 
         if (poolEntry.player_id) {
-          // Existing player - just update tryout
+          // Existing player - update tryout and pool entry
           await updateTryoutMutation.mutateAsync({
             playerId: poolEntry.player_id,
             data: { next_year_team: destTeamName }
           });
-          // Remove from pool
-          await base44.entities.TryoutPool.delete(poolEntry.id);
+          // Update pool entry instead of deleting
+          await base44.entities.TryoutPool.update(poolEntry.id, {
+            next_year_team: destTeamName,
+            status: 'Invited'
+          });
         } else {
           // New external player - create player entity first
           const newPlayer = await createPlayerMutation.mutateAsync({
@@ -504,8 +516,12 @@ export default function TeamTryout() {
             }
           });
           
-          // Remove from pool
-          await base44.entities.TryoutPool.delete(poolEntry.id);
+          // Update pool entry
+          await base44.entities.TryoutPool.update(poolEntry.id, {
+            player_id: newPlayer.id,
+            next_year_team: destTeamName,
+            status: 'Invited'
+          });
         }
       } else {
         // Moving between teams

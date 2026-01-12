@@ -40,6 +40,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterCurrentTeam, setFilterCurrentTeam] = useState('all');
   const [filterBirthDateFrom, setFilterBirthDateFrom] = useState('');
   const [filterBirthDateTo, setFilterBirthDateTo] = useState('');
   const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
@@ -229,6 +230,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     const matchesSearch = !searchTerm || p.player_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGender = filterGender === 'all' || p.gender === filterGender;
     const matchesAgeGroup = filterAgeGroup === 'all' || p.next_year_age_group === filterAgeGroup;
+    const matchesCurrentTeam = filterCurrentTeam === 'all' || p.current_team === filterCurrentTeam;
     
     let matchesBirthDate = true;
     if (filterBirthDateFrom && p.date_of_birth) {
@@ -238,7 +240,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
       matchesBirthDate = matchesBirthDate && p.date_of_birth <= filterBirthDateTo;
     }
     
-    return matchesSearch && matchesGender && matchesAgeGroup && matchesBirthDate;
+    return matchesSearch && matchesGender && matchesAgeGroup && matchesCurrentTeam && matchesBirthDate;
   });
 
   const bulkFilteredPlayers = players.filter(p => {
@@ -266,11 +268,12 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     setSearchTerm('');
     setFilterGender('all');
     setFilterAgeGroup('all');
+    setFilterCurrentTeam('all');
     setFilterBirthDateFrom('');
     setFilterBirthDateTo('');
   };
 
-  const hasActiveFilters = searchTerm || filterGender !== 'all' || filterAgeGroup !== 'all' || filterBirthDateFrom || filterBirthDateTo;
+  const hasActiveFilters = searchTerm || filterGender !== 'all' || filterAgeGroup !== 'all' || filterCurrentTeam !== 'all' || filterBirthDateFrom || filterBirthDateTo;
 
   return (
     <Card className="border-2 border-blue-400 shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -372,6 +375,17 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={filterCurrentTeam} onValueChange={setFilterCurrentTeam}>
+                <SelectTrigger className="h-8 text-xs w-32">
+                  <SelectValue placeholder="Team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {[...new Set(poolPlayersWithNextYearAge.map(p => p.current_team).filter(Boolean))].sort().map(team => (
+                    <SelectItem key={team} value={team}>{team}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex gap-2">
@@ -442,14 +456,16 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                             className="w-4 h-4 flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-slate-900">
-                              {poolPlayer.player_name}
-                              {poolPlayer.grad_year && <span className="text-[10px] text-slate-500 ml-1">• {poolPlayer.grad_year}</span>}
-                            </div>
+                            <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
                             <div className="flex gap-1 mt-1 flex-wrap">
                               {poolPlayer.next_year_age_group && (
                                 <Badge className="bg-purple-100 text-purple-800 text-[10px]">
                                   {poolPlayer.next_year_age_group} (26/27)
+                                </Badge>
+                              )}
+                              {poolPlayer.grad_year && (
+                                <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-bold">
+                                  {poolPlayer.grad_year}
                                 </Badge>
                               )}
                               {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}

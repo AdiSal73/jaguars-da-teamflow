@@ -32,6 +32,7 @@ import Landing from './pages/Landing';
 import Leaderboard from './pages/Leaderboard';
 import MyBookings from './pages/MyBookings';
 import OfferResponse from './pages/OfferResponse';
+import OffersManagement from './pages/OffersManagement';
 import PDPViewer from './pages/PDPViewer';
 import ParentPortal from './pages/ParentPortal';
 import PlayerComparison from './pages/PlayerComparison';
@@ -51,7 +52,6 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import OffersManagement from './pages/OffersManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -90,6 +90,7 @@ export const PAGES = {
     "Leaderboard": Leaderboard,
     "MyBookings": MyBookings,
     "OfferResponse": OfferResponse,
+    "OffersManagement": OffersManagement,
     "PDPViewer": PDPViewer,
     "ParentPortal": ParentPortal,
     "PlayerComparison": PlayerComparison,
@@ -109,7 +110,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "OffersManagement": OffersManagement,
 }
 
 export const pagesConfig = {
