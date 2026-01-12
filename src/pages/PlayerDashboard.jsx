@@ -379,6 +379,10 @@ export default function PlayerDashboard() {
                     <Badge className="bg-purple-500 text-white text-sm px-2 py-1 font-bold">{player.age_group || 'N/A'}</Badge>
                   </div>
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">Grad Year</div>
+                    <Badge className="bg-blue-500 text-white text-sm px-2 py-1 font-bold">{player.grad_year || 'N/A'}</Badge>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Position</div>
                     <div className="font-bold text-sm sm:text-base">{player.primary_position}</div>
                   </div>
