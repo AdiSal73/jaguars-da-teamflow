@@ -87,11 +87,16 @@ export default function TryoutPoolManager({ onAddToTeam }) {
 
   // Calculate next year age groups for all pool players
   const poolPlayersWithNextYearAge = useMemo(() => {
-    return poolPlayers.map(p => ({
-      ...p,
-      next_year_age_group: calculateNextYearAgeGroup(p.date_of_birth)
-    }));
-  }, [poolPlayers]);
+    return poolPlayers.map(p => {
+      // Get player data if it exists to include grad_year
+      const playerData = p.player_id ? players.find(pl => pl.id === p.player_id) : null;
+      return {
+        ...p,
+        next_year_age_group: calculateNextYearAgeGroup(p.date_of_birth),
+        grad_year: playerData?.grad_year || p.grad_year
+      };
+    });
+  }, [poolPlayers, players]);
 
   // Get unique next year age groups for filter
   const nextYearAgeGroups = useMemo(() => {
@@ -437,7 +442,10 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                             className="w-4 h-4 flex-shrink-0"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
+                            <div className="font-semibold text-sm text-slate-900">
+                              {poolPlayer.player_name}
+                              {poolPlayer.grad_year && <span className="text-[10px] text-slate-500 ml-1">• {poolPlayer.grad_year}</span>}
+                            </div>
                             <div className="flex gap-1 mt-1 flex-wrap">
                               {poolPlayer.next_year_age_group && (
                                 <Badge className="bg-purple-100 text-purple-800 text-[10px]">
@@ -746,9 +754,20 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                           }
                         }}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedPoolPlayers.includes(player.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="w-5 h-5 flex-shrink-0"
+                          />
                           <div className="flex-1">
-                            <div className="font-semibold text-sm">{player.full_name}</div>
+                            <div className="font-semibold text-sm">
+                              {player.full_name}
+                              {player.grad_year && <span className="text-xs text-slate-500 ml-1">• {player.grad_year}</span>}
+                            </div>
                             <div className="flex gap-1 mt-1 flex-wrap">
                               {player.age_group && <Badge className="bg-slate-100 text-slate-700 text-xs">{player.age_group} (now)</Badge>}
                               {nextYearAge && <Badge className="bg-purple-100 text-purple-800 text-xs">{nextYearAge} (26/27)</Badge>}
@@ -756,12 +775,6 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                               {team && <Badge className="bg-slate-200 text-slate-700 text-xs">{team.name}</Badge>}
                             </div>
                           </div>
-                          <input
-                            type="checkbox"
-                            checked={selectedPoolPlayers.includes(player.id)}
-                            onChange={() => {}}
-                            className="w-5 h-5"
-                          />
                         </div>
                       </div>
                     );
