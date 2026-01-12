@@ -4,14 +4,19 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, CheckCircle, XCircle, Clock, UserCheck, FileCheck, Sparkles } from 'lucide-react';
+import { Users, CheckCircle, XCircle, Clock, UserCheck, FileCheck, Sparkles, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function TryoutDashboard() {
   const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = React.useState(false);
+  const [filterGender, setFilterGender] = React.useState('all');
+  const [filterAgeGroup, setFilterAgeGroup] = React.useState('all');
+  const [filterLeague, setFilterLeague] = React.useState('all');
+  const [sortBy, setSortBy] = React.useState('age');
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -50,9 +55,31 @@ export default function TryoutDashboard() {
     return teams.filter(t => t.season === '26/27' || t.name?.includes('26/27'));
   }, [teams]);
 
+  // Apply filters to teams
+  const filteredTeams = useMemo(() => {
+    return nextSeasonTeams.filter(team => {
+      const matchesGender = filterGender === 'all' || team.gender === filterGender;
+      const matchesAge = filterAgeGroup === 'all' || team.age_group === filterAgeGroup;
+      const matchesLeague = filterLeague === 'all' || 
+        (filterLeague === 'Girls Academy' && team.name?.includes('Girls Academy') && !team.name?.includes('Aspire')) ||
+        (filterLeague === 'Aspire' && team.name?.includes('Aspire')) ||
+        (filterLeague === 'Green' && team.name?.includes('Green')) ||
+        (filterLeague === 'White' && team.name?.includes('White'));
+      return matchesGender && matchesAge && matchesLeague;
+    });
+  }, [nextSeasonTeams, filterGender, filterAgeGroup, filterLeague]);
+
+  // Get unique values for filters
+  const uniqueAgeGroups = useMemo(() => {
+    return [...new Set(nextSeasonTeams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+      const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
+      return extractAge(b) - extractAge(a);
+    });
+  }, [nextSeasonTeams]);
+
   // Calculate team statistics
   const teamStats = useMemo(() => {
-    return nextSeasonTeams.map(team => {
+    return filteredTeams.map(team => {
       // Get all players assigned to this team
       const assignedTryouts = tryouts.filter(t => t.next_year_team === team.name);
       const assignedPoolPlayers = poolPlayers.filter(pp => pp.next_year_team === team.name);
@@ -83,7 +110,7 @@ export default function TryoutDashboard() {
         pending: totalAssigned - offered - accepted - rejected - considering - finalized
       };
     });
-  }, [nextSeasonTeams, tryouts, poolPlayers]);
+  }, [filteredTeams, tryouts, poolPlayers]);
 
   // Overall statistics
   const overallStats = useMemo(() => {
@@ -143,9 +170,79 @@ export default function TryoutDashboard() {
         </div>
       </div>
 
+      {/* Filters */}
+      <Card className="mb-6 border-2">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="text-sm font-semibold text-slate-700">Filters:</span>
+            </div>
+            <Select value={filterGender} onValueChange={setFilterGender}>
+              <SelectTrigger className="h-9 w-32">
+                <SelectValue placeholder="Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genders</SelectItem>
+                <SelectItem value="Female">Girls</SelectItem>
+                <SelectItem value="Male">Boys</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+              <SelectTrigger className="h-9 w-32">
+                <SelectValue placeholder="Age Group" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                {uniqueAgeGroups.map(ag => (
+                  <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterLeague} onValueChange={setFilterLeague}>
+              <SelectTrigger className="h-9 w-40">
+                <SelectValue placeholder="League" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leagues</SelectItem>
+                <SelectItem value="Girls Academy">Girls Academy</SelectItem>
+                <SelectItem value="Aspire">Aspire</SelectItem>
+                <SelectItem value="Green">Green</SelectItem>
+                <SelectItem value="White">White</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-9 w-40">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="age">Age (Oldest First)</SelectItem>
+                <SelectItem value="league">League Priority</SelectItem>
+                <SelectItem value="players">Most Players</SelectItem>
+                <SelectItem value="accepted">Most Accepted</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filterGender !== 'all' || filterAgeGroup !== 'all' || filterLeague !== 'all') && (
+              <Button
+                onClick={() => {
+                  setFilterGender('all');
+                  setFilterAgeGroup('all');
+                  setFilterLeague('all');
+                }}
+                variant="ghost"
+                size="sm"
+                className="text-slate-600"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Overall Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-        <Card className="border-2 border-slate-200">
+        <Card className="border-2 border-slate-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-slate-600">Total Assigned</CardTitle>
           </CardHeader>
@@ -154,7 +251,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-yellow-200">
+        <Card className="border-2 border-yellow-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-yellow-700">Offers Sent</CardTitle>
           </CardHeader>
@@ -163,7 +260,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-green-200">
+        <Card className="border-2 border-green-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-green-700">Accepted</CardTitle>
           </CardHeader>
@@ -172,7 +269,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-red-200">
+        <Card className="border-2 border-red-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('OffersManagement'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-red-700">Rejected</CardTitle>
           </CardHeader>
@@ -181,7 +278,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-purple-200">
+        <Card className="border-2 border-purple-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-purple-700">Finalized</CardTitle>
           </CardHeader>
@@ -190,7 +287,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-blue-200">
+        <Card className="border-2 border-blue-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-blue-700">Registered</CardTitle>
           </CardHeader>
@@ -199,7 +296,7 @@ export default function TryoutDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-indigo-200">
+        <Card className="border-2 border-indigo-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate(createPageUrl('TeamTryout'))}>
           <CardHeader className="pb-2">
             <CardTitle className="text-xs text-indigo-700">In Pool</CardTitle>
           </CardHeader>
@@ -211,28 +308,52 @@ export default function TryoutDashboard() {
 
       {/* Team Breakdown */}
       <div className="space-y-3">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Team Rosters</h2>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">
+          Team Rosters {filteredTeams.length !== nextSeasonTeams.length && `(${filteredTeams.length} of ${nextSeasonTeams.length})`}
+        </h2>
         {teamStats
           .sort((a, b) => {
-            const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
-            const ageA = extractAge(a.team.age_group);
-            const ageB = extractAge(b.team.age_group);
-            if (ageA !== ageB) return ageB - ageA;
-            
-            const priority = { 
-              'Girls Academy': 1, 
-              'Girls Academy Aspire': 2,
-              'Aspire': 3, 
-              'Green': 4, 
-              'White': 5 
-            };
-            const getName = (name) => {
-              for (const key of Object.keys(priority)) {
-                if (name?.includes(key)) return key;
-              }
-              return name;
-            };
-            return (priority[getName(a.team.name)] || 99) - (priority[getName(b.team.name)] || 99);
+            if (sortBy === 'age') {
+              const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
+              const ageA = extractAge(a.team.age_group);
+              const ageB = extractAge(b.team.age_group);
+              if (ageA !== ageB) return ageB - ageA;
+              
+              const priority = { 
+                'Girls Academy': 1, 
+                'Girls Academy Aspire': 2,
+                'Aspire': 3, 
+                'Green': 4, 
+                'White': 5 
+              };
+              const getName = (name) => {
+                for (const key of Object.keys(priority)) {
+                  if (name?.includes(key)) return key;
+                }
+                return name;
+              };
+              return (priority[getName(a.team.name)] || 99) - (priority[getName(b.team.name)] || 99);
+            } else if (sortBy === 'league') {
+              const priority = { 
+                'Girls Academy': 1, 
+                'Girls Academy Aspire': 2,
+                'Aspire': 3, 
+                'Green': 4, 
+                'White': 5 
+              };
+              const getName = (name) => {
+                for (const key of Object.keys(priority)) {
+                  if (name?.includes(key)) return key;
+                }
+                return name;
+              };
+              return (priority[getName(a.team.name)] || 99) - (priority[getName(b.team.name)] || 99);
+            } else if (sortBy === 'players') {
+              return b.totalAssigned - a.totalAssigned;
+            } else if (sortBy === 'accepted') {
+              return b.accepted - a.accepted;
+            }
+            return 0;
           })
           .map(stat => (
             <Card 
