@@ -257,14 +257,15 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     return matchesTeam && matchesAge && matchesBirthDate && matchesNextYearAge;
   });
 
-  const clearAllFilters = () => {
+  const clearPoolFilters = () => {
+    setSearchTerm('');
     setFilterGender('all');
     setFilterAgeGroup('all');
     setFilterBirthDateFrom('');
     setFilterBirthDateTo('');
   };
 
-  const hasActiveFilters = filterGender !== 'all' || filterAgeGroup !== 'all' || filterBirthDateFrom || filterBirthDateTo;
+  const hasActiveFilters = searchTerm || filterGender !== 'all' || filterAgeGroup !== 'all' || filterBirthDateFrom || filterBirthDateTo;
 
   return (
     <Card className="border-2 border-blue-400 shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -319,69 +320,75 @@ export default function TryoutPoolManager({ onAddToTeam }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3">
-        <div className="space-y-2 mb-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
-              <Input
-                placeholder="Search pool..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 text-xs pl-7"
-              />
-            </div>
-            <Select value={filterGender} onValueChange={setFilterGender}>
-              <SelectTrigger className="h-8 text-xs w-24">
-                <SelectValue placeholder="Gender" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="Female">Girls</SelectItem>
-                <SelectItem value="Male">Boys</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
-              <SelectTrigger className="h-8 text-xs w-24">
-                <SelectValue placeholder="Age" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Ages</SelectItem>
-                {nextYearAgeGroups.map(ag => (
-                  <SelectItem key={ag} value={ag}>{ag}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Input
-                type="date"
-                placeholder="Birth date from"
-                value={filterBirthDateFrom}
-                onChange={(e) => setFilterBirthDateFrom(e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="flex-1">
-              <Input
-                type="date"
-                placeholder="Birth date to"
-                value={filterBirthDateTo}
-                onChange={(e) => setFilterBirthDateTo(e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs font-semibold text-slate-700">Search Pool</Label>
             {hasActiveFilters && (
               <Button
-                onClick={clearAllFilters}
+                onClick={clearPoolFilters}
                 size="sm"
                 variant="ghost"
-                className="h-8 px-2 text-slate-600 hover:text-slate-900"
+                className="h-6 px-2 text-xs text-slate-600 hover:text-slate-900"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3 mr-1" />
+                Reset
               </Button>
             )}
+          </div>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                <Input
+                  placeholder="Search pool..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 text-xs pl-7"
+                />
+              </div>
+              <Select value={filterGender} onValueChange={setFilterGender}>
+                <SelectTrigger className="h-8 text-xs w-24">
+                  <SelectValue placeholder="Gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="Female">Girls</SelectItem>
+                  <SelectItem value="Male">Boys</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+                <SelectTrigger className="h-8 text-xs w-24">
+                  <SelectValue placeholder="Age" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ages</SelectItem>
+                  {nextYearAgeGroups.map(ag => (
+                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  type="date"
+                  placeholder="Birth date from"
+                  value={filterBirthDateFrom}
+                  onChange={(e) => setFilterBirthDateFrom(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="flex-1">
+                <Input
+                  type="date"
+                  placeholder="Birth date to"
+                  value={filterBirthDateTo}
+                  onChange={(e) => setFilterBirthDateTo(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -607,7 +614,25 @@ export default function TryoutPoolManager({ onAddToTeam }) {
             <DialogTitle>Add Players from Last Year's Teams</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-xs text-slate-600">Filter by team, age group, or birth date range, then select players to add</p>
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-semibold text-blue-900">Filter Players</Label>
+                <Button
+                  onClick={() => {
+                    setBulkTeamFilter('all');
+                    setBulkAgeFilter('all');
+                    setBulkBirthDateFrom('');
+                    setBulkBirthDateTo('');
+                    setBulkNextYearAgeFilter('all');
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-xs"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Reset
+                </Button>
+              </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -676,6 +701,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
             </div>
 
             {bulkFilteredPlayers.length === 0 ? (

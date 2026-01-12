@@ -43,7 +43,10 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
-                    <div className="text-[10px] text-slate-600 truncate">{player.primary_position}</div>
+                    <div className="text-[10px] text-slate-600 truncate">
+                      {player.primary_position}
+                      {player.grad_year && <span className="ml-1">• {player.grad_year}</span>}
+                    </div>
                   </div>
                 </div>
                 {onRemove && (
