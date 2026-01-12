@@ -77,7 +77,7 @@ export default function TeamTryout() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showBulkFromTeamsDialog, setShowBulkFromTeamsDialog] = useState(false);
-  const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
+  const [selectedDatabasePlayers, setSelectedDatabasePlayers] = useState([]);
   const [newPoolPlayer, setNewPoolPlayer] = useState({
     player_name: '',
     date_of_birth: '',
@@ -433,7 +433,7 @@ export default function TeamTryout() {
     onSuccess: (_, playerIds) => {
       queryClient.invalidateQueries(['tryoutPool']);
       setShowBulkFromTeamsDialog(false);
-      setSelectedPoolPlayers([]);
+      setSelectedDatabasePlayers([]);
       toast.success(`Added ${playerIds.length} players to tryout pool`);
     }
   });
@@ -1488,28 +1488,28 @@ export default function TeamTryout() {
                 <>
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
                     <span className="text-sm font-bold text-blue-900">
-                      {availablePlayers.length} players • {selectedPoolPlayers.length} selected
+                      {availablePlayers.length} players • {selectedDatabasePlayers.length} selected
                     </span>
                     <Button
                       onClick={() => {
-                        if (selectedPoolPlayers.length === availablePlayers.length) {
-                          setSelectedPoolPlayers([]);
+                        if (selectedDatabasePlayers.length === availablePlayers.length) {
+                          setSelectedDatabasePlayers([]);
                         } else {
-                          setSelectedPoolPlayers(availablePlayers.map(p => p.id));
+                          setSelectedDatabasePlayers(availablePlayers.map(p => p.id));
                         }
                       }}
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs"
                     >
-                      {selectedPoolPlayers.length === availablePlayers.length ? 'Deselect All' : 'Select All'}
+                      {selectedDatabasePlayers.length === availablePlayers.length ? 'Deselect All' : 'Select All'}
                     </Button>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto space-y-2 pr-2">
                     {availablePlayers.map(player => {
                       const team = teams.find(t => t.id === player.team_id);
-                      const isSelected = selectedPoolPlayers.includes(player.id);
+                      const isSelected = selectedDatabasePlayers.includes(player.id);
                       return (
                         <div
                           key={player.id}
@@ -1520,9 +1520,9 @@ export default function TeamTryout() {
                           }`}
                           onClick={() => {
                             if (isSelected) {
-                              setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
+                              setSelectedDatabasePlayers(selectedDatabasePlayers.filter(id => id !== player.id));
                             } else {
-                              setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
+                              setSelectedDatabasePlayers([...selectedDatabasePlayers, player.id]);
                             }
                           }}
                         >
@@ -1557,7 +1557,7 @@ export default function TeamTryout() {
                 variant="outline"
                 onClick={() => {
                   setShowBulkFromTeamsDialog(false);
-                  setSelectedPoolPlayers([]);
+                  setSelectedDatabasePlayers([]);
                   setPlayerSearchTerm('');
                   setPlayerFilterBranch('all');
                   setPlayerFilterCurrentTeam('all');
@@ -1568,16 +1568,16 @@ export default function TeamTryout() {
               </Button>
               <Button
                 onClick={() => {
-                  bulkAddFromDatabaseMutation.mutate(selectedPoolPlayers);
+                  bulkAddFromDatabaseMutation.mutate(selectedDatabasePlayers);
                   setPlayerSearchTerm('');
                   setPlayerFilterBranch('all');
                   setPlayerFilterCurrentTeam('all');
                 }}
-                disabled={selectedPoolPlayers.length === 0}
+                disabled={selectedDatabasePlayers.length === 0}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add {selectedPoolPlayers.length} Player{selectedPoolPlayers.length !== 1 ? 's' : ''}
+                Add {selectedDatabasePlayers.length} Player{selectedDatabasePlayers.length !== 1 ? 's' : ''}
               </Button>
             </div>
           </div>
