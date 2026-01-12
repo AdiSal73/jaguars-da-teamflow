@@ -11,9 +11,10 @@ export default function SendOfferDialog({ open, onClose, player, team, onSendOff
 
   React.useEffect(() => {
     if (open && player && team) {
+      const teamName = typeof team === 'string' ? team : team?.name || 'the team';
       setMessage(`Dear ${player.full_name} and Family,
 
-We are pleased to offer ${player.full_name} a position on the ${team} team for the 2026/2027 season.
+We are pleased to offer ${player.full_name} a position on the ${teamName} team for the 2026/2027 season.
 
 ${player.full_name} has shown excellent skills and dedication during the evaluation process, and we believe they will be a valuable member of our team.
 
@@ -49,7 +50,7 @@ Michigan Jaguars Coaching Staff`);
               <div className="flex-1">
                 <h3 className="font-bold text-lg">{player.full_name}</h3>
                 <div className="flex gap-2 mt-1">
-                  <Badge className="bg-emerald-600 text-white">{team}</Badge>
+                  <Badge className="bg-emerald-600 text-white">{team || 'Team'}</Badge>
                   <Badge className="bg-blue-600 text-white">{player.primary_position}</Badge>
                   {player.age_group && <Badge className="bg-purple-600 text-white">{player.age_group}</Badge>}
                 </div>
