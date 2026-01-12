@@ -555,7 +555,7 @@ export default function TeamTryout() {
         <div className="flex gap-2">
           <Button onClick={() => setShowAIFormationDialog(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
             <Sparkles className="w-4 h-4 mr-2" />
-            AI Auto-Formation
+            Auto Team Formation
           </Button>
           <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg">
             <Plus className="w-4 h-4 mr-2" />
