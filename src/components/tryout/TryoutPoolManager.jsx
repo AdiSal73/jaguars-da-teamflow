@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +7,28 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Plus, Users, Search, Filter, Trash2, UserPlus } from 'lucide-react';
+import { Upload, Plus, Users, Search, Filter, Trash2, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
+
+// Calculate next year's age group based on date of birth
+// Age groups are based on Aug 1 cutoff
+const calculateNextYearAgeGroup = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  
+  const dob = new Date(dateOfBirth);
+  const cutoffDate = new Date('2027-08-01'); // Next season cutoff
+  
+  let age = cutoffDate.getFullYear() - dob.getFullYear();
+  const monthDiff = cutoffDate.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && cutoffDate.getDate() < dob.getDate())) {
+    age--;
+  }
+  
+  return `U${age}`;
+};
 
 export default function TryoutPoolManager({ onAddToTeam }) {
   const queryClient = useQueryClient();
@@ -22,9 +39,14 @@ export default function TryoutPoolManager({ onAddToTeam }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('all');
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
+  const [filterBirthDateFrom, setFilterBirthDateFrom] = useState('');
+  const [filterBirthDateTo, setFilterBirthDateTo] = useState('');
   const [selectedPoolPlayers, setSelectedPoolPlayers] = useState([]);
   const [bulkTeamFilter, setBulkTeamFilter] = useState('all');
   const [bulkAgeFilter, setBulkAgeFilter] = useState('all');
+  const [bulkBirthDateFrom, setBulkBirthDateFrom] = useState('');
+  const [bulkBirthDateTo, setBulkBirthDateTo] = useState('');
+  const [bulkNextYearAgeFilter, setBulkNextYearAgeFilter] = useState('all');
   
   const [newPlayer, setNewPlayer] = useState({
     player_name: '',
@@ -50,6 +72,25 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     queryKey: ['teams'],
     queryFn: () => base44.entities.Team.list()
   });
+
+  // Calculate next year age groups for all pool players
+  const poolPlayersWithNextYearAge = useMemo(() => {
+    return poolPlayers.map(p => ({
+      ...p,
+      next_year_age_group: calculateNextYearAgeGroup(p.date_of_birth)
+    }));
+  }, [poolPlayers]);
+
+  // Get unique next year age groups for filter
+  const nextYearAgeGroups = useMemo(() => {
+    const ages = poolPlayersWithNextYearAge
+      .map(p => p.next_year_age_group)
+      .filter(Boolean);
+    return [...new Set(ages)].sort((a, b) => {
+      const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
+      return extractAge(b) - extractAge(a);
+    });
+  }, [poolPlayersWithNextYearAge]);
 
   const addToPoolMutation = useMutation({
     mutationFn: (data) => base44.entities.TryoutPool.create(data),
@@ -104,6 +145,9 @@ export default function TryoutPoolManager({ onAddToTeam }) {
       setSelectedPoolPlayers([]);
       setBulkTeamFilter('all');
       setBulkAgeFilter('all');
+      setBulkBirthDateFrom('');
+      setBulkBirthDateTo('');
+      setBulkNextYearAgeFilter('all');
       toast.success(`Added ${playerIds.length} players to tryout pool`);
     }
   });
@@ -153,16 +197,21 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     reader.readAsText(file);
   };
 
-  const filteredPoolPlayers = poolPlayers.filter(p => {
+  const filteredPoolPlayers = poolPlayersWithNextYearAge.filter(p => {
     const matchesSearch = p.player_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGender = filterGender === 'all' || p.gender === filterGender;
-    const matchesAgeGroup = filterAgeGroup === 'all' || p.age_group === filterAgeGroup;
-    return matchesSearch && matchesGender && matchesAgeGroup;
+    const matchesAgeGroup = filterAgeGroup === 'all' || p.next_year_age_group === filterAgeGroup;
+    
+    let matchesBirthDate = true;
+    if (filterBirthDateFrom && p.date_of_birth) {
+      matchesBirthDate = matchesBirthDate && p.date_of_birth >= filterBirthDateFrom;
+    }
+    if (filterBirthDateTo && p.date_of_birth) {
+      matchesBirthDate = matchesBirthDate && p.date_of_birth <= filterBirthDateTo;
+    }
+    
+    return matchesSearch && matchesGender && matchesAgeGroup && matchesBirthDate;
   });
-
-  const availablePlayers = players.filter(p => 
-    !poolPlayers.some(pp => pp.player_id === p.id)
-  );
 
   const bulkFilteredPlayers = players.filter(p => {
     if (poolPlayers.some(pp => pp.player_id === p.id)) return false;
@@ -171,8 +220,28 @@ export default function TryoutPoolManager({ onAddToTeam }) {
     const matchesTeam = bulkTeamFilter === 'all' || team?.id === bulkTeamFilter;
     const matchesAge = bulkAgeFilter === 'all' || team?.age_group === bulkAgeFilter;
     
-    return matchesTeam && matchesAge;
+    let matchesBirthDate = true;
+    if (bulkBirthDateFrom && p.date_of_birth) {
+      matchesBirthDate = matchesBirthDate && p.date_of_birth >= bulkBirthDateFrom;
+    }
+    if (bulkBirthDateTo && p.date_of_birth) {
+      matchesBirthDate = matchesBirthDate && p.date_of_birth <= bulkBirthDateTo;
+    }
+    
+    const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+    const matchesNextYearAge = bulkNextYearAgeFilter === 'all' || nextYearAge === bulkNextYearAgeFilter;
+    
+    return matchesTeam && matchesAge && matchesBirthDate && matchesNextYearAge;
   });
+
+  const clearAllFilters = () => {
+    setFilterGender('all');
+    setFilterAgeGroup('all');
+    setFilterBirthDateFrom('');
+    setFilterBirthDateTo('');
+  };
+
+  const hasActiveFilters = filterGender !== 'all' || filterAgeGroup !== 'all' || filterBirthDateFrom || filterBirthDateTo;
 
   return (
     <Card className="border-2 border-blue-400 shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -182,6 +251,11 @@ export default function TryoutPoolManager({ onAddToTeam }) {
             <Users className="w-5 h-5" />
             <span className="font-bold">Tryout Pool</span>
             <Badge className="bg-white text-blue-700 text-sm font-bold px-2">{poolPlayers.length}</Badge>
+            {filteredPoolPlayers.length !== poolPlayers.length && (
+              <Badge className="bg-yellow-400 text-yellow-900 text-xs px-2">
+                {filteredPoolPlayers.length} shown
+              </Badge>
+            )}
           </div>
           <div className="flex gap-1">
             <Button
@@ -212,26 +286,70 @@ export default function TryoutPoolManager({ onAddToTeam }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3">
-        <div className="flex gap-2 mb-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
-            <Input
-              placeholder="Search pool..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-8 text-xs pl-7"
-            />
+        <div className="space-y-2 mb-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+              <Input
+                placeholder="Search pool..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8 text-xs pl-7"
+              />
+            </div>
+            <Select value={filterGender} onValueChange={setFilterGender}>
+              <SelectTrigger className="h-8 text-xs w-24">
+                <SelectValue placeholder="Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Female">Girls</SelectItem>
+                <SelectItem value="Male">Boys</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterAgeGroup} onValueChange={setFilterAgeGroup}>
+              <SelectTrigger className="h-8 text-xs w-24">
+                <SelectValue placeholder="Age" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Ages</SelectItem>
+                {nextYearAgeGroups.map(ag => (
+                  <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={filterGender} onValueChange={setFilterGender}>
-            <SelectTrigger className="h-8 text-xs w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="Female">Girls</SelectItem>
-              <SelectItem value="Male">Boys</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Input
+                type="date"
+                placeholder="Birth date from"
+                value={filterBirthDateFrom}
+                onChange={(e) => setFilterBirthDateFrom(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                type="date"
+                placeholder="Birth date to"
+                value={filterBirthDateTo}
+                onChange={(e) => setFilterBirthDateTo(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            {hasActiveFilters && (
+              <Button
+                onClick={clearAllFilters}
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-slate-600 hover:text-slate-900"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <Droppable droppableId="tryout-pool">
@@ -240,7 +358,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
               ref={provided.innerRef}
               {...provided.droppableProps}
               className={`space-y-1.5 overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-blue-200 rounded-xl' : ''}`}
-              style={{ maxHeight: 'calc(100vh - 280px)' }}
+              style={{ maxHeight: 'calc(100vh - 340px)' }}
             >
               {filteredPoolPlayers.map((poolPlayer, index) => (
                 <Draggable key={poolPlayer.id} draggableId={poolPlayer.player_id || poolPlayer.id} index={index}>
@@ -257,7 +375,11 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm text-slate-900">{poolPlayer.player_name}</div>
                           <div className="flex gap-1 mt-1 flex-wrap">
-                            {poolPlayer.age_group && <Badge className="bg-purple-100 text-purple-800 text-[10px]">{poolPlayer.age_group}</Badge>}
+                            {poolPlayer.next_year_age_group && (
+                              <Badge className="bg-purple-100 text-purple-800 text-[10px]">
+                                {poolPlayer.next_year_age_group} (26/27)
+                              </Badge>
+                            )}
                             {poolPlayer.primary_position && <Badge className="bg-blue-100 text-blue-800 text-[10px]">{poolPlayer.primary_position}</Badge>}
                             {poolPlayer.current_team && <Badge className="bg-slate-200 text-slate-700 text-[10px]">{poolPlayer.current_team}</Badge>}
                             <Badge className={`text-[10px] ${
@@ -396,7 +518,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
             <DialogTitle>Add Players from Last Year's Teams</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-xs text-slate-600">Filter by team or age group, then select players to add to tryout pool</p>
+            <p className="text-xs text-slate-600">Filter by team, age group, or birth date range, then select players to add</p>
             
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -414,7 +536,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Filter by Age Group</Label>
+                <Label className="text-xs">Filter by Current Age Group</Label>
                 <Select value={bulkAgeFilter} onValueChange={setBulkAgeFilter}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="All Ages" />
@@ -422,6 +544,41 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                   <SelectContent>
                     <SelectItem value="all">All Age Groups</SelectItem>
                     {[...new Set(teams.map(t => t.age_group).filter(Boolean))].sort((a, b) => {
+                      const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
+                      return extractAge(b) - extractAge(a);
+                    }).map(ag => (
+                      <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Birth Date From</Label>
+                <Input
+                  type="date"
+                  value={bulkBirthDateFrom}
+                  onChange={(e) => setBulkBirthDateFrom(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Birth Date To</Label>
+                <Input
+                  type="date"
+                  value={bulkBirthDateTo}
+                  onChange={(e) => setBulkBirthDateTo(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Next Year Age Group (26/27)</Label>
+                <Select value={bulkNextYearAgeFilter} onValueChange={setBulkNextYearAgeFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Age Groups</SelectItem>
+                    {[...new Set(players.map(p => calculateNextYearAgeGroup(p.date_of_birth)).filter(Boolean))].sort((a, b) => {
                       const extractAge = (ag) => parseInt(ag?.match(/\d+/)?.[0] || 0);
                       return extractAge(b) - extractAge(a);
                     }).map(ag => (
@@ -457,6 +614,7 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {bulkFilteredPlayers.map(player => {
                     const team = teams.find(t => t.id === player.team_id);
+                    const nextYearAge = calculateNextYearAgeGroup(player.date_of_birth);
                     return (
                       <div
                         key={player.id}
@@ -476,8 +634,9 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="font-semibold text-sm">{player.full_name}</div>
-                            <div className="flex gap-1 mt-1">
-                              {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs">{player.age_group}</Badge>}
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {player.age_group && <Badge className="bg-slate-100 text-slate-700 text-xs">{player.age_group} (now)</Badge>}
+                              {nextYearAge && <Badge className="bg-purple-100 text-purple-800 text-xs">{nextYearAge} (26/27)</Badge>}
                               {player.primary_position && <Badge className="bg-blue-100 text-blue-800 text-xs">{player.primary_position}</Badge>}
                               {team && <Badge className="bg-slate-200 text-slate-700 text-xs">{team.name}</Badge>}
                             </div>
@@ -501,6 +660,9 @@ export default function TryoutPoolManager({ onAddToTeam }) {
                       setSelectedPoolPlayers([]);
                       setBulkTeamFilter('all');
                       setBulkAgeFilter('all');
+                      setBulkBirthDateFrom('');
+                      setBulkBirthDateTo('');
+                      setBulkNextYearAgeFilter('all');
                     }}
                     className="flex-1"
                   >
