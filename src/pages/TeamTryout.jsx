@@ -74,6 +74,7 @@ export default function TeamTryout() {
   const [aiFormParams, setAiFormParams] = useState({ gender: '', age_groups: [], league_preference: '' });
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showTotalAssignedDialog, setShowTotalAssignedDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showBulkFromTeamsDialog, setShowBulkFromTeamsDialog] = useState(false);
@@ -677,7 +678,16 @@ export default function TeamTryout() {
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
             Team Assignments 2026/2027
           </h1>
-          <p className="text-slate-600 mt-2">Select an age group to manage teams and tryout pool</p>
+          <p className="text-slate-600 mt-2">
+            Select an age group to manage teams and tryout pool
+            <Button
+              variant="link"
+              onClick={() => setShowTotalAssignedDialog(true)}
+              className="ml-2 h-auto p-0 text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              View Total Assigned ({players.filter(p => tryouts.find(t => t.player_id === p.id)?.next_year_team).length})
+            </Button>
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowAIFormationDialog(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
@@ -692,24 +702,28 @@ export default function TeamTryout() {
       </div>
 
       <Tabs value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} className="w-full">
-        <TabsList className="flex w-full mb-6 bg-gradient-to-r from-slate-100 to-slate-50 p-1.5 rounded-xl border-2 border-slate-200 shadow-lg overflow-x-auto">
+        <TabsList className="grid w-full mb-6 p-1 rounded-xl bg-white border border-slate-200 shadow-sm" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length}, minmax(0, 1fr))` }}>
           {uniqueAgeGroups.map(age => {
             const teamsInAge = teams.filter(t => t.age_group === age && (t.season === '26/27' || t.name?.includes('26/27'))).length;
             const playersInAge = poolPlayers.filter(pp => {
-              const nextYearAge = calculateNextYearAgeGroup(pp.date_of_birth);
-              return nextYearAge === age && !pp.next_year_team;
+              const effectiveAgeGroup = pp.age_group || calculateNextYearAgeGroup(pp.date_of_birth);
+              return effectiveAgeGroup === age && !pp.next_year_team;
             }).length;
             return (
               <TabsTrigger 
                 key={age} 
                 value={age} 
-                className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 px-4 py-2.5 rounded-lg font-semibold whitespace-nowrap"
+                className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=inactive]:text-slate-600 transition-colors duration-150 px-3 py-2 rounded-lg font-medium text-sm"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{age}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-bold">{age}</span>
                   <div className="flex gap-1.5">
-                    <Badge variant="outline" className="text-xs px-2 bg-white/20 border-white/30">{teamsInAge}T</Badge>
-                    <Badge className="bg-blue-600 text-white text-xs px-2 font-bold">{playersInAge}P</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 data-[state=active]:border-white/50 data-[state=active]:text-white/90 data-[state=inactive]:bg-slate-100 data-[state=inactive]:border-slate-300">
+                      {teamsInAge}T
+                    </Badge>
+                    <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 h-4 font-semibold">
+                      {playersInAge}P
+                    </Badge>
                   </div>
                 </div>
               </TabsTrigger>
@@ -1580,6 +1594,46 @@ export default function TeamTryout() {
                 Add {selectedDatabasePlayers.length} Player{selectedDatabasePlayers.length !== 1 ? 's' : ''}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Total Assigned Dialog */}
+      <Dialog open={showTotalAssignedDialog} onOpenChange={setShowTotalAssignedDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">All Assigned Players (2026/2027)</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4">
+            {uniqueAgeGroups.map(ageGroup => {
+              const ageTeams = teams.filter(t => t.age_group === ageGroup && (t.season === '26/27' || t.name?.includes('26/27')));
+              return (
+                <div key={ageGroup} className="border-2 border-slate-200 rounded-lg p-4">
+                  <h3 className="font-bold text-lg mb-3 text-slate-800">{ageGroup}</h3>
+                  <div className="space-y-2">
+                    {ageTeams.map(team => {
+                      const teamPlayers = getTeamPlayers(team.name);
+                      if (teamPlayers.length === 0) return null;
+                      return (
+                        <div key={team.id} className="bg-slate-50 rounded-lg p-3">
+                          <div className="font-semibold text-sm mb-2 text-slate-700">
+                            {team.name} ({teamPlayers.length})
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {teamPlayers.map(player => (
+                              <Badge key={player.id} className="bg-emerald-100 text-emerald-800 text-xs">
+                                {player.full_name}
+                                {player.tryout?.next_season_status === 'Accepted Offer' && ' ✓'}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
