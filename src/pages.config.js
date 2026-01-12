@@ -47,7 +47,6 @@ import TeamRoster from './pages/TeamRoster';
 import TeamTryout from './pages/TeamTryout';
 import Teams from './pages/Teams';
 import TryoutPlayers from './pages/TryoutPlayers';
-import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
@@ -103,7 +102,6 @@ export const PAGES = {
     "TeamTryout": TeamTryout,
     "Teams": Teams,
     "TryoutPlayers": TryoutPlayers,
-    "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
 }

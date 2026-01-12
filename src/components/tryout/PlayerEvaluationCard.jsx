@@ -63,20 +63,52 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
-          <div className="text-center">
-            <div className="text-xs text-slate-500">Eval</div>
-            <div className="text-lg font-bold text-emerald-600">{evaluation?.overall_score?.toFixed(1) || 'N/A'}</div>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="text-center p-2 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg">
+            <div className="text-xs text-emerald-700 font-semibold">Eval Score</div>
+            <div className="text-2xl font-bold text-emerald-700">{evaluation?.overall_score?.toFixed(1) || '-'}</div>
           </div>
-          <div className="text-center">
-            <div className="text-xs text-slate-500">Physical</div>
-            <div className="text-lg font-bold text-blue-600">{assessment?.overall_score || 'N/A'}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-slate-500">Age Rank</div>
-            <div className="text-lg font-bold text-purple-600">{tryout?.age_group_ranking || '-'}</div>
+          <div className="text-center p-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+            <div className="text-xs text-blue-700 font-semibold">Physical</div>
+            <div className="text-2xl font-bold text-blue-700">{assessment?.overall_score || '-'}</div>
           </div>
         </div>
+
+        {/* Physical Breakdown */}
+        {assessment && (
+          <div className="grid grid-cols-4 gap-1 mb-3 text-xs">
+            <div className="text-center bg-red-50 rounded p-1">
+              <div className="text-[10px] text-red-600">SPD</div>
+              <div className="font-bold text-red-700">{assessment.speed_score}</div>
+            </div>
+            <div className="text-center bg-blue-50 rounded p-1">
+              <div className="text-[10px] text-blue-600">PWR</div>
+              <div className="font-bold text-blue-700">{assessment.power_score}</div>
+            </div>
+            <div className="text-center bg-green-50 rounded p-1">
+              <div className="text-[10px] text-green-600">END</div>
+              <div className="font-bold text-green-700">{assessment.endurance_score}</div>
+            </div>
+            <div className="text-center bg-pink-50 rounded p-1">
+              <div className="text-[10px] text-pink-600">AGI</div>
+              <div className="font-bold text-pink-700">{assessment.agility_score}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Evaluation Highlights */}
+        {evaluation && (
+          <div className="mb-3 p-2 bg-slate-50 rounded-lg space-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-slate-600">Mindset</span>
+              <span className="font-bold text-purple-600">{evaluation.growth_mindset}/10</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Athleticism</span>
+              <span className="font-bold text-emerald-600">{evaluation.athleticism}/10</span>
+            </div>
+          </div>
+        )}
 
         {/* Offer Status & Action */}
         <div className="space-y-2">
