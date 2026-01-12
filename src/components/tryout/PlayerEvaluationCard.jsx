@@ -8,7 +8,7 @@ import { createPageUrl } from '@/utils';
 import { User, Check, X, Clock, Trash2 } from 'lucide-react';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 
-export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, onRemove, isDragging }) {
+export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, onRemove, isDragging, isSelectable, isSelected, onToggleSelect }) {
   const navigate = useNavigate();
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
   const isTrapped = player.date_of_birth ? (() => {
@@ -35,15 +35,27 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
           <Card 
             className={`transition-all cursor-pointer border ${isTrapped ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300' : 'bg-white'} ${isDragging ? 'shadow-2xl border-emerald-500 rotate-1 scale-105' : 'border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
           >
-            <CardContent className="p-2">
+            <CardContent className="p-3">
               <div className="flex items-start gap-2 mb-2">
+                {isSelectable && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      onToggleSelect();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-5 h-5 mt-0.5 flex-shrink-0 cursor-pointer"
+                  />
+                )}
                 <div onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`)} className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer">
-                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
-                    {player.jersey_number || <User className="w-4 h-4" />}
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-md">
+                    {player.jersey_number || <User className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs text-slate-900 truncate">{player.full_name}</div>
-                    <div className="text-[10px] text-slate-600 truncate">
+                    <div className="font-bold text-sm text-slate-900 truncate">{player.full_name}</div>
+                    <div className="text-xs text-slate-600 truncate">
                       {player.primary_position}
                       {player.grad_year && <span className="ml-1">• {player.grad_year}</span>}
                     </div>
@@ -65,21 +77,21 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
               </div>
 
               {/* Badges */}
-              <div className="flex flex-wrap gap-0.5 mb-2">
-                {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-[9px] px-1 py-0">{player.age_group}</Badge>}
-                {player.grad_year && <Badge className="bg-slate-600 text-white text-[8px] px-1 py-0">'{player.grad_year.toString().slice(-2)}</Badge>}
-                {isTrapped && <Badge className="bg-red-500 text-white text-[9px] px-1 py-0">TRAP</Badge>}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 font-semibold">{player.age_group}</Badge>}
+                {player.grad_year && <Badge className="bg-slate-600 text-white text-xs px-2 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>}
+                {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-bold">TRAP</Badge>}
                 {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="small" />}
-                {player.is_tryout_player && <Badge className="bg-indigo-500 text-white text-[9px] px-1 py-0">EXT</Badge>}
+                {player.is_tryout_player && <Badge className="bg-indigo-500 text-white text-xs px-2 py-0.5 font-semibold">EXT</Badge>}
               </div>
 
               {/* Offer Status & Action */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {tryout?.next_season_status && tryout.next_season_status !== 'N/A' ? (
-                  <Badge className={`w-full justify-center py-1 text-[10px] ${getOfferStatusColor(tryout.next_season_status)}`}>
-                    {tryout.next_season_status === 'Accepted Offer' && <Check className="w-2 h-2 mr-0.5" />}
-                    {tryout.next_season_status === 'Rejected Offer' && <X className="w-2 h-2 mr-0.5" />}
-                    {tryout.next_season_status === 'Considering Offer' && <Clock className="w-2 h-2 mr-0.5" />}
+                  <Badge className={`w-full justify-center py-1.5 text-xs font-semibold ${getOfferStatusColor(tryout.next_season_status)}`}>
+                    {tryout.next_season_status === 'Accepted Offer' && <Check className="w-3 h-3 mr-1" />}
+                    {tryout.next_season_status === 'Rejected Offer' && <X className="w-3 h-3 mr-1" />}
+                    {tryout.next_season_status === 'Considering Offer' && <Clock className="w-3 h-3 mr-1" />}
                     {tryout.next_season_status}
                   </Badge>
                 ) : tryout?.next_year_team ? (
@@ -89,14 +101,14 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
                       onSendOffer(player);
                     }}
                     size="sm"
-                    className="w-full h-6 text-[10px] bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
+                    className="w-full h-7 text-xs font-semibold bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700"
                   >
                     Send Offer
                   </Button>
                 ) : null}
                 
                 {tryout?.registration_status && tryout.registration_status !== 'Not Signed' && (
-                  <Badge className={`w-full justify-center text-[9px] py-0.5 ${
+                  <Badge className={`w-full justify-center text-xs py-1 font-semibold ${
                     tryout.registration_status === 'Signed and Paid' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
                   }`}>
                     {tryout.registration_status}
