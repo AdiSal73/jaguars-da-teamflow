@@ -11,6 +11,9 @@ import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 export default function PlayerEvaluationCard({ player, team, tryout, evaluation, assessment, onSendOffer, onRemove, isDragging, isSelectable, isSelected, onToggleSelect }) {
   const navigate = useNavigate();
   const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
+  const currentTeam = tryout?.current_team || team?.name || player.current_team;
+  const gradYear = player.grad_year;
+  
   const isTrapped = player.date_of_birth ? (() => {
     const dob = new Date(player.date_of_birth);
     const month = dob.getMonth();
@@ -57,7 +60,7 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
                     <div className="font-bold text-sm text-slate-900 truncate">{player.full_name}</div>
                     <div className="text-xs text-slate-600 truncate">
                       {player.primary_position}
-                      {player.grad_year && <span className="ml-1">• {player.grad_year}</span>}
+                      {gradYear && <span className="ml-1">• '{gradYear.toString().slice(-2)}</span>}
                     </div>
                   </div>
                 </div>
@@ -79,8 +82,10 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
               {/* Badges */}
               <div className="flex flex-wrap gap-1 mb-2">
                 {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 font-semibold">{player.age_group}</Badge>}
-                {player.grad_year && <Badge className="bg-slate-600 text-white text-xs px-2 py-0.5 font-bold">'{player.grad_year.toString().slice(-2)}</Badge>}
-                {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-bold">TRAP</Badge>}
+                {birthYear && <Badge className="bg-slate-400 text-white text-xs px-2 py-0.5 font-bold">{birthYear}</Badge>}
+                {gradYear && <Badge className="bg-slate-600 text-white text-xs px-2 py-0.5 font-bold">'{gradYear.toString().slice(-2)}</Badge>}
+                {currentTeam && <Badge className="bg-blue-500 text-white text-xs px-2 py-0.5 font-semibold">{currentTeam}</Badge>}
+                {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-bold">TRAPPED</Badge>}
                 {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="small" />}
                 {player.is_tryout_player && <Badge className="bg-indigo-500 text-white text-xs px-2 py-0.5 font-semibold">EXT</Badge>}
               </div>
