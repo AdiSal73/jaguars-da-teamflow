@@ -53,6 +53,7 @@ export default function TeamTryout() {
   const [birthdayFrom, setBirthdayFrom] = useState('');
   const [birthdayTo, setBirthdayTo] = useState('');
   const [selectedPlayers, setSelectedPlayers] = useState([]);
+  const [selectedPoolPlayers, setSelectedPoolPlayersForBulk] = useState([]);
   const [bulkAssignTeam, setBulkAssignTeam] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   
@@ -620,11 +621,8 @@ export default function TeamTryout() {
             playerId: poolEntry.player_id,
             data: { next_year_team: destTeamName }
           });
-          // Update pool entry instead of deleting
-          await base44.entities.TryoutPool.update(poolEntry.id, {
-            next_year_team: destTeamName,
-            status: 'Invited'
-          });
+          // Remove from pool when assigned to team
+          await base44.entities.TryoutPool.delete(poolEntry.id);
         } else {
           // New external player - create player entity first
           const newPlayer = await createPlayerMutation.mutateAsync({
@@ -649,12 +647,8 @@ export default function TeamTryout() {
             }
           });
           
-          // Update pool entry
-          await base44.entities.TryoutPool.update(poolEntry.id, {
-            player_id: newPlayer.id,
-            next_year_team: destTeamName,
-            status: 'Invited'
-          });
+          // Remove from pool when assigned to team
+          await base44.entities.TryoutPool.delete(poolEntry.id);
         }
       } else {
         // Moving between teams
@@ -698,7 +692,7 @@ export default function TeamTryout() {
       </div>
 
       <Tabs value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} className="w-full">
-        <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length}, minmax(0, 1fr))` }}>
+        <TabsList className="flex w-full mb-6 bg-gradient-to-r from-slate-100 to-slate-50 p-1.5 rounded-xl border-2 border-slate-200 shadow-lg overflow-x-auto">
           {uniqueAgeGroups.map(age => {
             const teamsInAge = teams.filter(t => t.age_group === age && (t.season === '26/27' || t.name?.includes('26/27'))).length;
             const playersInAge = poolPlayers.filter(pp => {
@@ -706,12 +700,16 @@ export default function TeamTryout() {
               return nextYearAge === age && !pp.next_year_team;
             }).length;
             return (
-              <TabsTrigger key={age} value={age} className="relative">
+              <TabsTrigger 
+                key={age} 
+                value={age} 
+                className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 px-4 py-2.5 rounded-lg font-semibold whitespace-nowrap"
+              >
                 <div className="flex items-center gap-2">
-                  <span>{age}</span>
-                  <div className="flex gap-1">
-                    <Badge variant="outline" className="text-[10px] px-1">{teamsInAge}T</Badge>
-                    <Badge className="bg-blue-500 text-white text-[10px] px-1">{playersInAge}P</Badge>
+                  <span className="text-base">{age}</span>
+                  <div className="flex gap-1.5">
+                    <Badge variant="outline" className="text-xs px-2 bg-white/20 border-white/30">{teamsInAge}T</Badge>
+                    <Badge className="bg-blue-600 text-white text-xs px-2 font-bold">{playersInAge}P</Badge>
                   </div>
                 </div>
               </TabsTrigger>
@@ -855,13 +853,18 @@ export default function TeamTryout() {
                 <div>
                   <Card className="border-2 border-blue-400 shadow-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
                     <CardHeader className="pb-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md">
-                      <CardTitle className="text-sm flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <Users className="w-5 h-5" />
                           <span className="font-bold">{selectedAgeGroup} Tryout Pool</span>
                           <Badge className="bg-white text-blue-700 text-sm font-bold px-2">{filteredPoolPlayers.length}</Badge>
+                          {selectedPoolPlayersForBulk.length > 0 && (
+                            <Badge className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2">
+                              {selectedPoolPlayersForBulk.length} Selected
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap">
                           <Button
                             onClick={() => setShowBulkFromTeamsDialog(true)}
                             size="sm"
@@ -890,6 +893,76 @@ export default function TeamTryout() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3">
+                      {selectedPoolPlayersForBulk.length > 0 && (
+                        <div className="mb-3 p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-yellow-900">{selectedPoolPlayersForBulk.length} players selected</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedPoolPlayersForBulk([])}
+                              className="h-6 text-xs"
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Clear
+                            </Button>
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            <Select 
+                              value=""
+                              onValueChange={(teamName) => {
+                                if (teamName) {
+                                  selectedPoolPlayersForBulk.forEach(playerId => {
+                                    const poolEntry = poolPlayers.find(pp => pp.id === playerId || pp.player_id === playerId);
+                                    if (poolEntry?.player_id) {
+                                      updateTryoutMutation.mutate({
+                                        playerId: poolEntry.player_id,
+                                        data: { next_year_team: teamName }
+                                      });
+                                    }
+                                  });
+                                  setSelectedPoolPlayersForBulk([]);
+                                  toast.success(`Assigned ${selectedPoolPlayersForBulk.length} players to ${teamName}`);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs flex-1">
+                                <SelectValue placeholder="Assign to team..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {filteredTeams.map(team => (
+                                  <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value=""
+                              onValueChange={(ageGroup) => {
+                                if (ageGroup) {
+                                  selectedPoolPlayersForBulk.forEach(playerId => {
+                                    const poolEntry = poolPlayers.find(pp => pp.id === playerId || pp.player_id === playerId);
+                                    if (poolEntry) {
+                                      base44.entities.TryoutPool.update(poolEntry.id, { age_group: ageGroup });
+                                    }
+                                  });
+                                  queryClient.invalidateQueries(['tryoutPool']);
+                                  setSelectedPoolPlayersForBulk([]);
+                                  toast.success(`Moved ${selectedPoolPlayersForBulk.length} players to ${ageGroup}`);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs flex-1">
+                                <SelectValue placeholder="Move to age group..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {uniqueAgeGroups.map(ag => (
+                                  <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
                       <Droppable droppableId="tryout-pool">
                         {(provided, snapshot) => (
                           <div
@@ -914,6 +987,15 @@ export default function TeamTryout() {
                                       assessment={player.assessment}
                                       isDragging={snapshot.isDragging}
                                       onRemove={handleRemovePlayer}
+                                      isSelectable={true}
+                                      isSelected={selectedPoolPlayersForBulk.includes(player.id)}
+                                      onToggleSelect={() => {
+                                        if (selectedPoolPlayersForBulk.includes(player.id)) {
+                                          setSelectedPoolPlayersForBulk(prev => prev.filter(id => id !== player.id));
+                                        } else {
+                                          setSelectedPoolPlayersForBulk(prev => [...prev, player.id]);
+                                        }
+                                      }}
                                     />
                                   </div>
                                 )}
@@ -1339,116 +1421,165 @@ export default function TeamTryout() {
 
       {/* Bulk Add from Teams Dialog */}
       <Dialog open={showBulkFromTeamsDialog} onOpenChange={setShowBulkFromTeamsDialog}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Add Players from Player Database</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Add Players from Database to {selectedAgeGroup} Pool</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-slate-700">Select players from the database to add to the {selectedAgeGroup} tryout pool</p>
+          
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200">
+              <p className="text-sm text-slate-700 font-medium">Search and select players to add to the tryout pool</p>
             </div>
 
-            {players.filter(p => {
-              const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-              return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
-            }).length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-sm">No players available for {selectedAgeGroup}</p>
-            ) : (
-              <>
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <span className="text-sm font-semibold text-blue-900">
-                    {players.filter(p => {
-                      const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-                      return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
-                    }).length} players available
-                  </span>
-                  <Button
-                    onClick={() => {
-                      const availablePlayers = players.filter(p => {
-                        const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-                        return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
-                      }).map(p => p.id);
-                      
-                      if (selectedPoolPlayers.length === availablePlayers.length) {
-                        setSelectedPoolPlayers([]);
-                      } else {
-                        setSelectedPoolPlayers(availablePlayers);
-                      }
-                    }}
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                  >
-                    {selectedPoolPlayers.length === players.filter(p => {
-                      const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-                      return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
-                    }).length ? 'Deselect All' : 'Select All'}
-                  </Button>
+            {/* Search and Filters */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search players..."
+                  value={playerSearchTerm}
+                  onChange={(e) => setPlayerSearchTerm(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+              <Select value={playerFilterBranch} onValueChange={setPlayerFilterBranch}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {BRANCH_OPTIONS.map(branch => (
+                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={playerFilterCurrentTeam} onValueChange={setPlayerFilterCurrentTeam}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {[...new Set(players.map(p => p.team_id).filter(Boolean))].map(teamId => {
+                    const team = teams.find(t => t.id === teamId);
+                    return team ? <SelectItem key={teamId} value={teamId}>{team.name}</SelectItem> : null;
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(() => {
+              const availablePlayers = players.filter(p => {
+                const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
+                const ageMatch = nextYearAge === selectedAgeGroup;
+                const notInPool = !poolPlayers.some(pp => pp.player_id === p.id);
+                const searchMatch = !playerSearchTerm || p.full_name?.toLowerCase().includes(playerSearchTerm.toLowerCase());
+                const branchMatch = playerFilterBranch === 'all' || p.branch === playerFilterBranch;
+                const teamMatch = playerFilterCurrentTeam === 'all' || p.team_id === playerFilterCurrentTeam;
+                return ageMatch && notInPool && searchMatch && branchMatch && teamMatch;
+              });
+
+              return availablePlayers.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">No players found</p>
+                  <p className="text-sm">Try adjusting your filters</p>
                 </div>
-                
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {players.filter(p => {
-                    const nextYearAge = calculateNextYearAgeGroup(p.date_of_birth);
-                    return nextYearAge === selectedAgeGroup && !poolPlayers.some(pp => pp.player_id === p.id);
-                  }).map(player => {
-                    const team = teams.find(t => t.id === player.team_id);
-                    return (
-                      <div
-                        key={player.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                          selectedPoolPlayers.includes(player.id)
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-slate-200 hover:border-blue-300'
-                        }`}
-                        onClick={() => {
-                          if (selectedPoolPlayers.includes(player.id)) {
-                            setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
-                          } else {
-                            setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedPoolPlayers.includes(player.id)}
-                            onChange={() => {}}
-                            className="w-5 h-5 flex-shrink-0"
-                          />
-                          <div className="flex-1">
-                            <div className="font-semibold text-sm">{player.full_name}</div>
-                            <div className="flex gap-1 mt-1 flex-wrap">
-                              {player.age_group && <Badge className="bg-slate-100 text-slate-700 text-xs">{player.age_group} (now)</Badge>}
-                              {player.primary_position && <Badge className="bg-blue-100 text-blue-800 text-xs">{player.primary_position}</Badge>}
-                              {team && <Badge className="bg-slate-200 text-slate-700 text-xs">{team.name}</Badge>}
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <span className="text-sm font-bold text-blue-900">
+                      {availablePlayers.length} players • {selectedPoolPlayers.length} selected
+                    </span>
+                    <Button
+                      onClick={() => {
+                        if (selectedPoolPlayers.length === availablePlayers.length) {
+                          setSelectedPoolPlayers([]);
+                        } else {
+                          setSelectedPoolPlayers(availablePlayers.map(p => p.id));
+                        }
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                    >
+                      {selectedPoolPlayers.length === availablePlayers.length ? 'Deselect All' : 'Select All'}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                    {availablePlayers.map(player => {
+                      const team = teams.find(t => t.id === player.team_id);
+                      const isSelected = selectedPoolPlayers.includes(player.id);
+                      return (
+                        <div
+                          key={player.id}
+                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-slate-200 hover:border-blue-300 hover:shadow'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedPoolPlayers(selectedPoolPlayers.filter(id => id !== player.id));
+                            } else {
+                              setSelectedPoolPlayers([...selectedPoolPlayers, player.id]);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="w-5 h-5 flex-shrink-0 cursor-pointer"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-base text-slate-900 truncate">{player.full_name}</div>
+                              <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                                {player.age_group && <Badge className="bg-slate-200 text-slate-800 text-xs">{player.age_group}</Badge>}
+                                {player.primary_position && <Badge className="bg-blue-500 text-white text-xs">{player.primary_position}</Badge>}
+                                {player.branch && <Badge variant="outline" className="text-xs">{player.branch}</Badge>}
+                                {team && <Badge className="bg-emerald-500 text-white text-xs">{team.name}</Badge>}
+                                {player.grad_year && <Badge className="bg-purple-500 text-white text-xs font-bold">{player.grad_year}</Badge>}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-2 pt-2 sticky bottom-0 bg-white">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowBulkFromTeamsDialog(false);
-                      setSelectedPoolPlayers([]);
-                    }}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => bulkAddFromDatabaseMutation.mutate(selectedPoolPlayers)}
-                    disabled={selectedPoolPlayers.length === 0}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  >
-                    Add {selectedPoolPlayers.length} Player{selectedPoolPlayers.length !== 1 ? 's' : ''}
-                  </Button>
-                </div>
-              </>
-            )}
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+
+            <div className="flex gap-2 pt-3 border-t-2 bg-white">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBulkFromTeamsDialog(false);
+                  setSelectedPoolPlayers([]);
+                  setPlayerSearchTerm('');
+                  setPlayerFilterBranch('all');
+                  setPlayerFilterCurrentTeam('all');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  bulkAddFromDatabaseMutation.mutate(selectedPoolPlayers);
+                  setPlayerSearchTerm('');
+                  setPlayerFilterBranch('all');
+                  setPlayerFilterCurrentTeam('all');
+                }}
+                disabled={selectedPoolPlayers.length === 0}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add {selectedPoolPlayers.length} Player{selectedPoolPlayers.length !== 1 ? 's' : ''}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
