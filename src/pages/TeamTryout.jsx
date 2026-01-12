@@ -19,6 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import PlayerEvaluationCard from '../components/tryout/PlayerEvaluationCard';
 import SendOfferDialog from '../components/tryout/SendOfferDialog';
 import FinalizeRosterDialog from '../components/tryout/FinalizeRosterDialog';
+import TryoutPoolManager from '../components/tryout/TryoutPoolManager';
 
 export default function TeamTryout() {
   const navigate = useNavigate();
@@ -375,7 +376,7 @@ export default function TeamTryout() {
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid lg:grid-cols-[1fr_480px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_480px_380px] gap-6">
           {/* Teams Section */}
           <div>
             <Card className="mb-4 border-none shadow-xl bg-gradient-to-br from-white to-slate-50">
@@ -675,7 +676,7 @@ export default function TeamTryout() {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className={`space-y-1.5 p-2.5 rounded-xl overflow-y-auto transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
-                  style={{ maxHeight: 'calc(100vh - 580px)' }}
+                  style={{ maxHeight: 'calc(100vh - 420px)' }}
                 >
                   {unassignedPlayers?.map((player, index) => (
                     <Draggable key={player.id} draggableId={player.id} index={index}>
@@ -724,6 +725,18 @@ export default function TeamTryout() {
             </Droppable>
           </CardContent>
         </Card>
+
+          {/* Tryout Pool */}
+          <TryoutPoolManager
+            onAddToTeam={(poolPlayer) => {
+              if (poolPlayer.player_id) {
+                // If it's an existing player, just navigate to their dashboard
+                navigate(`${createPageUrl('PlayerDashboard')}?id=${poolPlayer.player_id}`);
+              } else {
+                toast.info('Drag this player to a team to create their profile');
+              }
+            }}
+          />
       </div>
       </DragDropContext>
 

@@ -136,6 +136,7 @@ export default function Layout({ children, currentPageName }) {
       icon: TrendingUp,
       roles: ["admin", "director"],
       submenu: [
+        { title: "Tryout Board", url: createPageUrl("Tryouts") },
         { title: "Team Assignments", url: createPageUrl("TeamTryout") },
         { title: "Position Assignments", url: createPageUrl("PositionAssignments") },
         { title: "Outside Players", url: createPageUrl("TryoutPlayers") },
