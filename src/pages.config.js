@@ -48,12 +48,12 @@ import TeamReports from './pages/TeamReports';
 import TeamRoster from './pages/TeamRoster';
 import TeamTryout from './pages/TeamTryout';
 import Teams from './pages/Teams';
+import TryoutDashboard from './pages/TryoutDashboard';
 import TryoutPlayers from './pages/TryoutPlayers';
+import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import TryoutDashboard from './pages/TryoutDashboard';
-import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import __Layout from './Layout.jsx';
 
 
@@ -108,12 +108,12 @@ export const PAGES = {
     "TeamRoster": TeamRoster,
     "TeamTryout": TeamTryout,
     "Teams": Teams,
+    "TryoutDashboard": TryoutDashboard,
     "TryoutPlayers": TryoutPlayers,
+    "TryoutPoolsByAge": TryoutPoolsByAge,
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "TryoutDashboard": TryoutDashboard,
-    "TryoutPoolsByAge": TryoutPoolsByAge,
 }
 
 export const pagesConfig = {
