@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, X, MessageSquare, Send, Filter, Plus } from 'lucide-react';
+import { Calendar, Clock, User, X, MessageSquare, Send, Filter, Plus, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
 import BookingCalendarView from '../components/booking/BookingCalendarView';
+import GoogleCalendarConnectDialog from '../components/booking/GoogleCalendarConnectDialog';
 import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
 
 export default function MyBookings() {
@@ -31,6 +32,8 @@ export default function MyBookings() {
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [sendRecipient, setSendRecipient] = useState('');
+  const [showCalendarDialog, setShowCalendarDialog] = useState(false);
+  const [calendarStatus, setCalendarStatus] = useState({ connected: false, checking: true });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -59,6 +62,22 @@ export default function MyBookings() {
 
   const currentCoach = coaches.find(c => c.email === user?.email);
   const isCoach = !!currentCoach;
+
+  // Check calendar connection status
+  useEffect(() => {
+    const checkCalendarStatus = async () => {
+      try {
+        const response = await base44.functions.invoke('connectGoogleCalendar', {});
+        setCalendarStatus({ connected: response.data.connected, checking: false });
+      } catch (error) {
+        console.error('Error checking calendar:', error);
+        setCalendarStatus({ connected: false, checking: false });
+      }
+    };
+    if (user) {
+      checkCalendarStatus();
+    }
+  }, [user]);
 
   const cancelBookingMutation = useMutation({
     mutationFn: async (id) => {
@@ -396,12 +415,30 @@ export default function MyBookings() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">My Bookings</h1>
             <p className="text-slate-600 mt-2">View and manage your scheduled training sessions</p>
           </div>
-          <Link to={createPageUrl('Bookingpage')}>
-            <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg">
-              <Plus className="w-4 h-4 mr-2" />
-              Book New Session
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowCalendarDialog(true)}
+              className={`${
+                calendarStatus.connected
+                  ? 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                  : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100'
+              }`}
+            >
+              {calendarStatus.checking ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Calendar className="w-4 h-4 mr-2" />
+              )}
+              {calendarStatus.checking ? 'Checking...' : calendarStatus.connected ? 'Calendar Synced' : 'Connect Calendar'}
             </Button>
-          </Link>
+            <Link to={createPageUrl('Bookingpage')}>
+              <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Book New Session
+              </Button>
+            </Link>
+          </div>
         </div>
 
       {/* Filters - Admin Only */}
@@ -735,6 +772,21 @@ export default function MyBookings() {
         title="Send Message?"
         recipients={[sendRecipient]}
         isLoading={sendMessageMutation.isPending}
+      />
+
+      <GoogleCalendarConnectDialog
+        open={showCalendarDialog}
+        onClose={() => {
+          setShowCalendarDialog(false);
+          // Recheck status after dialog closes
+          if (user) {
+            base44.functions.invoke('connectGoogleCalendar', {}).then(response => {
+              setCalendarStatus({ connected: response.data.connected, checking: false });
+            }).catch(() => {
+              setCalendarStatus({ connected: false, checking: false });
+            });
+          }
+        }}
       />
       </div>
     </div>
