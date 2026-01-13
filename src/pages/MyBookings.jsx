@@ -84,6 +84,16 @@ export default function MyBookings() {
       const booking = bookings.find(b => b.id === id);
       await base44.entities.Booking.update(id, { status: 'cancelled' });
 
+      // Auto-remove from Google Calendar
+      try {
+        await base44.functions.invoke('syncBookingToGoogleCalendar', {
+          bookingId: id,
+          action: 'delete'
+        });
+      } catch (calError) {
+        console.log('Calendar removal skipped:', calError);
+      }
+
       const location = locations.find(l => l.id === booking.location_id);
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
       const coach = coaches.find(c => c.id === booking.coach_id);

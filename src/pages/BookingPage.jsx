@@ -141,6 +141,17 @@ export default function BookingPage() {
     onSuccess: async (booking) => {
       queryClient.invalidateQueries(['bookings']);
       queryClient.invalidateQueries(['timeSlots']);
+
+      // Auto-sync to Google Calendar for the booker
+      try {
+        if (user?.email) {
+          await base44.functions.invoke('syncBookingToGoogleCalendar', {
+            bookingId: booking.id
+          });
+        }
+      } catch (calError) {
+        console.log('Calendar sync skipped (not connected or failed):', calError);
+      }
       
       const location = locations.find(l => l.id === booking.location_id);
       const locationInfo = location ? `${location.name} - ${location.address}` : 'Location TBD';
