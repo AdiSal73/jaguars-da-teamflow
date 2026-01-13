@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
 import BookingCalendarSync from '../components/booking/BookingCalendarSync';
+import BookingCalendarView from '../components/booking/BookingCalendarView';
 import SendConfirmDialog from '../components/messaging/SendConfirmDialog';
 
 export default function MyBookings() {
@@ -338,7 +339,7 @@ export default function MyBookings() {
           
           {(booking.status === 'confirmed' || booking.status === 'pending') && booking.booking_date >= today && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <BookingCalendarSync booking={booking} coach={coach} location={location} />
+              <BookingCalendarSync booking={booking} size="small" />
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -469,6 +470,10 @@ export default function MyBookings() {
           <TabsTrigger value="upcoming">
             Upcoming ({upcomingBookings.length})
           </TabsTrigger>
+          <TabsTrigger value="calendar">
+            <Calendar className="w-4 h-4 mr-2" />
+            Calendar View
+          </TabsTrigger>
           <TabsTrigger value="past">
             Past & Cancelled ({pastBookings.length})
           </TabsTrigger>
@@ -534,6 +539,20 @@ export default function MyBookings() {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <BookingCalendarView 
+            bookings={filteredBookings}
+            onBookingClick={(booking) => {
+              setSelectedBooking(booking);
+              setMessageForm({ 
+                subject: `Regarding Session on ${new Date(booking.booking_date).toLocaleDateString()}`,
+                content: `Hi,\n\nI wanted to reach out regarding our session:\n\nDate: ${new Date(booking.booking_date).toLocaleDateString()}\nTime: ${booking.start_time} - ${booking.end_time}\nService: ${booking.service_name}\n\n` 
+              });
+              setShowMessageDialog(true);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="past">
