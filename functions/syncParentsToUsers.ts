@@ -5,24 +5,24 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    console.log('Sync Parents - Auth user:', user?.email, 'Role:', user?.role);
-
     if (!user || user.role !== 'admin') {
-      console.error('Unauthorized access attempt');
-      return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+      return Response.json({ 
+        success: false,
+        error: 'Unauthorized: Admin access required' 
+      }, { status: 403 });
     }
 
-    console.log('Fetching players...');
-    const players = await base44.asServiceRole.entities.Player.list();
-    console.log('Found players:', players.length);
+    console.log('=== Starting Parent Sync ===');
     
-    console.log('Fetching existing users...');
+    const players = await base44.asServiceRole.entities.Player.list();
+    console.log(`Fetched ${players.length} players`);
+    
     const existingUsers = await base44.asServiceRole.entities.User.list();
-    console.log('Found existing users:', existingUsers.length);
+    console.log(`Fetched ${existingUsers.length} existing users`);
     
     const parentEmailsMap = new Map();
     
-    // Build a map of parent emails to player IDs
+    // Build map of parent emails to player data
     players.forEach(player => {
       if (player.parent_emails && Array.isArray(player.parent_emails)) {
         player.parent_emails.forEach(parentEmail => {
@@ -32,29 +32,48 @@ Deno.serve(async (req) => {
               parentEmailsMap.set(normalizedEmail, {
                 email: normalizedEmail,
                 playerIds: [],
+                playerNames: [],
                 parentName: player.parent_name || 'Parent'
               });
             }
-            parentEmailsMap.get(normalizedEmail).playerIds.push(player.id);
+            const data = parentEmailsMap.get(normalizedEmail);
+            data.playerIds.push(player.id);
+            data.playerNames.push(player.full_name);
           }
         });
       }
     });
 
-    console.log('Unique parent emails found:', parentEmailsMap.size);
+    console.log(`Found ${parentEmailsMap.size} unique parent emails`);
 
-    const updates = [];
-    const invitations = [];
-    const errors = [];
+    const results = {
+      updated: [],
+      invited: [],
+      errors: [],
+      skipped: []
+    };
 
-    // Process each unique parent email
     for (const [email, data] of parentEmailsMap.entries()) {
-      console.log(`Processing parent: ${email}`);
-      const existingUser = existingUsers.find(u => u.email?.toLowerCase() === email);
+      console.log(`Processing: ${email}`);
       
-      if (existingUser) {
-        console.log(`User exists: ${email}, updating...`);
-        try {
+      try {
+        const existingUser = existingUsers.find(u => u.email?.toLowerCase() === email);
+        
+        if (existingUser) {
+          console.log(`  - User exists (${existingUser.role})`);
+          
+          // Don't override admin/director roles
+          if (existingUser.role === 'admin' || existingUser.role === 'director') {
+            console.log(`  - Skipping: has higher role (${existingUser.role})`);
+            results.skipped.push({
+              email,
+              reason: `User has ${existingUser.role} role`,
+              playerCount: data.playerIds.length,
+              players: data.playerNames
+            });
+            continue;
+          }
+          
           const currentPlayerIds = existingUser.player_ids || [];
           const mergedPlayerIds = [...new Set([...currentPlayerIds, ...data.playerIds])];
           
@@ -63,45 +82,77 @@ Deno.serve(async (req) => {
             role: 'parent'
           });
           
-          console.log(`Updated user ${email} with ${mergedPlayerIds.length} players`);
-          updates.push({ email, status: 'updated', playerCount: mergedPlayerIds.length });
-        } catch (updateError) {
-          console.error(`Failed to update ${email}:`, updateError);
-          errors.push({ email, error: updateError.message, action: 'update' });
-        }
-      } else {
-        console.log(`User doesn't exist: ${email}, inviting...`);
-        try {
-          await base44.asServiceRole.users.inviteUser(email, 'parent', { 
-            full_name: data.parentName,
-            player_ids: data.playerIds 
+          console.log(`  - Updated with ${mergedPlayerIds.length} players`);
+          results.updated.push({
+            email,
+            userName: existingUser.full_name || existingUser.display_name,
+            previousRole: existingUser.role,
+            newRole: 'parent',
+            playerCount: mergedPlayerIds.length,
+            players: data.playerNames
           });
-          console.log(`Invited ${email}`);
-          invitations.push({ email, status: 'invited', playerCount: data.playerIds.length });
-        } catch (inviteError) {
-          console.error(`Failed to invite ${email}:`, inviteError);
-          errors.push({ email, error: inviteError.message, action: 'invite' });
+          
+        } else {
+          console.log(`  - User doesn't exist, inviting...`);
+          
+          await base44.asServiceRole.users.inviteUser(email, 'parent');
+          
+          // Try to update the newly invited user with player_ids
+          // Note: The invite creates a pending user, we need to update it
+          const newUsers = await base44.asServiceRole.entities.User.list();
+          const newUser = newUsers.find(u => u.email?.toLowerCase() === email);
+          
+          if (newUser) {
+            await base44.asServiceRole.entities.User.update(newUser.id, {
+              player_ids: data.playerIds,
+              display_name: data.parentName
+            });
+          }
+          
+          console.log(`  - Invited successfully`);
+          results.invited.push({
+            email,
+            parentName: data.parentName,
+            playerCount: data.playerIds.length,
+            players: data.playerNames
+          });
         }
+        
+      } catch (error) {
+        console.error(`  - Error processing ${email}:`, error.message);
+        results.errors.push({
+          email,
+          error: error.message,
+          playerCount: data.playerIds.length,
+          players: data.playerNames
+        });
       }
     }
 
-    console.log('Sync complete. Updates:', updates.length, 'Invitations:', invitations.length, 'Errors:', errors.length);
+    console.log('=== Sync Complete ===');
+    console.log(`Updated: ${results.updated.length}`);
+    console.log(`Invited: ${results.invited.length}`);
+    console.log(`Skipped: ${results.skipped.length}`);
+    console.log(`Errors: ${results.errors.length}`);
 
     return Response.json({
       success: true,
       totalParents: parentEmailsMap.size,
-      updated: updates.length,
-      invited: invitations.length,
-      errors: errors.length,
-      details: {
-        updates,
-        invitations,
-        errors
-      }
+      summary: {
+        updated: results.updated.length,
+        invited: results.invited.length,
+        skipped: results.skipped.length,
+        errors: results.errors.length
+      },
+      details: results
     });
 
   } catch (error) {
-    console.error('Sync error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('=== Sync Failed ===', error);
+    return Response.json({ 
+      success: false,
+      error: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 });

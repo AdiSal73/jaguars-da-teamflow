@@ -22,24 +22,7 @@ export default function ContactsManager() {
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
-  const syncParentsMutation = useMutation({
-    mutationFn: async () => {
-      console.log('Starting parent sync...');
-      const response = await base44.functions.invoke('syncParentsToUsers');
-      console.log('Sync response:', response);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      console.log('Sync successful:', data);
-      queryClient.invalidateQueries(['users']);
-      const errorMsg = data.errors > 0 ? ` (${data.errors} errors)` : '';
-      toast.success(`✅ Synced ${data.totalParents} parents: ${data.updated} updated, ${data.invited} invited${errorMsg}`);
-    },
-    onError: (error) => {
-      console.error('Sync failed:', error);
-      toast.error(`❌ Failed to sync parents: ${error.message || 'Unknown error'}`);
-    }
-  });
+
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
