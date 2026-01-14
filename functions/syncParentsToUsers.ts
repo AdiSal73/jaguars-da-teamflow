@@ -20,9 +20,6 @@ Deno.serve(async (req) => {
     const existingUsers = await base44.asServiceRole.entities.User.list();
     console.log(`Fetched ${existingUsers.length} existing users`);
     
-    const coaches = await base44.asServiceRole.entities.Coach.list();
-    console.log(`Fetched ${coaches.length} coaches`);
-    
     const parentEmailsMap = new Map();
     
     // Build map of parent emails to player data
@@ -65,9 +62,9 @@ Deno.serve(async (req) => {
         if (existingUser) {
           console.log(`  - User exists (${existingUser.role})`);
           
-          // Skip if user has admin or director role
+          // Only skip admin and director roles
           if (['admin', 'director'].includes(existingUser.role)) {
-            console.log(`  - Skipping: has higher role (${existingUser.role})`);
+            console.log(`  - Skipping: admin/director role`);
             results.skipped.push({
               email,
               reason: `User has ${existingUser.role} role`,
@@ -78,21 +75,7 @@ Deno.serve(async (req) => {
             continue;
           }
           
-          // Skip if user is a coach
-          const isCoach = coaches.some(c => c.email?.toLowerCase() === email);
-          if (isCoach) {
-            console.log('  - Skipping: user is a coach');
-            results.skipped.push({
-              email,
-              reason: 'User is a coach',
-              userName: existingUser.full_name || existingUser.display_name,
-              playerCount: data.playerIds.length,
-              players: data.playerNames
-            });
-            continue;
-          }
-          
-          // Update all other users (parents) with player_ids
+          // Update all other users (parent, coach, player) with player_ids
           const currentPlayerIds = existingUser.player_ids || [];
           const mergedPlayerIds = [...new Set([...currentPlayerIds, ...data.playerIds])];
           
