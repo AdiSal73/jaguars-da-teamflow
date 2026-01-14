@@ -53,8 +53,12 @@ Deno.serve(async (req) => {
       skipped: []
     };
 
+    // Batch process to avoid timeouts
+    let processedCount = 0;
+    
     for (const [email, data] of parentEmailsMap.entries()) {
-      console.log(`Processing: ${email}`);
+      processedCount++;
+      console.log(`[${processedCount}/${parentEmailsMap.size}] Processing: ${email}`);
       
       try {
         const existingUser = existingUsers.find(u => u.email?.toLowerCase() === email);
@@ -75,7 +79,7 @@ Deno.serve(async (req) => {
             continue;
           }
           
-          // Update all other users (parent, coach, player) with player_ids
+          // Update all other users with player_ids
           const currentPlayerIds = existingUser.player_ids || [];
           const mergedPlayerIds = [...new Set([...currentPlayerIds, ...data.playerIds])];
           
@@ -94,29 +98,43 @@ Deno.serve(async (req) => {
           });
           
         } else {
-          console.log(`  - User doesn't exist, inviting...`);
+          console.log(`  - User doesn't exist, inviting as parent...`);
           
-          await base44.asServiceRole.users.inviteUser(email, 'parent');
-          
-          // Try to update the newly invited user with player_ids
-          // Note: The invite creates a pending user, we need to update it
-          const newUsers = await base44.asServiceRole.entities.User.list();
-          const newUser = newUsers.find(u => u.email?.toLowerCase() === email);
-          
-          if (newUser) {
-            await base44.asServiceRole.entities.User.update(newUser.id, {
-              player_ids: data.playerIds,
-              display_name: data.parentName
+          try {
+            await base44.asServiceRole.users.inviteUser(email, 'parent');
+            console.log(`  - Invited successfully`);
+            
+            // Wait a moment for the user to be created
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Fetch fresh user list to get the newly invited user
+            const freshUsers = await base44.asServiceRole.entities.User.list();
+            const newUser = freshUsers.find(u => u.email?.toLowerCase() === email);
+            
+            if (newUser) {
+              await base44.asServiceRole.entities.User.update(newUser.id, {
+                player_ids: data.playerIds
+              });
+              console.log(`  - Linked ${data.playerIds.length} players to new parent`);
+            } else {
+              console.log(`  - Warning: Could not find newly invited user to link players`);
+            }
+            
+            results.invited.push({
+              email,
+              parentName: data.parentName,
+              playerCount: data.playerIds.length,
+              players: data.playerNames
+            });
+          } catch (inviteError) {
+            console.error(`  - Invite error: ${inviteError.message}`);
+            results.errors.push({
+              email,
+              error: `Invite failed: ${inviteError.message}`,
+              playerCount: data.playerIds.length,
+              players: data.playerNames
             });
           }
-          
-          console.log(`  - Invited successfully`);
-          results.invited.push({
-            email,
-            parentName: data.parentName,
-            playerCount: data.playerIds.length,
-            players: data.playerNames
-          });
         }
         
       } catch (error) {
