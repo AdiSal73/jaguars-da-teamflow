@@ -87,6 +87,36 @@ Deno.serve(async (req) => {
       // Update existing event
       method = 'PUT';
       url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`;
+    } else {
+      // Check if an event already exists for this booking by searching for it
+      const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?q=${encodeURIComponent(booking.service_name)}&timeMin=${startDateTime}Z&timeMax=${endDateTime}Z`;
+      const searchResponse = await fetch(searchUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        // Check if we find an existing event that matches this booking
+        const existingEvent = searchData.items?.find(item => {
+          const isSameTime = item.start?.dateTime?.includes(startDateTime) && item.end?.dateTime?.includes(endDateTime);
+          const isSameTitle = item.summary?.includes(booking.service_name);
+          return isSameTime && isSameTitle;
+        });
+
+        if (existingEvent) {
+          // Update the existing event instead of creating a duplicate
+          eventId = existingEvent.id;
+          method = 'PUT';
+          url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`;
+          
+          // Store the event ID in the booking
+          await base44.asServiceRole.entities.Booking.update(bookingId, {
+            google_calendar_event_id: eventId
+          });
+        }
+      }
     }
 
     const response = await fetch(url, {
