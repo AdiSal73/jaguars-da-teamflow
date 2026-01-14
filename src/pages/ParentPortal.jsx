@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Calendar, MessageSquare, DollarSign, TrendingUp, BookOpen, Activity, Mail } from 'lucide-react';
-import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { 
+  Users, Calendar, MessageSquare, Phone, Mail, 
+  User, Clock, MapPin, Trophy, TrendingUp, Activity,
+  ChevronRight, Star
+} from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function ParentPortal() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
@@ -22,464 +21,333 @@ export default function ParentPortal() {
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list()
-  });
-
-  const { data: teams = [] } = useQuery({
-    queryKey: ['teams'],
-    queryFn: () => base44.entities.Team.list()
+    queryFn: () => base44.entities.Player.list(),
+    enabled: !!user
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => base44.entities.Booking.list('-booking_date')
+    queryFn: () => base44.entities.Booking.list('-booking_date'),
+    enabled: !!user
   });
 
-  const { data: evaluations = [] } = useQuery({
-    queryKey: ['evaluations'],
-    queryFn: () => base44.entities.Evaluation.list()
+  const { data: coaches = [] } = useQuery({
+    queryKey: ['coaches'],
+    queryFn: () => base44.entities.Coach.list(),
+    enabled: !!user
   });
 
-  const { data: assessments = [] } = useQuery({
-    queryKey: ['assessments'],
-    queryFn: () => base44.entities.PhysicalAssessment.list()
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list(),
+    enabled: !!user
   });
 
-  const myChildren = players.filter(p => 
-    (user?.player_ids || []).includes(p.id)
+  const { data: messages = [] } = useQuery({
+    queryKey: ['messages'],
+    queryFn: () => base44.entities.Message.list('-created_date'),
+    enabled: !!user
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => base44.entities.Notification.filter({ user_email: user?.email }, '-created_date', 10),
+    enabled: !!user?.email
+  });
+
+  // Get parent's players
+  const myPlayers = players.filter(p => 
+    user?.player_ids?.includes(p.id) || 
+    p.parent_emails?.includes(user?.email)
   );
 
-  const activePlayer = selectedPlayerId 
-    ? myChildren.find(p => p.id === selectedPlayerId) 
-    : myChildren[0];
+  // Get upcoming bookings for parent's players
+  const today = new Date().toISOString().split('T')[0];
+  const upcomingBookings = bookings.filter(b => 
+    b.booking_date >= today && 
+    b.status !== 'cancelled' &&
+    myPlayers.some(p => p.id === b.player_id)
+  ).slice(0, 5);
 
-  React.useEffect(() => {
-    if (!selectedPlayerId && myChildren.length > 0) {
-      setSelectedPlayerId(myChildren[0].id);
+  // Get unread messages
+  const myMessages = messages.filter(m => 
+    m.recipient_email === user?.email && !m.read
+  ).slice(0, 5);
+
+  // Get coaches for parent's players
+  const myCoaches = new Map();
+  myPlayers.forEach(player => {
+    if (player.team_id) {
+      const team = teams.find(t => t.id === player.team_id);
+      if (team?.coach_ids) {
+        team.coach_ids.forEach(coachId => {
+          const coach = coaches.find(c => c.id === coachId);
+          if (coach && !myCoaches.has(coach.id)) {
+            myCoaches.set(coach.id, { ...coach, teamName: team.name });
+          }
+        });
+      }
     }
-  }, [myChildren, selectedPlayerId]);
+  });
 
-  const playerTeam = teams.find(t => t.id === activePlayer?.team_id);
-  const playerBookings = bookings.filter(b => b.player_id === activePlayer?.id);
-  const upcomingBookings = playerBookings.filter(b => 
-    new Date(b.booking_date) >= new Date() && b.status !== 'cancelled'
-  ).slice(0, 3);
-  
-  const playerEvaluations = evaluations.filter(e => e.player_id === activePlayer?.id)
-    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-  const latestEval = playerEvaluations[0];
-
-  const playerAssessments = assessments.filter(a => a.player_id === activePlayer?.id)
-    .sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date));
-  const latestAssessment = playerAssessments[0];
-
-  if (!user || myChildren.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <User className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h2 className="text-xl font-bold text-slate-900 mb-2">No Players Linked</h2>
-            <p className="text-slate-600">
-              Your account is not linked to any players yet. Please contact your club administrator.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const formatTimeDisplay = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
-            Parent Portal
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            Welcome Back, {user?.full_name?.split(' ')[0]}!
           </h1>
-          <p className="text-slate-600">Welcome, {user?.full_name}</p>
+          <p className="text-slate-600">Here's what's happening with your athletes</p>
         </div>
 
-        {/* Player Selector */}
-        {myChildren.length > 1 && (
-          <Card className="mb-6 border-none shadow-lg">
-            <CardContent className="p-4">
-              <Label className="text-sm font-semibold text-slate-700 mb-3 block">Select Player</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {myChildren.map(child => {
-                  const childTeam = teams.find(t => t.id === child.team_id);
-                  return (
-                    <button
-                      key={child.id}
-                      onClick={() => setSelectedPlayerId(child.id)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left ${
-                        selectedPlayerId === child.id
-                          ? 'border-emerald-500 bg-emerald-50'
-                          : 'border-slate-200 hover:border-emerald-300 bg-white'
-                      }`}
-                    >
-                      <div className="font-bold text-sm">{child.full_name}</div>
-                      <div className="text-xs text-slate-600 mt-1">{childTeam?.name}</div>
-                      <Badge className="text-[9px] mt-2">{child.primary_position}</Badge>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <Activity className="w-8 h-8 mb-2 opacity-80" />
-              <div className="text-2xl font-bold">{playerEvaluations.length}</div>
-              <div className="text-sm opacity-90">Evaluations</div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
-            <CardContent className="p-6">
-              <TrendingUp className="w-8 h-8 mb-2 opacity-80" />
-              <div className="text-2xl font-bold">{playerAssessments.length}</div>
-              <div className="text-sm opacity-90">Assessments</div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-            <CardContent className="p-6">
-              <Calendar className="w-8 h-8 mb-2 opacity-80" />
-              <div className="text-2xl font-bold">{upcomingBookings.length}</div>
-              <div className="text-sm opacity-90">Upcoming Sessions</div>
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500 to-red-600 text-white">
-            <CardContent className="p-6">
-              <BookOpen className="w-8 h-8 mb-2 opacity-80" />
-              <div className="text-2xl font-bold">{activePlayer?.goals?.length || 0}</div>
-              <div className="text-sm opacity-90">Development Goals</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="bookings">Sessions</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Player Profile Summary */}
-              <Card className="border-none shadow-xl">
-                <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Player Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-xl flex items-center justify-center text-white text-2xl font-bold">
-                      {activePlayer?.jersey_number || activePlayer?.full_name?.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold">{activePlayer?.full_name}</h3>
-                      <p className="text-sm text-slate-600">{playerTeam?.name}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-                    <div>
-                      <Label className="text-xs text-slate-600">Position</Label>
-                      <p className="font-semibold">{activePlayer?.primary_position}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-600">Jersey</Label>
-                      <p className="font-semibold">{activePlayer?.jersey_number || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-600">Age Group</Label>
-                      <p className="font-semibold">{playerTeam?.age_group}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-600">Status</Label>
-                      <Badge className="bg-green-100 text-green-800">{activePlayer?.status}</Badge>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => navigate(`${createPageUrl('PlayerDashboard')}?id=${activePlayer?.id}`)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 mt-4"
-                  >
-                    View Full Profile
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Latest Evaluation */}
-              {latestEval && (
-                <Card className="border-none shadow-xl">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Latest Evaluation
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-xs text-slate-600 mb-4">
-                      {new Date(latestEval.created_date).toLocaleDateString()}
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: 'Mental', value: Math.round(((latestEval.growth_mindset || 0) + (latestEval.resilience || 0) + (latestEval.team_focus || 0)) / 3) },
-                        { label: 'Physical', value: latestEval.athleticism || 0 },
-                        { label: 'Defending', value: Math.round(((latestEval.defending_organized || 0) + (latestEval.defending_final_third || 0)) / 2) },
-                        { label: 'Attacking', value: Math.round(((latestEval.attacking_organized || 0) + (latestEval.attacking_final_third || 0)) / 2) }
-                      ].map(metric => (
-                        <div key={metric.label} className="p-3 bg-blue-50 rounded-lg">
-                          <div className="text-xs text-slate-600">{metric.label}</div>
-                          <div className="text-2xl font-bold text-blue-600">{metric.value}<span className="text-sm">/10</span></div>
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Player Cards - Takes up 2 columns on large screens */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <Users className="w-6 h-6 text-emerald-600" />
+                Your Athletes
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {myPlayers.map(player => {
+                const team = teams.find(t => t.id === player.team_id);
+                const playerBookings = upcomingBookings.filter(b => b.player_id === player.id);
+                
+                return (
+                  <Card key={player.id} className="border-none shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-white to-slate-50 overflow-hidden group">
+                    <div className="h-2 bg-gradient-to-r from-emerald-500 to-blue-500"></div>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                            {player.full_name?.charAt(0)}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{player.full_name}</CardTitle>
+                            {team && (
+                              <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
+                                <Trophy className="w-3 h-3" />
+                                {team.name}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    {latestEval.player_strengths && (
-                      <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                        <Label className="text-xs font-semibold text-green-900">Strengths</Label>
-                        <p className="text-sm text-slate-700 mt-1">{latestEval.player_strengths}</p>
                       </div>
-                    )}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {player.age_group && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                            {player.age_group}
+                          </Badge>
+                          {player.primary_position && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {player.primary_position}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      {playerBookings.length > 0 && (
+                        <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                          <p className="text-xs font-semibold text-emerald-900 mb-2">Upcoming Sessions</p>
+                          <div className="space-y-1">
+                            {playerBookings.slice(0, 2).map(booking => (
+                              <div key={booking.id} className="text-xs text-emerald-800 flex items-center gap-2">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(booking.booking_date + 'T12:00:00'), 'MMM d')} at {formatTimeDisplay(booking.start_time)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <Link to={`${createPageUrl('PlayerDashboard')}?id=${player.id}`}>
+                        <Button className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 group-hover:shadow-lg transition-all">
+                          View Profile
+                          <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              
+              {myPlayers.length === 0 && (
+                <Card className="col-span-2 border-none shadow-lg">
+                  <CardContent className="p-12 text-center">
+                    <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500">No players associated with your account</p>
                   </CardContent>
                 </Card>
               )}
             </div>
+          </div>
 
-            {/* Development Goals */}
-            {activePlayer?.goals?.length > 0 && (
-              <Card className="border-none shadow-xl">
-                <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-                  <CardTitle className="text-lg">Development Goals</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {activePlayer.goals.slice(0, 5).map(goal => (
-                      <div key={goal.id} className="p-4 bg-slate-50 rounded-lg border-2 border-slate-200">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{goal.description}</h4>
-                            {goal.plan_of_action && (
-                              <p className="text-xs text-slate-600 mt-1">{goal.plan_of_action}</p>
-                            )}
-                          </div>
-                          <Badge className={goal.completed ? 'bg-green-500' : 'bg-blue-500'}>
-                            {goal.completed ? 'Completed' : `${goal.progress || 0}%`}
-                          </Badge>
-                        </div>
-                        {goal.progress > 0 && !goal.completed && (
-                          <div className="mt-3">
-                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-                                style={{ width: `${goal.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Bookings Tab */}
-          <TabsContent value="bookings" className="space-y-6">
-            <Card className="border-none shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Coaching Sessions</CardTitle>
-                  <Button 
-                    onClick={() => navigate(createPageUrl('BookingPage'))}
-                    className="bg-white/20 hover:bg-white/30 text-white"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Book New Session
-                  </Button>
-                </div>
+          {/* Right Column - Upcoming Bookings & Quick Actions */}
+          <div className="space-y-6">
+            {/* Upcoming Bookings */}
+            <Card className="border-none shadow-lg bg-gradient-to-br from-white to-blue-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  Upcoming Sessions
+                </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                {upcomingBookings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Calendar className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                    <p className="text-slate-500 mb-4">No upcoming sessions</p>
-                    <Button onClick={() => navigate(createPageUrl('BookingPage'))} className="bg-emerald-600">
-                      Book a Session
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {upcomingBookings.map(booking => (
-                      <div key={booking.id} className="p-4 bg-emerald-50 rounded-xl border-2 border-emerald-200">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-bold text-sm">{booking.service_name}</div>
-                            <div className="text-xs text-slate-600 mt-1">
-                              {new Date(booking.booking_date).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
+              <CardContent className="space-y-3">
+                {upcomingBookings.length > 0 ? (
+                  <>
+                    {upcomingBookings.slice(0, 4).map(booking => {
+                      const player = players.find(p => p.id === booking.player_id);
+                      const coach = coaches.find(c => c.id === booking.coach_id);
+                      
+                      return (
+                        <div key={booking.id} className="bg-white rounded-lg p-3 border border-blue-100 hover:shadow-md transition-all">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="font-semibold text-slate-900 text-sm">{booking.service_name}</p>
+                              <p className="text-xs text-slate-600">{player?.full_name}</p>
                             </div>
-                            <div className="text-xs text-slate-600">
-                              {booking.start_time} - {booking.end_time}
-                            </div>
-                            <div className="text-xs text-slate-500 mt-1">
-                              Coach: {booking.coach_name}
-                            </div>
+                            <Badge className="bg-emerald-100 text-emerald-800 text-xs">
+                              {format(new Date(booking.booking_date + 'T12:00:00'), 'MMM d')}
+                            </Badge>
                           </div>
-                          <Badge className="bg-emerald-500 text-white">
-                            {booking.status}
-                          </Badge>
+                          <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Clock className="w-3 h-3" />
+                            {formatTimeDisplay(booking.start_time)}
+                          </div>
+                          {coach && (
+                            <p className="text-xs text-slate-500 mt-1">with {coach.full_name}</p>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
+                    <Link to={createPageUrl('MyBookings')}>
+                      <Button variant="outline" className="w-full mt-2">
+                        View All Bookings
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <div className="text-center py-6">
+                    <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">No upcoming sessions</p>
+                    <Link to={createPageUrl('Bookingpage')}>
+                      <Button className="mt-3 bg-emerald-600 hover:bg-emerald-700">
+                        Book a Session
+                      </Button>
+                    </Link>
                   </div>
                 )}
-                <Button 
-                  onClick={() => navigate(createPageUrl('MyBookings'))}
-                  variant="outline"
-                  className="w-full mt-4"
-                >
-                  View All Bookings
-                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          {/* Messages Tab */}
-          <TabsContent value="messages" className="space-y-6">
-            <Card className="border-none shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Communications
+            {/* Messages & Communications */}
+            <Card className="border-none shadow-lg bg-gradient-to-br from-white to-purple-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-purple-600" />
+                  Messages & Updates
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-sm text-blue-900 mb-2">Contact Your Coach</h3>
-                    <p className="text-sm text-slate-600 mb-3">
-                      Use the communications system to send messages to your child's coaches
-                    </p>
-                    <Button 
-                      onClick={() => navigate(createPageUrl('Communications'))}
-                      className="bg-blue-600 hover:bg-blue-700 w-full"
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Go to Messages
-                    </Button>
+              <CardContent>
+                {myMessages.length > 0 || notifications.length > 0 ? (
+                  <div className="space-y-2">
+                    {myMessages.slice(0, 3).map(msg => (
+                      <div key={msg.id} className="bg-white rounded-lg p-3 border border-purple-100 hover:shadow-md transition-all">
+                        <div className="flex items-start gap-2">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-slate-900">{msg.subject}</p>
+                            <p className="text-xs text-slate-600 line-clamp-2">{msg.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {notifications.slice(0, 2).map(notif => (
+                      <div key={notif.id} className="bg-white rounded-lg p-3 border border-purple-100">
+                        <p className="font-semibold text-sm text-slate-900">{notif.title}</p>
+                        <p className="text-xs text-slate-600 line-clamp-2">{notif.message}</p>
+                      </div>
+                    ))}
+                    <Link to={createPageUrl('Communications')}>
+                      <Button variant="outline" className="w-full mt-2">
+                        View All Messages
+                      </Button>
+                    </Link>
                   </div>
-
-                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <h3 className="font-semibold text-sm text-purple-900 mb-2">Quick Actions</h3>
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={() => navigate(createPageUrl('Communications'))}
-                        variant="outline"
-                        className="w-full justify-start"
-                      >
-                        Ask about progress
-                      </Button>
-                      <Button 
-                        onClick={() => navigate(createPageUrl('Communications'))}
-                        variant="outline"
-                        className="w-full justify-start"
-                      >
-                        Schedule a meeting
-                      </Button>
-                      <Button 
-                        onClick={() => navigate(createPageUrl('Communications'))}
-                        variant="outline"
-                        className="w-full justify-start"
-                      >
-                        Report an absence
-                      </Button>
-                    </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">No new messages</p>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
 
-          {/* Billing Tab */}
-          <TabsContent value="billing" className="space-y-6">
-            <Card className="border-none shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Billing & Payments
+          {/* Coaches Contact Info - Full Width */}
+          <div className="lg:col-span-3">
+            <Card className="border-none shadow-lg bg-gradient-to-br from-white to-slate-50">
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Star className="w-6 h-6 text-amber-500" />
+                  Your Coaches
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-sm text-green-900 mb-2">Payment Information</h3>
-                    <p className="text-sm text-slate-600 mb-3">
-                      For billing inquiries and payment management, please contact your club administrator.
-                    </p>
-                    <div className="grid md:grid-cols-2 gap-3 mt-4">
-                      <div className="p-3 bg-white rounded-lg">
-                        <Label className="text-xs text-slate-600">Player Name</Label>
-                        <p className="font-semibold text-sm">{activePlayer?.full_name}</p>
+              <CardContent>
+                {myCoaches.size > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from(myCoaches.values()).map(coach => (
+                      <div key={coach.id} className="bg-white rounded-xl p-4 border border-slate-200 hover:shadow-lg transition-all">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            {coach.full_name?.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-slate-900">{coach.full_name}</h3>
+                            <p className="text-xs text-slate-600">{coach.teamName}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {coach.email && (
+                            <a href={`mailto:${coach.email}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-600 transition-colors">
+                              <Mail className="w-4 h-4" />
+                              {coach.email}
+                            </a>
+                          )}
+                          {coach.phone && (
+                            <a href={`tel:${coach.phone}`} className="flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-600 transition-colors">
+                              <Phone className="w-4 h-4" />
+                              {coach.phone}
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <div className="p-3 bg-white rounded-lg">
-                        <Label className="text-xs text-slate-600">Team</Label>
-                        <p className="font-semibold text-sm">{playerTeam?.name}</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-lg">
-                        <Label className="text-xs text-slate-600">Season</Label>
-                        <p className="font-semibold text-sm">{playerTeam?.season || '2025/2026'}</p>
-                      </div>
-                      <div className="p-3 bg-white rounded-lg">
-                        <Label className="text-xs text-slate-600">League</Label>
-                        <p className="font-semibold text-sm">{playerTeam?.league}</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-sm text-blue-900 mb-2">Session Bookings</h3>
-                    <p className="text-sm text-slate-600">
-                      Individual coaching sessions are booked through the booking system
-                    </p>
-                    <Button 
-                      onClick={() => navigate(createPageUrl('BookingPage'))}
-                      className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
-                    >
-                      Book Training Session
-                    </Button>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-16 h-16 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">No coaches assigned to your players' teams</p>
                   </div>
-
-                  <div className="p-4 bg-slate-50 rounded-lg border">
-                    <h3 className="font-semibold text-sm mb-2">Contact Administration</h3>
-                    <p className="text-sm text-slate-600 mb-3">
-                      For billing questions, payment plans, or financial assistance:
-                    </p>
-                    <a 
-                      href="mailto:billing@michiganjaguars.com"
-                      className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
-                    >
-                      billing@michiganjaguars.com
-                    </a>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
