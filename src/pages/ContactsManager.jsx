@@ -8,8 +8,10 @@ import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
 import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
+import SyncParentsDialog from '../components/contacts/SyncParentsDialog';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { RefreshCw } from 'lucide-react';
 
 export default function ContactsManager() {
   const queryClient = useQueryClient();
@@ -19,6 +21,7 @@ export default function ContactsManager() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
@@ -164,17 +167,11 @@ export default function ContactsManager() {
           </div>
           <div className="flex gap-2">
             <Button 
-              onClick={() => {
-                if (confirm('Sync all parents from player contacts to create/update user accounts?')) {
-                  syncParentsMutation.mutate();
-                }
-              }}
-              disabled={syncParentsMutation.isPending}
-              variant="outline"
-              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              onClick={() => setShowSyncDialog(true)}
+              className="bg-purple-600 hover:bg-purple-700"
             >
-              <Users className="w-4 h-4 mr-2" />
-              {syncParentsMutation.isPending ? 'Syncing...' : 'Sync All Parents'}
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Sync All Parents
             </Button>
             <Button onClick={() => setShowInviteNewParentDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <Mail className="w-4 h-4 mr-2" />
@@ -256,6 +253,11 @@ export default function ContactsManager() {
           open={showInviteNewParentDialog}
           onClose={() => setShowInviteNewParentDialog(false)}
           players={players}
+        />
+
+        <SyncParentsDialog
+          open={showSyncDialog}
+          onClose={() => setShowSyncDialog(false)}
         />
       </div>
     </div>
