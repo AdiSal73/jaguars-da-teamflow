@@ -586,10 +586,12 @@ export default function UserManagement() {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="coach">Coach</SelectItem>
                   <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="player">Player</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-500 mt-1">Base roles: admin, director, coach, parent, or user (player).</p>
+              <p className="text-xs text-slate-500 mt-1">Base roles: admin, director, coach, parent, player, or user.</p>
             </div>
             
             <div>
