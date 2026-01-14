@@ -58,7 +58,8 @@ export default function ParentPortal() {
   // Get parent's players
   const myPlayers = players.filter(p => 
     user?.player_ids?.includes(p.id) || 
-    p.parent_emails?.includes(user?.email)
+    p.parent_emails?.some(e => e?.toLowerCase() === user?.email?.toLowerCase()) ||
+    p.email?.toLowerCase() === user?.email?.toLowerCase()
   );
 
   // Get upcoming bookings for parent's players

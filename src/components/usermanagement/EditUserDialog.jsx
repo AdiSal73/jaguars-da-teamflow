@@ -14,7 +14,7 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
 
   const [formData, setFormData] = useState({
     display_name: '',
-    role: 'user',
+    assigned_role: 'user',
     player_ids: []
   });
 
@@ -24,7 +24,7 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
     if (user) {
       setFormData({
         display_name: user.display_name || user.full_name || '',
-        role: user.role || 'user',
+        assigned_role: user.assigned_role || user.role || 'user',
         player_ids: user.player_ids || []
       });
     }
@@ -80,20 +80,9 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
   const handleSave = () => {
     const updateData = {
       display_name: formData.display_name,
-      role: formData.role,
+      assigned_role: formData.assigned_role,
       player_ids: formData.player_ids
     };
-
-    // Auto-assign parent role if players are linked
-    if (formData.player_ids.length > 0) {
-      const higherRoles = ['admin', 'director', 'coach'];
-      if (!higherRoles.includes(formData.role)) {
-        updateData.role = 'parent';
-      }
-    } else if (formData.role === 'parent') {
-      // If no players but role is parent, revert to user
-      updateData.role = 'user';
-    }
 
     updateMutation.mutate(updateData);
   };
@@ -160,8 +149,8 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
           </div>
 
           <div>
-            <Label className="mb-2 block">Base Role</Label>
-            <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
+            <Label className="mb-2 block">Assigned Role</Label>
+            <Select value={formData.assigned_role} onValueChange={(v) => setFormData({ ...formData, assigned_role: v })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -174,6 +163,9 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
                 <SelectItem value="player">Player</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-slate-500 mt-1">
+              This role takes precedence and can be changed anytime
+            </p>
           </div>
 
           <div>
@@ -202,7 +194,7 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
             </div>
             {formData.player_ids.length > 0 && (
               <p className="text-xs text-emerald-600 mt-1">
-                {formData.player_ids.length} player(s) linked - auto-assigned 'parent' role
+                {formData.player_ids.length} player(s) linked
               </p>
             )}
           </div>
@@ -212,16 +204,13 @@ export default function EditUserDialog({ open, onClose, user, players, coaches }
             <Button
               variant="outline"
               onClick={handleToggleCoach}
-              disabled={formData.role === 'admin'}
               className="w-full"
             >
               {isCoach ? 'Remove Coach Role' : 'Promote to Coach'}
             </Button>
-            {formData.role === 'admin' && (
-              <p className="text-xs text-amber-600 mt-1">
-                Remove admin role first to modify coach status
-              </p>
-            )}
+            <p className="text-xs text-slate-500 mt-1">
+              Creates/removes Coach entity separate from role
+            </p>
           </div>
 
           <div className="flex gap-2 justify-end pt-4 border-t">

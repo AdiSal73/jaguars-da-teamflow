@@ -71,32 +71,34 @@ Deno.serve(async (req) => {
         const existingUser = existingUsers.find(u => u.email?.toLowerCase() === email);
         
         if (existingUser) {
-          console.log(`  - User exists (${existingUser.role})`);
+          console.log(`  - User exists (${existingUser.assigned_role || existingUser.role})`);
           
           // Skip admin and director
-          if (['admin', 'director'].includes(existingUser.role)) {
+          const effectiveRole = existingUser.assigned_role || existingUser.role;
+          if (['admin', 'director'].includes(effectiveRole)) {
             console.log(`  - Skipping: admin/director`);
             results.skipped.push({
               email,
-              reason: `Has ${existingUser.role} role`,
+              reason: `Has ${effectiveRole} role`,
               userName: existingUser.full_name || existingUser.display_name
             });
             continue;
           }
           
-          // Merge: update player_ids
+          // Merge: update player_ids and set assigned_role to parent
           const currentPlayerIds = existingUser.player_ids || [];
           const mergedPlayerIds = [...new Set([...currentPlayerIds, ...data.playerIds])];
           
           await base44.asServiceRole.entities.User.update(existingUser.id, {
-            player_ids: mergedPlayerIds
+            player_ids: mergedPlayerIds,
+            assigned_role: 'parent'
           });
           
-          console.log(`  - Merged with ${mergedPlayerIds.length} players`);
+          console.log(`  - Merged with ${mergedPlayerIds.length} players, set as parent`);
           results.merged.push({
             email,
             userName: existingUser.full_name || existingUser.display_name,
-            role: existingUser.role,
+            role: 'parent',
             playerCount: mergedPlayerIds.length,
             players: data.playerNames
           });
@@ -112,15 +114,16 @@ Deno.serve(async (req) => {
             // Wait for user creation
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Link players
+            // Link players and set assigned_role
             const freshUsers = await base44.asServiceRole.entities.User.list();
             const newUser = freshUsers.find(u => u.email?.toLowerCase() === email);
             
             if (newUser) {
               await base44.asServiceRole.entities.User.update(newUser.id, {
-                player_ids: data.playerIds
+                player_ids: data.playerIds,
+                assigned_role: 'parent'
               });
-              console.log(`  - Linked ${data.playerIds.length} players`);
+              console.log(`  - Linked ${data.playerIds.length} players, set as parent`);
             }
             
             results.created.push({
