@@ -24,15 +24,20 @@ export default function ContactsManager() {
 
   const syncParentsMutation = useMutation({
     mutationFn: async () => {
+      console.log('Starting parent sync...');
       const response = await base44.functions.invoke('syncParentsToUsers');
+      console.log('Sync response:', response);
       return response.data;
     },
     onSuccess: (data) => {
+      console.log('Sync successful:', data);
       queryClient.invalidateQueries(['users']);
-      toast.success(`Synced ${data.totalParents} parents: ${data.updated} updated, ${data.invited} invited`);
+      const errorMsg = data.errors > 0 ? ` (${data.errors} errors)` : '';
+      toast.success(`✅ Synced ${data.totalParents} parents: ${data.updated} updated, ${data.invited} invited${errorMsg}`);
     },
     onError: (error) => {
-      toast.error('Failed to sync parents: ' + error.message);
+      console.error('Sync failed:', error);
+      toast.error(`❌ Failed to sync parents: ${error.message || 'Unknown error'}`);
     }
   });
 

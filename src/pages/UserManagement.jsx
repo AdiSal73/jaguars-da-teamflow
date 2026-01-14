@@ -160,17 +160,22 @@ export default function UserManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, data }) => {
-      return base44.entities.User.update(userId, data);
+      console.log('Mutation executing for user:', userId, 'with data:', data);
+      const result = await base44.entities.User.update(userId, data);
+      console.log('Mutation result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update successful:', data);
       queryClient.invalidateQueries(['users']);
       queryClient.invalidateQueries(['currentUser']);
       setShowEditUserDialog(false);
       setEditingUser(null);
-      toast.success('User updated successfully');
+      toast.success('✅ User updated successfully!');
     },
     onError: (error) => {
-      toast.error('Failed to update user: ' + error.message);
+      console.error('Update failed:', error);
+      toast.error(`❌ Failed to update user: ${error.message}`);
     }
   });
 
@@ -206,26 +211,32 @@ export default function UserManagement() {
     }
   });
 
-  const handleSaveUser = async () => {
+  const handleSaveUser = () => {
     if (!editingUser || !editingUser.id) {
-      toast.error('No user selected for editing');
+      toast.error('❌ No user selected for editing');
       return;
     }
 
+    console.log('Saving user:', editingUser.id, editUserForm);
+
     const updateData = {
-      display_name: editUserForm.display_name,
+      display_name: editUserForm.display_name || editingUser.full_name,
       role: editUserForm.role,
-      player_ids: editUserForm.player_ids
+      player_ids: editUserForm.player_ids || []
     };
 
     // Auto-assign parent role if player_ids are present
-    if (editUserForm.player_ids && editUserForm.player_ids.length > 0) {
+    if (updateData.player_ids.length > 0) {
       const currentHigherRoles = ['admin', 'director', 'coach'];
-      if (!currentHigherRoles.includes(editUserForm.role)) {
+      if (!currentHigherRoles.includes(updateData.role)) {
         updateData.role = 'parent';
       }
+    } else if (updateData.role === 'parent') {
+      // If no players but role is parent, revert to user
+      updateData.role = 'user';
     }
 
+    console.log('Update data:', updateData);
     updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
   };
 
