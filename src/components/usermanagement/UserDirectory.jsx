@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Mail, UserPlus, Edit2, UserCog, Search, Filter } from 'lucide-react';
+import { Mail, UserPlus, Edit2, UserCog, Search, Filter, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 
 import InviteUserDialog from './InviteUserDialog';
 import EditUserDialog from './EditUserDialog';
+import BulkRoleEditDialog from './BulkRoleEditDialog';
 
 export default function UserDirectory({ users, coaches, players, currentUser }) {
   const queryClient = useQueryClient();
@@ -22,6 +23,7 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
   const [roleFilter, setRoleFilter] = useState('all');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Get user's effective role
@@ -64,6 +66,35 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
   const handleEditUser = (user) => {
     setSelectedUser(user);
     setShowEditDialog(true);
+  };
+
+  // Bulk role update
+  const handleBulkRoleUpdate = async (userIds, newRole) => {
+    toast.info(`Updating ${userIds.length} users...`);
+    
+    for (const userId of userIds) {
+      try {
+        const user = users.find(u => u.id === userId);
+        if (!user) continue;
+        
+        // For parent role, ensure they have player_ids
+        if (newRole === 'parent') {
+          const userPlayers = players.filter(p => 
+            p.parent_emails?.some(e => e.toLowerCase() === user.email.toLowerCase())
+          );
+          const playerIds = userPlayers.map(p => p.id);
+          
+          await base44.asServiceRole.entities.User.update(userId, {
+            player_ids: playerIds
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to update user ${userId}:`, error);
+      }
+    }
+    
+    queryClient.invalidateQueries(['users']);
+    toast.success(`Updated ${userIds.length} users to ${newRole} role`);
   };
 
   // Role badge styling
@@ -112,13 +143,22 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
           </Select>
         </div>
 
-        <Button 
-          onClick={() => setShowInviteDialog(true)}
-          className="bg-emerald-600 hover:bg-emerald-700"
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite User
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowBulkEditDialog(true)}
+            variant="outline"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Bulk Edit Roles
+          </Button>
+          <Button 
+            onClick={() => setShowInviteDialog(true)}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Invite User
+          </Button>
+        </div>
       </div>
 
       {/* User Table */}
@@ -235,6 +275,13 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
         user={selectedUser}
         players={players}
         coaches={coaches}
+      />
+
+      <BulkRoleEditDialog
+        open={showBulkEditDialog}
+        onClose={() => setShowBulkEditDialog(false)}
+        users={filteredUsers}
+        onComplete={handleBulkRoleUpdate}
       />
     </div>
   );

@@ -8,10 +8,8 @@ import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
 import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
-import SyncParentsDialog from '../components/contacts/SyncParentsDialog';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
 
 export default function ContactsManager() {
   const queryClient = useQueryClient();
@@ -21,8 +19,8 @@ export default function ContactsManager() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
-  const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [sortField, setSortField] = useState('name');
+  const [isCreatingParents, setIsCreatingParents] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc');
 
 
@@ -155,6 +153,33 @@ export default function ContactsManager() {
   const uniqueAgeGroups = [...new Set(teams.map(t => t.age_group).filter(Boolean))].sort();
   const uniqueLeagues = [...new Set(teams.map(t => t.league).filter(Boolean))].sort();
 
+  const createParentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('createParentsFromContacts');
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['users']);
+      toast.success(`Created ${data.summary.created} parent accounts, merged ${data.summary.merged} existing users`);
+      if (data.summary.errors > 0) {
+        toast.warning(`${data.summary.errors} errors occurred. Check console for details.`);
+        console.error('Parent creation errors:', data.details.errors);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to create parent accounts: ${error.message}`);
+      console.error('Parent creation failed:', error);
+    }
+  });
+
+  const handleCreateAllParents = async () => {
+    if (window.confirm(`This will create parent accounts for all ${contacts.length} contacts. Existing users will be merged. Continue?`)) {
+      setIsCreatingParents(true);
+      await createParentsMutation.mutateAsync();
+      setIsCreatingParents(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -167,11 +192,12 @@ export default function ContactsManager() {
           </div>
           <div className="flex gap-2">
             <Button 
-              onClick={() => setShowSyncDialog(true)}
+              onClick={handleCreateAllParents}
+              disabled={isCreatingParents}
               className="bg-purple-600 hover:bg-purple-700"
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Sync All Parents
+              <Users className="w-4 h-4 mr-2" />
+              {isCreatingParents ? 'Creating...' : 'Create All Parent Accounts'}
             </Button>
             <Button onClick={() => setShowInviteNewParentDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <Mail className="w-4 h-4 mr-2" />
@@ -253,11 +279,6 @@ export default function ContactsManager() {
           open={showInviteNewParentDialog}
           onClose={() => setShowInviteNewParentDialog(false)}
           players={players}
-        />
-
-        <SyncParentsDialog
-          open={showSyncDialog}
-          onClose={() => setShowSyncDialog(false)}
         />
       </div>
     </div>
