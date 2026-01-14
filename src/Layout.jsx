@@ -92,7 +92,11 @@ export default function Layout({ children, currentPageName }) {
 
   React.useEffect(() => {
     if (roleType && location.pathname === '/') {
-      navigate(createPageUrl('Communications'));
+      if (roleType === 'parent') {
+        navigate(createPageUrl('ParentPortal'));
+      } else {
+        navigate(createPageUrl('Communications'));
+      }
     }
   }, [roleType, location.pathname, navigate]);
 
