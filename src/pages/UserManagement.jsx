@@ -38,7 +38,8 @@ export default function UserManagement() {
     director: null,
     coach: null,
     user: null,
-    parent: null
+    parent: null,
+    player: null
   });
 
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
@@ -76,13 +77,15 @@ export default function UserManagement() {
     const coachPerms = permissions.find(p => p.role_name === 'coach');
     const userPerms = permissions.find(p => p.role_name === 'user');
     const parentPerms = permissions.find(p => p.role_name === 'parent');
+    const playerPerms = permissions.find(p => p.role_name === 'player');
 
     setLocalPermissions({
       admin: adminPerms?.permissions || getDefaultPermissions('admin'),
       director: directorPerms?.permissions || getDefaultPermissions('director'),
       coach: coachPerms?.permissions || getDefaultPermissions('coach'),
       user: userPerms?.permissions || getDefaultPermissions('user'),
-      parent: parentPerms?.permissions || getDefaultPermissions('parent')
+      parent: parentPerms?.permissions || getDefaultPermissions('parent'),
+      player: playerPerms?.permissions || getDefaultPermissions('player')
     });
   }, [permissions]);
 
@@ -139,8 +142,10 @@ export default function UserManagement() {
     if (user.role === 'director') return 'director';
     const isCoach = coaches.find(c => c.email === user.email);
     if (isCoach) return 'coach';
+    if (user.role === 'parent') return 'parent';
     if (user.player_ids && user.player_ids.length > 0) return 'parent';
-    return 'user';
+    if (user.role === 'player') return 'player';
+    return user.role || 'user';
   };
 
   const autoAssignParentRole = useMutation({
@@ -211,16 +216,13 @@ export default function UserManagement() {
 
       // Auto-assign parent role if player_ids are present
       if (editUserForm.player_ids && editUserForm.player_ids.length > 0) {
-        updateData.role = 'parent';
+        const currentHigherRoles = ['admin', 'director', 'coach'];
+        if (!currentHigherRoles.includes(editUserForm.role)) {
+          updateData.role = 'parent';
+        }
       }
 
-      await base44.entities.User.update(editingUser.id, updateData);
-      
-      queryClient.invalidateQueries(['users']);
-      queryClient.invalidateQueries(['currentUser']);
-      setShowEditUserDialog(false);
-      setEditingUser(null);
-      toast.success('User updated successfully');
+      await updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
     } catch (error) {
       toast.error('Failed to update user: ' + error.message);
     }
@@ -321,6 +323,25 @@ export default function UserManagement() {
         access_club_management: false,
         send_messages: true
       };
+    } else if (role === 'player') {
+      return {
+        view_all_players: false,
+        edit_all_players: false,
+        view_all_teams: false,
+        edit_all_teams: false,
+        view_all_assessments: false,
+        create_assessments: false,
+        view_all_evaluations: false,
+        create_evaluations: false,
+        view_all_bookings: true,
+        manage_bookings: false,
+        view_all_training_plans: true,
+        create_training_plans: false,
+        manage_coaches: false,
+        manage_users: false,
+        access_club_management: false,
+        send_messages: true
+      };
     } else {
       return {
         view_all_players: false,
@@ -372,7 +393,7 @@ export default function UserManagement() {
     });
   };
 
-  if (!localPermissions.admin || !localPermissions.director || !localPermissions.coach || !localPermissions.user || !localPermissions.parent) {
+  if (!localPermissions.admin || !localPermissions.director || !localPermissions.coach || !localPermissions.user || !localPermissions.parent || !localPermissions.player) {
     return <div>Loading...</div>;
   }
 
@@ -393,13 +414,14 @@ export default function UserManagement() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="admin">Admin</TabsTrigger>
           <TabsTrigger value="director">Director</TabsTrigger>
           <TabsTrigger value="coach">Coach</TabsTrigger>
-          <TabsTrigger value="user">Player</TabsTrigger>
           <TabsTrigger value="parent">Parent</TabsTrigger>
+          <TabsTrigger value="player">Player</TabsTrigger>
+          <TabsTrigger value="user">User</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -430,8 +452,10 @@ export default function UserManagement() {
                         <TableCell>
                           <Badge className={
                             userRole === 'admin' ? 'bg-purple-100 text-purple-800' :
+                            userRole === 'director' ? 'bg-indigo-100 text-indigo-800' :
                             userRole === 'coach' ? 'bg-blue-100 text-blue-800' :
                             userRole === 'parent' ? 'bg-orange-100 text-orange-800' :
+                            userRole === 'player' ? 'bg-green-100 text-green-800' :
                             'bg-slate-100 text-slate-800'
                           }>
                             {userRole}
@@ -482,7 +506,7 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
 
-        {['admin', 'director', 'coach', 'user', 'parent']?.map(role => (
+        {['admin', 'director', 'coach', 'user', 'parent', 'player']?.map(role => (
           <TabsContent key={role} value={role}>
             <Card className="border-none shadow-lg">
               <CardHeader>
@@ -649,7 +673,9 @@ export default function UserManagement() {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="coach">Coach</SelectItem>
                   <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="player">Player</SelectItem>
                 </SelectContent>
               </Select>
             </div>
