@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail, UserCog } from 'lucide-react';
+import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -60,7 +61,12 @@ export default function UserManagement() {
   const handleActAsUser = (user) => {
     if (window.confirm(`Act as ${user.full_name || user.email}? You will see the app as this user sees it.`)) {
       localStorage.setItem('actingAsUser', JSON.stringify(user));
-      window.location.reload();
+      const userRole = getUserRole(user);
+      if (userRole === 'parent') {
+        window.location.href = createPageUrl('ParentPortal');
+      } else {
+        window.location.reload();
+      }
     }
   };
 
@@ -556,9 +562,10 @@ export default function UserManagement() {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-500 mt-1">Base44 role: 'user', 'admin', or 'director'. App roles (coach/parent) are determined by other data.</p>
+              <p className="text-xs text-slate-500 mt-1">Base roles: admin, director, coach, parent, or user (player).</p>
             </div>
             
             <div>
@@ -642,6 +649,7 @@ export default function UserManagement() {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="director">Director</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
