@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Shield, Save, Users as UsersIcon, Plus, Edit2, Mail, UserCog } from 'lucide-react';
-import { createPageUrl } from '@/utils';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Shield, Users, Settings, Activity, Key } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
+
+// Import new components
+import UserDirectory from '@/components/usermanagement/UserDirectory';
+import RolePermissionsManager from '@/components/usermanagement/RolePermissionsManager';
+import UserActivityLog from '@/components/usermanagement/UserActivityLog';
+import AccountSettings from '@/components/usermanagement/AccountSettings';
 
 export default function UserManagement() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('users');
 
-  const { data: permissions = [] } = useQuery({
-    queryKey: ['rolePermissions'],
-    queryFn: () => base44.entities.RolePermissions.list()
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
   });
 
   const { data: users = [] } = useQuery({
@@ -28,717 +26,155 @@ export default function UserManagement() {
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: permissions = [] } = useQuery({
+    queryKey: ['rolePermissions'],
+    queryFn: () => base44.entities.RolePermissions.list()
+  });
+
   const { data: coaches = [] } = useQuery({
     queryKey: ['coaches'],
     queryFn: () => base44.entities.Coach.list()
   });
-
-  const [localPermissions, setLocalPermissions] = useState({
-    admin: null,
-    director: null,
-    coach: null,
-    user: null,
-    parent: null,
-    player: null
-  });
-
-  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ full_name: '', display_name: '', email: '', role: '', player_ids: [] });
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'user', player_ids: [] });
-  const [messageSearchTerm, setMessageSearchTerm] = useState('');
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list()
   });
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
-
-  const handleActAsUser = (user) => {
-    if (window.confirm(`Act as ${user.full_name || user.email}? You will see the app as this user sees it.`)) {
-      localStorage.setItem('actingAsUser', JSON.stringify(user));
-      const userRole = getUserRole(user);
-      if (userRole === 'parent') {
-        window.location.href = createPageUrl('ParentPortal');
-      } else {
-        window.location.reload();
-      }
-    }
-  };
-
-  useEffect(() => {
-    const adminPerms = permissions.find(p => p.role_name === 'admin');
-    const directorPerms = permissions.find(p => p.role_name === 'director');
-    const coachPerms = permissions.find(p => p.role_name === 'coach');
-    const userPerms = permissions.find(p => p.role_name === 'user');
-    const parentPerms = permissions.find(p => p.role_name === 'parent');
-    const playerPerms = permissions.find(p => p.role_name === 'player');
-
-    setLocalPermissions({
-      admin: adminPerms?.permissions || getDefaultPermissions('admin'),
-      director: directorPerms?.permissions || getDefaultPermissions('director'),
-      coach: coachPerms?.permissions || getDefaultPermissions('coach'),
-      user: userPerms?.permissions || getDefaultPermissions('user'),
-      parent: parentPerms?.permissions || getDefaultPermissions('parent'),
-      player: playerPerms?.permissions || getDefaultPermissions('player')
-    });
-  }, [permissions]);
-
-  const saveMutation = useMutation({
-    mutationFn: async (role) => {
-      const existing = permissions.find(p => p.role_name === role);
-      const data = {
-        role_name: role,
-        permissions: localPermissions[role]
-      };
-
-      if (existing) {
-        return base44.entities.RolePermissions.update(existing.id, data);
-      } else {
-        return base44.entities.RolePermissions.create(data);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['rolePermissions']);
-      toast.success('Permissions saved');
-    }
-  });
-
-  const createCoachMutation = useMutation({
-    mutationFn: async (userData) => {
-      return await base44.entities.Coach.create({
-        full_name: userData.full_name,
-        email: userData.email,
-        specialization: 'General Coaching',
-        booking_enabled: true
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['coaches']);
-      toast.success('User promoted to coach');
-    }
-  });
-
-  const removeCoachMutation = useMutation({
-    mutationFn: async (email) => {
-      const coach = coaches.find(c => c.email === email);
-      if (coach) {
-        await base44.entities.Coach.delete(coach.id);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['coaches']);
-      toast.success('Coach role removed');
-    }
-  });
-
-  const getUserRole = (user) => {
-    if (user.role === 'admin') return 'admin';
-    if (user.role === 'director') return 'director';
-    const isCoach = coaches.find(c => c.email === user.email);
-    if (isCoach) return 'coach';
-    if (user.role === 'parent') return 'parent';
-    if (user.player_ids && user.player_ids.length > 0) return 'parent';
-    if (user.role === 'player') return 'player';
-    return user.role || 'user';
-  };
-
-  const autoAssignParentRole = useMutation({
-    mutationFn: async (userId) => {
-      return base44.entities.User.update(userId, { role: 'parent' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
-      toast.success('User role updated to parent');
-    }
-  });
-
-  const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, data }) => {
-      console.log('Mutation executing for user:', userId, 'with data:', data);
-      const result = await base44.entities.User.update(userId, data);
-      console.log('Mutation result:', result);
-      return result;
-    },
-    onSuccess: (data) => {
-      console.log('Update successful:', data);
-      queryClient.invalidateQueries(['users']);
-      queryClient.invalidateQueries(['currentUser']);
-      setShowEditUserDialog(false);
-      setEditingUser(null);
-      toast.success('✅ User updated successfully!');
-    },
-    onError: (error) => {
-      console.error('Update failed:', error);
-      toast.error(`❌ Failed to update user: ${error.message}`);
-    }
-  });
-
-  const handleEditUser = (user) => {
-    setEditingUser(user);
-    setEditUserForm({
-      full_name: user.full_name || '',
-      display_name: user.display_name || '',
-      email: user.email || '',
-      role: user.role || 'user',
-      player_ids: user.player_ids || []
-    });
-    setShowEditUserDialog(true);
-  };
-
-  const inviteUserMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await base44.functions.invoke('sendInviteEmail', {
-        email: data.email,
-        full_name: data.full_name,
-        role: data.role,
-        app_url: window.location.origin
-      });
-      return response.data;
-    },
-    onSuccess: (result) => {
-      setShowInviteDialog(false);
-      setInviteForm({ email: '', full_name: '', role: 'user', player_ids: [] });
-      toast.success(`✅ Invitation sent to ${inviteForm.email}`);
-    },
-    onError: (error) => {
-      toast.error('Failed to send invitation: ' + (error.response?.data?.error || error.message));
-    }
-  });
-
-  const handleSaveUser = () => {
-    if (!editingUser || !editingUser.id) {
-      toast.error('❌ No user selected for editing');
-      return;
-    }
-
-    console.log('Saving user:', editingUser.id, editUserForm);
-
-    const updateData = {
-      display_name: editUserForm.display_name || editingUser.full_name,
-      role: editUserForm.role,
-      player_ids: editUserForm.player_ids || []
-    };
-
-    // Auto-assign parent role if player_ids are present
-    if (updateData.player_ids.length > 0) {
-      const currentHigherRoles = ['admin', 'director', 'coach'];
-      if (!currentHigherRoles.includes(updateData.role)) {
-        updateData.role = 'parent';
-      }
-    } else if (updateData.role === 'parent') {
-      // If no players but role is parent, revert to user
-      updateData.role = 'user';
-    }
-
-    console.log('Update data:', updateData);
-    updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
-  };
-
-  const toggleCoachRole = async (user) => {
-    const currentRole = getUserRole(user);
-    if (currentRole === 'admin') {
-      toast.error('Cannot change admin users to coach. Remove admin role first.');
-      return;
-    }
-    
-    if (currentRole === 'coach') {
-      if (window.confirm(`Remove coach role from ${user.full_name}?`)) {
-        removeCoachMutation.mutate(user.email);
-      }
-    } else {
-      if (window.confirm(`Promote ${user.full_name} to coach?`)) {
-        createCoachMutation.mutate(user);
-      }
-    }
-  };
-
-  const getDefaultPermissions = (role) => {
-    if (role === 'admin') {
-      return {
-        view_all_players: true,
-        edit_all_players: true,
-        view_all_teams: true,
-        edit_all_teams: true,
-        view_all_assessments: true,
-        create_assessments: true,
-        view_all_evaluations: true,
-        create_evaluations: true,
-        view_all_bookings: true,
-        manage_bookings: true,
-        view_all_training_plans: true,
-        create_training_plans: true,
-        manage_coaches: true,
-        manage_users: true,
-        access_club_management: true,
-        send_messages: true
-      };
-    } else if (role === 'director') {
-      return {
-        view_all_players: true,
-        edit_all_players: true,
-        view_all_teams: true,
-        edit_all_teams: true,
-        view_all_assessments: true,
-        create_assessments: true,
-        view_all_evaluations: true,
-        create_evaluations: true,
-        view_all_bookings: true,
-        manage_bookings: true,
-        view_all_training_plans: true,
-        create_training_plans: true,
-        manage_coaches: false,
-        manage_users: false,
-        access_club_management: false,
-        send_messages: true
-      };
-    } else if (role === 'coach') {
-      return {
-        view_all_players: false,
-        edit_all_players: false,
-        view_all_teams: false,
-        edit_all_teams: false,
-        view_all_assessments: false,
-        create_assessments: true,
-        view_all_evaluations: false,
-        create_evaluations: true,
-        view_all_bookings: false,
-        manage_bookings: true,
-        view_all_training_plans: false,
-        create_training_plans: true,
-        manage_coaches: false,
-        manage_users: false,
-        access_club_management: false,
-        send_messages: true
-      };
-    } else if (role === 'parent') {
-      return {
-        view_all_players: false,
-        edit_all_players: false,
-        view_all_teams: false,
-        edit_all_teams: false,
-        view_all_assessments: false,
-        create_assessments: false,
-        view_all_evaluations: false,
-        create_evaluations: false,
-        view_all_bookings: false,
-        manage_bookings: false,
-        view_all_training_plans: false,
-        create_training_plans: false,
-        manage_coaches: false,
-        manage_users: false,
-        access_club_management: false,
-        send_messages: true
-      };
-    } else if (role === 'player') {
-      return {
-        view_all_players: false,
-        edit_all_players: false,
-        view_all_teams: false,
-        edit_all_teams: false,
-        view_all_assessments: false,
-        create_assessments: false,
-        view_all_evaluations: false,
-        create_evaluations: false,
-        view_all_bookings: true,
-        manage_bookings: false,
-        view_all_training_plans: true,
-        create_training_plans: false,
-        manage_coaches: false,
-        manage_users: false,
-        access_club_management: false,
-        send_messages: true
-      };
-    } else {
-      return {
-        view_all_players: false,
-        edit_all_players: false,
-        view_all_teams: false,
-        edit_all_teams: false,
-        view_all_assessments: false,
-        create_assessments: false,
-        view_all_evaluations: false,
-        create_evaluations: false,
-        view_all_bookings: false,
-        manage_bookings: false,
-        view_all_training_plans: false,
-        create_training_plans: false,
-        manage_coaches: false,
-        manage_users: false,
-        access_club_management: false,
-        send_messages: false
-      };
-    }
-  };
-
-  const permissionLabels = {
-    view_all_players: 'View All Players',
-    edit_all_players: 'Edit All Players',
-    view_all_teams: 'View All Teams',
-    edit_all_teams: 'Edit All Teams',
-    view_all_assessments: 'View All Assessments',
-    create_assessments: 'Create Assessments',
-    view_all_evaluations: 'View All Evaluations',
-    create_evaluations: 'Create Evaluations',
-    view_all_bookings: 'View All Bookings',
-    manage_bookings: 'Manage Bookings',
-    view_all_training_plans: 'View All Training Plans',
-    create_training_plans: 'Create Training Plans',
-    manage_coaches: 'Manage Coaches',
-    manage_users: 'Manage Users',
-    access_club_management: 'Access Club Management',
-    send_messages: 'Send Messages'
-  };
-
-  const updatePermission = (role, permission, value) => {
-    setLocalPermissions({
-      ...localPermissions,
-      [role]: {
-        ...localPermissions[role],
-        [permission]: value
-      }
-    });
-  };
-
-  if (!localPermissions.admin || !localPermissions.director || !localPermissions.coach || !localPermissions.user || !localPermissions.parent || !localPermissions.player) {
-    return <div>Loading...</div>;
+  // Check if current user is admin
+  if (!currentUser || currentUser.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Access Denied</CardTitle>
+            <CardDescription>
+              You must be an administrator to access User Management.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-emerald-600" />
-            User Management & RBAC
-          </h1>
-          <p className="text-slate-600 mt-1">Manage users and customize role-based access control</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Shield className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">User Management & RBAC</h1>
+              <p className="text-slate-600">Manage users, roles, permissions, and access control</p>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => setShowInviteDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-          <Mail className="w-4 h-4 mr-2" />
-          Invite User
-        </Button>
-      </div>
 
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="admin">Admin</TabsTrigger>
-          <TabsTrigger value="director">Director</TabsTrigger>
-          <TabsTrigger value="coach">Coach</TabsTrigger>
-          <TabsTrigger value="parent">Parent</TabsTrigger>
-          <TabsTrigger value="player">Player</TabsTrigger>
-          <TabsTrigger value="user">User</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="users">
-          <Card className="border-none shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UsersIcon className="w-5 h-5 text-emerald-600" />
-                All Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Current Role</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users?.map(user => {
-                    const userRole = getUserRole(user);
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.display_name || user.full_name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge className={
-                            userRole === 'admin' ? 'bg-purple-100 text-purple-800' :
-                            userRole === 'director' ? 'bg-indigo-100 text-indigo-800' :
-                            userRole === 'coach' ? 'bg-blue-100 text-blue-800' :
-                            userRole === 'parent' ? 'bg-orange-100 text-orange-800' :
-                            userRole === 'player' ? 'bg-green-100 text-green-800' :
-                            'bg-slate-100 text-slate-800'
-                          }>
-                            {userRole}
-                          </Badge>
-                          {userRole === 'parent' && (user.player_ids || []).length > 0 && (
-                            <span className="ml-2 text-xs text-slate-500">
-                              → {(user.player_ids || [])?.map(pid => players?.find(p => p.id === pid)?.full_name).filter(Boolean).join(', ') || 'Unknown'}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit2 className="w-3 h-3 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleCoachRole(user)}
-                              disabled={userRole === 'admin' || userRole === 'parent'}
-                            >
-                              {userRole === 'coach' ? 'Remove Coach' : 'Make Coach'}
-                            </Button>
-                            {currentUser?.role === 'admin' && user.id !== currentUser.id && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActAsUser(user)}
-                                className="border-purple-300 text-purple-600 hover:bg-purple-50"
-                              >
-                                <UserCog className="w-3 h-3 mr-1" />
-                                Act As
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Total Users</p>
+                  <p className="text-2xl font-bold text-slate-900">{users.length}</p>
+                </div>
+                <Users className="w-8 h-8 text-emerald-600" />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {['admin', 'director', 'coach', 'user', 'parent', 'player']?.map(role => (
-          <TabsContent key={role} value={role}>
-            <Card className="border-none shadow-lg">
-              <CardHeader>
-                <CardTitle className="capitalize">{role} Permissions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {Object.keys(permissionLabels)?.map(permission => (
-                    <div key={permission} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <label htmlFor={`${role}-${permission}`} className="font-medium text-slate-900 cursor-pointer">
-                        {permissionLabels[permission]}
-                      </label>
-                      <Switch
-                        id={`${role}-${permission}`}
-                        checked={localPermissions[role]?.[permission] || false}
-                        onCheckedChange={(checked) => updatePermission(role, permission, checked)}
-                      />
-                    </div>
-                  ))}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Admins</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {users.filter(u => u.role === 'admin').length}
+                  </p>
                 </div>
-                <div className="flex justify-end mt-6">
-                  <Button
-                    onClick={() => saveMutation.mutate(role)}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save {role.charAt(0).toUpperCase() + role.slice(1)} Permissions
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
-
-      {/* Edit User Dialog */}
-      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label className="mb-2 block">Display Name</Label>
-              <Input
-                value={editUserForm.display_name}
-                onChange={(e) => setEditUserForm({ ...editUserForm, display_name: e.target.value })}
-                placeholder="Display Name"
-              />
-              <p className="text-xs text-slate-500 mt-1">This is the name shown throughout the app</p>
-            </div>
-            <div>
-              <Label className="mb-2 block">Account Name (Read-only)</Label>
-              <Input
-                value={editUserForm.full_name}
-                readOnly
-                className="bg-slate-100"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Email</Label>
-              <Input
-                type="email"
-                value={editUserForm.email}
-                readOnly
-                className="bg-slate-100"
-              />
-              <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
-            </div>
-            <div>
-              <Label className="mb-2 block">Base Role</Label>
-              <Select value={editUserForm.role} onValueChange={(v) => setEditUserForm({ ...editUserForm, role: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="director">Director</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
-                  <SelectItem value="player">Player</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-slate-500 mt-1">Base roles: admin, director, coach, parent, player, or user.</p>
-            </div>
-            
-            <div>
-              <Label className="mb-2 block">Assigned Players (for Parents)</Label>
-                <Input
-                  placeholder="Search players..."
-                  value={messageSearchTerm}
-                  onChange={(e) => setMessageSearchTerm(e.target.value)}
-                  className="mb-2 h-8 text-xs"
-                />
-                <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
-                  {[...players]
-                    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
-                    .filter(p => 
-                      !messageSearchTerm || 
-                      p.full_name?.toLowerCase().includes(messageSearchTerm.toLowerCase())
-                    )
-                    .map(player => (
-                      <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={(editUserForm.player_ids || []).includes(player.id)}
-                          onChange={(e) => {
-                            const currentIds = editUserForm.player_ids || [];
-                            if (e.target.checked) {
-                              setEditUserForm({ ...editUserForm, player_ids: [...currentIds, player.id] });
-                            } else {
-                              setEditUserForm({ ...editUserForm, player_ids: currentIds.filter(id => id !== player.id) });
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{player.full_name}</span>
-                      </label>
-                    ))}
-                </div>
-              <p className="text-xs text-slate-500 mt-1">If players are assigned, this user becomes a 'parent' in the app.</p>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowEditUserDialog(false)}>Cancel</Button>
-              <Button onClick={handleSaveUser} className="bg-emerald-600 hover:bg-emerald-700">
-                <Save className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite New User</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label className="mb-2 block">Full Name</Label>
-              <Input
-                value={inviteForm.full_name}
-                onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
-                placeholder="John Doe"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Email *</Label>
-              <Input
-                type="email"
-                value={inviteForm.email}
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                placeholder="user@example.com"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">Base Role</Label>
-              <Select value={inviteForm.role} onValueChange={(v) => setInviteForm({ ...inviteForm, role: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="director">Director</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
-                  <SelectItem value="player">Player</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {inviteForm.role !== 'admin' && (
-              <div>
-                <Label className="mb-2 block">Assign to Players (Optional)</Label>
-                <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1">
-                  {players?.map(player => (
-                    <label key={player.id} className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(inviteForm.player_ids || []).includes(player.id)}
-                        onChange={(e) => {
-                          const currentIds = inviteForm.player_ids || [];
-                          if (e.target.checked) {
-                            setInviteForm({ ...inviteForm, player_ids: [...currentIds, player.id] });
-                          } else {
-                            setInviteForm({ ...inviteForm, player_ids: currentIds.filter(id => id !== player.id) });
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{player.full_name}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">If players are assigned, this user becomes a 'parent' in the app.</p>
+                <Shield className="w-8 h-8 text-purple-600" />
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            <div className="flex gap-2 justify-end pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowInviteDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={() => {
-                  if (confirm(`Send invitation email to ${inviteForm.email}?`)) {
-                    inviteUserMutation.mutate(inviteForm);
-                  }
-                }}
-                disabled={!inviteForm.email || inviteUserMutation.isPending}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                {inviteUserMutation.isPending ? 'Sending...' : 'Send Invite'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-        </Dialog>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Coaches</p>
+                  <p className="text-2xl font-bold text-slate-900">{coaches.length}</p>
+                </div>
+                <Activity className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600">Parents</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {users.filter(u => u.role === 'parent' || (u.player_ids && u.player_ids.length > 0)).length}
+                  </p>
+                </div>
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        );
-        }
+
+        {/* Main Content Tabs */}
+        <Card className="border-none shadow-xl">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="border-b border-slate-200 px-6 pt-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="users" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  User Directory
+                </TabsTrigger>
+                <TabsTrigger value="permissions" className="flex items-center gap-2">
+                  <Key className="w-4 h-4" />
+                  Role Permissions
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Activity Log
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="users" className="p-6">
+              <UserDirectory 
+                users={users}
+                coaches={coaches}
+                players={players}
+                currentUser={currentUser}
+              />
+            </TabsContent>
+
+            <TabsContent value="permissions" className="p-6">
+              <RolePermissionsManager permissions={permissions} />
+            </TabsContent>
+
+            <TabsContent value="activity" className="p-6">
+              <UserActivityLog users={users} />
+            </TabsContent>
+
+            <TabsContent value="settings" className="p-6">
+              <AccountSettings />
+            </TabsContent>
+          </Tabs>
+        </Card>
+      </div>
+    </div>
+  );
+}
