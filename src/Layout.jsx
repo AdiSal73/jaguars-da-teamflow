@@ -60,6 +60,15 @@ export default function Layout({ children, currentPageName }) {
 
   const getUserRole = () => {
     if (!user) return null;
+    // Check assigned_role first (admin-controlled)
+    if (user.assigned_role) {
+      if (user.assigned_role === 'coach') {
+        const coach = coaches.find((c) => c.email === user.email);
+        return coach || user.assigned_role;
+      }
+      return user.assigned_role;
+    }
+    // Fallback to platform role
     if (user.role === 'admin') return 'admin';
     if (user.role === 'director') return 'director';
     const isCoach = coaches.find((c) => c.email === user.email);

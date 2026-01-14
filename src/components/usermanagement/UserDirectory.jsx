@@ -28,6 +28,9 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
 
   // Get user's effective role
   const getUserRole = (user) => {
+    // Check assigned_role first (admin-controlled)
+    if (user.assigned_role) return user.assigned_role;
+    // Fallback to platform role
     if (user.role === 'admin') return 'admin';
     if (user.role === 'director') return 'director';
     const isCoach = coaches.find(c => c.email === user.email);
@@ -77,17 +80,18 @@ export default function UserDirectory({ users, coaches, players, currentUser }) 
         const user = users.find(u => u.id === userId);
         if (!user) continue;
         
+        const updates = { assigned_role: newRole };
+        
         // For parent role, ensure they have player_ids
         if (newRole === 'parent') {
           const userPlayers = players.filter(p => 
-            p.parent_emails?.some(e => e.toLowerCase() === user.email.toLowerCase())
+            p.parent_emails?.some(e => e?.toLowerCase() === user.email?.toLowerCase()) ||
+            p.email?.toLowerCase() === user.email?.toLowerCase()
           );
-          const playerIds = userPlayers.map(p => p.id);
-          
-          await base44.asServiceRole.entities.User.update(userId, {
-            player_ids: playerIds
-          });
+          updates.player_ids = userPlayers.map(p => p.id);
         }
+        
+        await base44.asServiceRole.entities.User.update(userId, updates);
       } catch (error) {
         console.error(`Failed to update user ${userId}:`, error);
       }
