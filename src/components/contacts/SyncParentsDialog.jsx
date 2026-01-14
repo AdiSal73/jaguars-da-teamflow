@@ -136,7 +136,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                                   </span>
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">
-                                  {item.players.join(', ')}
+                                  {item.players?.join(', ') || 'N/A'}
                                 </p>
                               </div>
                             </div>
@@ -159,7 +159,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                             <p className="font-medium text-slate-900">{item.parentName}</p>
                             <p className="text-sm text-slate-600">{item.email}</p>
                             <p className="text-xs text-slate-500 mt-1">
-                              {item.playerCount} player{item.playerCount !== 1 ? 's' : ''}: {item.players.join(', ')}
+                              {item.playerCount} player{item.playerCount !== 1 ? 's' : ''}: {item.players?.join(', ') || 'N/A'}
                             </p>
                           </div>
                         ))}
@@ -180,7 +180,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                             <p className="font-medium text-slate-900">{item.email}</p>
                             <p className="text-sm text-amber-700">{item.reason}</p>
                             <p className="text-xs text-slate-500 mt-1">
-                              {item.players.join(', ')}
+                              {item.players?.join(', ') || 'N/A'}
                             </p>
                           </div>
                         ))}
@@ -201,7 +201,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                             <p className="font-medium text-slate-900">{item.email}</p>
                             <p className="text-sm text-red-700">{item.error}</p>
                             <p className="text-xs text-slate-500 mt-1">
-                              {item.players.join(', ')}
+                              {item.players?.join(', ') || 'N/A'}
                             </p>
                           </div>
                         ))}
