@@ -94,19 +94,19 @@ export default function SyncParentsDialog({ open, onClose }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <p className="text-sm text-green-700 font-medium">Updated</p>
-                  <p className="text-2xl font-bold text-green-900">{syncResults.summary.updated}</p>
+                  <p className="text-2xl font-bold text-green-900">{syncResults.summary?.updated || 0}</p>
                 </div>
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-700 font-medium">Invited</p>
-                  <p className="text-2xl font-bold text-blue-900">{syncResults.summary.invited}</p>
+                  <p className="text-2xl font-bold text-blue-900">{syncResults.summary?.invited || 0}</p>
                 </div>
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-700 font-medium">Skipped</p>
-                  <p className="text-2xl font-bold text-amber-900">{syncResults.summary.skipped}</p>
+                  <p className="text-2xl font-bold text-amber-900">{syncResults.summary?.skipped || 0}</p>
                 </div>
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700 font-medium">Errors</p>
-                  <p className="text-2xl font-bold text-red-900">{syncResults.summary.errors}</p>
+                  <p className="text-2xl font-bold text-red-900">{syncResults.summary?.errors || 0}</p>
                 </div>
               </div>
 
@@ -114,7 +114,7 @@ export default function SyncParentsDialog({ open, onClose }) {
               <ScrollArea className="h-96 border rounded-lg p-4 bg-slate-50">
                 <div className="space-y-4">
                   {/* Updated Users */}
-                  {syncResults.details.updated.length > 0 && (
+                  {syncResults.details?.updated?.length > 0 && (
                     <div>
                       <h3 className="font-semibold text-green-900 flex items-center gap-2 mb-2">
                         <CheckCircle2 className="w-4 h-4" />
@@ -147,7 +147,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                   )}
 
                   {/* Invited Users */}
-                  {syncResults.details.invited.length > 0 && (
+                  {syncResults.details?.invited?.length > 0 && (
                     <div>
                       <h3 className="font-semibold text-blue-900 flex items-center gap-2 mb-2">
                         <CheckCircle2 className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                   )}
 
                   {/* Skipped Users */}
-                  {syncResults.details.skipped.length > 0 && (
+                  {syncResults.details?.skipped?.length > 0 && (
                     <div>
                       <h3 className="font-semibold text-amber-900 flex items-center gap-2 mb-2">
                         <AlertCircle className="w-4 h-4" />
@@ -189,7 +189,7 @@ export default function SyncParentsDialog({ open, onClose }) {
                   )}
 
                   {/* Errors */}
-                  {syncResults.details.errors.length > 0 && (
+                  {syncResults.details?.errors?.length > 0 && (
                     <div>
                       <h3 className="font-semibold text-red-900 flex items-center gap-2 mb-2">
                         <XCircle className="w-4 h-4" />
