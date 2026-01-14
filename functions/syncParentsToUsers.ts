@@ -78,8 +78,7 @@ Deno.serve(async (req) => {
           const mergedPlayerIds = [...new Set([...currentPlayerIds, ...data.playerIds])];
           
           await base44.asServiceRole.entities.User.update(existingUser.id, {
-            player_ids: mergedPlayerIds,
-            role: 'parent'
+            player_ids: mergedPlayerIds
           });
           
           console.log(`  - Updated with ${mergedPlayerIds.length} players`);
@@ -87,7 +86,7 @@ Deno.serve(async (req) => {
             email,
             userName: existingUser.full_name || existingUser.display_name,
             previousRole: existingUser.role,
-            newRole: 'parent',
+            newRole: existingUser.role,
             playerCount: mergedPlayerIds.length,
             players: data.playerNames
           });
