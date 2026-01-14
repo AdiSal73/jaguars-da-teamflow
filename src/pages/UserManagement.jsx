@@ -207,25 +207,26 @@ export default function UserManagement() {
   });
 
   const handleSaveUser = async () => {
-    try {
-      const updateData = {
-        display_name: editUserForm.display_name,
-        role: editUserForm.role,
-        player_ids: editUserForm.player_ids
-      };
-
-      // Auto-assign parent role if player_ids are present
-      if (editUserForm.player_ids && editUserForm.player_ids.length > 0) {
-        const currentHigherRoles = ['admin', 'director', 'coach'];
-        if (!currentHigherRoles.includes(editUserForm.role)) {
-          updateData.role = 'parent';
-        }
-      }
-
-      await updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
-    } catch (error) {
-      toast.error('Failed to update user: ' + error.message);
+    if (!editingUser || !editingUser.id) {
+      toast.error('No user selected for editing');
+      return;
     }
+
+    const updateData = {
+      display_name: editUserForm.display_name,
+      role: editUserForm.role,
+      player_ids: editUserForm.player_ids
+    };
+
+    // Auto-assign parent role if player_ids are present
+    if (editUserForm.player_ids && editUserForm.player_ids.length > 0) {
+      const currentHigherRoles = ['admin', 'director', 'coach'];
+      if (!currentHigherRoles.includes(editUserForm.role)) {
+        updateData.role = 'parent';
+      }
+    }
+
+    updateUserMutation.mutate({ userId: editingUser.id, data: updateData });
   };
 
   const toggleCoachRole = async (user) => {
