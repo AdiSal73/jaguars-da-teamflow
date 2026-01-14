@@ -8,8 +8,11 @@ import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
 import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
+import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function ContactsManager() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterTeam, setFilterTeam] = useState('all');
   const [filterBranch, setFilterBranch] = useState('all');
@@ -18,6 +21,20 @@ export default function ContactsManager() {
   const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
+
+  const syncParentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('syncParentsToUsers');
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['users']);
+      toast.success(`Synced ${data.totalParents} parents: ${data.updated} updated, ${data.invited} invited`);
+    },
+    onError: (error) => {
+      toast.error('Failed to sync parents: ' + error.message);
+    }
+  });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -157,10 +174,25 @@ export default function ContactsManager() {
             </h1>
             <p className="text-slate-600 mt-1">Manage all parent contacts, send invitations, and communicate</p>
           </div>
-          <Button onClick={() => setShowInviteNewParentDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Mail className="w-4 h-4 mr-2" />
-            Invite New Parent
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                if (confirm('Sync all parents from player contacts to create/update user accounts?')) {
+                  syncParentsMutation.mutate();
+                }
+              }}
+              disabled={syncParentsMutation.isPending}
+              variant="outline"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {syncParentsMutation.isPending ? 'Syncing...' : 'Sync All Parents'}
+            </Button>
+            <Button onClick={() => setShowInviteNewParentDialog(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Mail className="w-4 h-4 mr-2" />
+              Invite New Parent
+            </Button>
+          </div>
         </div>
 
         <Card className="border-none shadow-lg mb-6">
