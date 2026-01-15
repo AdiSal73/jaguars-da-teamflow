@@ -18,6 +18,7 @@ import {
 "@/components/ui/dropdown-menu";
 import NotificationCenter from "./components/notifications/NotificationCenter";
 import GlobalSearch from "./components/search/GlobalSearch";
+import OnboardingTour from "./components/onboarding/OnboardingTour";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -226,6 +227,12 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("UserDashboard"),
       icon: UserIcon,
       roles: ["user"]
+    },
+    {
+      title: "Family",
+      url: createPageUrl("FamilyManagement"),
+      icon: Users,
+      roles: ["parent"]
     }
   ];
 
@@ -497,6 +504,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       <GlobalSearch open={showGlobalSearch} onClose={() => setShowGlobalSearch(false)} />
-    </div>
-  );
-}
+      <OnboardingTour userRole={roleType} />
+      </div>
+      );
+      }
