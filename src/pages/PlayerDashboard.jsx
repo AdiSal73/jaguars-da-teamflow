@@ -291,6 +291,79 @@ export default function PlayerDashboard() {
   const currentEvaluation = evaluations[evaluationIndex] || null;
   const team = teams.find(t => t.id === player?.team_id);
 
+  const getGradeText = (value) => {
+    const grades = {
+      1: "State Level",
+      2: "United Pool",
+      3: "United Starter",
+      4: "Aspire Pool",
+      5: "Aspire Starter",
+      6: "GA Pool",
+      7: "GA Starter",
+      8: "Elite",
+      9: "National Team Pool",
+      10: "National Team Starter"
+    };
+    return grades[value] || value;
+  };
+
+  const teamAssessments = React.useMemo(() => {
+    if (!player?.team_id || !assessments.length) return [];
+    const allAssessments = [];
+    for (const p of allPlayers) {
+      if (p.team_id === player.team_id) {
+        const pAssessments = assessments.filter(a => a.player_id === p.id);
+        allAssessments.push(...pAssessments);
+      }
+    }
+    return allAssessments;
+  }, [player, assessments, allPlayers]);
+
+  const { data: allAssessments = [] } = useQuery({
+    queryKey: ['allAssessments'],
+    queryFn: () => base44.entities.PhysicalAssessment.list(),
+    enabled: !!playerId
+  });
+
+  const teamAverages = React.useMemo(() => {
+    if (!player?.team_id || !allAssessments.length) return null;
+    const teamAsses = allAssessments.filter(a => {
+      const p = allPlayers.find(pl => pl.id === a.player_id);
+      return p?.team_id === player.team_id;
+    });
+    if (!teamAsses.length) return null;
+    const totals = teamAsses.reduce((acc, a) => ({
+      sprint: acc.sprint + (a.sprint || 0),
+      vertical: acc.vertical + (a.vertical || 0),
+      yirt: acc.yirt + (a.yirt || 0),
+      shuttle: acc.shuttle + (a.shuttle || 0),
+      count: acc.count + 1
+    }), { sprint: 0, vertical: 0, yirt: 0, shuttle: 0, count: 0 });
+    return {
+      sprint: (totals.sprint / totals.count).toFixed(2),
+      vertical: (totals.vertical / totals.count).toFixed(1),
+      yirt: (totals.yirt / totals.count).toFixed(1),
+      shuttle: (totals.shuttle / totals.count).toFixed(2)
+    };
+  }, [player, allAssessments, allPlayers]);
+
+  const clubAverages = React.useMemo(() => {
+    if (!allAssessments.length) return null;
+    const totals = allAssessments.reduce((acc, a) => ({
+      sprint: acc.sprint + (a.sprint || 0),
+      vertical: acc.vertical + (a.vertical || 0),
+      yirt: acc.yirt + (a.yirt || 0),
+      shuttle: acc.shuttle + (a.shuttle || 0),
+      count: acc.count + 1
+    }), { sprint: 0, vertical: 0, yirt: 0, shuttle: 0, count: 0 });
+    return {
+      sprint: (totals.sprint / totals.count).toFixed(2),
+      vertical: (totals.vertical / totals.count).toFixed(1),
+      yirt: (totals.yirt / totals.count).toFixed(1),
+      shuttle: (totals.shuttle / totals.count).toFixed(2)
+    };
+  }, [allAssessments]);
+
   const radarData = currentEvaluation ? [
     { attribute: 'Growth Mindset', value: currentEvaluation.growth_mindset || 0 },
     { attribute: 'Resilience', value: currentEvaluation.resilience || 0 },
@@ -475,18 +548,26 @@ export default function PlayerDashboard() {
                   <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
                     <div className="text-xs text-red-400">Sprint</div>
                     <div className="text-2xl font-bold text-red-400">{currentAssessment.sprint?.toFixed(2)}s</div>
+                    {teamAverages && <div className="text-[10px] text-red-300 mt-1">Team: {teamAverages.sprint}s</div>}
+                    {clubAverages && <div className="text-[10px] text-red-200 mt-0.5">Club: {clubAverages.sprint}s</div>}
                   </div>
                   <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
                     <div className="text-xs text-blue-400">Vertical</div>
                     <div className="text-2xl font-bold text-blue-400">{currentAssessment.vertical}"</div>
+                    {teamAverages && <div className="text-[10px] text-blue-300 mt-1">Team: {teamAverages.vertical}"</div>}
+                    {clubAverages && <div className="text-[10px] text-blue-200 mt-0.5">Club: {clubAverages.vertical}"</div>}
                   </div>
                   <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
                     <div className="text-xs text-green-400">YIRT</div>
                     <div className="text-2xl font-bold text-green-400">{currentAssessment.yirt}</div>
+                    {teamAverages && <div className="text-[10px] text-green-300 mt-1">Team: {teamAverages.yirt}</div>}
+                    {clubAverages && <div className="text-[10px] text-green-200 mt-0.5">Club: {clubAverages.yirt}</div>}
                   </div>
                   <div className="bg-pink-500/10 rounded-lg p-3 border border-pink-500/30">
                     <div className="text-xs text-pink-400">Shuttle</div>
                     <div className="text-2xl font-bold text-pink-400">{currentAssessment.shuttle?.toFixed(2)}s</div>
+                    {teamAverages && <div className="text-[10px] text-pink-300 mt-1">Team: {teamAverages.shuttle}s</div>}
+                    {clubAverages && <div className="text-[10px] text-pink-200 mt-0.5">Club: {clubAverages.shuttle}s</div>}
                   </div>
                 </div>
 
@@ -643,7 +724,23 @@ export default function PlayerDashboard() {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">{new Date(currentEvaluation.created_date).toLocaleDateString()}</p>
+                <p className="text-xs text-slate-400 mb-2">{new Date(currentEvaluation.created_date).toLocaleDateString()}</p>
+                
+                <div className="mb-4 p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                  <p className="text-[10px] font-semibold text-purple-300 mb-2">Grading Scale</p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-purple-200">
+                    <span>1 - State Level</span>
+                    <span>6 - GA Pool</span>
+                    <span>2 - United Pool</span>
+                    <span>7 - GA Starter</span>
+                    <span>3 - United Starter</span>
+                    <span>8 - Elite</span>
+                    <span>4 - Aspire Pool</span>
+                    <span>9 - National Team Pool</span>
+                    <span>5 - Aspire Starter</span>
+                    <span>10 - National Team Starter</span>
+                  </div>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -675,7 +772,10 @@ export default function PlayerDashboard() {
                       <div key={i}>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-slate-300">{item.label}</span>
-                          <span className={`text-${item.color}-400 font-bold`}>{item.value || 0}/10</span>
+                          <div className="text-right">
+                            <span className={`text-${item.color}-400 font-bold`}>{item.value || 0}</span>
+                            <span className="text-[9px] text-slate-400 ml-1 block">{getGradeText(item.value)}</span>
+                          </div>
                         </div>
                         <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
                           <div className={`h-full bg-${item.color}-500 rounded-full transition-all`} style={{ width: `${(item.value || 0) * 10}%` }}></div>
@@ -691,7 +791,10 @@ export default function PlayerDashboard() {
                           <div key={i} className="mb-2">
                             <div className="flex justify-between text-xs mb-1">
                               <span className="text-slate-300">{currentEvaluation[`position_role_${i}_label`]}</span>
-                              <span className="text-indigo-400 font-bold">{currentEvaluation[`position_role_${i}`] || 0}/10</span>
+                              <div className="text-right">
+                                <span className="text-indigo-400 font-bold">{currentEvaluation[`position_role_${i}`] || 0}</span>
+                                <span className="text-[9px] text-slate-400 ml-1 block">{getGradeText(currentEvaluation[`position_role_${i}`])}</span>
+                              </div>
                             </div>
                             <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
                               <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${(currentEvaluation[`position_role_${i}`] || 0) * 10}%` }}></div>

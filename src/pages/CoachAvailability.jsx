@@ -149,6 +149,18 @@ export default function CoachAvailability() {
     },
   });
 
+  const deleteSegmentMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('removeAvailabilitySegment', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['timeSlots']);
+      setShowEditDialog(false);
+      showSuccess('Session removed');
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove session: ${error.message}`);
+    },
+  });
+
   const createRecurrenceMutation = useMutation({
     mutationFn: async (data) => {
       const pattern = await base44.entities.RecurrencePattern.create(data);
