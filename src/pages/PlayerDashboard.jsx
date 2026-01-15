@@ -546,7 +546,7 @@ export default function PlayerDashboard() {
                 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
-                    <div className="text-xs text-red-400">Sprint</div>
+                    <div className="text-xs text-red-400">20 m Sprint</div>
                     <div className="text-2xl font-bold text-red-400">{currentAssessment.sprint?.toFixed(2)}s</div>
                     {teamAverages && <div className="text-[10px] text-red-300 mt-1">Team: {teamAverages.sprint}s</div>}
                     {clubAverages && <div className="text-[10px] text-red-200 mt-0.5">Club: {clubAverages.sprint}s</div>}
@@ -564,7 +564,7 @@ export default function PlayerDashboard() {
                     {clubAverages && <div className="text-[10px] text-green-200 mt-0.5">Club: {clubAverages.yirt}</div>}
                   </div>
                   <div className="bg-pink-500/10 rounded-lg p-3 border border-pink-500/30">
-                    <div className="text-xs text-pink-400">Shuttle</div>
+                    <div className="text-xs text-pink-400">5-10-5 Shuttle</div>
                     <div className="text-2xl font-bold text-pink-400">{currentAssessment.shuttle?.toFixed(2)}s</div>
                     {teamAverages && <div className="text-[10px] text-pink-300 mt-1">Team: {teamAverages.shuttle}s</div>}
                     {clubAverages && <div className="text-[10px] text-pink-200 mt-0.5">Club: {clubAverages.shuttle}s</div>}
