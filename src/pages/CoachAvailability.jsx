@@ -137,6 +137,18 @@ export default function CoachAvailability() {
     }
   });
 
+  const deleteSegmentMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('removeAvailabilitySegment', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['timeSlots']);
+      setShowEditDialog(false);
+      showSuccess('Session removed');
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove session: ${error.message}`);
+    },
+  });
+
   const createRecurrenceMutation = useMutation({
     mutationFn: async (data) => {
       const pattern = await base44.entities.RecurrencePattern.create(data);
@@ -264,7 +276,16 @@ export default function CoachAvailability() {
   };
 
   const handleDeleteSingle = () => {
-    deleteSlotMutation.mutate(slotToEdit.id);
+    if (slotToEdit && slotToEdit.parentSlot) {
+      deleteSegmentMutation.mutate({
+        timeSlotId: slotToEdit.parentSlot.id,
+        segmentDate: slotToEdit.parentSlot.date,
+        segmentStartTime: slotToEdit.start_time,
+        segmentEndTime: slotToEdit.end_time,
+      });
+    } else {
+      deleteSlotMutation.mutate(slotToEdit.id);
+    }
   };
 
   const handleDeleteAllRecurring = () => {
@@ -957,71 +978,147 @@ export default function CoachAvailability() {
                   <p className="text-xs text-red-700 mt-1">This slot is already booked. Editing will not affect the existing booking.</p>
                 </div>
               )}
+              {slotToEdit.parentSlot ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Session Start (Read-only)</Label>
+                      <Input type="time" value={slotToEdit.start_time} readOnly className="bg-slate-100" />
+                    </div>
+                    <div>
+                      <Label>Session End (Read-only)</Label>
+                      <Input type="time" value={slotToEdit.end_time} readOnly className="bg-slate-100" />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Start Time</Label>
-                  <Input type="time" value={slotToEdit.start_time} onChange={e => setSlotToEdit({...slotToEdit, start_time: e.target.value})} />
-                </div>
-                <div>
-                  <Label>End Time</Label>
-                  <Input type="time" value={slotToEdit.end_time} onChange={e => setSlotToEdit({...slotToEdit, end_time: e.target.value})} />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Block Start Time</Label>
+                      <Input type="time" value={slotToEdit.parentSlot.start_time} onChange={e => setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, start_time: e.target.value}}))} />
+                    </div>
+                    <div>
+                      <Label>Block End Time</Label>
+                      <Input type="time" value={slotToEdit.parentSlot.end_time} onChange={e => setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, end_time: e.target.value}}))} />
+                    </div>
+                  </div>
 
-              <div>
-                <Label>Location</Label>
-                <Select value={slotToEdit.location_id} onValueChange={v => setSlotToEdit({...slotToEdit, location_id: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {locations.map(loc => <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label>Location</Label>
+                    <Select value={slotToEdit.parentSlot.location_id} onValueChange={v => setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, location_id: v}}))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {locations.map(loc => <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div>
-                <Label>Services</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
-                  {services?.map(service => (
-                    <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer">
-                      <Checkbox
-                        checked={slotToEdit.service_names?.includes(service.name)}
-                        onCheckedChange={checked => {
-                          const updated = checked
-                            ? [...(slotToEdit.service_names || []), service.name]
-                            : (slotToEdit.service_names || []).filter(s => s !== service.name);
-                          setSlotToEdit({...slotToEdit, service_names: updated});
-                        }}
-                      />
-                      <span className="flex-1 text-sm">{service.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                  <div>
+                    <Label>Services</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
+                      {services?.map(service => (
+                        <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer">
+                          <Checkbox
+                            checked={slotToEdit.parentSlot.service_names?.includes(service.name)}
+                            onCheckedChange={checked => {
+                              const updated = checked
+                                ? [...(slotToEdit.parentSlot.service_names || []), service.name]
+                                : (slotToEdit.parentSlot.service_names || []).filter(s => s !== service.name);
+                              setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, service_names: updated}}));
+                            }}
+                          />
+                          <span className="flex-1 text-sm">{service.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Buffer Before (min)</Label>
-                  <Input type="number" min="0" step="5" value={slotToEdit.buffer_before || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_before: parseInt(e.target.value) || 0})} />
-                </div>
-                <div>
-                  <Label>Buffer After (min)</Label>
-                  <Input type="number" min="0" step="5" value={slotToEdit.buffer_after || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_after: parseInt(e.target.value) || 0})} />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Buffer Before (min)</Label>
+                      <Input type="number" min="0" step="5" value={slotToEdit.parentSlot.buffer_before || 0} onChange={e => setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, buffer_before: parseInt(e.target.value) || 0}}))} />
+                    </div>
+                    <div>
+                      <Label>Buffer After (min)</Label>
+                      <Input type="number" min="0" step="5" value={slotToEdit.parentSlot.buffer_after || 0} onChange={e => setSlotToEdit(prev => ({...prev, parentSlot: {...prev.parentSlot, buffer_after: parseInt(e.target.value) || 0}}))} />
+                    </div>
+                  </div>
 
-              <div className="flex gap-2 pt-4 border-t">
-                <Button onClick={() => updateSlotMutation.mutate({ id: slotToEdit.id, data: slotToEdit })} className="bg-emerald-600 hover:bg-emerald-700">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </Button>
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-              </div>
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button onClick={() => updateSlotMutation.mutate({ id: slotToEdit.parentSlot.id, data: slotToEdit.parentSlot })} className="bg-emerald-600 hover:bg-emerald-700">
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Block
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Start Time</Label>
+                      <Input type="time" value={slotToEdit.start_time} onChange={e => setSlotToEdit({...slotToEdit, start_time: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label>End Time</Label>
+                      <Input type="time" value={slotToEdit.end_time} onChange={e => setSlotToEdit({...slotToEdit, end_time: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Location</Label>
+                    <Select value={slotToEdit.location_id} onValueChange={v => setSlotToEdit({...slotToEdit, location_id: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {locations.map(loc => <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Services</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-lg">
+                      {services?.map(service => (
+                        <label key={service.name} className="flex items-center gap-3 p-2 hover:bg-white rounded-lg cursor-pointer">
+                          <Checkbox
+                            checked={slotToEdit.service_names?.includes(service.name)}
+                            onCheckedChange={checked => {
+                              const updated = checked
+                                ? [...(slotToEdit.service_names || []), service.name]
+                                : (slotToEdit.service_names || []).filter(s => s !== service.name);
+                              setSlotToEdit({...slotToEdit, service_names: updated});
+                            }}
+                          />
+                          <span className="flex-1 text-sm">{service.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Buffer Before (min)</Label>
+                      <Input type="number" min="0" step="5" value={slotToEdit.buffer_before || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_before: parseInt(e.target.value) || 0})} />
+                    </div>
+                    <div>
+                      <Label>Buffer After (min)</Label>
+                      <Input type="number" min="0" step="5" value={slotToEdit.buffer_after || 0} onChange={e => setSlotToEdit({...slotToEdit, buffer_after: parseInt(e.target.value) || 0})} />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button onClick={() => updateSlotMutation.mutate({ id: slotToEdit.id, data: slotToEdit })} className="bg-emerald-600 hover:bg-emerald-700">
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2 border-t pt-4">
                 <p className="text-sm font-semibold text-slate-700">Delete Options:</p>
                 <Button variant="outline" className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200" onClick={handleDeleteSingle}>
-                  <Trash2 className="w-4 h-4 mr-2" />Delete This Slot Only
+                  <Trash2 className="w-4 h-4 mr-2" />Delete This Session Only
                 </Button>
                 {slotToEdit.is_recurring_instance && (
                   <>

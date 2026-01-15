@@ -15,8 +15,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Booking ID required' }, { status: 400 });
     }
 
-    // Get user's Google Calendar access token
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar', user.email);
+    // Get coach's Google Calendar access token
+    const coaches = await base44.asServiceRole.entities.Coach.filter({ id: booking.coach_id });
+    const coach = coaches[0];
+
+    if (!coach) {
+      return Response.json({ error: 'Coach not found for this booking' }, { status: 404 });
+    }
+
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar', coach.email);
     
     if (!accessToken) {
       return Response.json({ error: 'Google Calendar not connected. Please connect your calendar first.' }, { status: 400 });
