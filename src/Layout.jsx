@@ -168,6 +168,7 @@ export default function Layout({ children, currentPageName }) {
       submenu: [
         { title: "Coach Dashboard", url: createPageUrl("coachdashboard") },
         { title: "My Availability", url: createPageUrl("coachAvailability") },
+        { title: "Video Analysis", url: createPageUrl("CoachVideoAnalysis") },
         { title: "Team Reports", url: createPageUrl("TeamReports") },
         { title: "Assessments", url: createPageUrl("Assessments") },
         { title: "Evaluations", url: createPageUrl("EvaluationsNew") },

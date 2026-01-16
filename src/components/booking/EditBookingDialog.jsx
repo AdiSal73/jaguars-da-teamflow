@@ -18,7 +18,8 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
     service_name: booking?.service_name || '',
     location_id: booking?.location_id || '',
     notes: booking?.notes || '',
-    status: booking?.status || 'confirmed'
+    status: booking?.status || 'confirmed',
+    video_consultation_link: booking?.video_consultation_link || ''
   });
   const [sendingReminder, setSendingReminder] = useState(false);
 
@@ -31,7 +32,8 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
         service_name: booking.service_name || '',
         location_id: booking.location_id || '',
         notes: booking.notes || '',
-        status: booking.status || 'confirmed'
+        status: booking.status || 'confirmed',
+        video_consultation_link: booking.video_consultation_link || ''
       });
     }
   }, [booking]);
@@ -171,6 +173,15 @@ export default function EditBookingDialog({ open, onClose, booking, onSave, onDe
               onChange={(e) => setForm({...form, notes: e.target.value})}
               rows={3}
               placeholder="Additional notes..."
+            />
+          </div>
+
+          <div>
+            <Label>Video Consultation Link</Label>
+            <Input
+              value={form.video_consultation_link}
+              onChange={(e) => setForm({...form, video_consultation_link: e.target.value})}
+              placeholder="e.g., Zoom, Google Meet link"
             />
           </div>
 
