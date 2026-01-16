@@ -89,6 +89,12 @@ export default function TeamTryout() {
     current_team: '',
     notes: ''
   });
+  const [showDeleteTeamDialog, setShowDeleteTeamDialog] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState(null);
+  const [showResetTeamDialog, setShowResetTeamDialog] = useState(false);
+  const [teamToReset, setTeamToReset] = useState(null);
+  const [showResetAllDialog, setShowResetAllDialog] = useState(false);
+  const [showResetAllErrorDialog, setShowResetAllErrorDialog] = useState(false);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -160,7 +166,57 @@ export default function TeamTryout() {
     mutationFn: (teamId) => base44.entities.Team.delete(teamId),
     onSuccess: () => {
       queryClient.invalidateQueries(['teams']);
+      setShowDeleteTeamDialog(false);
+      setTeamToDelete(null);
       toast.success('Team deleted');
+    }
+  });
+
+  const resetTeamMutation = useMutation({
+    mutationFn: async (teamName) => {
+      const teamPlayers = getTeamPlayers(teamName);
+      await Promise.all(teamPlayers.map(player => {
+        if (player.isPoolOnly) {
+          return base44.entities.TryoutPool.update(player.id, { next_year_team: null });
+        } else {
+          return removeFromTeamMutation.mutateAsync({ playerId: player.id, playerData: player });
+        }
+      }));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['tryoutPool']);
+      setShowResetTeamDialog(false);
+      setTeamToReset(null);
+      toast.success('Team reset successfully');
+    },
+    onError: () => {
+      toast.error('Failed to reset team');
+    }
+  });
+
+  const resetAllTeamsMutation = useMutation({
+    mutationFn: async () => {
+      const ageTeams = filteredTeams;
+      for (const team of ageTeams) {
+        const teamPlayers = getTeamPlayers(team.name);
+        await Promise.all(teamPlayers.map(player => {
+          if (player.isPoolOnly) {
+            return base44.entities.TryoutPool.update(player.id, { next_year_team: null });
+          } else {
+            return removeFromTeamMutation.mutateAsync({ playerId: player.id, playerData: player });
+          }
+        }));
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['tryoutPool']);
+      setShowResetAllDialog(false);
+      toast.success('All teams reset successfully');
+    },
+    onError: () => {
+      setShowResetAllErrorDialog(true);
     }
   });
 
@@ -573,10 +629,11 @@ export default function TeamTryout() {
         'Girls Academy Aspire': 2,
         'Aspire': 3, 
         'Green': 4, 
-        'White': 5, 
-        'Pre GA 1': 6, 
-        'Pre GA 2': 7, 
-        'Green White': 8 
+        'White': 5,
+        'Black': 6,
+        'Pre GA 1': 7, 
+        'Pre GA 2': 8, 
+        'Green White': 9 
       };
       const getName = (name) => {
         for (const key of Object.keys(priority)) {
@@ -754,6 +811,14 @@ export default function TeamTryout() {
             <Sparkles className="w-4 h-4 mr-2" />
             Auto Team Formation
           </Button>
+          <Button 
+            onClick={() => setShowResetAllDialog(true)} 
+            variant="outline"
+            className="border-orange-600 text-orange-600 hover:bg-orange-50"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Reset All Teams
+          </Button>
           <Button onClick={() => setShowCreateTeamDialog(true)} className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 shadow-lg">
             <Plus className="w-4 h-4 mr-2" />
             Create Team
@@ -868,7 +933,24 @@ export default function TeamTryout() {
                             Finalize
                           </Button>
                         )}
-                        <button onClick={() => deleteTeamMutation.mutate(team.id)} className="p-1 hover:bg-white/20 rounded transition-colors">
+                        <Button
+                          onClick={() => {
+                            setTeamToReset(team);
+                            setShowResetTeamDialog(true);
+                          }}
+                          size="sm"
+                          className="h-7 px-2 bg-orange-500/20 hover:bg-orange-500/30 text-white"
+                        >
+                          <X className="w-3 h-3 mr-1" />
+                          Reset
+                        </Button>
+                        <button 
+                          onClick={() => {
+                            setTeamToDelete(team);
+                            setShowDeleteTeamDialog(true);
+                          }} 
+                          className="p-1 hover:bg-white/20 rounded transition-colors"
+                        >
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
@@ -1694,6 +1776,122 @@ export default function TeamTryout() {
                 </div>
               );
             })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Team Confirmation Dialog */}
+      <Dialog open={showDeleteTeamDialog} onOpenChange={setShowDeleteTeamDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Delete Team</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-slate-700">
+              Are you sure you want to delete <span className="font-bold">{teamToDelete?.name}</span>?
+            </p>
+            {getTeamPlayers(teamToDelete?.name).length > 0 && (
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-800 font-semibold">
+                  ⚠️ This team has {getTeamPlayers(teamToDelete?.name).length} assigned players
+                </p>
+                <p className="text-xs text-orange-700 mt-1">Players will be returned to the tryout pool</p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteTeamDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => deleteTeamMutation.mutate(teamToDelete?.id)}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                Delete Team
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Team Confirmation Dialog */}
+      <Dialog open={showResetTeamDialog} onOpenChange={setShowResetTeamDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-600">Confirm Reset Team</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-slate-700">
+              Are you sure you want to reset <span className="font-bold">{teamToReset?.name}</span>?
+            </p>
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-800">
+                This will remove all {getTeamPlayers(teamToReset?.name).length} players from the team and return them to the tryout pool.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowResetTeamDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => resetTeamMutation.mutate(teamToReset?.name)}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                Reset Team
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset All Teams Confirmation Dialog */}
+      <Dialog open={showResetAllDialog} onOpenChange={setShowResetAllDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Reset All Teams</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-slate-700">
+              Are you sure you want to reset ALL teams in <span className="font-bold">{selectedAgeGroup}</span>?
+            </p>
+            <div className="p-3 bg-red-50 border-2 border-red-300 rounded-lg">
+              <p className="text-sm text-red-800 font-semibold">
+                ⚠️ WARNING: This action cannot be undone
+              </p>
+              <p className="text-xs text-red-700 mt-2">
+                All players from {filteredTeams.length} teams will be returned to the tryout pool. This will affect {filteredTeams.reduce((sum, t) => sum + getTeamPlayers(t.name).length, 0)} player assignments.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setShowResetAllDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => resetAllTeamsMutation.mutate()}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                disabled={resetAllTeamsMutation.isPending}
+              >
+                {resetAllTeamsMutation.isPending ? 'Resetting...' : 'Reset All Teams'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset All Error Dialog */}
+      <Dialog open={showResetAllErrorDialog} onOpenChange={setShowResetAllErrorDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Reset Failed</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+              <p className="text-sm text-red-800">
+                An error occurred while resetting teams. Some teams may have been partially reset.
+              </p>
+            </div>
+            <Button onClick={() => setShowResetAllErrorDialog(false)} className="w-full">
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -22,6 +22,7 @@ import EmailTest from './pages/EmailTest';
 import EvaluationAnalytics from './pages/EvaluationAnalytics';
 import EvaluationsNew from './pages/EvaluationsNew';
 import FAQ from './pages/FAQ';
+import FamilyManagement from './pages/FamilyManagement';
 import Features from './pages/Features';
 import FitnessResources from './pages/FitnessResources';
 import FormationView from './pages/FormationView';
@@ -54,7 +55,6 @@ import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import FamilyManagement from './pages/FamilyManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +83,7 @@ export const PAGES = {
     "EvaluationAnalytics": EvaluationAnalytics,
     "EvaluationsNew": EvaluationsNew,
     "FAQ": FAQ,
+    "FamilyManagement": FamilyManagement,
     "Features": Features,
     "FitnessResources": FitnessResources,
     "FormationView": FormationView,
@@ -115,7 +116,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "FamilyManagement": FamilyManagement,
 }
 
 export const pagesConfig = {

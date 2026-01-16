@@ -898,9 +898,18 @@ export default function PlayerDashboard() {
 
         {/* Position Knowledge Bank */}
         {player.primary_position && (
-          <div className="mt-6">
-            <PositionKnowledgeBank position={player.primary_position} />
-          </div>
+          <Card className="mt-6 bg-slate-800/50 border-slate-700 backdrop-blur-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border-b border-white/10">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-emerald-400" />
+                Position Knowledge Bank
+              </CardTitle>
+              <p className="text-xs text-slate-400 mt-1">Technical and tactical requirements for {player.primary_position}</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <PositionKnowledgeBank position={player.primary_position} />
+            </CardContent>
+          </Card>
         )}
 
         {/* Tryout Info Footer - Admin/Coach Only */}
