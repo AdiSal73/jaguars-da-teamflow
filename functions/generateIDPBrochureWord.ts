@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, UnderlineType } from 'npm:docx@8.5.0';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'npm:docx@8.5.0';
 
 Deno.serve(async (req) => {
     try {
@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 400, after: 200 },
-                        border: { top: { color: "10B981", space: 8, style: BorderStyle.SINGLE, size: 24 } },
                         children: [
                             new TextRun({
                                 text: "Three Pillars of Excellence",
@@ -61,8 +60,20 @@ Deno.serve(async (req) => {
                         alignment: AlignmentType.CENTER,
                         spacing: { after: 100 },
                         children: [
-                            new TextRun({ text: "• Reflexive Skill Development  ", size: 20, bold: true }),
-                            new TextRun({ text: "• Position-Specific Training  ", size: 20, bold: true }),
+                            new TextRun({ text: "• Reflexive Skill Development", size: 20, bold: true })
+                        ]
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                        children: [
+                            new TextRun({ text: "• Position-Specific Training", size: 20, bold: true })
+                        ]
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 100 },
+                        children: [
                             new TextRun({ text: "• Video Analysis", size: 20, bold: true })
                         ]
                     }),
@@ -139,15 +150,7 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         text: "Reflexive Skill Development",
                         heading: HeadingLevel.HEADING_1,
-                        spacing: { before: 200, after: 200 },
-                        shading: { fill: "10B981" },
-                        children: [
-                            new TextRun({
-                                text: "Reflexive Skill Development",
-                                color: "FFFFFF",
-                                bold: true
-                            })
-                        ]
+                        spacing: { before: 200, after: 200 }
                     }),
                     new Paragraph({
                         spacing: { after: 200 },
@@ -219,7 +222,6 @@ Deno.serve(async (req) => {
 
                     new Paragraph({
                         spacing: { after: 400 },
-                        shading: { fill: "D1FAE5" },
                         children: [
                             new TextRun({ text: "Expected Outcomes: ", bold: true, size: 22, color: "10B981" }),
                             new TextRun({ text: "Faster decision-making, improved technique under pressure, automatic execution of skills in game situations, and enhanced confidence on the ball.", size: 22 })
@@ -236,15 +238,7 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         text: "Position-Specific & Functional Training",
                         heading: HeadingLevel.HEADING_1,
-                        spacing: { before: 200, after: 200 },
-                        shading: { fill: "3B82F6" },
-                        children: [
-                            new TextRun({
-                                text: "Position-Specific & Functional Training",
-                                color: "FFFFFF",
-                                bold: true
-                            })
-                        ]
+                        spacing: { before: 200, after: 200 }
                     }),
                     new Paragraph({
                         spacing: { after: 200 },
@@ -316,7 +310,6 @@ Deno.serve(async (req) => {
 
                     new Paragraph({
                         spacing: { after: 400 },
-                        shading: { fill: "DBEAFE" },
                         children: [
                             new TextRun({ text: "Expected Outcomes: ", bold: true, size: 22, color: "3B82F6" }),
                             new TextRun({ text: "Improved positional understanding, enhanced tactical awareness, better coordination with teammates, and increased effectiveness in your specific role.", size: 22 })
@@ -333,15 +326,7 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         text: "Video Analysis & Performance Evaluation",
                         heading: HeadingLevel.HEADING_1,
-                        spacing: { before: 200, after: 200 },
-                        shading: { fill: "A855F7" },
-                        children: [
-                            new TextRun({
-                                text: "Video Analysis & Performance Evaluation",
-                                color: "FFFFFF",
-                                bold: true
-                            })
-                        ]
+                        spacing: { before: 200, after: 200 }
                     }),
                     new Paragraph({
                         spacing: { after: 200 },
@@ -421,7 +406,6 @@ Deno.serve(async (req) => {
 
                     new Paragraph({
                         spacing: { after: 400 },
-                        shading: { fill: "F3E8FF" },
                         children: [
                             new TextRun({ text: "Expected Outcomes: ", bold: true, size: 22, color: "A855F7" }),
                             new TextRun({ text: "Objective self-awareness, targeted improvement plans, measurable progress tracking, and accelerated development through evidence-based training.", size: 22 })
@@ -456,10 +440,21 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
                         spacing: { after: 200 },
-                        border: { top: { color: "10B981", space: 8, style: BorderStyle.SINGLE, size: 24 } },
                         children: [
-                            new TextRun({ text: "500+ Players Trained  •  ", size: 26, bold: true, color: "10B981" }),
-                            new TextRun({ text: "15+ Expert Coaches  •  ", size: 26, bold: true, color: "3B82F6" }),
+                            new TextRun({ text: "500+ Players Trained", size: 26, bold: true, color: "10B981" })
+                        ]
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                        children: [
+                            new TextRun({ text: "15+ Expert Coaches", size: 26, bold: true, color: "3B82F6" })
+                        ]
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                        children: [
                             new TextRun({ text: "1000+ Training Hours", size: 26, bold: true, color: "A855F7" })
                         ]
                     }),
@@ -467,13 +462,12 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 600, after: 200 },
-                        shading: { fill: "10B981" },
                         children: [
                             new TextRun({
                                 text: "BOOK YOUR FIRST SESSION TODAY",
                                 size: 28,
                                 bold: true,
-                                color: "FFFFFF"
+                                color: "10B981"
                             })
                         ]
                     }),
@@ -492,7 +486,6 @@ Deno.serve(async (req) => {
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 800 },
-                        border: { top: { color: "E2E8F0", space: 8, style: BorderStyle.SINGLE, size: 12 } },
                         children: [
                             new TextRun({
                                 text: "Michigan Jaguars Individual Development Program",
