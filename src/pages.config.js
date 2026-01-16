@@ -13,6 +13,7 @@ import CoachAvailability from './pages/CoachAvailability';
 import CoachDashboard from './pages/CoachDashboard';
 import CoachManagement from './pages/CoachManagement';
 import CoachProfile from './pages/CoachProfile';
+import CoachVideoAnalysis from './pages/CoachVideoAnalysis';
 import CoachingResources from './pages/CoachingResources';
 import CommunicationPreferences from './pages/CommunicationPreferences';
 import Communications from './pages/Communications';
@@ -55,7 +56,6 @@ import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import CoachVideoAnalysis from './pages/CoachVideoAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -75,6 +75,7 @@ export const PAGES = {
     "CoachDashboard": CoachDashboard,
     "CoachManagement": CoachManagement,
     "CoachProfile": CoachProfile,
+    "CoachVideoAnalysis": CoachVideoAnalysis,
     "CoachingResources": CoachingResources,
     "CommunicationPreferences": CommunicationPreferences,
     "Communications": Communications,
@@ -117,7 +118,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "CoachVideoAnalysis": CoachVideoAnalysis,
 }
 
 export const pagesConfig = {

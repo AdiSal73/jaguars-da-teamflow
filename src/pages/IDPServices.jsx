@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Video, Target, Users, TrendingUp, CheckCircle, ArrowRight, Zap, BarChart3, MessageSquare, Download } from 'lucide-react';
+import { Video, Target, Users, TrendingUp, CheckCircle, ArrowRight, Zap, BarChart3, MessageSquare, Download, FileText } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -11,24 +12,28 @@ export default function IDPServices() {
   const navigate = useNavigate();
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
-  const handleDownloadBrochure = async () => {
+  const handleDownloadBrochure = async (format = 'pdf') => {
     try {
       setDownloadingPDF(true);
-      const response = await base44.functions.invoke('generateIDPBrochure');
+      const functionName = format === 'pdf' ? 'generateIDPBrochure' : 'generateIDPBrochureWord';
+      const response = await base44.functions.invoke(functionName);
       
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const mimeType = format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const extension = format === 'pdf' ? 'pdf' : 'docx';
+      
+      const blob = new Blob([response.data], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'IDP-Training-Brochure.pdf';
+      a.download = `IDP-Training-Brochure.${extension}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
       
-      toast.success('PDF downloaded successfully!');
+      toast.success(`${format.toUpperCase()} downloaded successfully!`);
     } catch (error) {
-      toast.error('Failed to download PDF');
+      toast.error('Failed to download file');
       console.error(error);
     } finally {
       setDownloadingPDF(false);
@@ -67,21 +72,35 @@ export default function IDPServices() {
               Get Started Today
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button 
-              size="lg"
-              onClick={handleDownloadBrochure}
-              disabled={downloadingPDF}
-              className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
-            >
-              {downloadingPDF ? (
-                <>Downloading...</>
-              ) : (
-                <>
-                  <Download className="w-5 h-5 mr-2" />
-                  Download Brochure
-                </>
-              )}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="lg"
+                  disabled={downloadingPDF}
+                  className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
+                >
+                  {downloadingPDF ? (
+                    <>Downloading...</>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5 mr-2" />
+                      Download Brochure
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem onClick={() => handleDownloadBrochure('pdf')}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadBrochure('word')}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Download as Word
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 mt-16">
