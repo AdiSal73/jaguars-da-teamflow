@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Video, Target, Users, TrendingUp, CheckCircle, ArrowRight, Zap, BarChart3, MessageSquare, Download, FileText } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -11,10 +10,16 @@ import { toast } from 'sonner';
 export default function IDPServices() {
   const navigate = useNavigate();
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [downloadingWord, setDownloadingWord] = useState(false);
 
   const handleDownloadBrochure = async (format = 'pdf') => {
     try {
-      setDownloadingPDF(true);
+      if (format === 'pdf') {
+        setDownloadingPDF(true);
+      } else {
+        setDownloadingWord(true);
+      }
+      
       const functionName = format === 'pdf' ? 'generateIDPBrochure' : 'generateIDPBrochureWord';
       const response = await base44.functions.invoke(functionName);
       
@@ -36,7 +41,11 @@ export default function IDPServices() {
       toast.error('Failed to download file');
       console.error(error);
     } finally {
-      setDownloadingPDF(false);
+      if (format === 'pdf') {
+        setDownloadingPDF(false);
+      } else {
+        setDownloadingWord(false);
+      }
     }
   };
 
@@ -72,35 +81,37 @@ export default function IDPServices() {
               Get Started Today
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  size="lg"
-                  disabled={downloadingPDF}
-                  className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
-                >
-                  {downloadingPDF ? (
-                    <>Downloading...</>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5 mr-2" />
-                      Download Brochure
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuItem onClick={() => handleDownloadBrochure('pdf')}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download as PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownloadBrochure('word')}>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Download as Word
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button 
+              size="lg"
+              onClick={() => handleDownloadBrochure('pdf')}
+              disabled={downloadingPDF}
+              className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
+            >
+              {downloadingPDF ? (
+                <>Downloading...</>
+              ) : (
+                <>
+                  <Download className="w-5 h-5 mr-2" />
+                  Download PDF
+                </>
+              )}
+            </Button>
+            <Button 
+              size="lg"
+              onClick={() => handleDownloadBrochure('word')}
+              disabled={downloadingWord}
+              variant="outline"
+              className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
+            >
+              {downloadingWord ? (
+                <>Downloading...</>
+              ) : (
+                <>
+                  <FileText className="w-5 h-5 mr-2" />
+                  Download Word
+                </>
+              )}
+            </Button>
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 mt-16">
