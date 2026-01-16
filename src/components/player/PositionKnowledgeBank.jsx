@@ -442,24 +442,24 @@ export default function PositionKnowledgeBank({ position }) {
   }
 
   const ResponsibilityCard = ({ title, data, icon: Icon, gradient }) => (
-    <div className="space-y-3">
-      <div className={`bg-gradient-to-r ${gradient} text-white p-3 rounded-t-xl`}>
+    <div className="bg-slate-800/50 border border-white/10 rounded-xl overflow-hidden">
+      <div className={`bg-gradient-to-r ${gradient} p-3 border-b border-white/10`}>
         <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5" />
-          <h3 className="font-bold text-sm">{title}</h3>
+          <Icon className="w-5 h-5 text-white" />
+          <h3 className="font-bold text-sm text-white">{title}</h3>
         </div>
       </div>
       
-      <div className="space-y-3 p-3 bg-white rounded-b-xl">
+      <div className="space-y-3 p-4">
         <div className="space-y-2">
-          <div className="text-xs font-bold text-emerald-700">Balanced</div>
+          <div className="text-xs font-bold text-emerald-400">Balanced</div>
           {data.balanced.map((item, idx) => (
             <div key={idx}>
-              <div className="text-xs font-semibold text-slate-800">{item.title}</div>
+              <div className="text-xs font-semibold text-slate-200">{item.title}</div>
               {item.points && (
                 <ul className="ml-2 space-y-0.5">
                   {item.points.map((point, pidx) => (
-                    <li key={pidx} className="text-[10px] text-slate-600 flex items-start gap-1">
+                    <li key={pidx} className="text-[10px] text-slate-400 flex items-start gap-1">
                       <span className="text-emerald-500">→</span>
                       <span>{point}</span>
                     </li>
@@ -470,15 +470,15 @@ export default function PositionKnowledgeBank({ position }) {
           ))}
         </div>
 
-        <div className="space-y-2 pt-2 border-t">
-          <div className="text-xs font-bold text-emerald-700">Final Third</div>
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="text-xs font-bold text-emerald-400">Final Third</div>
           {data.finalThird.map((item, idx) => (
             <div key={idx}>
-              <div className="text-xs font-semibold text-slate-800">{item.title}</div>
+              <div className="text-xs font-semibold text-slate-200">{item.title}</div>
               {item.points && (
                 <ul className="ml-2 space-y-0.5">
                   {item.points.map((point, pidx) => (
-                    <li key={pidx} className="text-[10px] text-slate-600 flex items-start gap-1">
+                    <li key={pidx} className="text-[10px] text-slate-400 flex items-start gap-1">
                       <span className="text-emerald-500">→</span>
                       <span>{point}</span>
                     </li>
@@ -489,15 +489,15 @@ export default function PositionKnowledgeBank({ position }) {
           ))}
         </div>
 
-        <div className="space-y-2 pt-2 border-t">
-          <div className="text-xs font-bold text-emerald-700">Transition</div>
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="text-xs font-bold text-emerald-400">Transition</div>
           {data.transition.map((item, idx) => (
             <div key={idx}>
-              <div className="text-xs font-semibold text-slate-800">{item.title}</div>
+              <div className="text-xs font-semibold text-slate-200">{item.title}</div>
               {item.points && (
                 <ul className="ml-2 space-y-0.5">
                   {item.points.map((point, pidx) => (
-                    <li key={pidx} className="text-[10px] text-slate-600 flex items-start gap-1">
+                    <li key={pidx} className="text-[10px] text-slate-400 flex items-start gap-1">
                       <span className="text-emerald-500">→</span>
                       <span>{point}</span>
                     </li>
@@ -512,75 +512,61 @@ export default function PositionKnowledgeBank({ position }) {
   );
 
   return (
-    <Card className="border-none shadow-2xl overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white border-b border-emerald-400/30">
-        <div className="flex items-center gap-3">
-          <span className="text-4xl">{knowledge.icon}</span>
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              {knowledge.title} Knowledge Bank
-            </CardTitle>
-            <p className="text-xs text-white/90 mt-1">Position-specific tactical responsibilities</p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6 bg-gradient-to-br from-emerald-50 to-green-50">
+    <div className="p-6">
         {/* Role & Traits */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="pb-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <div className="bg-slate-800/50 border border-emerald-500/30 rounded-xl overflow-hidden">
+            <div className="pb-3 bg-gradient-to-r from-emerald-600/20 to-green-600/20 border-b border-emerald-500/30 p-4">
+              <h3 className="text-sm flex items-center gap-2 text-emerald-400 font-bold">
                 <Target className="w-4 h-4" />
                 Primary Role
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
+              </h3>
+            </div>
+            <div className="p-4">
               <div className="space-y-2">
                 {knowledge.role.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs bg-emerald-50 p-2 rounded">
-                    <span className="text-emerald-600 font-bold">•</span>
-                    <span className="text-slate-800">{item}</span>
+                  <div key={idx} className="flex items-start gap-2 text-xs bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                    <span className="text-emerald-400 font-bold">•</span>
+                    <span className="text-slate-300">{item}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border-none shadow-lg">
-            <CardHeader className="pb-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-              <CardTitle className="text-sm">Key Traits</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
+          <div className="bg-slate-800/50 border border-blue-500/30 rounded-xl overflow-hidden">
+            <div className="pb-3 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-b border-blue-500/30 p-4">
+              <h3 className="text-sm text-blue-400 font-bold">Key Traits</h3>
+            </div>
+            <div className="p-4">
               <div className="space-y-2">
                 {knowledge.traits.map((trait, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs bg-blue-50 p-2 rounded">
-                    <span className="text-blue-600">✓</span>
-                    <span className="text-slate-800">{trait}</span>
+                  <div key={idx} className="flex items-start gap-2 text-xs bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                    <span className="text-blue-400">✓</span>
+                    <span className="text-slate-300">{trait}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* Responsibilities Bento Grid */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <ResponsibilityCard
-            title="Defending Responsibilities"
-            data={knowledge.defending}
-            icon={Shield}
-            gradient="from-red-600 to-orange-600"
-          />
-          
-          <ResponsibilityCard
-            title="Attacking Responsibilities"
-            data={knowledge.attacking}
-            icon={TrendingUp}
-            gradient="from-emerald-600 to-green-600"
-          />
-        </div>
-      </CardContent>
-    </Card>
+      {/* Responsibilities Grid */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <ResponsibilityCard
+          title="Defending Responsibilities"
+          data={knowledge.defending}
+          icon={Shield}
+          gradient="from-red-600/20 to-orange-600/20"
+        />
+        
+        <ResponsibilityCard
+          title="Attacking Responsibilities"
+          data={knowledge.attacking}
+          icon={TrendingUp}
+          gradient="from-emerald-600/20 to-green-600/20"
+        />
+      </div>
+    </div>
   );
 }
