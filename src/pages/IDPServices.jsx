@@ -1,12 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Video, Target, Users, TrendingUp, CheckCircle, ArrowRight, Zap, BarChart3, MessageSquare } from 'lucide-react';
+import { Video, Target, Users, TrendingUp, CheckCircle, ArrowRight, Zap, BarChart3, MessageSquare, Download } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 export default function IDPServices() {
   const navigate = useNavigate();
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  const handleDownloadBrochure = async () => {
+    try {
+      setDownloadingPDF(true);
+      const response = await base44.functions.invoke('generateIDPBrochure');
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'IDP-Training-Brochure.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast.success('PDF downloaded successfully!');
+    } catch (error) {
+      toast.error('Failed to download PDF');
+      console.error(error);
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900">
@@ -42,10 +69,18 @@ export default function IDPServices() {
             </Button>
             <Button 
               size="lg"
-              variant="outline"
-              className="border-2 border-white/50 text-green hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
+              onClick={handleDownloadBrochure}
+              disabled={downloadingPDF}
+              className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
             >
-              Learn More
+              {downloadingPDF ? (
+                <>Downloading...</>
+              ) : (
+                <>
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Brochure
+                </>
+              )}
             </Button>
           </div>
 
