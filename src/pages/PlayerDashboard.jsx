@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus } from 'lucide-react';
+import { ArrowLeft, User, TrendingUp, ChevronLeft, ChevronRight, Target, Activity, Award, Save, Edit, Plus, MessageSquare, UserPlus, Video, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import moment from 'moment';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, RadialBarChart, RadialBar, Legend } from 'recharts';
 import PositionKnowledgeBank from '../components/player/PositionKnowledgeBank';
@@ -22,6 +23,10 @@ import AddParentDialog from '../components/player/AddParentDialog';
 import EditPhysicalAssessmentDialog from '../components/player/EditPhysicalAssessmentDialog';
 import EditEvaluationDialog from '../components/player/EditEvaluationDialog';
 import UpcomingBookings from '../components/player/UpcomingBookings';
+import VideoPlayer from '../components/video/VideoPlayer';
+import AnnotationPanel from '../components/video/AnnotationPanel';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 export default function PlayerDashboard() {
   const navigate = useNavigate();
@@ -48,6 +53,8 @@ export default function PlayerDashboard() {
     notes: '',
     coach_id: ''
   });
+  const [selectedPlayerVideo, setSelectedPlayerVideo] = useState(null);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -173,6 +180,18 @@ export default function PlayerDashboard() {
   const { data: idpMeetings = [] } = useQuery({
     queryKey: ['idpMeetings', playerId],
     queryFn: () => base44.entities.IDPMeeting.filter({ player_id: playerId }, '-meeting_date'),
+    enabled: !!playerId
+  });
+
+  const { data: playerVideos = [] } = useQuery({
+    queryKey: ['playerVideos', playerId],
+    queryFn: () => base44.entities.Video.list(),
+    enabled: !!playerId
+  });
+
+  const { data: videoAnnotations = [] } = useQuery({
+    queryKey: ['videoAnnotations'],
+    queryFn: () => base44.entities.VideoAnnotation.list(),
     enabled: !!playerId
   });
 
@@ -842,20 +861,120 @@ export default function PlayerDashboard() {
           )}
         </div>
 
-        {/* Development Pathway - Show when evaluation exists */}
-        {evaluations.length > 0 && (
-          <div className="mt-6">
-            <PlayerDevelopmentDisplay
-              player={player}
-              pathway={pathway}
-              assessments={assessments}
-              evaluations={evaluations}
-              onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
-              onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
-              isAdminOrCoach={isAdminOrCoach}
-            />
-          </div>
-        )}
+        {/* Tabs for Development, Videos, etc */}
+        <Tabs defaultValue="development" className="mt-6">
+          <TabsList className="bg-slate-800/50 border border-slate-700">
+            <TabsTrigger value="development">Development</TabsTrigger>
+            <TabsTrigger value="videos">
+              Videos ({playerVideos.filter(v => v.player_id === playerId).length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="development" className="mt-6">
+            {evaluations.length > 0 && (
+              <PlayerDevelopmentDisplay
+                player={player}
+                pathway={pathway}
+                assessments={assessments}
+                evaluations={evaluations}
+                onUpdatePlayer={(data) => updatePlayerMutation.mutate(data)}
+                onUpdatePathway={(data) => updatePathwayMutation.mutate(data)}
+                isAdminOrCoach={isAdminOrCoach}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="videos" className="mt-6">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Video className="w-5 h-5 text-emerald-400" />
+                  Training Videos & Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {playerVideos.filter(v => v.player_id === playerId).length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <Video className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">No videos available yet</p>
+                    <p className="text-xs mt-1">Your coach will share training videos and analysis here</p>
+                  </div>
+                ) : (
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      {playerVideos
+                        .filter(v => v.player_id === playerId)
+                        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+                        .map(video => (
+                          <Card
+                            key={video.id}
+                            className={`p-3 cursor-pointer transition-all ${
+                              selectedPlayerVideo?.id === video.id
+                                ? 'border-2 border-emerald-500 bg-emerald-900/20'
+                                : 'bg-slate-700/50 hover:bg-slate-700'
+                            }`}
+                            onClick={() => setSelectedPlayerVideo(video)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-16 h-16 bg-slate-600 rounded flex items-center justify-center flex-shrink-0">
+                                <Video className="w-6 h-6 text-slate-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-sm text-white">{video.title}</h3>
+                                <div className="flex gap-1 mt-1">
+                                  <Badge variant="outline" className="text-xs">{video.video_type}</Badge>
+                                  <Badge className="bg-blue-500 text-white text-xs">
+                                    {videoAnnotations.filter(a => a.video_id === video.id).length} notes
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {new Date(video.created_date).toLocaleDateString()} • {video.uploaded_by_name}
+                                </p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                    </div>
+
+                    <div className="space-y-4">
+                      {selectedPlayerVideo ? (
+                        <>
+                          <div>
+                            <h3 className="text-lg font-bold text-white mb-2">{selectedPlayerVideo.title}</h3>
+                            {selectedPlayerVideo.description && (
+                              <p className="text-sm text-slate-400 mb-3">{selectedPlayerVideo.description}</p>
+                            )}
+                            <VideoPlayer
+                              videoUrl={selectedPlayerVideo.file_url}
+                              annotations={videoAnnotations.filter(a => a.video_id === selectedPlayerVideo.id)}
+                              onTimeUpdate={setVideoCurrentTime}
+                              showAnnotationTools={false}
+                            />
+                          </div>
+
+                          <AnnotationPanel
+                            videoId={selectedPlayerVideo.id}
+                            annotations={videoAnnotations.filter(a => a.video_id === selectedPlayerVideo.id)}
+                            currentTime={videoCurrentTime}
+                            isCoach={false}
+                            onUpdate={() => queryClient.invalidateQueries(['videoAnnotations'])}
+                          />
+                        </>
+                      ) : (
+                        <Card className="p-12 bg-slate-700/50">
+                          <div className="text-center text-slate-400">
+                            <Play className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                            <p className="text-sm">Select a video to watch</p>
+                          </div>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* IDP Meetings */}
         {isAdminOrCoach && (
