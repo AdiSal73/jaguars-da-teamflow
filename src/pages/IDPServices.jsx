@@ -43,7 +43,7 @@ export default function IDPServices() {
             <Button 
               size="lg"
               variant="outline"
-              className="border-2 border-white/50 text-white hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
+              className="border-2 border-white/50 text-green hover:bg-white/10 font-bold text-lg px-8 py-6 backdrop-blur-md"
             >
               Learn More
             </Button>
