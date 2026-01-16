@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
     // Filter players by gender and age groups
     const eligiblePlayers = players.filter(p => {
-      if (gender && p.gender !== gender) return false;
+      if (gender && gender !== '' && p.gender !== gender) return false;
       if (age_groups && age_groups.length > 0 && !age_groups.includes(p.age_group)) return false;
       // Only include players without next year team assignment
       const playerTryout = tryouts.find(t => t.player_id === p.id);
@@ -54,9 +54,9 @@ Deno.serve(async (req) => {
 
     // Get available teams for this gender/age
     const availableTeams = teams.filter(t => {
-      if (gender && t.gender !== gender) return false;
+      if (gender && gender !== '' && t.gender !== gender) return false;
       if (age_groups && age_groups.length > 0 && !age_groups.includes(t.age_group)) return false;
-      if (league_preference && t.league !== league_preference) return false;
+      if (league_preference && league_preference !== '' && t.league !== league_preference) return false;
       return true;
     });
 

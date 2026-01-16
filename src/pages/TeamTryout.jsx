@@ -75,6 +75,12 @@ export default function TeamTryout() {
   const [aiFormParams, setAiFormParams] = useState({ gender: '', age_groups: [], league_preference: '' });
   const [aiSuggestions, setAiSuggestions] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  React.useEffect(() => {
+    if (selectedAgeGroup) {
+      setAiFormParams(prev => ({ ...prev, age_groups: [selectedAgeGroup] }));
+    }
+  }, [selectedAgeGroup]);
   const [showTotalAssignedDialog, setShowTotalAssignedDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -553,10 +559,19 @@ export default function TeamTryout() {
     setIsGeneratingAI(true);
     try {
       const response = await base44.functions.invoke('autoFormTeams', aiFormParams);
-      setAiSuggestions(response.data);
-      toast.success('AI suggestions generated');
+      
+      if (!response.data || response.data.error) {
+        throw new Error(response.data?.error || 'Unknown error from AI formation');
+      }
+      
+      if (response.data?.assignments && Array.isArray(response.data.assignments)) {
+        setAiSuggestions(response.data);
+        toast.success(`Generated ${response.data.assignments.length} AI suggestions`);
+      } else {
+        toast.error('No AI suggestions returned');
+      }
     } catch (error) {
-      toast.error('Failed to generate suggestions');
+      toast.error(`Failed to generate suggestions: ${error.message}`);
     } finally {
       setIsGeneratingAI(false);
     }
@@ -566,17 +581,32 @@ export default function TeamTryout() {
     if (!aiSuggestions?.assignments) return;
     
     try {
-      await Promise.all(aiSuggestions.assignments.map(assignment =>
-        updateTryoutMutation.mutateAsync({
-          playerId: assignment.player_id,
-          data: { next_year_team: assignment.team_name }
-        })
-      ));
+      for (const assignment of aiSuggestions.assignments) {
+        const player = players.find(p => p.id === assignment.player_id);
+        if (!player) continue;
+
+        const existingTryout = tryouts.find(t => t.player_id === assignment.player_id);
+
+        if (existingTryout) {
+          await base44.entities.PlayerTryout.update(existingTryout.id, {
+            next_year_team: assignment.team_name
+          });
+        } else {
+          await base44.entities.PlayerTryout.create({
+            player_id: assignment.player_id,
+            player_name: player.full_name,
+            next_year_team: assignment.team_name
+          });
+        }
+      }
+      
+      queryClient.invalidateQueries(['tryouts']);
+      queryClient.invalidateQueries(['players']);
       setShowAIFormationDialog(false);
       setAiSuggestions(null);
-      toast.success('AI suggestions applied');
+      toast.success(`Applied ${aiSuggestions.assignments.length} AI suggestions`);
     } catch (error) {
-      toast.error('Failed to apply suggestions');
+      toast.error(`Failed to apply suggestions: ${error.message}`);
     }
   };
 
@@ -806,10 +836,25 @@ export default function TeamTryout() {
             </Button>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={() => setShowAIFormationDialog(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
             <Sparkles className="w-4 h-4 mr-2" />
             Auto Team Formation
+          </Button>
+          <Button 
+            onClick={async () => {
+              try {
+                const response = await base44.functions.invoke('autoAssignLeagues', {});
+                toast.success(`Updated ${response.data.updated} team leagues`);
+                queryClient.invalidateQueries(['teams']);
+              } catch (error) {
+                toast.error('Failed to assign leagues');
+              }
+            }}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            Auto-Assign Leagues
           </Button>
           <Button 
             onClick={() => setShowResetAllDialog(true)} 
