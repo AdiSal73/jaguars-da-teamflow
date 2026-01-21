@@ -222,7 +222,6 @@ export default function Tryouts() {
                   variant="outline"
                   onClick={() => {
                     setSelectedAgeGroup('all');
-                    setSelectedLeague('all');
                     setSelectedCoach('all');
                     setSelectedGender('all');
                     setSelectedSeason('all');
