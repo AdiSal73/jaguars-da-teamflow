@@ -347,7 +347,7 @@ export default function Tryouts() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 md:gap-4">
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Gender</label>
-                <Select value={selectedGender} onValueChange={setSelectedGender}>
+                <Select value={selectedGender} onValueChange={setSelectedGender} disabled={isDragging || updatePlayerTeamMutation.isPending}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -360,7 +360,7 @@ export default function Tryouts() {
               </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Age Group</label>
-                <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
+                <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} disabled={isDragging || updatePlayerTeamMutation.isPending}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue placeholder="All Age Groups" />
                   </SelectTrigger>
@@ -380,7 +380,7 @@ export default function Tryouts() {
               </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">League</label>
-                <Select value={selectedLeague} onValueChange={setSelectedLeague}>
+                <Select value={selectedLeague} onValueChange={setSelectedLeague} disabled={isDragging || updatePlayerTeamMutation.isPending}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue placeholder="All Leagues" />
                   </SelectTrigger>
@@ -393,7 +393,7 @@ export default function Tryouts() {
               </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Coach</label>
-                <Select value={selectedCoach} onValueChange={setSelectedCoach}>
+                <Select value={selectedCoach} onValueChange={setSelectedCoach} disabled={isDragging || updatePlayerTeamMutation.isPending}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue placeholder="All Coaches" />
                   </SelectTrigger>
@@ -407,7 +407,7 @@ export default function Tryouts() {
               </div>
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-2 block">Season</label>
-                <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                <Select value={selectedSeason} onValueChange={setSelectedSeason} disabled={isDragging || updatePlayerTeamMutation.isPending}>
                   <SelectTrigger className="border-2 h-10 md:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
