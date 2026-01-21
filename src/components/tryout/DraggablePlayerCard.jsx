@@ -54,11 +54,7 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true 
                   {player.grad_year && (
                     <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5">{player.grad_year}</Badge>
                   )}
-                  {player.tryout?.age_group_ranking && (
-                    <Badge className="bg-amber-500 text-white text-xs px-2 py-0.5 font-bold">
-                      #{player.tryout.age_group_ranking}
-                    </Badge>
-                  )}
+
                 </div>
               </div>
             </div>
