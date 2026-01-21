@@ -156,11 +156,23 @@ export default function Tryouts() {
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId.replace('player-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
-    await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
+    // Validate team exists
+    const teamExists = teams.some(t => t.id === destTeamId);
+    if (!teamExists) {
+      console.error('Team not found:', destTeamId);
+      return;
+    }
+
+    try {
+      await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
+    } catch (error) {
+      console.error('Failed to update player team:', error);
+    }
   };
 
   const TeamColumn = ({ title, teams, bgColor, logoUrl }) => (
@@ -186,11 +198,12 @@ export default function Tryouts() {
         <CardContent className="p-3 md:p-5 overflow-y-auto max-h-[calc(100vh-280px)] bg-gradient-to-b from-slate-50 to-white">
           <div className="space-y-3 md:space-y-4">
             {teams?.map((team) => {
-              const teamPlayers = getTeamPlayers(team);
+            const teamPlayers = getTeamPlayers(team);
+            if (!team.id) return null;
 
-              return (
-                <Droppable droppableId={`team-${team.id}`} key={team.id}>
-                  {(provided, snapshot) => (
+            return (
+              <Droppable droppableId={`team-${team.id}`} key={`team-${team.id}`}>
+                {(provided, snapshot) => (
                     <Card 
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -219,8 +232,10 @@ export default function Tryouts() {
                         {teamPlayers.length === 0 ? (
                           <p className="text-center text-slate-400 text-xs md:text-sm py-6 md:py-8 italic">Drop players here</p>
                         ) : (
-                          teamPlayers?.map((player, index) => (
-                            <Draggable key={player.id} draggableId={`player-${player.id}`} index={index}>
+                          teamPlayers?.map((player, index) => {
+                            if (!player.id) return null;
+                            return (
+                            <Draggable key={`player-${player.id}`} draggableId={`player-${player.id}`} index={index}>
                               {(provided, snapshot) => (
                                 <PlayerHoverTooltip 
                                   player={player}
@@ -289,9 +304,10 @@ export default function Tryouts() {
                                     </div>
                                     </div>
                                 </PlayerHoverTooltip>
-                              )}
-                            </Draggable>
-                          ))
+                                )}
+                                </Draggable>
+                                );
+                                })
                         )}
                         {provided.placeholder}
                       </CardContent>
