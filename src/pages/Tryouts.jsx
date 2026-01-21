@@ -12,7 +12,6 @@ import TeamColumn from '@/components/tryout/TeamColumn';
 export default function Tryouts() {
   const queryClient = useQueryClient();
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
-  const [selectedLeague, setSelectedLeague] = useState('all');
   const [selectedCoach, setSelectedCoach] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
   const [selectedSeason, setSelectedSeason] = useState('all');
