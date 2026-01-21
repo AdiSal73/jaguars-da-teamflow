@@ -55,6 +55,7 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
+import Tryouts from './pages/Tryouts';
 import __Layout from './Layout.jsx';
 
 
@@ -116,6 +117,7 @@ export const PAGES = {
     "TryoutPoolsByAge": TryoutPoolsByAge,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
+    "Tryouts": Tryouts,
 }
 
 export const pagesConfig = {
