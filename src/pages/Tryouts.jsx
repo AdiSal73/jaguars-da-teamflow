@@ -188,20 +188,6 @@ export default function Tryouts() {
               </div>
 
               <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">League</label>
-                <Select value={selectedLeague} onValueChange={setSelectedLeague}>
-                  <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue placeholder="All Leagues" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Leagues</SelectItem>
-                    <SelectItem value="Girls Academy">Girls Academy</SelectItem>
-                    <SelectItem value="Aspire">Aspire</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Coach</label>
                 <Select value={selectedCoach} onValueChange={setSelectedCoach}>
                   <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
