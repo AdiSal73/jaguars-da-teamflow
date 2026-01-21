@@ -34,7 +34,7 @@ export default function Tryouts() {
     queryFn: () => base44.entities.Player.list(),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    enabled: !isDragging
+    staleTime: Infinity
   });
 
   const { data: teams = [] } = useQuery({
@@ -42,7 +42,7 @@ export default function Tryouts() {
     queryFn: () => base44.entities.Team.list(),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    enabled: !isDragging
+    staleTime: Infinity
   });
 
   const { data: tryouts = [] } = useQuery({
@@ -50,7 +50,7 @@ export default function Tryouts() {
     queryFn: () => base44.entities.PlayerTryout.list(),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    enabled: !isDragging
+    staleTime: Infinity
   });
 
   const { data: assessments = [] } = useQuery({
