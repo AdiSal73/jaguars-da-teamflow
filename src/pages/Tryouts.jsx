@@ -31,17 +31,26 @@ export default function Tryouts() {
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list()
+    queryFn: () => base44.entities.Player.list(),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !isDragging
   });
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => base44.entities.Team.list()
+    queryFn: () => base44.entities.Team.list(),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !isDragging
   });
 
   const { data: tryouts = [] } = useQuery({
     queryKey: ['tryouts'],
-    queryFn: () => base44.entities.PlayerTryout.list()
+    queryFn: () => base44.entities.PlayerTryout.list(),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !isDragging
   });
 
   const { data: assessments = [] } = useQuery({
