@@ -59,6 +59,8 @@ export default function Tryouts() {
     queryFn: () => base44.entities.Coach.list()
   });
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const updatePlayerTeamMutation = useMutation({
     mutationFn: ({ playerId, teamId }) => base44.entities.Player.update(playerId, { team_id: teamId }),
     onSuccess: () => {
@@ -153,7 +155,13 @@ export default function Tryouts() {
     return 6;
   };
 
+  const onDragStart = () => {
+    setIsDragging(true);
+  };
+
   const onDragEnd = async (result) => {
+    setIsDragging(false);
+    
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -161,10 +169,11 @@ export default function Tryouts() {
     const playerId = draggableId.replace('player-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
-    // Validate team exists
-    const teamExists = teams.some(t => t.id === destTeamId);
+    // Validate team exists in current filtered list
+    const allTeams = [...gaTeams, ...aspireTeams, ...otherTeams];
+    const teamExists = allTeams.some(t => t.id === destTeamId);
     if (!teamExists) {
-      console.error('Team not found:', destTeamId);
+      console.error('Team not found in current view:', destTeamId);
       return;
     }
 
@@ -202,15 +211,15 @@ export default function Tryouts() {
             if (!team.id) return null;
 
             return (
-              <Droppable droppableId={`team-${team.id}`} key={`team-${team.id}`}>
+              <Droppable droppableId={`team-${team.id}`} key={`team-${team.id}`} isDropDisabled={updatePlayerTeamMutation.isPending}>
                 {(provided, snapshot) => (
-                    <Card 
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
-                        snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''
-                      }`}
-                    >
+                  <Card 
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl ${
+                      snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''
+                    } ${updatePlayerTeamMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
                       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 p-3 md:p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 md:gap-3">
@@ -235,7 +244,12 @@ export default function Tryouts() {
                           teamPlayers?.map((player, index) => {
                             if (!player.id) return null;
                             return (
-                            <Draggable key={`player-${player.id}`} draggableId={`player-${player.id}`} index={index}>
+                            <Draggable 
+                              key={`player-${player.id}`} 
+                              draggableId={`player-${player.id}`} 
+                              index={index}
+                              isDragDisabled={updatePlayerTeamMutation.isPending}
+                            >
                               {(provided, snapshot) => (
                                 <PlayerHoverTooltip 
                                   player={player}
@@ -326,7 +340,7 @@ export default function Tryouts() {
   const dragContextKey = `${selectedAgeGroup}-${selectedLeague}-${selectedCoach}-${selectedGender}-${selectedSeason}`;
 
   return (
-    <DragDropContext onDragEnd={onDragEnd} key={dragContextKey}>
+    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
       <div className="p-4 md:p-8 max-w-[1900px] mx-auto">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
