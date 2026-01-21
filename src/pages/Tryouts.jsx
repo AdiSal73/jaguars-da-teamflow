@@ -162,20 +162,13 @@ export default function Tryouts() {
   const onDragEnd = async (result) => {
     setIsDragging(false);
     
+    if (!result.destination) return;
+    
     const { source, destination, draggableId } = result;
-    if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId.replace('player-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
-
-    // Validate team exists in current filtered list
-    const allTeams = [...gaTeams, ...aspireTeams, ...otherTeams];
-    const teamExists = allTeams.some(t => t.id === destTeamId);
-    if (!teamExists) {
-      console.error('Team not found in current view:', destTeamId);
-      return;
-    }
 
     try {
       await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
