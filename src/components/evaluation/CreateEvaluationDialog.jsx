@@ -109,6 +109,18 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
     }
   }, [player, open]);
 
+  // Update labels when position changes
+  React.useEffect(() => {
+    const positionFields = getPositionFields(form.primary_position);
+    setForm(prev => ({
+      ...prev,
+      position_role_1_label: positionFields[0]?.label || '',
+      position_role_2_label: positionFields[1]?.label || '',
+      position_role_3_label: positionFields[2]?.label || '',
+      position_role_4_label: positionFields[3]?.label || ''
+    }));
+  }, [form.primary_position]);
+
   const calculateGreatRating = (data) => {
     const mental = (
       2 * data.growth_mindset +
@@ -320,12 +332,12 @@ export default function CreateEvaluationDialog({ open, onClose, player }) {
                   🎯 Position-Specific ({form.primary_position})
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {positionFields.slice(0, 4).map((field, idx) => (
+                  {[1, 2, 3, 4].map((idx) => form[`position_role_${idx}_label`] && (
                     <SliderField 
                       key={idx}
-                      label={field.label} 
-                      value={form[`position_role_${idx + 1}`]} 
-                      onChange={v => setForm({...form, [`position_role_${idx + 1}`]: v})} 
+                      label={form[`position_role_${idx}_label`]} 
+                      value={form[`position_role_${idx}`]} 
+                      onChange={v => setForm({...form, [`position_role_${idx}`]: v})} 
                     />
                   ))}
                 </div>

@@ -54,12 +54,17 @@ export default function EditEvaluationDialog({ open, onClose, evaluation, player
     position_role_2: evaluation?.position_role_2 || 5,
     position_role_3: evaluation?.position_role_3 || 5,
     position_role_4: evaluation?.position_role_4 || 5,
+    position_role_1_label: evaluation?.position_role_1_label || '',
+    position_role_2_label: evaluation?.position_role_2_label || '',
+    position_role_3_label: evaluation?.position_role_3_label || '',
+    position_role_4_label: evaluation?.position_role_4_label || '',
   });
 
   const [generatingAI, setGeneratingAI] = useState({ strengths: false, growth: false, focus: false });
 
   React.useEffect(() => {
     if (evaluation && open) {
+      const positionFields = getPositionFields(evaluation.primary_position || '');
       setForm({
         growth_mindset: evaluation.growth_mindset || 5,
         resilience: evaluation.resilience || 5,
@@ -85,9 +90,25 @@ export default function EditEvaluationDialog({ open, onClose, evaluation, player
         position_role_2: evaluation.position_role_2 || 5,
         position_role_3: evaluation.position_role_3 || 5,
         position_role_4: evaluation.position_role_4 || 5,
+        position_role_1_label: evaluation.position_role_1_label || positionFields[0]?.label || '',
+        position_role_2_label: evaluation.position_role_2_label || positionFields[1]?.label || '',
+        position_role_3_label: evaluation.position_role_3_label || positionFields[2]?.label || '',
+        position_role_4_label: evaluation.position_role_4_label || positionFields[3]?.label || '',
       });
     }
   }, [evaluation, open]);
+
+  // Update labels when position changes
+  React.useEffect(() => {
+    const positionFields = getPositionFields(form.primary_position);
+    setForm(prev => ({
+      ...prev,
+      position_role_1_label: positionFields[0]?.label || '',
+      position_role_2_label: positionFields[1]?.label || '',
+      position_role_3_label: positionFields[2]?.label || '',
+      position_role_4_label: positionFields[3]?.label || ''
+    }));
+  }, [form.primary_position]);
 
   const calculateGreatRating = (data) => {
     const mental = (
@@ -294,12 +315,12 @@ Use authentic Michigan Jaguars PDP terminology.`;
                   🎯 Position-Specific ({form.primary_position})
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {positionFields.slice(0, 4).map((field, idx) => (
+                  {[1, 2, 3, 4].map((idx) => form[`position_role_${idx}_label`] && (
                     <SliderField 
                       key={idx}
-                      label={field.label} 
-                      value={form[`position_role_${idx + 1}`]} 
-                      onChange={v => setForm({...form, [`position_role_${idx + 1}`]: v})} 
+                      label={form[`position_role_${idx}_label`]} 
+                      value={form[`position_role_${idx}`]} 
+                      onChange={v => setForm({...form, [`position_role_${idx}`]: v})} 
                     />
                   ))}
                 </div>
