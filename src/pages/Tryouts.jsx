@@ -63,7 +63,7 @@ export default function Tryouts() {
     });
   };
 
-  const filteredTeams = useMemo(() => {
+  const teamColumns = useMemo(() => {
     let filtered = teams.filter(t => t.name && typeof t.name === 'string');
 
     if (selectedGender !== 'all') {
@@ -71,9 +71,6 @@ export default function Tryouts() {
     }
     if (selectedAgeGroup !== 'all') {
       filtered = filtered.filter(t => t.age_group === selectedAgeGroup);
-    }
-    if (selectedLeague !== 'all') {
-      filtered = filtered.filter(t => t.league === selectedLeague);
     }
     if (selectedCoach !== 'all') {
       filtered = filtered.filter(t => t.coach_ids?.includes(selectedCoach));
@@ -89,8 +86,12 @@ export default function Tryouts() {
     const aspireTeams = sortTeamsByAge(filtered.filter(t => t.league === 'Aspire'));
     const otherTeams = sortTeamsByAge(filtered.filter(t => t.league !== 'Girls Academy' && t.league !== 'Aspire'));
 
-    return [...gaTeams, ...aspireTeams, ...otherTeams];
-  }, [teams, selectedAgeGroup, selectedLeague, selectedCoach, selectedGender, selectedSeason]);
+    return {
+      girlsAcademy: gaTeams,
+      aspire: aspireTeams,
+      other: otherTeams
+    };
+  }, [teams, selectedAgeGroup, selectedCoach, selectedGender, selectedSeason]);
 
   const getTeamPlayers = useCallback((team) => {
     const teamPlayers = players.filter(p => p.team_id === team.id);
