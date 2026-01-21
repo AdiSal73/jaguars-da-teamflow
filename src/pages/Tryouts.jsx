@@ -130,6 +130,13 @@ export default function Tryouts() {
     const playersWithTryout = teamPlayers?.map((p) => getPlayerTryoutData(p)) || [];
 
     return playersWithTryout.sort((a, b) => {
+      // Sort by age_group_ranking first if available
+      const rankA = a.tryout?.age_group_ranking || 999;
+      const rankB = b.tryout?.age_group_ranking || 999;
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+      // Fall back to alphabetical by last name
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
@@ -222,26 +229,32 @@ export default function Tryouts() {
                                   assessment={assessments.filter(a => a.player_id === player.id).sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0]}
                                 >
                                   <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                    }}
-                                    className={`${
-                                      isTrappedPlayer(player.date_of_birth)
-                                        ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-                                        : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
-                                    } w-full p-3 md:p-4 rounded-xl transition-all border-2 cursor-grab active:cursor-grabbing ${
-                                      snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 bg-white' : 'hover:shadow-md'
-                                    }`}
-                                    onClick={(e) => {
-                                     if (!snapshot.isDragging) {
-                                       e.stopPropagation();
-                                       navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
-                                     }
-                                    }}
-                                    >
+                                   ref={provided.innerRef}
+                                   {...provided.draggableProps}
+                                   {...provided.dragHandleProps}
+                                   style={{
+                                     ...provided.draggableProps.style,
+                                     transform: snapshot.isDragging 
+                                       ? provided.draggableProps.style?.transform 
+                                       : 'translate(0px, 0px)',
+                                     transition: snapshot.isDragging 
+                                       ? 'none' 
+                                       : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                   }}
+                                   className={`${
+                                     isTrappedPlayer(player.date_of_birth)
+                                       ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
+                                       : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
+                                   } w-full p-3 md:p-4 rounded-xl border-2 cursor-grab active:cursor-grabbing ${
+                                     snapshot.isDragging ? 'shadow-2xl scale-[1.03] ring-4 ring-emerald-400 bg-white opacity-90 rotate-[2deg]' : 'hover:shadow-md'
+                                   }`}
+                                   onClick={(e) => {
+                                    if (!snapshot.isDragging) {
+                                      e.stopPropagation();
+                                      navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
+                                    }
+                                   }}
+                                   >
                                     <div className="flex items-center justify-between gap-2">
                                      <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                                        <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-xs md:text-base flex-shrink-0">
@@ -249,10 +262,16 @@ export default function Tryouts() {
                                        </div>
                                        <div className="flex-1 min-w-0">
                                          <div className="font-bold text-slate-900 text-sm md:text-base truncate">{player.full_name}</div>
-                                         <div className="text-xs md:text-sm text-slate-600 mt-0.5 flex gap-1 items-center truncate">
+                                         <div className="text-xs md:text-sm text-slate-600 mt-0.5 flex gap-1 items-center truncate flex-wrap">
                                            <span>{player.primary_position}</span>
                                            {player.age_group && (
-                                             <Badge className="bg-purple-100 text-purple-800 text-xs md:text-sm px-2 py-1 font-bold">{player.age_group}</Badge>
+                                             <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 font-bold">{player.age_group}</Badge>
+                                           )}
+                                           {player.grad_year && (
+                                             <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 font-bold">{player.grad_year}</Badge>
+                                           )}
+                                           {player.tryout?.age_group_ranking && (
+                                             <Badge className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 font-bold">#{player.tryout.age_group_ranking}</Badge>
                                            )}
                                          </div>
                                        </div>
