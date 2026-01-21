@@ -252,14 +252,54 @@ export default function Tryouts() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-          {filteredTeams.map(team => (
-            <TeamColumn 
-              key={team.id} 
-              team={team} 
-              players={getTeamPlayers(team)}
-            />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Girls Academy Column */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-500 p-4">
+            <h2 className="text-xl font-bold text-emerald-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-emerald-200">
+              Girls Academy Teams
+            </h2>
+            <div className="space-y-3">
+              {teamColumns.girlsAcademy.map(team => (
+                <TeamColumn 
+                  key={team.id} 
+                  team={team} 
+                  players={getTeamPlayers(team)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Aspire Column */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-blue-500 p-4">
+            <h2 className="text-xl font-bold text-blue-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-blue-200">
+              Girls Aspire Teams
+            </h2>
+            <div className="space-y-3">
+              {teamColumns.aspire.map(team => (
+                <TeamColumn 
+                  key={team.id} 
+                  team={team} 
+                  players={getTeamPlayers(team)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Other Teams Column */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-slate-500 p-4">
+            <h2 className="text-xl font-bold text-slate-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-slate-200">
+              All Other Teams
+            </h2>
+            <div className="space-y-3">
+              {teamColumns.other.map(team => (
+                <TeamColumn 
+                  key={team.id} 
+                  team={team} 
+                  players={getTeamPlayers(team)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </DragDropContext>
