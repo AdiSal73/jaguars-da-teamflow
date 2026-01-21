@@ -340,7 +340,7 @@ export default function Tryouts() {
   const dragContextKey = `${selectedAgeGroup}-${selectedLeague}-${selectedCoach}-${selectedGender}-${selectedSeason}`;
 
   return (
-    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart} key={dragContextKey}>
       <div className="p-4 md:p-8 max-w-[1900px] mx-auto">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
