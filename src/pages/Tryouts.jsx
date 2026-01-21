@@ -60,9 +60,14 @@ export default function Tryouts() {
   });
 
   const updatePlayerTeamMutation = useMutation({
-    mutationFn: ({ playerId, teamId }) => base44.entities.Player.update(playerId, { team_id: teamId }),
+    mutationFn: async ({ playerId, teamId }) => {
+      await base44.entities.Player.update(playerId, { team_id: teamId });
+      // Update rankings after player move
+      await base44.functions.invoke('updatePlayerRankings', {});
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['tryouts']);
     }
   });
 
@@ -162,10 +167,18 @@ export default function Tryouts() {
     const playerId = draggableId.replace('player-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
+    // Optimistic update
+    queryClient.setQueryData(['players'], (old) => {
+      return old?.map(p => 
+        p.id === playerId ? { ...p, team_id: destTeamId } : p
+      ) || old;
+    });
+
     try {
       await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
     } catch (error) {
       console.error('Failed to update player team:', error);
+      queryClient.invalidateQueries(['players']);
     }
   };
 
@@ -305,33 +318,33 @@ export default function Tryouts() {
           <p className="text-sm md:text-lg text-slate-600">Current team rosters with drag-and-drop management</p>
         </div>
 
-        <Collapsible open={searchOpen} onOpenChange={setSearchOpen} className="mb-6">
-          <Card className="border-none shadow-xl bg-gradient-to-br from-white via-blue-50 to-purple-50">
+        <Collapsible open={searchOpen} onOpenChange={setSearchOpen} className="mb-4">
+          <Card className="border-none shadow-lg bg-gradient-to-br from-white to-blue-50">
             <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-blue-50/50 transition-colors p-4">
+              <CardHeader className="cursor-pointer hover:bg-blue-50/50 transition-colors p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Search className="w-5 h-5 text-blue-600" />
-                    <CardTitle className="text-lg">Player Search</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4 text-blue-600" />
+                    <CardTitle className="text-base font-semibold">Player Search</CardTitle>
                     {searchedPlayers.length > 0 && (
-                      <Badge className="bg-blue-600 text-white">{searchedPlayers.length} players</Badge>
+                      <Badge className="bg-blue-600 text-white text-xs">{searchedPlayers.length}</Badge>
                     )}
                   </div>
-                  {searchOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  {searchOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className="p-3 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <Input
                     placeholder="Search by name..."
                     value={searchName}
                     onChange={(e) => setSearchName(e.target.value)}
-                    className="border-2"
+                    className="border-2 h-9 text-sm"
                   />
                   <Select value={searchPosition} onValueChange={setSearchPosition}>
-                    <SelectTrigger className="border-2">
+                    <SelectTrigger className="border-2 h-9 text-sm">
                       <SelectValue placeholder="All Positions" />
                     </SelectTrigger>
                     <SelectContent>
@@ -342,7 +355,7 @@ export default function Tryouts() {
                     </SelectContent>
                   </Select>
                   <Select value={searchTeam} onValueChange={setSearchTeam}>
-                    <SelectTrigger className="border-2">
+                    <SelectTrigger className="border-2 h-9 text-sm">
                       <SelectValue placeholder="All Teams" />
                     </SelectTrigger>
                     <SelectContent>
@@ -360,7 +373,7 @@ export default function Tryouts() {
                       <div 
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto p-2"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1"
                       >
                         {searchedPlayers.map((player, index) => (
                           <PlayerCard key={player.id} player={player} index={index} />
