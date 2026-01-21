@@ -150,7 +150,7 @@ export default function Tryouts() {
 
         <Card className="border-none shadow-xl mb-4 md:mb-6 bg-gradient-to-br from-white via-slate-50 to-blue-50">
           <CardContent className="p-3 md:p-4 lg:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Gender</label>
                 <Select value={selectedGender} onValueChange={setSelectedGender}>
