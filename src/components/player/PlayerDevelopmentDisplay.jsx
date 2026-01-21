@@ -205,15 +205,15 @@ export default function PlayerDevelopmentDisplay({
   return (
     <>
       {/* Player Development Pathway (Goals) */}
-      <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-blue-50">
-        <CardHeader className="border-b">
+      <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-md shadow-2xl">
+        <CardHeader className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border-b border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="w-5 h-5 text-emerald-600" />
+              <CardTitle className="text-lg flex items-center gap-2 text-white">
+                <Target className="w-5 h-5 text-emerald-400" />
                 Player Development Pathway ({player.goals?.length || 0})
               </CardTitle>
-              <p className="text-xs text-slate-600 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
+              <p className="text-xs text-slate-300 mt-1">SMART Goals to help you track your progress and stay focused on your development journey.</p>
             </div>
             <div className="flex gap-2">
               {isAdminOrCoach && (
@@ -234,11 +234,11 @@ export default function PlayerDevelopmentDisplay({
           <CardContent className="p-4">
             {sortedGoals.length === 0 ? (
               <div className="text-center py-8">
-                <Target className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 text-sm">No development goals set yet</p>
+                <Target className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400 text-sm">No development goals set yet</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                 {sortedGoals.map(goal => {
                   const autoProgress = getAutoProgress(goal);
                   const isExpanded = expandedGoals.has(goal.id);
@@ -246,31 +246,31 @@ export default function PlayerDevelopmentDisplay({
                   return (
                     <div 
                       key={goal.id} 
-                      className={`rounded-lg border-2 transition-all ${
+                      className={`rounded-xl border-2 transition-all shadow-lg ${
                         goal.completed 
-                          ? 'bg-emerald-50 border-emerald-200' 
+                          ? 'bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-emerald-500/50' 
                           : goal.progress >= 50 
-                            ? 'bg-blue-50 border-blue-200'
-                            : 'bg-white border-slate-200'
+                            ? 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/50'
+                            : 'bg-slate-700/50 border-slate-600/50'
                       }`}
                     >
-                      <div className="p-3">
-                        <div className="flex items-start justify-between mb-2">
+                      <div className="p-4">
+                        <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-sm text-slate-900">{goal.description}</h4>
-                              {goal.completed && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-bold text-base text-white">{goal.description}</h4>
+                              {goal.completed && <CheckCircle className="w-5 h-5 text-emerald-400" />}
                               {autoProgress?.improved && (
-                                <Badge className="bg-emerald-500 text-white text-[9px]">
+                                <Badge className="bg-emerald-500 text-white text-[10px] shadow-md">
                                   <TrendingUp className="w-3 h-3 mr-1" />
                                   +{autoProgress.delta.toFixed(0)}
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              <Badge className="text-[9px] bg-purple-100 text-purple-800">{goal.category}</Badge>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <Badge className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">{goal.category}</Badge>
                               {goal.start_date && (
-                                <span className="text-xs text-slate-500">Started: {new Date(goal.start_date).toLocaleDateString()}</span>
+                                <span className="text-xs text-slate-400">🗓 Started: {new Date(goal.start_date).toLocaleDateString()}</span>
                               )}
                             </div>
                           </div>
@@ -279,18 +279,18 @@ export default function PlayerDevelopmentDisplay({
                               variant="ghost"
                               size="icon"
                               onClick={() => toggleExpand(goal.id)}
-                              className="h-6 w-6"
+                              className="h-7 w-7 text-slate-300 hover:bg-white/10 hover:text-white"
                             >
-                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </Button>
                             {onProvideFeedback && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => onProvideFeedback(goal)}
-                                className="h-6 w-6 hover:bg-blue-50"
+                                className="h-7 w-7 text-blue-400 hover:bg-blue-500/20"
                               >
-                                <MessageSquare className="w-3 h-3" />
+                                <MessageSquare className="w-4 h-4" />
                               </Button>
                             )}
                             {isAdminOrCoach && (
@@ -298,55 +298,66 @@ export default function PlayerDevelopmentDisplay({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => { setEditingGoal(goal); setShowEditGoalDialog(true); }}
-                                className="h-6 w-6"
+                                className="h-7 w-7 text-emerald-400 hover:bg-emerald-500/20"
                               >
-                                <Target className="w-3 h-3" />
+                                <Target className="w-4 h-4" />
                               </Button>
                             )}
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteGoal(goal.id)}
-                              className="h-6 w-6 hover:bg-red-50 hover:text-red-600"
+                              className="h-7 w-7 text-red-400 hover:bg-red-500/20"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-slate-600">Progress</span>
-                            <span className="font-bold text-emerald-600">{goal.progress}%</span>
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="text-slate-300 font-medium">Progress</span>
+                            <span className="font-bold text-emerald-400 text-lg">{goal.progress}%</span>
                           </div>
-                          <Progress value={goal.progress} className="h-2" />
+                          <div className="relative">
+                            <div className="h-3 bg-slate-900/50 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all ${
+                                  goal.completed 
+                                    ? 'bg-gradient-to-r from-emerald-500 to-green-500' 
+                                    : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                                }`}
+                                style={{ width: `${goal.progress}%` }}
+                              />
+                            </div>
+                          </div>
                           <Input
                             type="range"
                             min="0"
                             max="100"
                             value={goal.progress}
                             onChange={(e) => handleProgressChange(goal.id, parseInt(e.target.value))}
-                            className="w-full h-2 accent-emerald-600"
+                            className="w-full h-2 accent-emerald-500 cursor-pointer"
                           />
                         </div>
 
                         {goal.plan_of_action && (
-                          <div className="mt-2">
-                            <p className="text-xs text-slate-600 italic">{goal.plan_of_action}</p>
+                          <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/10">
+                            <p className="text-xs text-slate-300 italic leading-relaxed">{goal.plan_of_action}</p>
                           </div>
                         )}
 
                         {isExpanded && (
-                          <div className="mt-3 pt-3 border-t space-y-2">
+                          <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
                             {goal.notes && (
-                              <div>
-                                <div className="text-xs font-semibold text-slate-700 mb-1">Notes</div>
-                                <p className="text-xs text-slate-600 bg-white p-2 rounded">{goal.notes}</p>
+                              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                <div className="text-xs font-semibold text-emerald-400 mb-1">📝 Notes</div>
+                                <p className="text-xs text-slate-300 leading-relaxed">{goal.notes}</p>
                               </div>
                             )}
                             {goal.completion_date && (
-                              <div className="text-xs text-slate-500">
-                                Completed: {new Date(goal.completion_date).toLocaleDateString()}
+                              <div className="text-xs text-emerald-400 font-medium">
+                                ✓ Completed: {new Date(goal.completion_date).toLocaleDateString()}
                               </div>
                             )}
                           </div>
