@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -111,11 +111,22 @@ export default function Tryouts() {
     });
   };
 
-  const gaTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string')))))));
-  const aspireTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string')))))));
-  const otherTeams = sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string')))))));
+  const gaTeams = useMemo(() => 
+    sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Girls Academy' && t.name && typeof t.name === 'string'))))))),
+    [teams, selectedAgeGroup, selectedLeague, selectedCoach, selectedGender, selectedSeason]
+  );
+  
+  const aspireTeams = useMemo(() => 
+    sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league === 'Aspire' && t.name && typeof t.name === 'string'))))))),
+    [teams, selectedAgeGroup, selectedLeague, selectedCoach, selectedGender, selectedSeason]
+  );
+  
+  const otherTeams = useMemo(() => 
+    sortTeamsByAge(filterBySeason(filterByGender(filterByAgeGroup(filterByCoach(filterByLeague((teams || []).filter((t) => t.league !== 'Girls Academy' && t.league !== 'Aspire' && t.name && typeof t.name === 'string'))))))),
+    [teams, selectedAgeGroup, selectedLeague, selectedCoach, selectedGender, selectedSeason]
+  );
 
-  const getTeamPlayers = (team) => {
+  const getTeamPlayers = useCallback((team) => {
     let teamPlayers = players.filter((p) => p.team_id === team.id);
 
     if (birthdayFrom) {
@@ -143,7 +154,7 @@ export default function Tryouts() {
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
     });
-  };
+  }, [players, tryouts, birthdayFrom, birthdayTo, showTrappedOnly]);
 
   const calculateTeamPriority = (team) => {
     if (team.league === 'Girls Academy') return 1;
