@@ -224,7 +224,7 @@ export default function IDPServices() {
             <div>
               <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80" 
+                  src="https://prepsoccer.com/wp-content/uploads/sites/8/2022/04/VillarrealNourse-scaled.jpg?" 
                   alt="Position-specific training"
                   className="w-full h-full object-cover"
                 />
