@@ -138,7 +138,7 @@ export default function IDPServices() {
             <div className="order-2 lg:order-1">
               <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=800&q=80" 
+                  src="https://ssprodst.blob.core.windows.net/library/58/d78e9213-dde4-436c-a065-241a1bcab036-04-05-2025-06-45-02-101.jpg" 
                   alt="Reflexive skill training"
                   className="w-full h-full object-cover"
                 />
