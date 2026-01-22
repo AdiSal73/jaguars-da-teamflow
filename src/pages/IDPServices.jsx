@@ -92,7 +92,7 @@ export default function IDPServices() {
               ) : (
                 <>
                   <Download className="w-5 h-5 mr-2" />
-                  Download PDF
+                 Brochure in PDF
                 </>
               )}
             </Button>
@@ -108,7 +108,7 @@ export default function IDPServices() {
               ) : (
                 <>
                   <FileText className="w-5 h-5 mr-2" />
-                  Download Word
+                  Brochure in Word
                 </>
               )}
             </Button>
