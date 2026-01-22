@@ -300,7 +300,7 @@ export default function IDPServices() {
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 py-24">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            The Jaguars Player Development System?
+            The Jaguars Player Development System
           </h2>
           <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-16">
             Comprehensive training covering skills, tactics, and performance
