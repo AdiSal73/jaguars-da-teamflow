@@ -358,61 +358,6 @@ export default function IDPServices() {
         </div>
       </div>
 
-      {/* Section 5: CTA & Contact */}
-      <div className="relative overflow-hidden py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/20 to-blue-600/20"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-        
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Ready to Elevate Your<br />
-            <span className="bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
-              Soccer Game?
-            </span>
-          </h2>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-12">
-            Join our training system today and unlock your full potential with personalized coaching, expert analysis, and proven development pathways.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-6">
-            <Button 
-              size="lg"
-              onClick={() => navigate(createPageUrl('Bookingpage'))}
-              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-bold text-lg px-10 py-7 shadow-2xl"
-            >
-              Schedule a Free Consultation
-              <ArrowRight className="w-6 h-6 ml-2" />
-            </Button>
-            <Button 
-              size="lg"
-              onClick={() => navigate(createPageUrl('Communications'))}
-              className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white hover:bg-white/20 font-bold text-lg px-10 py-7"
-            >
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Contact Us
-            </Button>
-          </div>
-
-          <div className="mt-20 grid md:grid-cols-3 gap-8 text-left">
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">500+</div>
-              <p className="text-slate-300 font-medium">Players Trained</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
-              <div className="text-5xl font-bold text-blue-400 mb-2">15+</div>
-              <p className="text-slate-300 font-medium">Expert Coaches</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
-              <div className="text-5xl font-bold text-purple-400 mb-2">1000+</div>
-              <p className="text-slate-300 font-medium">Training Hours</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Footer */}
       <div className="bg-slate-950 border-t border-slate-800 py-8">
         <div className="max-w-7xl mx-auto px-6">
