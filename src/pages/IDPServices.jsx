@@ -242,7 +242,7 @@ export default function IDPServices() {
             <div className="order-2 lg:order-1">
               <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800&q=80" 
+                  src="https://simplifaster.com/wp-content/uploads/2017/11/Sport-Video-Analysis-Buyers-Guide.jpg" 
                   alt="Video analysis"
                   className="w-full h-full object-cover"
                 />
