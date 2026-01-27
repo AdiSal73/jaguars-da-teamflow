@@ -129,7 +129,7 @@ export default function LandingCTA() {
 
           <h1 className="text-6xl md:text-8xl font-black text-white mb-6 leading-tight animate-fade-in-up-delay">
             Kickstart Your<br />
-            <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-400 via-Gold-400 to-slate-400 bg-clip-text text-transparent">
               Soccer Passion!
             </span>
           </h1>
