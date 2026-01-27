@@ -30,15 +30,28 @@ export default function LandingCTA() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     playerName: '',
+    birthday: '',
+    primaryPosition: '',
+    pathway: '',
+    parentName: '',
+    cellNumber: '',
     email: '',
-    age: '',
     message: ''
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     toast.success('Thanks for your interest! We\'ll be in touch soon!');
-    setFormData({ playerName: '', email: '', age: '', message: '' });
+    setFormData({ 
+      playerName: '', 
+      birthday: '', 
+      primaryPosition: '', 
+      pathway: '', 
+      parentName: '', 
+      cellNumber: '', 
+      email: '', 
+      message: '' 
+    });
   };
 
   const playerStories = [
@@ -101,60 +114,64 @@ export default function LandingCTA() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-700 min-h-screen flex items-center">
-        
-        {/* Logo Background */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-40">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0be30f146_Jaguars-logo.png" 
-            alt="" 
-            className="w-[800px] h-auto animate-ken-burns"
-          />
-        </div>
-        
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-yellow-500 to-emerald-800 min-h-screen flex items-center">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-950"></div>
         
-        <div className="relative max-w-7xl mx-auto px-6 py-32 text-center">
-          <div className="mb-8 flex justify-center gap-4 animate-fade-in-up">
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <span className="text-emerald-300 font-bold text-sm"> Over 500 D1 Players Developed</span>
-            </div>
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <span className="text-blue-300 font-bold text-sm">4 NWSL Pro Players</span>
-            </div>
-             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <span className="text-emerald-300 font-bold text-sm"> Over 2 Billion smiles generated</span>
-            </div>
-          </div>
+        <div className="relative max-w-7xl mx-auto px-6 py-16 w-full">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Text Content Section */}
+            <div className="text-left">
+              <div className="mb-6 flex flex-wrap gap-3 animate-fade-in-up">
+                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                  <span className="text-yellow-300 font-bold text-sm">Over 500 D1 Players Developed</span>
+                </div>
+                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                  <span className="text-yellow-300 font-bold text-sm">4 NWSL Pro Players</span>
+                </div>
+                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                  <span className="text-yellow-300 font-bold text-sm">Over 2 Billion smiles generated</span>
+                </div>
+              </div>
 
-          <h1 className="text-6xl md:text-8xl font-black text-white mb-6 leading-tight animate-fade-in-up-delay">
-            Kickstart Your<br />
-            <span className="bg-gradient-to-r from-emerald-400 via-Gold-400 to-slate-400 bg-clip-text text-transparent">
-              Soccer Passion!
-            </span>
-          </h1>
-          
-          <p className="text-2xl md:text-3xl text-slate-200 mb-12 max-w-4xl mx-auto font-medium animate-fade-in-up-delay" style={{animationDelay: '0.2s'}}>
-            Join the <span className="text-emerald-400 font-bold">Michigan Jaguars</span> — Don't wait to chase your dream.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-6 mb-12 animate-fade-in-up-delay" style={{animationDelay: '0.4s'}}>
-            <Button 
-              size="lg"
-              onClick={() => navigate(createPageUrl('Bookingpage'))}
-              className="bg-white text-emerald-600 hover:bg-emerald-50 font-bold text-xl px-12 py-8 shadow-2xl group"
-            >
-              Start Your Journey
-              <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-2 transition-transform" />
-            </Button>
-            <Button 
-              size="lg"
-              onClick={() => document.getElementById('player-stories').scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white hover:bg-white/20 font-bold text-xl px-12 py-8"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              See Success Stories
-            </Button>
+              <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight animate-fade-in-up-delay">
+                Kickstart Your<br />
+                <span className="bg-gradient-to-r from-yellow-400 via-yellow-300 to-emerald-400 bg-clip-text text-transparent">
+                  Soccer Passion!
+                </span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl text-slate-100 mb-10 font-medium animate-fade-in-up-delay" style={{animationDelay: '0.2s'}}>
+                Join the <span className="text-yellow-400 font-bold">Michigan Jaguars</span> — Don't wait to chase your dream.
+              </p>
+              
+              <div className="flex flex-wrap gap-4 animate-fade-in-up-delay" style={{animationDelay: '0.4s'}}>
+                <Button 
+                  size="lg"
+                  onClick={() => navigate(createPageUrl('Bookingpage'))}
+                  className="bg-gradient-to-r from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white font-bold text-lg px-10 py-6 shadow-2xl group"
+                >
+                  Start Your Journey
+                  <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-2 transition-transform" />
+                </Button>
+                <Button 
+                  size="lg"
+                  onClick={() => document.getElementById('player-stories').scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white hover:bg-white/20 font-bold text-lg px-10 py-6"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  See Success Stories
+                </Button>
+              </div>
+            </div>
+            
+            {/* Logo Section */}
+            <div className="flex items-center justify-center animate-fade-in-up">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0be30f146_Jaguars-logo.png" 
+                alt="Michigan Jaguars FC" 
+                className="w-full max-w-lg h-auto animate-ken-burns drop-shadow-2xl"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -174,7 +191,7 @@ export default function LandingCTA() {
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
-              Your Proven <span className="text-emerald-400">Pathway to Success</span>
+              Your Proven <span className="bg-gradient-to-r from-emerald-400 to-yellow-400 bg-clip-text text-transparent">Pathway to Success</span>
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
               We've created a systematic approach to player development that produces results at every level
@@ -189,14 +206,14 @@ export default function LandingCTA() {
               { step: "04", title: "Next Level", desc: "College pathway and professional opportunities", icon: Star }
             ].map((stage, idx) => (
               <div key={idx} className="relative">
-                <div className="bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl p-8 border-2 border-emerald-500/30 hover:border-emerald-400 transition-all">
-                  <div className="text-6xl font-Bold text-white-900/40 mb-4">{stage.step}</div>
-                  <stage.icon className="w-12 h-12 text-emerald-400 mb-4" />
+                <div className="bg-gradient-to-br from-emerald-500/20 to-yellow-500/20 rounded-2xl p-8 border-2 border-emerald-500/30 hover:border-yellow-400 transition-all">
+                  <div className="text-8xl font-black text-white mb-4">{stage.step}</div>
+                  <stage.icon className="w-12 h-12 text-yellow-400 mb-4" />
                   <h3 className="text-2xl font-bold text-white mb-3">{stage.title}</h3>
                   <p className="text-slate-300">{stage.desc}</p>
                 </div>
                 {idx < 3 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-emerald-400 to-blue-400"></div>
+                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-emerald-400 to-yellow-400"></div>
                 )}
               </div>
             ))}
@@ -206,7 +223,7 @@ export default function LandingCTA() {
             <Button 
               size="lg"
               onClick={() => navigate(createPageUrl('IDPServices'))}
-              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-bold text-lg px-10 py-6"
+              className="bg-gradient-to-r from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white font-bold text-lg px-10 py-6"
             >
               Discover Your Pathway
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -223,7 +240,7 @@ export default function LandingCTA() {
               <span className="text-emerald-400 font-bold">Jaguars Alumnae</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
-              Become Our <span className="text-emerald-400">Next Star</span>
+              Become Our <span className="bg-gradient-to-r from-emerald-400 to-yellow-400 bg-clip-text text-transparent">Next Star</span>
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
               Our players have gone on to compete at the highest levels of college and professional soccer
@@ -275,7 +292,7 @@ export default function LandingCTA() {
             <Button 
               size="lg"
               onClick={() => navigate(createPageUrl('Bookingpage'))}
-              className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white font-bold text-xl px-12 py-8"
+              className="bg-gradient-to-r from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white font-bold text-xl px-12 py-8"
             >
               <Star className="w-6 h-6 mr-2" />
               Become Our Next Star
@@ -299,7 +316,7 @@ export default function LandingCTA() {
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
-              Why Choose <span className="text-emerald-400">Michigan Jaguars?</span>
+              Why Choose <span className="bg-gradient-to-r from-emerald-400 to-yellow-400 bg-clip-text text-transparent">Michigan Jaguars?</span>
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
               We provide everything you need to reach your full potential
@@ -312,7 +329,7 @@ export default function LandingCTA() {
                 key={idx}
                 className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700 hover:border-emerald-500 transition-all group"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-yellow-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <benefit.icon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">{benefit.title}</h3>
@@ -324,7 +341,7 @@ export default function LandingCTA() {
       </div>
 
       {/* Sign Up Section */}
-      <div className="py-24 bg-gradient-to-br from-emerald-600 via-Gold-600 to-Slate-700">
+      <div className="py-24 bg-gradient-to-br from-emerald-600 via-yellow-500 to-emerald-800">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
@@ -350,17 +367,81 @@ export default function LandingCTA() {
                     />
                   </div>
                   <div>
-                    <label className="text-white font-semibold mb-2 block">Age *</label>
+                    <label className="text-white font-semibold mb-2 block">Birthday *</label>
                     <Input 
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({...formData, age: e.target.value})}
+                      type="date"
+                      value={formData.birthday}
+                      onChange={(e) => setFormData({...formData, birthday: e.target.value})}
                       required
                       className="bg-white/20 border-white/30 text-white placeholder:text-white/60"
-                      placeholder="Player age"
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="text-white font-semibold mb-2 block">Primary Position *</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {['GK', 'Outside Back', 'Centerback', 'Defensive Mid', 'Attacking Mid', 'Forward', 'Winger'].map((position) => (
+                      <label key={position} className="flex items-center gap-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-all">
+                        <input
+                          type="radio"
+                          name="primaryPosition"
+                          value={position}
+                          checked={formData.primaryPosition === position}
+                          onChange={(e) => setFormData({...formData, primaryPosition: e.target.value})}
+                          required
+                          className="text-emerald-600"
+                        />
+                        <span className="text-white text-sm">{position}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-white font-semibold mb-2 block">Pathway *</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {['Girls Academy', 'Aspire', 'DPL', 'Pre-GA'].map((pathway) => (
+                      <label key={pathway} className="flex items-center gap-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-all">
+                        <input
+                          type="radio"
+                          name="pathway"
+                          value={pathway}
+                          checked={formData.pathway === pathway}
+                          onChange={(e) => setFormData({...formData, pathway: e.target.value})}
+                          required
+                          className="text-emerald-600"
+                        />
+                        <span className="text-white text-sm">{pathway}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-white font-semibold mb-2 block">Parent Name *</label>
+                    <Input 
+                      value={formData.parentName}
+                      onChange={(e) => setFormData({...formData, parentName: e.target.value})}
+                      required
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                      placeholder="Enter parent name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white font-semibold mb-2 block">Cell Number *</label>
+                    <Input 
+                      type="tel"
+                      value={formData.cellNumber}
+                      onChange={(e) => setFormData({...formData, cellNumber: e.target.value})}
+                      required
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                      placeholder="(555) 555-5555"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-white font-semibold mb-2 block">Email *</label>
                   <Input 
@@ -372,6 +453,7 @@ export default function LandingCTA() {
                     placeholder="your@email.com"
                   />
                 </div>
+
                 <div>
                   <label className="text-white font-semibold mb-2 block">Message</label>
                   <Textarea 
@@ -385,7 +467,7 @@ export default function LandingCTA() {
                 <Button 
                   type="submit"
                   size="lg"
-                  className="w-full bg-white text-emerald-600 hover:bg-slate-100 font-bold text-xl py-6"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white font-bold text-xl py-6"
                 >
                  No need to wait to be a Jag - Join us today!
                   <ArrowRight className="w-6 h-6 ml-2" />
@@ -411,7 +493,7 @@ export default function LandingCTA() {
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black text-white mb-6">
-              Join the <span className="text-emerald-400">#JaguarsFamily</span>
+              Join the <span className="bg-gradient-to-r from-emerald-400 to-yellow-400 bg-clip-text text-transparent">#JaguarsFamily</span>
             </h2>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
               Follow our journey and share yours with the community
@@ -462,7 +544,7 @@ export default function LandingCTA() {
       </div>
 
       {/* Final CTA */}
-      <div className="py-24 bg-gradient-to-r from-emerald-600 to-blue-600 relative overflow-hidden">
+      <div className="py-24 bg-gradient-to-r from-emerald-600 to-yellow-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0be30f146_Jaguars-logo.png')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
