@@ -190,7 +190,7 @@ export default function LandingCTA() {
             ].map((stage, idx) => (
               <div key={idx} className="relative">
                 <div className="bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl p-8 border-2 border-emerald-500/30 hover:border-emerald-400 transition-all">
-                  <div className="text-6xl font-white text-white-900/90 mb-4">{stage.step}</div>
+                  <div className="text-6xl font-white text-Emerald-900/90 mb-4">{stage.step}</div>
                   <stage.icon className="w-12 h-12 text-emerald-400 mb-4" />
                   <h3 className="text-2xl font-bold text-white mb-3">{stage.title}</h3>
                   <p className="text-slate-300">{stage.desc}</p>
