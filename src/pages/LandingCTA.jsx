@@ -405,8 +405,8 @@ export default function LandingCTA() {
             alt="" 
             className="w-full h-full object-cover"
           />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/90 to-slate-950"></div>
+        </div>        <div className="absolute inset-0 bg-gradient-to-b from-emerald-400 via-emerald-400/40 to-emerald-400"></div>
+
         
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
