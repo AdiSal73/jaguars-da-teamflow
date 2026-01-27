@@ -387,7 +387,7 @@ export default function LandingCTA() {
                   size="lg"
                   className="w-full bg-white text-emerald-600 hover:bg-slate-100 font-bold text-xl py-6"
                 >
-                  Join the Movement — Register Now!
+                  Don't need to wait to be a Jag - Join us today!
                   <ArrowRight className="w-6 h-6 ml-2" />
                 </Button>
               </form>
