@@ -102,7 +102,6 @@ export default function LandingCTA() {
     <div className="min-h-screen bg-slate-950">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-700 min-h-screen flex items-center">
-        <div className="absolute inset-0 bg-[url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/fda76c783_camps-classes.jpg')] bg-cover bg-center opacity-30 animate-ken-burns"></div>
         
         {/* Logo Background */}
         <div className="absolute inset-0 flex items-center justify-center opacity-40">
