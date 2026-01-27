@@ -31,8 +31,10 @@ export default function LandingCTA() {
   const [formData, setFormData] = useState({
     playerName: '',
     birthday: '',
-    primaryPosition: '',
-    pathway: '',
+    primaryPosition: [],
+    pathway: [],
+    currentTeam: '',
+    currentClub: '',
     parentName: '',
     cellNumber: '',
     email: '',
@@ -45,12 +47,25 @@ export default function LandingCTA() {
     setFormData({ 
       playerName: '', 
       birthday: '', 
-      primaryPosition: '', 
-      pathway: '', 
+      primaryPosition: [], 
+      pathway: [], 
+      currentTeam: '',
+      currentClub: '',
       parentName: '', 
       cellNumber: '', 
       email: '', 
       message: '' 
+    });
+  };
+
+  const handleCheckboxChange = (field, value) => {
+    setFormData(prev => {
+      const currentValues = prev[field];
+      if (currentValues.includes(value)) {
+        return { ...prev, [field]: currentValues.filter(v => v !== value) };
+      } else {
+        return { ...prev, [field]: [...currentValues, value] };
+      }
     });
   };
 
@@ -379,18 +394,16 @@ export default function LandingCTA() {
                 </div>
 
                 <div>
-                  <label className="text-white font-semibold mb-2 block">Primary Position *</label>
+                  <label className="text-white font-semibold mb-2 block">Primary Position * (Select all that apply)</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {['GK', 'Outside Back', 'Centerback', 'Defensive Mid', 'Attacking Mid', 'Forward', 'Winger'].map((position) => (
                       <label key={position} className="flex items-center gap-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-all">
                         <input
-                          type="radio"
-                          name="primaryPosition"
+                          type="checkbox"
                           value={position}
-                          checked={formData.primaryPosition === position}
-                          onChange={(e) => setFormData({...formData, primaryPosition: e.target.value})}
-                          required
-                          className="text-emerald-600"
+                          checked={formData.primaryPosition.includes(position)}
+                          onChange={() => handleCheckboxChange('primaryPosition', position)}
+                          className="text-emerald-600 rounded"
                         />
                         <span className="text-white text-sm">{position}</span>
                       </label>
@@ -399,22 +412,41 @@ export default function LandingCTA() {
                 </div>
 
                 <div>
-                  <label className="text-white font-semibold mb-2 block">Pathway *</label>
+                  <label className="text-white font-semibold mb-2 block">Pathway * (Select all that apply)</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {['Girls Academy', 'Aspire', 'DPL', 'Pre-GA'].map((pathway) => (
                       <label key={pathway} className="flex items-center gap-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-all">
                         <input
-                          type="radio"
-                          name="pathway"
+                          type="checkbox"
                           value={pathway}
-                          checked={formData.pathway === pathway}
-                          onChange={(e) => setFormData({...formData, pathway: e.target.value})}
-                          required
-                          className="text-emerald-600"
+                          checked={formData.pathway.includes(pathway)}
+                          onChange={() => handleCheckboxChange('pathway', pathway)}
+                          className="text-emerald-600 rounded"
                         />
                         <span className="text-white text-sm">{pathway}</span>
                       </label>
                     ))}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-white font-semibold mb-2 block">Current Team</label>
+                    <Input 
+                      value={formData.currentTeam}
+                      onChange={(e) => setFormData({...formData, currentTeam: e.target.value})}
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                      placeholder="Enter current team"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white font-semibold mb-2 block">Current Club</label>
+                    <Input 
+                      value={formData.currentClub}
+                      onChange={(e) => setFormData({...formData, currentClub: e.target.value})}
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                      placeholder="Enter current club"
+                    />
                   </div>
                 </div>
 
