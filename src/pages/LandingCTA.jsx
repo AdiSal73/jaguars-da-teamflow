@@ -119,9 +119,9 @@ export default function LandingCTA() {
           </div>
 
           <h1 className="text-6xl md:text-8xl font-black text-white mb-6 leading-tight">
-            Unleash Your<br />
+            Kickstart Your<br />
             <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Soccer Potential!
+              Soccer Passion!
             </span>
           </h1>
           
