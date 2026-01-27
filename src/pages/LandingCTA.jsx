@@ -201,7 +201,7 @@ export default function LandingCTA() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <div className="inline-block px-6 py-2 bg-emerald-500/20 rounded-full border border-emerald-500/30 mb-6">
-              <span className="text-emerald-400 font-bold">Jaguars Alumnae/span>
+              <span className="text-emerald-400 font-bold">Jaguars Alumnae</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
               Become Our <span className="text-emerald-400">Next Star</span>
