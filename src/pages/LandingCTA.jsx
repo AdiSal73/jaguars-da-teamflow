@@ -44,7 +44,7 @@ export default function LandingCTA() {
   const playerStories = [
     {
       name: "Amalia Villarreal",
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Texas_vs_MSU_-_NCAA_2024_-_020.jpg/250px-Texas_vs_MSU_-_NCAA_2024_-_020.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/320ad9ab3_Amalia-Villareal.png",
       position: "Forward",
       achievement: "SEC Freshman of the Year 2024",
       currentTeam: "Texas Longhorns",
@@ -53,7 +53,7 @@ export default function LandingCTA() {
     },
     {
       name: "Chloe Ricketts",
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/NC_Courage_vs_Washington_Spirit_%28Nov_2024%29_007_%28Ricketts%29.jpg/250px-NC_Courage_vs_Washington_Spirit_%28Nov_2024%29_007_%28Ricketts%29.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/cc880322d_Chloe-Ricketts.jpg",
       position: "Midfielder / Forward",
       achievement: "NWSL Professional Player",
       currentTeam: "Boston Legacy FC",
@@ -62,7 +62,7 @@ export default function LandingCTA() {
     },
     {
       name: "Madison Pogarch",
-      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Madison_Pogarch_2022-01_%28cropped%29.jpg/250px-Madison_Pogarch_2022-01_%28cropped%29.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/755e884b6_Madison-Pogarch.png",
       position: "Left Back",
       achievement: "NWSL Shield Winner",
       currentTeam: "Hammarby (Sweden)",
@@ -71,7 +71,7 @@ export default function LandingCTA() {
     },
     {
       name: "Emerson Sargeant",
-      image: "https://dxbhsrqyrr690.cloudfront.net/sidearm.nextgen.sites/msuspartans.com/images/2025/8/2/For_Web_Sargeant__Emerson_zOrHO.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0302189d8_Emerson-Sargeant.jpg",
       position: "Midfielder",
       achievement: "Big Ten Athlete",
       currentTeam: "Michigan State Spartans",
@@ -223,11 +223,6 @@ export default function LandingCTA() {
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent"></div>
-                      <div className="absolute bottom-6 left-6">
-                        <div className="px-4 py-2 bg-emerald-500 rounded-full mb-2">
-                          <span className="text-white font-bold text-sm">{player.position}</span>
-                        </div>
-                      </div>
                     </div>
                     
                     <div className={`p-8 flex flex-col justify-center ${idx % 2 === 1 ? 'md:col-start-1' : ''}`}>
