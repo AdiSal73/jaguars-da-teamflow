@@ -144,21 +144,6 @@ export default function LandingCTA() {
               See Success Stories
             </Button>
           </div>
-
-          <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center">
-              <div className="text-5xl font-black text-white mb-2">500+</div>
-              <div className="text-slate-300">Players Trained</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-black text-white mb-2">15+</div>
-              <div className="text-slate-300">Expert Coaches</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-black text-white mb-2">20+</div>
-              <div className="text-slate-300">Years Experience</div>
-            </div>
-          </div>
         </div>
       </div>
 
