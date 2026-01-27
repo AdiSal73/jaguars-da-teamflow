@@ -162,14 +162,14 @@ export default function LandingCTA() {
       {/* Proven Pathway Section */}
       <div className="py-24 bg-slate-900 relative overflow-hidden">
         {/* Background Image */}
-        <div className="absolute inset-0 opacity-80">
+        <div className="absolute inset-0 opacity-60">
           <img 
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/00b58bd74_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg" 
             alt="" 
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-900"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-500 via-slate-500/50 to-slate-500"></div>
         
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
