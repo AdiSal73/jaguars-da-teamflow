@@ -341,7 +341,7 @@ export default function LandingCTA() {
       </div>
 
       {/* Sign Up Section */}
-      <div className="py-24 bg-gradient-to-br from-emerald-600 via-yellow-500 to-emerald-800">
+      <div className="py-24 bg-gradient-to-br from-emerald-600 via-gold-300 to-emerald-800">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
