@@ -126,7 +126,7 @@ export default function LandingCTA() {
           </h1>
           
           <p className="text-2xl md:text-3xl text-slate-200 mb-12 max-w-4xl mx-auto font-medium">
-            Join the <span className="text-emerald-400 font-bold">Michigan Jaguars</span> — Your Journey Begins Today
+            Join the <span className="text-emerald-400 font-bold">Michigan Jaguars</span> — Don't wait to chase your dream.
           </p>
           
           <div className="flex flex-wrap justify-center gap-6 mb-12">
