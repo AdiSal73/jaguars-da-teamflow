@@ -167,7 +167,7 @@ export default function LandingCTA() {
               { step: "01", title: "Foundation", desc: "Master the fundamentals with age-appropriate training", icon: Target },
               { step: "02", title: "Development", desc: "Position-specific skills and tactical understanding", icon: TrendingUp },
               { step: "03", title: "Elite Training", desc: "High-level competition and college exposure", icon: Trophy },
-              { step: "04", title: "Next Level", desc: "College scholarships and professional opportunities", icon: Star }
+              { step: "04", title: "Next Level", desc: "College pathway and professional opportunities", icon: Star }
             ].map((stage, idx) => (
               <div key={idx} className="relative">
                 <div className="bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-2xl p-8 border-2 border-emerald-500/30 hover:border-emerald-400 transition-all">
