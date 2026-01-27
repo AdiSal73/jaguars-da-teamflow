@@ -463,7 +463,7 @@ export default function LandingCTA() {
 
       {/* Final CTA */}
       <div className="py-24 bg-gradient-to-r from-emerald-600 to-blue-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80')] bg-cover bg-center opacity-10"></div>
+        <div className="absolute inset-0 bg-[url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0be30f146_Jaguars-logo.png')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
             Your Journey Starts Now
