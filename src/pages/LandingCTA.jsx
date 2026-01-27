@@ -81,11 +81,11 @@ export default function LandingCTA() {
     {
       name: "Haley Craig",
       image: "https://gostanford.com/imgproxy/UURZtQoJ7vLbCK-2mjgVJ1WJcisQipS5b1h5InC3v4g/rs:fit:1980:0:0:0/g:ce:0:0/q:90/aHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL3N0YW5mb3JkLXByb2QvMjAyNC8wNy8xMi84TzZsb1hMVzlyNFRoODJWUnJzdEM0WHJiT1VkbndsRUpuT01MNFo1LmpwZw.jpg",
-      position: "Forward",
+      position: "Goalkeeper",
       achievement: "NCAA Champion",
       currentTeam: "Stanford Cardinal",
       quote: "The pathway from Michigan Jaguars to Stanford was made possible by the elite training and development I received.",
-      journey: "Developed through the Jaguars academy, earned a scholarship to Stanford University, and helped lead the Cardinal to national prominence."
+      journey: "Developed through the Jaguars academy, earned a scholarship to Stanford University, and helped lead the Cardinal to a National championship."
     }
   ];
 
