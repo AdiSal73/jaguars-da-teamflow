@@ -103,6 +103,16 @@ export default function LandingCTA() {
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-700 min-h-screen flex items-center">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80')] bg-cover bg-center opacity-20"></div>
+        
+        {/* Logo Background */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/0be30f146_Jaguars-logo.png" 
+            alt="" 
+            className="w-[600px] h-auto"
+          />
+        </div>
+        
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-950"></div>
         
         <div className="relative max-w-7xl mx-auto px-6 py-32 text-center">
@@ -151,8 +161,18 @@ export default function LandingCTA() {
       </div>
 
       {/* Proven Pathway Section */}
-      <div className="py-24 bg-slate-900">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="py-24 bg-slate-900 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 opacity-10">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/fda76c783_camps-classes.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-900"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
               Your Proven <span className="text-emerald-400">Pathway to Success</span>
@@ -266,8 +286,18 @@ export default function LandingCTA() {
       </div>
 
       {/* Program Highlights */}
-      <div className="py-24 bg-slate-900">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="py-24 bg-slate-900 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 opacity-10">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/3225307a1_jags-GA-1.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-900"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
               Why Choose <span className="text-emerald-400">Michigan Jaguars?</span>
@@ -368,8 +398,18 @@ export default function LandingCTA() {
       </div>
 
       {/* Social Media Section */}
-      <div className="py-24 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-6">
+      <div className="py-24 bg-slate-950 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 opacity-10">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/691b4f505049805bdf639ffd/00b58bd74_d05ee993-bdd5-40a8-b6f6-d83e6e8e794e-04-23-2025-06-31-32-436.jpg" 
+            alt="" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/95 to-slate-950"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black text-white mb-6">
               Join the <span className="text-emerald-400">#JaguarsFamily</span>

@@ -31,6 +31,7 @@ import Home from './pages/Home';
 import IDPServices from './pages/IDPServices';
 import JaguarsKnowledgeBank from './pages/JaguarsKnowledgeBank';
 import Landing from './pages/Landing';
+import LandingCTA from './pages/LandingCTA';
 import Leaderboard from './pages/Leaderboard';
 import MyBookings from './pages/MyBookings';
 import OfferResponse from './pages/OfferResponse';
@@ -56,7 +57,6 @@ import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import LandingCTA from './pages/LandingCTA';
 import __Layout from './Layout.jsx';
 
 
@@ -94,6 +94,7 @@ export const PAGES = {
     "IDPServices": IDPServices,
     "JaguarsKnowledgeBank": JaguarsKnowledgeBank,
     "Landing": Landing,
+    "LandingCTA": LandingCTA,
     "Leaderboard": Leaderboard,
     "MyBookings": MyBookings,
     "OfferResponse": OfferResponse,
@@ -119,7 +120,6 @@ export const PAGES = {
     "Tryouts": Tryouts,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "LandingCTA": LandingCTA,
 }
 
 export const pagesConfig = {
