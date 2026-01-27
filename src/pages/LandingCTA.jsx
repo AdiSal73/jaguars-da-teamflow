@@ -108,10 +108,13 @@ export default function LandingCTA() {
         <div className="relative max-w-7xl mx-auto px-6 py-32 text-center">
           <div className="mb-8 flex justify-center gap-4">
             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-              <span className="text-emerald-300 font-bold text-sm">🏆 Over 500 D1 Players Developed</span>
+              <span className="text-emerald-300 font-bold text-sm"> Over 500 D1 Players Developed</span>
             </div>
             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
               <span className="text-blue-300 font-bold text-sm">4 NWSL Pro Players</span>
+            </div>
+             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+              <span className="text-emerald-300 font-bold text-sm"> Over 2 Billion smiles generated</span>
             </div>
           </div>
 
