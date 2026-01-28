@@ -53,8 +53,8 @@ const formations = {
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
       { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
       { id: 'Defensive Midfielder', x: 56, y: 55, label: 'DM', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 44, y: 55, label: 'CM', width: 160, height: 180 },
@@ -69,8 +69,8 @@ const formations = {
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 70, label: 'RB', width: 160, height: 180 },
-      { id: 'Left Centerback', x: 58, y: 70, label: 'LCB', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 42, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Left Centerback', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
       { id: 'Left Outside Back', x: 25, y: 70, label: 'LB', width: 160, height: 180 },
       { id: 'Right Winger', x: 75, y: 45, label: 'RM', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
@@ -84,9 +84,9 @@ const formations = {
     name: '3-5-2',
     positions: [
       { id: 'GK', x: 50, y: 90, label: 'GK', width: 160, height: 180 },
-      { id: 'Right Centerback', x: 60, y: 70, label: 'RCB', width: 160, height: 180 },
+      { id: 'Right Centerback', x: 58, y: 70, label: 'RCB', width: 160, height: 180 },
       { id: 'Left Centerback', x: 50, y: 72, label: 'CB', width: 160, height: 180 },
-      { id: 'Left Outside Back', x: 40, y: 70, label: 'LCB', width: 160, height: 180 },
+      { id: 'Left Outside Back', x: 42, y: 70, label: 'LCB', width: 160, height: 180 },
       { id: 'Right Outside Back', x: 75, y: 50, label: 'RWB', width: 160, height: 180 },
       { id: 'Center Midfielder', x: 58, y: 50, label: 'CM', width: 160, height: 180 },
       { id: 'Defensive Midfielder', x: 50, y: 55, label: 'DM', width: 160, height: 180 },
@@ -232,8 +232,7 @@ export default function FormationView() {
   const players = useMemo(() => {
     return allPlayers.filter((player) => {
       if (selectedTeam !== 'all') {
-        const currentTeamIds = player.current_team_ids || [];
-        return currentTeamIds.includes(selectedTeam);
+        return player.current_25_26_team === selectedTeam || player.current_26_27_team === selectedTeam;
       }
       if (selectedAgeGroup !== 'all') {
         return player.age_group === selectedAgeGroup;
@@ -337,27 +336,25 @@ export default function FormationView() {
     const draggedPlayer = allPlayers.find(p => p.id === draggedPlayerId);
     const ageGroup = teams.find(t => t.id === draggedPlayer?.team_id)?.age_group || selectedAgeGroup;
     
-    const sameAgeGroupPlayers = allPlayers.filter(p => {
-      const playerTeam = teams.find(t => t.id === p.team_id);
-      return playerTeam?.age_group === ageGroup && p.primary_position === destPositionId && p.id !== draggedPlayerId;
-    });
+    const destPositionPlayers = getPlayersForPosition(destPositionId);
     
     const updates = [];
-    for (const player of sameAgeGroupPlayers) {
-      const playerTryout = tryouts.find(t => t.player_id === player.id);
-      const currentRank = playerTryout?.age_group_ranking || 9999;
+    destPositionPlayers.forEach((player, idx) => {
+      if (player.id === draggedPlayerId) return;
       
-      if (currentRank >= newRanking) {
+      const targetRank = idx < result.destination.index ? idx + 1 : idx + 2;
+      
+      if (targetRank !== (player.tryout?.team_ranking || 9999)) {
         updates.push(
           updateTryoutMutation.mutateAsync({
             playerId: player.id,
-            newRanking: currentRank + 1,
+            newRanking: targetRank,
             position: destPositionId,
-            ageGroupRanking: currentRank + 1
+            ageGroupRanking: targetRank
           })
         );
       }
-    }
+    });
     
     await Promise.all(updates);
     
@@ -367,7 +364,7 @@ export default function FormationView() {
       position: destPositionId,
       ageGroupRanking: newRanking
     });
-  }, [updatePlayerMutation, updateTryoutMutation, allPlayers, teams, tryouts, selectedAgeGroup]);
+  }, [updatePlayerMutation, updateTryoutMutation, allPlayers, teams, tryouts, selectedAgeGroup, getPlayersForPosition]);
 
   const handleSaveNewFormation = () => {
     if (!newFormationName?.trim()) return;
