@@ -855,39 +855,65 @@ export default function TeamTryout() {
           <Button 
             onClick={async () => {
               try {
-                // Get all players from current season teams
+                // Get all players from current season teams (25/26 or earlier)
                 const currentSeasonPlayers = players.filter(p => {
                   const team = teams.find(t => t.id === p.team_id);
-                  return team && !team.season?.includes('26/27');
+                  return team && team.season !== '26/27' && !team.name?.includes('26/27');
                 });
 
                 let assignedCount = 0;
                 for (const player of currentSeasonPlayers) {
                   const currentTeam = teams.find(t => t.id === player.team_id);
-                  if (!currentTeam) continue;
+                  if (!currentTeam || !currentTeam.name) continue;
 
-                  // Calculate new age group
+                  // Calculate new age group for 26/27 season
                   const newAgeGroup = calculateNextYearAgeGroup(player.date_of_birth);
                   if (!newAgeGroup) continue;
 
-                  // Determine pathway from current team name
+                  // Determine pathway from current team name - check more specific patterns first
+                  const teamNameUpper = currentTeam.name.toUpperCase();
                   let pathway = '';
-                  if (currentTeam.name?.includes('Girls Academy')) pathway = 'Girls Academy';
-                  else if (currentTeam.name?.includes('Aspire')) pathway = 'Aspire';
-                  else if (currentTeam.name?.includes('Green')) pathway = 'Green';
-                  else if (currentTeam.name?.includes('White')) pathway = 'White';
-                  else if (currentTeam.name?.includes('Black')) pathway = 'Black';
-                  else if (currentTeam.name?.includes('Pre GA')) pathway = 'Pre GA 1';
+                  
+                  if (teamNameUpper.includes('GIRLS ACADEMY') && !teamNameUpper.includes('ASPIRE')) {
+                    pathway = 'Girls Academy';
+                  } else if (teamNameUpper.includes('ASPIRE') || teamNameUpper.includes('GIRLS ACADEMY ASPIRE')) {
+                    pathway = 'Aspire';
+                  } else if (teamNameUpper.includes('PRE GA 1')) {
+                    pathway = 'Pre GA 1';
+                  } else if (teamNameUpper.includes('PRE GA 2')) {
+                    pathway = 'Pre GA 2';
+                  } else if (teamNameUpper.includes('GREEN WHITE')) {
+                    pathway = 'Green White';
+                  } else if (teamNameUpper.includes('GREEN')) {
+                    pathway = 'Green';
+                  } else if (teamNameUpper.includes('WHITE')) {
+                    pathway = 'White';
+                  } else if (teamNameUpper.includes('BLACK')) {
+                    pathway = 'Black';
+                  }
                   
                   if (!pathway) continue;
 
-                  // Find matching 26/27 team
-                  const targetTeam = teams.find(t => 
-                    t.season === '26/27' && 
-                    t.age_group === newAgeGroup && 
-                    t.gender === player.gender &&
-                    t.name?.includes(pathway)
-                  );
+                  // Find matching 26/27 team with same pathway
+                  const targetTeam = teams.find(t => {
+                    if (t.season !== '26/27' && !t.name?.includes('26/27')) return false;
+                    if (t.age_group !== newAgeGroup) return false;
+                    if (t.gender !== player.gender) return false;
+                    
+                    const targetNameUpper = t.name?.toUpperCase() || '';
+                    
+                    // Match specific pathways
+                    if (pathway === 'Girls Academy' && targetNameUpper.includes('GIRLS ACADEMY') && !targetNameUpper.includes('ASPIRE')) return true;
+                    if (pathway === 'Aspire' && (targetNameUpper.includes('ASPIRE') || targetNameUpper.includes('GIRLS ACADEMY ASPIRE'))) return true;
+                    if (pathway === 'Pre GA 1' && targetNameUpper.includes('PRE GA 1')) return true;
+                    if (pathway === 'Pre GA 2' && targetNameUpper.includes('PRE GA 2')) return true;
+                    if (pathway === 'Green White' && targetNameUpper.includes('GREEN WHITE')) return true;
+                    if (pathway === 'Green' && targetNameUpper.includes('GREEN') && !targetNameUpper.includes('GREEN WHITE')) return true;
+                    if (pathway === 'White' && targetNameUpper.includes('WHITE') && !targetNameUpper.includes('GREEN WHITE')) return true;
+                    if (pathway === 'Black' && targetNameUpper.includes('BLACK')) return true;
+                    
+                    return false;
+                  });
 
                   if (targetTeam) {
                     await updateTryoutMutation.mutateAsync({
@@ -900,6 +926,7 @@ export default function TeamTryout() {
                 
                 toast.success(`Auto-assigned ${assignedCount} players to 26/27 teams`);
               } catch (error) {
+                console.error('Auto-assign error:', error);
                 toast.error('Failed to auto-assign players');
               }
             }}
@@ -1078,7 +1105,7 @@ export default function TeamTryout() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[560px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                          className={`min-h-[1120px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                         >
                           <div className="grid grid-cols-2 gap-2">
                             {teamPlayers?.map((player, index) => (
