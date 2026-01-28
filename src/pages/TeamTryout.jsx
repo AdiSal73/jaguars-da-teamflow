@@ -24,17 +24,32 @@ import FinalizeRosterDialog from '../components/tryout/FinalizeRosterDialog';
 import TryoutPoolManager from '../components/tryout/TryoutPoolManager';
 import { sortPlayersByTeamAndName } from '../components/utils/playerSorting';
 
-// Calculate next year's age group based on date of birth
+// Age group ranges for 2026-27 season
+const AGE_GROUP_RANGES_26_27 = [
+  { name: 'U19', start: new Date('2007-08-01'), end: new Date('2009-07-31') },
+  { name: 'U17', start: new Date('2009-08-01'), end: new Date('2010-07-31') },
+  { name: 'U16', start: new Date('2010-08-01'), end: new Date('2011-07-31') },
+  { name: 'U15', start: new Date('2011-08-01'), end: new Date('2012-07-31') },
+  { name: 'U14', start: new Date('2012-08-01'), end: new Date('2013-07-31') },
+  { name: 'U13', start: new Date('2013-08-01'), end: new Date('2014-07-31') },
+  { name: 'U12', start: new Date('2014-08-01'), end: new Date('2015-07-31') },
+  { name: 'U11', start: new Date('2015-08-01'), end: new Date('2016-07-31') },
+  { name: 'U10', start: new Date('2016-08-01'), end: new Date('2017-07-31') },
+  { name: 'U9', start: new Date('2017-08-01'), end: new Date('2018-07-31') },
+  { name: 'U8', start: new Date('2018-08-01'), end: new Date('2019-07-31') },
+  { name: 'U7', start: new Date('2019-08-01'), end: new Date('2020-07-31') },
+];
+
 const calculateNextYearAgeGroup = (dateOfBirth) => {
   if (!dateOfBirth) return null;
   const dob = new Date(dateOfBirth);
-  const cutoffDate = new Date('2027-08-01');
-  let age = cutoffDate.getFullYear() - dob.getFullYear();
-  const monthDiff = cutoffDate.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && cutoffDate.getDate() < dob.getDate())) {
-    age--;
+  
+  for (const range of AGE_GROUP_RANGES_26_27) {
+    if (dob >= range.start && dob <= range.end) {
+      return range.name;
+    }
   }
-  return `U-${age}`;
+  return null;
 };
 
 export default function TeamTryout() {
@@ -1007,7 +1022,7 @@ export default function TeamTryout() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[280px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                          className={`min-h-[560px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                         >
                           <div className="grid grid-cols-2 gap-2">
                             {teamPlayers?.map((player, index) => (
@@ -1234,8 +1249,8 @@ export default function TeamTryout() {
                   <SelectValue placeholder="Select age group" />
                 </SelectTrigger>
                 <SelectContent>
-                  {['U-19', 'U-17', 'U-16', 'U-15', 'U-14', 'U-13', 'U-12', 'U-11', 'U-10', 'U-9']?.map(ag => (
-                    <SelectItem key={ag} value={ag}>{ag}</SelectItem>
+                  {AGE_GROUP_RANGES_26_27.map(ag => (
+                    <SelectItem key={ag.name} value={ag.name}>{ag.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
