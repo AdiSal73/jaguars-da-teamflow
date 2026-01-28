@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { RotateCcw, Upload, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import PlayerSearchPanel from '@/components/tryout/PlayerSearchPanel';
 import TeamColumn from '@/components/tryout/TeamColumn';
+import ResetTeamsDialog from '@/components/admin/ResetTeamsDialog';
 import { toast } from 'sonner';
 
 export default function Tryouts2627() {
@@ -20,6 +21,7 @@ export default function Tryouts2627() {
   const [selectedGender, setSelectedGender] = useState('all');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
@@ -316,13 +318,23 @@ export default function Tryouts2627() {
             <p className="text-sm md:text-base lg:text-lg text-slate-600">Manage 26/27 season teams and player assignments</p>
           </div>
           
-          <Button
-            onClick={() => document.getElementById('csv-import').click()}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowResetDialog(true)}
+              variant="outline"
+              className="border-red-600 text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Reset for 26/27
+            </Button>
+            <Button
+              onClick={() => document.getElementById('csv-import').click()}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import CSV
+            </Button>
+          </div>
           <input
             id="csv-import"
             type="file"
@@ -538,6 +550,17 @@ export default function Tryouts2627() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Reset Teams Dialog */}
+        <ResetTeamsDialog
+          open={showResetDialog}
+          onClose={() => setShowResetDialog(false)}
+          onComplete={() => {
+            queryClient.invalidateQueries(['teams']);
+            queryClient.invalidateQueries(['players']);
+            setShowResetDialog(false);
+          }}
+        />
       </div>
     </DragDropContext>
   );
