@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,9 +30,11 @@ Deno.serve(async (req) => {
         
         for (const player of players) {
           await base44.asServiceRole.entities.Player.update(player.id, { team_id: null });
+          await delay(150);
         }
 
         logs.push({ type: 'success', message: `Reset ${team.name}: removed ${players.length} players` });
+        await delay(300);
       }
 
       return Response.json({ 
@@ -57,9 +61,11 @@ Deno.serve(async (req) => {
         for (const player of players) {
           await base44.asServiceRole.entities.Player.update(player.id, { team_id: null });
           totalRemoved++;
+          await delay(150);
         }
 
         logs.push({ type: 'success', message: `Removed ${players.length} players from ${team.name}` });
+        await delay(300);
       }
 
       return Response.json({ 
@@ -82,6 +88,7 @@ Deno.serve(async (req) => {
       for (const team of teams2627) {
         await base44.asServiceRole.entities.Team.delete(team.id);
         logs.push({ type: 'success', message: `Deleted team: ${team.name}` });
+        await delay(200);
       }
 
       return Response.json({ 

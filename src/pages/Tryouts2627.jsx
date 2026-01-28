@@ -154,9 +154,16 @@ export default function Tryouts2627() {
           const values = lines[i].split(/[,\t]/).map(v => v.trim());
           if (values.length < 8) continue;
 
+          const firstName = values[0];
+          const lastName = values[1];
+          const fullName = `${firstName} ${lastName}`.trim();
+          
+          // Skip rows with blank names
+          if (!fullName || fullName.length < 2) continue;
+
           rows.push({
-            firstName: values[0],
-            lastName: values[1],
+            firstName,
+            lastName,
             currentTeam: values[2],
             position: values[3],
             gradYear: values[4],
@@ -175,6 +182,29 @@ export default function Tryouts2627() {
           logs: []
         });
         setShowImportDialog(true);
+
+        // Delete players with blank names first
+        const blankPlayers = players.filter(p => !p.full_name || p.full_name.trim().length < 2);
+        if (blankPlayers.length > 0) {
+          setImportProgress(prev => ({
+            ...prev,
+            logs: [...prev.logs, { type: 'info', message: `Deleting ${blankPlayers.length} players with blank names...` }]
+          }));
+          
+          for (const player of blankPlayers) {
+            try {
+              await base44.entities.Player.delete(player.id);
+              await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+              console.error('Failed to delete blank player:', error);
+            }
+          }
+          
+          setImportProgress(prev => ({
+            ...prev,
+            logs: [...prev.logs, { type: 'success', message: `Deleted ${blankPlayers.length} blank players` }]
+          }));
+        }
 
         // Step 1: Create unique teams
         const uniqueTeams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
@@ -217,6 +247,8 @@ export default function Tryouts2627() {
                 created: prev.created + 1,
                 logs: [...prev.logs, { type: 'success', message: `Created team "${teamName}"` }]
               }));
+              
+              await new Promise(resolve => setTimeout(resolve, 200));
             }
           } catch (error) {
             setImportProgress(prev => ({
@@ -227,14 +259,25 @@ export default function Tryouts2627() {
           }
         }
 
-        // Step 2: Process players in batches
-        const BATCH_SIZE = 10;
+        // Step 2: Process players in batches with delays
+        const BATCH_SIZE = 5;
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {
           const batch = rows.slice(i, i + BATCH_SIZE);
           
-          await Promise.all(batch.map(async (row) => {
+          for (const row of batch) {
             try {
               const fullName = `${row.firstName} ${row.lastName}`.trim();
+              
+              // Skip if name is blank
+              if (!fullName || fullName.length < 2) {
+                setImportProgress(prev => ({
+                  ...prev,
+                  processed: prev.processed + 1,
+                  logs: [...prev.logs, { type: 'error', message: `Skipped row with blank name` }]
+                }));
+                continue;
+              }
+              
               const teamId = createdTeams[row.newTeam];
 
               if (!teamId) {
@@ -258,6 +301,8 @@ export default function Tryouts2627() {
                   processed: prev.processed + 1,
                   logs: [...prev.logs, { type: 'success', message: `Matched "${fullName}" to ${row.newTeam}` }]
                 }));
+                
+                await new Promise(resolve => setTimeout(resolve, 150));
               } else {
                 // Create new player
                 const gradYearNum = parseInt(row.gradYear);
@@ -277,6 +322,8 @@ export default function Tryouts2627() {
                   processed: prev.processed + 1,
                   logs: [...prev.logs, { type: 'info', message: `Created new player "${fullName}" in ${row.newTeam}` }]
                 }));
+                
+                await new Promise(resolve => setTimeout(resolve, 150));
               }
             } catch (error) {
               setImportProgress(prev => ({
@@ -286,7 +333,9 @@ export default function Tryouts2627() {
                 logs: [...prev.logs, { type: 'error', message: `${row.firstName} ${row.lastName}: ${error.message}` }]
               }));
             }
-          }));
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         queryClient.invalidateQueries(['teams']);
