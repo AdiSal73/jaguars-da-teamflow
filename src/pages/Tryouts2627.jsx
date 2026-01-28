@@ -156,8 +156,6 @@ export default function Tryouts2627() {
     ];
 
     let currentRank = 1;
-    const tryoutUpdatesBatch = [];
-    const tryoutCreatesBatch = [];
 
     for (const ageGroup of ageGroupsInOrder) {
       for (const leagueEntry of leagueHierarchy) {
@@ -183,36 +181,25 @@ export default function Tryouts2627() {
           
           for (const player of teamPlayers) {
             const existingTryout = tryouts.find(t => t.player_id === player.id);
-            if (existingTryout) {
-              tryoutUpdatesBatch.push(base44.entities.PlayerTryout.update(existingTryout.id, {
-                age_group_ranking: currentRank
-              }));
-            } else {
-              tryoutCreatesBatch.push(base44.entities.PlayerTryout.create({
-                player_id: player.id,
-                age_group_ranking: currentRank
-              }));
-            }
-            currentRank++;
-
-            if (tryoutUpdatesBatch.length >= 20) {
-              await Promise.all(tryoutUpdatesBatch);
-              tryoutUpdatesBatch.length = 0;
-            }
-            if (tryoutCreatesBatch.length >= 20) {
-              await Promise.all(tryoutCreatesBatch);
-              tryoutCreatesBatch.length = 0;
+            try {
+              if (existingTryout) {
+                await base44.entities.PlayerTryout.update(existingTryout.id, {
+                  age_group_ranking: currentRank
+                });
+              } else {
+                await base44.entities.PlayerTryout.create({
+                  player_id: player.id,
+                  age_group_ranking: currentRank
+                });
+              }
+              currentRank++;
+              await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+              console.error(`Failed to update ranking for player ${player.id}:`, error);
             }
           }
         }
       }
-    }
-
-    if (tryoutUpdatesBatch.length > 0) {
-      await Promise.all(tryoutUpdatesBatch);
-    }
-    if (tryoutCreatesBatch.length > 0) {
-      await Promise.all(tryoutCreatesBatch);
     }
 
     queryClient.invalidateQueries(['tryouts']);
