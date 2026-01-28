@@ -151,10 +151,11 @@ export default function Tryouts2627() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId.replace('player-', '');
-    
-    if (source.droppableId !== destination.droppableId) {
-      const destTeamId = destination.droppableId.replace('team-', '');
+    const sourceTeamId = source.droppableId.replace('team-', '');
+    const destTeamId = destination.droppableId.replace('team-', '');
 
+    // Moving to a different team
+    if (sourceTeamId !== destTeamId) {
       queryClient.setQueryData(['players'], (old) => {
         return old?.map(p => 
           p.id === playerId ? { ...p, team_id: destTeamId } : p
@@ -168,6 +169,55 @@ export default function Tryouts2627() {
         console.error('Failed to update player team:', error);
         toast.error('Failed to move player');
         queryClient.invalidateQueries(['players']);
+      }
+    } else {
+      // Reordering within the same team
+      const team = teams.find(t => t.id === sourceTeamId);
+      const teamPlayers = getTeamPlayers(team);
+      
+      const reorderedPlayers = Array.from(teamPlayers);
+      const [movedPlayer] = reorderedPlayers.splice(source.index, 1);
+      reorderedPlayers.splice(destination.index, 0, movedPlayer);
+
+      // Update age_group_ranking for all players in the new order
+      const updates = reorderedPlayers.map((player, index) => ({
+        playerId: player.id,
+        ranking: index + 1
+      }));
+
+      // Optimistically update UI
+      queryClient.setQueryData(['tryouts'], (old) => {
+        return old?.map(tryout => {
+          const update = updates.find(u => u.playerId === tryout.player_id);
+          if (update) {
+            return { ...tryout, age_group_ranking: update.ranking };
+          }
+          return tryout;
+        }) || old;
+      });
+
+      try {
+        // Update rankings in backend
+        for (const update of updates) {
+          const tryout = tryouts.find(t => t.player_id === update.playerId);
+          if (tryout) {
+            await base44.entities.PlayerTryout.update(tryout.id, { 
+              age_group_ranking: update.ranking 
+            });
+          } else {
+            // Create tryout record if it doesn't exist
+            await base44.entities.PlayerTryout.create({
+              player_id: update.playerId,
+              age_group_ranking: update.ranking
+            });
+          }
+        }
+        toast.success('Player ranking updated');
+        queryClient.invalidateQueries(['tryouts']);
+      } catch (error) {
+        console.error('Failed to update rankings:', error);
+        toast.error('Failed to update ranking');
+        queryClient.invalidateQueries(['tryouts']);
       }
     }
   };
