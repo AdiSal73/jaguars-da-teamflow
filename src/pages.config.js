@@ -103,9 +103,9 @@ import TryoutDashboard from './pages/TryoutDashboard';
 import TryoutPlayers from './pages/TryoutPlayers';
 import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
+import Tryouts2627 from './pages/Tryouts2627';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
-import Tryouts2627 from './pages/Tryouts2627';
 import __Layout from './Layout.jsx';
 
 
@@ -166,9 +166,9 @@ export const PAGES = {
     "TryoutPlayers": TryoutPlayers,
     "TryoutPoolsByAge": TryoutPoolsByAge,
     "Tryouts": Tryouts,
+    "Tryouts2627": Tryouts2627,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
-    "Tryouts2627": Tryouts2627,
 }
 
 export const pagesConfig = {

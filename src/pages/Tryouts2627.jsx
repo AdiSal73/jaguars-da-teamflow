@@ -87,14 +87,49 @@ export default function Tryouts2627() {
       filtered = filtered.filter(t => t.coach_ids?.includes(selectedCoach));
     }
 
-    const gaTeams = sortTeamsByAge(filtered.filter(t => t.league === 'Girls Academy'));
-    const aspireTeams = sortTeamsByAge(filtered.filter(t => t.league === 'Aspire'));
-    const otherTeams = sortTeamsByAge(filtered.filter(t => t.league !== 'Girls Academy' && t.league !== 'Aspire'));
+    // Sort teams into columns based on name and league
+    const gaTeams = sortTeamsByAge(filtered.filter(t => 
+      t.league === 'Girls Academy' || 
+      t.name?.toLowerCase().includes('pre-ga 1')
+    ));
+    
+    const aspireTeams = sortTeamsByAge(filtered.filter(t => 
+      t.league === 'Aspire' || 
+      t.name?.toLowerCase().includes('aspire') ||
+      t.name?.toLowerCase().includes('pre-ga 2')
+    ));
+    
+    const otherTeams = filtered.filter(t => 
+      t.league !== 'Girls Academy' && 
+      t.league !== 'Aspire' && 
+      !t.name?.toLowerCase().includes('pre-ga 1') &&
+      !t.name?.toLowerCase().includes('pre-ga 2') &&
+      !t.name?.toLowerCase().includes('aspire')
+    );
+
+    // Sort other teams: DPL > Green > White > Black
+    const sortedOtherTeams = otherTeams.sort((a, b) => {
+      const leagueOrder = { 'DPL': 1, 'Green': 2, 'White': 3, 'Black': 4 };
+      const getOrder = (team) => {
+        const league = team.league || '';
+        return leagueOrder[league] || 999;
+      };
+      
+      const orderDiff = getOrder(a) - getOrder(b);
+      if (orderDiff !== 0) return orderDiff;
+      
+      // Within same league, sort by age
+      const extractAge = (ageGroup) => {
+        const match = ageGroup?.match(/U-?(\d+)/i);
+        return match ? parseInt(match[1]) : 0;
+      };
+      return extractAge(b.age_group) - extractAge(a.age_group);
+    });
 
     return {
       girlsAcademy: gaTeams,
       aspire: aspireTeams,
-      other: otherTeams
+      other: sortedOtherTeams
     };
   }, [teams, selectedAgeGroup, selectedCoach, selectedGender]);
 
@@ -164,12 +199,12 @@ export default function Tryouts2627() {
           rows.push({
             firstName,
             lastName,
-            currentTeam: values[2],
-            position: values[3],
-            gradYear: values[4],
-            birthdate: values[5],
-            comments: values[6],
-            newTeam: values[7]
+            currentTeam: values[2] || '',
+            position: values[3] || '',
+            gradYear: values[4] || '',
+            birthdate: values[5] || '',
+            comments: values[6] || '',
+            newTeam: values[7] || ''
           });
         }
 
@@ -259,12 +294,9 @@ export default function Tryouts2627() {
           }
         }
 
-        // Step 2: Process players in batches with delays
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-          const batch = rows.slice(i, i + BATCH_SIZE);
-          
-          for (const row of batch) {
+        // Step 2: Process players one by one with delays
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
             try {
               const fullName = `${row.firstName} ${row.lastName}`.trim();
               
@@ -305,16 +337,17 @@ export default function Tryouts2627() {
                 await new Promise(resolve => setTimeout(resolve, 150));
               } else {
                 // Create new player
-                const gradYearNum = parseInt(row.gradYear);
+                const gradYearNum = row.gradYear ? parseInt(row.gradYear) : undefined;
                 await base44.entities.Player.create({
                   full_name: fullName,
-                  date_of_birth: row.birthdate,
+                  date_of_birth: row.birthdate || undefined,
                   grad_year: gradYearNum,
-                  primary_position: row.position,
+                  primary_position: row.position || undefined,
+                  current_2526_team: row.currentTeam || undefined,
+                  comment: row.comments || undefined,
                   team_id: teamId,
-                  gender: 'Female', // Default, enhance if needed
-                  is_tryout_player: true,
-                  tryout_notes: row.comments
+                  gender: 'Female',
+                  is_tryout_player: true
                 });
 
                 setImportProgress(prev => ({
@@ -323,7 +356,7 @@ export default function Tryouts2627() {
                   logs: [...prev.logs, { type: 'info', message: `Created new player "${fullName}" in ${row.newTeam}` }]
                 }));
                 
-                await new Promise(resolve => setTimeout(resolve, 150));
+                await new Promise(resolve => setTimeout(resolve, 200));
               }
             } catch (error) {
               setImportProgress(prev => ({
@@ -333,9 +366,8 @@ export default function Tryouts2627() {
                 logs: [...prev.logs, { type: 'error', message: `${row.firstName} ${row.lastName}: ${error.message}` }]
               }));
             }
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 300));
+            
+          await new Promise(resolve => setTimeout(resolve, 250));
         }
 
         queryClient.invalidateQueries(['teams']);

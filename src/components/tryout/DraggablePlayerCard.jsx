@@ -46,15 +46,22 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true 
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-slate-900 truncate">{player.full_name}</div>
-                <div className="text-sm text-slate-600 flex gap-1 items-center flex-wrap mt-1">
-                  <span className="font-medium">{player.primary_position}</span>
-                  {player.age_group && (
-                    <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5">{player.age_group}</Badge>
+                <div className="text-sm text-slate-600 space-y-1 mt-1">
+                  <div className="flex gap-1 items-center flex-wrap">
+                    {player.current_2526_team && (
+                      <Badge className="bg-slate-100 text-slate-800 text-xs px-2 py-0.5">{player.current_2526_team}</Badge>
+                    )}
+                    <span className="font-medium">{player.primary_position}</span>
+                    {player.date_of_birth && (
+                      <Badge className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5">{player.date_of_birth}</Badge>
+                    )}
+                    {player.grad_year && (
+                      <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5">{player.grad_year}</Badge>
+                    )}
+                  </div>
+                  {player.comment && (
+                    <div className="text-xs text-slate-500 italic truncate">{player.comment}</div>
                   )}
-                  {player.grad_year && (
-                    <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5">{player.grad_year}</Badge>
-                  )}
-
                 </div>
               </div>
             </div>
