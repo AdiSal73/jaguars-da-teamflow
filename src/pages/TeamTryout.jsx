@@ -116,6 +116,8 @@ export default function TeamTryout() {
   const [teamToReset, setTeamToReset] = useState(null);
   const [showResetAllDialog, setShowResetAllDialog] = useState(false);
   const [showResetAllErrorDialog, setShowResetAllErrorDialog] = useState(false);
+  const [showAutoAssignProgress, setShowAutoAssignProgress] = useState(false);
+  const [autoAssignLogs, setAutoAssignLogs] = useState([]);
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -854,6 +856,10 @@ export default function TeamTryout() {
         <div className="flex gap-2 flex-wrap">
           <Button 
             onClick={async () => {
+              setAutoAssignLogs([]);
+              setShowAutoAssignProgress(true);
+              const logs = [];
+              
               try {
                 // Get all players from current season teams (25/26 or earlier)
                 const currentSeasonPlayers = players.filter(p => {
@@ -861,14 +867,29 @@ export default function TeamTryout() {
                   return team && team.season !== '26/27' && !team.name?.includes('26/27');
                 });
 
+                logs.push({ type: 'info', message: `Found ${currentSeasonPlayers.length} players in 25/26 teams` });
+                setAutoAssignLogs([...logs]);
+
                 let assignedCount = 0;
+                let skippedCount = 0;
+                
                 for (const player of currentSeasonPlayers) {
                   const currentTeam = teams.find(t => t.id === player.team_id);
-                  if (!currentTeam || !currentTeam.name) continue;
+                  if (!currentTeam || !currentTeam.name) {
+                    logs.push({ type: 'error', message: `${player.full_name}: No current team found` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
+                    continue;
+                  }
 
                   // Calculate new age group for 26/27 season
                   const newAgeGroup = calculateNextYearAgeGroup(player.date_of_birth);
-                  if (!newAgeGroup) continue;
+                  if (!newAgeGroup) {
+                    logs.push({ type: 'error', message: `${player.full_name}: Could not calculate age group from DOB ${player.date_of_birth}` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
+                    continue;
+                  }
 
                   // Determine pathway from current team name - check more specific patterns first
                   const teamNameUpper = currentTeam.name.toUpperCase();
@@ -892,7 +913,12 @@ export default function TeamTryout() {
                     pathway = 'Black';
                   }
                   
-                  if (!pathway) continue;
+                  if (!pathway) {
+                    logs.push({ type: 'warning', message: `${player.full_name}: Could not determine pathway from team "${currentTeam.name}"` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
+                    continue;
+                  }
 
                   // Find matching 26/27 team with same pathway
                   const targetTeam = teams.find(t => {
@@ -916,17 +942,32 @@ export default function TeamTryout() {
                   });
 
                   if (targetTeam) {
-                    await updateTryoutMutation.mutateAsync({
-                      playerId: player.id,
-                      data: { next_year_team: targetTeam.name }
-                    });
-                    assignedCount++;
+                    try {
+                      await updateTryoutMutation.mutateAsync({
+                        playerId: player.id,
+                        data: { next_year_team: targetTeam.name }
+                      });
+                      logs.push({ type: 'success', message: `✓ ${player.full_name}: ${currentTeam.name} → ${targetTeam.name}` });
+                      setAutoAssignLogs([...logs]);
+                      assignedCount++;
+                    } catch (error) {
+                      logs.push({ type: 'error', message: `${player.full_name}: Failed to assign - ${error.message}` });
+                      setAutoAssignLogs([...logs]);
+                      skippedCount++;
+                    }
+                  } else {
+                    logs.push({ type: 'warning', message: `${player.full_name}: No matching 26/27 team (${pathway}, ${newAgeGroup}, ${player.gender})` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
                   }
                 }
                 
+                logs.push({ type: 'info', message: `\n✅ Complete: ${assignedCount} assigned, ${skippedCount} skipped` });
+                setAutoAssignLogs([...logs]);
                 toast.success(`Auto-assigned ${assignedCount} players to 26/27 teams`);
               } catch (error) {
-                console.error('Auto-assign error:', error);
+                logs.push({ type: 'error', message: `Fatal error: ${error.message}` });
+                setAutoAssignLogs([...logs]);
                 toast.error('Failed to auto-assign players');
               }
             }}
@@ -1039,7 +1080,7 @@ export default function TeamTryout() {
               </CardContent>
             </Card>
 
-                  <div className="grid grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
+                  <div className="grid grid-cols-1 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
                     {filteredTeams?.map(team => {
               const teamPlayers = getTeamPlayers(team.name);
               const acceptedCount = teamPlayers.filter(p => p.tryout?.next_season_status === 'Accepted Offer').length;
@@ -2036,6 +2077,36 @@ export default function TeamTryout() {
               Close
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Auto-Assign Progress Dialog */}
+      <Dialog open={showAutoAssignProgress} onOpenChange={setShowAutoAssignProgress}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Auto-Assign Progress</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto bg-slate-900 rounded-lg p-4 font-mono text-xs space-y-1">
+            {autoAssignLogs.map((log, idx) => (
+              <div 
+                key={idx}
+                className={`${
+                  log.type === 'success' ? 'text-green-400' :
+                  log.type === 'error' ? 'text-red-400' :
+                  log.type === 'warning' ? 'text-yellow-400' :
+                  'text-slate-300'
+                }`}
+              >
+                {log.message}
+              </div>
+            ))}
+            {autoAssignLogs.length === 0 && (
+              <div className="text-slate-400">Processing...</div>
+            )}
+          </div>
+          <Button onClick={() => setShowAutoAssignProgress(false)} className="w-full">
+            Close
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
