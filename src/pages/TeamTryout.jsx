@@ -654,12 +654,12 @@ export default function TeamTryout() {
     return (teams || []).filter(t => {
       if (!t.name || typeof t.name !== 'string') return false;
       
-      // Filter by 26/27 season
+      // Filter by 26/27 season (or "All Teams" view)
       const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : null);
-      if (teamSeason !== '26/27') return false;
+      if (selectedAgeGroup !== 'all' && teamSeason !== '26/27') return false;
       
       // Filter by selected age group
-      if (t.age_group !== selectedAgeGroup) return false;
+      if (selectedAgeGroup !== 'all' && t.age_group !== selectedAgeGroup) return false;
       
       // Remove duplicates
       if (seen.has(t.name)) return false;
@@ -741,11 +741,11 @@ export default function TeamTryout() {
     
     // Get players with tryout data where next_year_team matches
     const assignedPlayers = (players || []).map(p => getPlayerWithTryoutData(p.id))
-      .filter(p => p && p.tryout?.next_year_team === teamName);
+      .filter(p => p && p.tryout?.next_year_team === teamName && p.grad_year !== 2026);
     
     // Get pool players assigned to this team (external players not yet in Player entity)
     const poolAssigned = poolPlayers
-      .filter(pp => !pp.player_id && pp.next_year_team === teamName)
+      .filter(pp => !pp.player_id && pp.next_year_team === teamName && pp.grad_year !== 2026)
       .map(pp => ({
         id: pp.id,
         full_name: pp.player_name,
@@ -874,6 +874,23 @@ export default function TeamTryout() {
                 let skippedCount = 0;
                 
                 for (const player of currentSeasonPlayers) {
+                  // Skip if player already assigned to 26/27 team
+                  const existingTryout = tryouts.find(t => t.player_id === player.id);
+                  if (existingTryout?.next_year_team) {
+                    logs.push({ type: 'info', message: `${player.full_name}: Already assigned to ${existingTryout.next_year_team}` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
+                    continue;
+                  }
+
+                  // Skip 2026 grads
+                  if (player.grad_year === 2026) {
+                    logs.push({ type: 'info', message: `${player.full_name}: Skipped (2026 grad)` });
+                    setAutoAssignLogs([...logs]);
+                    skippedCount++;
+                    continue;
+                  }
+
                   const currentTeam = teams.find(t => t.id === player.team_id);
                   if (!currentTeam || !currentTeam.name) {
                     logs.push({ type: 'error', message: `${player.full_name}: No current team found` });
@@ -893,6 +910,7 @@ export default function TeamTryout() {
 
                   // Determine pathway from current team name - check more specific patterns first
                   const teamNameUpper = currentTeam.name.toUpperCase();
+                  const leagueUpper = currentTeam.league?.toUpperCase() || '';
                   let pathway = '';
                   
                   if (teamNameUpper.includes('GIRLS ACADEMY') && !teamNameUpper.includes('ASPIRE')) {
@@ -905,7 +923,7 @@ export default function TeamTryout() {
                     pathway = 'Pre GA 2';
                   } else if (teamNameUpper.includes('GREEN WHITE')) {
                     pathway = 'Green White';
-                  } else if (teamNameUpper.includes('GREEN')) {
+                  } else if (leagueUpper.includes('NLC') || leagueUpper.includes('DPL') || teamNameUpper.includes('GREEN')) {
                     pathway = 'Green';
                   } else if (teamNameUpper.includes('WHITE')) {
                     pathway = 'White';
@@ -1011,7 +1029,18 @@ export default function TeamTryout() {
       </div>
 
       <Tabs value={selectedAgeGroup} onValueChange={setSelectedAgeGroup} className="w-full">
-        <TabsList className="grid w-full mb-6 p-1 rounded-xl bg-white border border-slate-200 shadow-sm" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length}, minmax(0, 1fr))` }}>
+        <TabsList className="grid w-full mb-6 p-1 rounded-xl bg-white border border-slate-200 shadow-sm" style={{ gridTemplateColumns: `repeat(${uniqueAgeGroups.length + 1}, minmax(0, 1fr))` }}>
+          <TabsTrigger 
+            value="all" 
+            className="data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=inactive]:text-slate-600 transition-colors duration-150 px-3 py-2 rounded-lg font-medium text-sm"
+          >
+            <div className="flex flex-col items-center gap-1">
+              <span className="font-bold">All Teams</span>
+              <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0 h-4 font-semibold">
+                {teams.filter(t => t.season === '26/27' || t.name?.includes('26/27')).length}
+              </Badge>
+            </div>
+          </TabsTrigger>
           {uniqueAgeGroups.map(age => {
             const teamsInAge = teams.filter(t => t.age_group === age && (t.season === '26/27' || t.name?.includes('26/27'))).length;
             const playersInAge = poolPlayers.filter(pp => {
@@ -1041,6 +1070,65 @@ export default function TeamTryout() {
         </TabsList>
 
         <DragDropContext onDragEnd={onDragEnd}>
+          <TabsContent value="all">
+            <div className="grid grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
+              {filteredTeams?.map(team => {
+                const teamPlayers = getTeamPlayers(team.name);
+                const acceptedCount = teamPlayers.filter(p => p.tryout?.next_season_status === 'Accepted Offer').length;
+                const pendingCount = teamPlayers.filter(p => 
+                  !p.tryout?.next_season_status || 
+                  p.tryout?.next_season_status === 'Considering Offer' || 
+                  p.tryout?.next_season_status === 'Offer Sent'
+                ).length;
+                
+                return (
+                  <Card key={team.id} className="border-2 border-emerald-400 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br from-emerald-50 to-green-50">
+                    <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white shadow-md">
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold truncate">{team.name}</div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.age_group}</Badge>
+                            {team.league && <Badge className="bg-white/30 text-white text-[9px] px-1.5">{team.league}</Badge>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-white text-slate-900 text-xs font-bold">{teamPlayers.length}</Badge>
+                          {acceptedCount > 0 && <Badge className="bg-green-500 text-white text-xs">{acceptedCount}✓</Badge>}
+                          {pendingCount > 0 && <Badge className="bg-yellow-500 text-white text-xs">{pendingCount}⏱</Badge>}
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                      <div className="min-h-[200px] p-2.5 rounded-xl bg-white/60">
+                        <div className="grid grid-cols-2 gap-2">
+                          {teamPlayers?.map((player) => (
+                            <div key={player.id}>
+                              <PlayerEvaluationCard 
+                                player={player}
+                                team={(teams || []).find(t => t.id === player.team_id)}
+                                tryout={player.tryout}
+                                evaluation={player.evaluation}
+                                assessment={player.assessment}
+                                onSendOffer={handleSendOffer}
+                                onRemove={handleRemovePlayer}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        {teamPlayers.length === 0 && (
+                          <div className="text-center py-12 text-slate-400 text-xs">
+                            <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                            <p>No players assigned</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
           {uniqueAgeGroups.map(age => (
             <TabsContent key={age} value={age}>
               <div className="grid lg:grid-cols-[1fr_420px] gap-6">
@@ -1080,7 +1168,7 @@ export default function TeamTryout() {
               </CardContent>
             </Card>
 
-                  <div className="grid grid-cols-1 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
+                  <div className="grid grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
                     {filteredTeams?.map(team => {
               const teamPlayers = getTeamPlayers(team.name);
               const acceptedCount = teamPlayers.filter(p => p.tryout?.next_season_status === 'Accepted Offer').length;
@@ -1146,7 +1234,7 @@ export default function TeamTryout() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[1120px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
+                          className={`min-h-[800px] p-2.5 rounded-xl transition-all ${snapshot.isDraggingOver ? 'bg-emerald-200 border-2 border-dashed border-emerald-500 scale-105' : 'bg-white/60'}`}
                         >
                           <div className="grid grid-cols-2 gap-2">
                             {teamPlayers?.map((player, index) => (
