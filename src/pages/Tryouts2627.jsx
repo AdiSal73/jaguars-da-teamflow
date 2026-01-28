@@ -146,58 +146,66 @@ export default function Tryouts2627() {
 
   const recalculateAllRankings = async () => {
     const ageGroupsInOrder = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11'];
-    const leagueHierarchy = [
-      { name: 'Girls Academy', identifiers: ['Girls Academy', 'pre-ga 1'], excludeIdentifiers: ['aspire', 'pre-ga 2'] },
-      { name: 'Aspire', identifiers: ['Aspire', 'aspire', 'pre-ga 2'] },
-      { name: 'DPL', identifiers: ['DPL'] },
-      { name: 'Green', identifiers: ['Green'] },
-      { name: 'White', identifiers: ['White'] },
-      { name: 'Black', identifiers: ['Black'] },
-    ];
+    const leagueOrder = { 'Girls Academy': 1, 'Aspire': 2, 'DPL': 3, 'Green': 4, 'White': 5, 'Black': 6 };
 
     for (const ageGroup of ageGroupsInOrder) {
-      let currentRank = 1;
+      const allPlayersInAge = players.filter(p => p.age_group === ageGroup && p.current_26_27_team);
       
-      for (const leagueEntry of leagueHierarchy) {
-        const teamsInCurrentCategory = teams.filter(t => {
-          const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : null);
-          if (teamSeason !== '26/27' || t.age_group !== ageGroup) return false;
+      const playersWithTeamData = allPlayersInAge.map(p => {
+        const team = teams.find(t => t.id === p.current_26_27_team);
+        if (!team) return null;
+        
+        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
+        if (teamSeason !== '26/27') return null;
 
-          const teamNameLower = t.name?.toLowerCase() || '';
-          const teamLeague = t.league;
+        let league = team.league;
+        const teamNameLower = team.name?.toLowerCase() || '';
+        
+        if ((league === 'Girls Academy' || teamNameLower.includes('pre-ga 1')) && !teamNameLower.includes('aspire') && !teamNameLower.includes('pre-ga 2')) {
+          league = 'Girls Academy';
+        } else if (league === 'Aspire' || teamNameLower.includes('aspire') || teamNameLower.includes('pre-ga 2')) {
+          league = 'Aspire';
+        }
 
-          const matchesIdentifier = leagueEntry.identifiers.some(id =>
-            typeof id === 'string' ? teamNameLower.includes(id.toLowerCase()) || teamLeague === id : false
-          );
-          const excludesIdentifier = leagueEntry.excludeIdentifiers?.some(id =>
-            typeof id === 'string' ? teamNameLower.includes(id.toLowerCase()) : false
-          );
-          
-          return matchesIdentifier && !excludesIdentifier;
-        }).sort((a, b) => a.name?.localeCompare(b.name || '') || 0);
+        const tryout = tryouts.find(t => t.player_id === p.id);
+        
+        return {
+          player: p,
+          team,
+          league,
+          teamRanking: tryout?.team_ranking || 999,
+          lastName: p.full_name?.split(' ').pop() || ''
+        };
+      }).filter(Boolean);
 
-        for (const team of teamsInCurrentCategory) {
-          const teamPlayers = getTeamPlayers(team);
-          
-          for (const player of teamPlayers) {
-            const existingTryout = tryouts.find(t => t.player_id === player.id);
-            try {
-              if (existingTryout) {
-                await base44.entities.PlayerTryout.update(existingTryout.id, {
-                  age_group_ranking: currentRank
-                });
-              } else {
-                await base44.entities.PlayerTryout.create({
-                  player_id: player.id,
-                  age_group_ranking: currentRank
-                });
-              }
-              currentRank++;
-              await new Promise(resolve => setTimeout(resolve, 250));
-            } catch (error) {
-              console.error(`Failed to update ranking for player ${player.id}:`, error);
-            }
+      playersWithTeamData.sort((a, b) => {
+        const leagueA = leagueOrder[a.league] || 999;
+        const leagueB = leagueOrder[b.league] || 999;
+        if (leagueA !== leagueB) return leagueA - leagueB;
+        
+        if (a.teamRanking !== b.teamRanking) return a.teamRanking - b.teamRanking;
+        
+        return a.lastName.localeCompare(b.lastName);
+      });
+
+      for (let i = 0; i < playersWithTeamData.length; i++) {
+        const { player } = playersWithTeamData[i];
+        const existingTryout = tryouts.find(t => t.player_id === player.id);
+        
+        try {
+          if (existingTryout) {
+            await base44.entities.PlayerTryout.update(existingTryout.id, {
+              age_group_ranking: i + 1
+            });
+          } else {
+            await base44.entities.PlayerTryout.create({
+              player_id: player.id,
+              age_group_ranking: i + 1
+            });
           }
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (error) {
+          console.error(`Failed to update ranking for player ${player.id}:`, error);
         }
       }
     }
@@ -302,6 +310,8 @@ export default function Tryouts2627() {
         const teamId = createdTeams[row.newTeam];
         if (!teamId) throw new Error(`Team "${row.newTeam}" not found`);
 
+        const team2526Id = row.team2526 ? createdTeams[row.team2526] : null;
+
         const existingPlayer = players.find(p => {
           const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
           const birthdateMatch = row.birthdate && p.date_of_birth === row.birthdate;
@@ -309,11 +319,15 @@ export default function Tryouts2627() {
         });
 
         if (existingPlayer) {
-          const updateData = { team_id: teamId };
+          const updateData = { 
+            current_26_27_team: teamId,
+            team_id: teamId
+          };
+          if (team2526Id) updateData.current_25_26_team = team2526Id;
           if (row.gradYear && !existingPlayer.grad_year) updateData.grad_year = parseInt(row.gradYear);
           if (row.birthdate && !existingPlayer.date_of_birth) updateData.date_of_birth = row.birthdate;
           if (row.position && !existingPlayer.primary_position) updateData.primary_position = row.position;
-          if (row.currentTeam && !existingPlayer.current_2526_team) updateData.current_2526_team = row.currentTeam;
+          if (row.currentTeam) updateData.current_2526_team = row.currentTeam;
           
           if (row.comments) {
             const commentLog = existingPlayer.comment_log || [];
@@ -341,7 +355,9 @@ export default function Tryouts2627() {
             date_of_birth: row.birthdate || undefined,
             grad_year: gradYearNum,
             primary_position: row.position || undefined,
-            current_2526_team: row.currentTeam || undefined,
+            current_2526_team: row.currentTeam || row.team2526 || undefined,
+            current_25_26_team: team2526Id || undefined,
+            current_26_27_team: teamId,
             team_id: teamId,
             gender: 'Female',
             is_tryout_player: true
@@ -437,7 +453,8 @@ export default function Tryouts2627() {
             gradYear: values[4] || '',
             birthdate: values[5] || '',
             comments: values[6] || '',
-            newTeam: values[7] || ''
+            newTeam: values[7] || '',
+            team2526: values[8] || ''
           });
         }
 
@@ -474,10 +491,13 @@ export default function Tryouts2627() {
           }));
         }
 
-        const uniqueTeams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
+        const allUniqueTeams = [...new Set([
+          ...rows.map(r => r.newTeam).filter(Boolean),
+          ...rows.map(r => r.team2526).filter(Boolean)
+        ])];
         const createdTeams = {};
         
-        for (const teamName of uniqueTeams) {
+        for (const teamName of allUniqueTeams) {
           try {
             const existingTeam = teams.find(t => t.name === teamName);
             if (existingTeam) {
@@ -543,6 +563,8 @@ export default function Tryouts2627() {
                 throw new Error(`Team "${row.newTeam}" not found`);
               }
 
+              const team2526Id = row.team2526 ? createdTeams[row.team2526] : null;
+
               const existingPlayer = players.find(p => {
                 const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
                 const birthdateMatch = row.birthdate && p.date_of_birth === row.birthdate;
@@ -550,8 +572,14 @@ export default function Tryouts2627() {
               });
 
               if (existingPlayer) {
-                const updateData = { team_id: teamId };
+                const updateData = { 
+                  current_26_27_team: teamId,
+                  team_id: teamId
+                };
                 
+                if (team2526Id) {
+                  updateData.current_25_26_team = team2526Id;
+                }
                 if (row.gradYear && !existingPlayer.grad_year) {
                   updateData.grad_year = parseInt(row.gradYear);
                 }
@@ -561,7 +589,7 @@ export default function Tryouts2627() {
                 if (row.position && !existingPlayer.primary_position) {
                   updateData.primary_position = row.position;
                 }
-                if (row.currentTeam && !existingPlayer.current_2526_team) {
+                if (row.currentTeam) {
                   updateData.current_2526_team = row.currentTeam;
                 }
                 
@@ -593,7 +621,9 @@ export default function Tryouts2627() {
                   date_of_birth: row.birthdate || undefined,
                   grad_year: gradYearNum,
                   primary_position: row.position || undefined,
-                  current_2526_team: row.currentTeam || undefined,
+                  current_2526_team: row.currentTeam || row.team2526 || undefined,
+                  current_25_26_team: team2526Id || undefined,
+                  current_26_27_team: teamId,
                   team_id: teamId,
                   gender: 'Female',
                   is_tryout_player: true
