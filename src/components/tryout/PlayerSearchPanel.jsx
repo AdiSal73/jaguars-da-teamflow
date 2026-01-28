@@ -41,8 +41,9 @@ export default function PlayerSearchPanel({ players, teams, getPlayerTryoutData 
 
     if (searchBirthYear !== 'all') {
       filtered = filtered.filter(p => {
-        const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null;
-        return birthYear === parseInt(searchBirthYear);
+        if (!p.date_of_birth) return false;
+        const playerBirthYear = new Date(p.date_of_birth).getFullYear();
+        return playerBirthYear === parseInt(searchBirthYear);
       });
     }
 
