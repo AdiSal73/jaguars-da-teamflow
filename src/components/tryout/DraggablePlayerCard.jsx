@@ -22,15 +22,20 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true 
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          style={provided.draggableProps.style}
+          style={{
+            ...provided.draggableProps.style,
+            transform: snapshot.isDragging 
+              ? provided.draggableProps.style?.transform 
+              : 'translate(0px, 0px)'
+          }}
           className={`
             ${isTrappedPlayer(player.date_of_birth)
               ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
               : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
             }
             w-full p-3 rounded-xl border-2 cursor-grab active:cursor-grabbing
-            transition-all duration-200
-            ${snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-400 opacity-90' : 'hover:shadow-md'}
+            transition-all duration-150
+            ${snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-500 opacity-95 z-50' : 'hover:shadow-md'}
           `}
           onClick={(e) => {
             if (!snapshot.isDragging) {

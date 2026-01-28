@@ -88,16 +88,16 @@ export default function Tryouts2627() {
     }
 
     // Sort teams into columns based on name and league
-    const gaTeams = sortTeamsByAge(filtered.filter(t => 
-      t.league === 'Girls Academy' || 
-      t.name?.toLowerCase().includes('pre-ga 1')
-    ));
+    const gaTeams = sortTeamsByAge(filtered.filter(t => {
+      const name = t.name?.toLowerCase() || '';
+      const isAspire = name.includes('aspire') || name.includes('pre-ga 2');
+      return (t.league === 'Girls Academy' || name.includes('pre-ga 1')) && !isAspire;
+    }));
     
-    const aspireTeams = sortTeamsByAge(filtered.filter(t => 
-      t.league === 'Aspire' || 
-      t.name?.toLowerCase().includes('aspire') ||
-      t.name?.toLowerCase().includes('pre-ga 2')
-    ));
+    const aspireTeams = sortTeamsByAge(filtered.filter(t => {
+      const name = t.name?.toLowerCase() || '';
+      return t.league === 'Aspire' || name.includes('aspire') || name.includes('pre-ga 2');
+    }));
     
     const otherTeams = filtered.filter(t => 
       t.league !== 'Girls Academy' && 
@@ -149,25 +149,36 @@ export default function Tryouts2627() {
   }, [players, getPlayerTryoutData]);
 
   const onDragEnd = async (result) => {
-    if (!result.destination) return;
-    
     const { source, destination, draggableId } = result;
-    if (source.droppableId === destination.droppableId) return;
+    
+    if (!destination) {
+      return;
+    }
+    
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
 
     const playerId = draggableId.replace('player-', '');
-    const destTeamId = destination.droppableId.replace('team-', '');
+    
+    // Only update if moving to a different team
+    if (source.droppableId !== destination.droppableId) {
+      const destTeamId = destination.droppableId.replace('team-', '');
 
-    queryClient.setQueryData(['players'], (old) => {
-      return old?.map(p => 
-        p.id === playerId ? { ...p, team_id: destTeamId } : p
-      ) || old;
-    });
+      queryClient.setQueryData(['players'], (old) => {
+        return old?.map(p => 
+          p.id === playerId ? { ...p, team_id: destTeamId } : p
+        ) || old;
+      });
 
-    try {
-      await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
-    } catch (error) {
-      console.error('Failed to update player team:', error);
-      queryClient.invalidateQueries(['players']);
+      try {
+        await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
+        toast.success('Player moved successfully');
+      } catch (error) {
+        console.error('Failed to update player team:', error);
+        toast.error('Failed to move player');
+        queryClient.invalidateQueries(['players']);
+      }
     }
   };
 
@@ -324,8 +335,35 @@ export default function Tryouts2627() {
               });
 
               if (existingPlayer) {
-                // Update existing player's team
-                await base44.entities.Player.update(existingPlayer.id, { team_id: teamId });
+                // Update existing player's team and missing info
+                const updateData = { team_id: teamId };
+                
+                if (row.gradYear && !existingPlayer.grad_year) {
+                  updateData.grad_year = parseInt(row.gradYear);
+                }
+                if (row.birthdate && !existingPlayer.date_of_birth) {
+                  updateData.date_of_birth = row.birthdate;
+                }
+                if (row.position && !existingPlayer.primary_position) {
+                  updateData.primary_position = row.position;
+                }
+                if (row.currentTeam && !existingPlayer.current_2526_team) {
+                  updateData.current_2526_team = row.currentTeam;
+                }
+                
+                // Add comment to log
+                if (row.comments) {
+                  const commentLog = existingPlayer.comment_log || [];
+                  commentLog.push({
+                    comment: row.comments,
+                    created_date: new Date().toISOString(),
+                    created_by: 'CSV Import'
+                  });
+                  updateData.comment_log = commentLog;
+                  updateData.comment = row.comments;
+                }
+                
+                await base44.entities.Player.update(existingPlayer.id, updateData);
                 
                 setImportProgress(prev => ({
                   ...prev,
@@ -334,21 +372,32 @@ export default function Tryouts2627() {
                   logs: [...prev.logs, { type: 'success', message: `Matched "${fullName}" to ${row.newTeam}` }]
                 }));
                 
-                await new Promise(resolve => setTimeout(resolve, 150));
+                await new Promise(resolve => setTimeout(resolve, 200));
               } else {
                 // Create new player
                 const gradYearNum = row.gradYear ? parseInt(row.gradYear) : undefined;
-                await base44.entities.Player.create({
+                const newPlayerData = {
                   full_name: fullName,
                   date_of_birth: row.birthdate || undefined,
                   grad_year: gradYearNum,
                   primary_position: row.position || undefined,
                   current_2526_team: row.currentTeam || undefined,
-                  comment: row.comments || undefined,
                   team_id: teamId,
                   gender: 'Female',
                   is_tryout_player: true
-                });
+                };
+                
+                // Add comment to log
+                if (row.comments) {
+                  newPlayerData.comment = row.comments;
+                  newPlayerData.comment_log = [{
+                    comment: row.comments,
+                    created_date: new Date().toISOString(),
+                    created_by: 'CSV Import'
+                  }];
+                }
+                
+                await base44.entities.Player.create(newPlayerData);
 
                 setImportProgress(prev => ({
                   ...prev,
