@@ -155,9 +155,9 @@ export default function Tryouts2627() {
       { name: 'Black', identifiers: ['Black'] },
     ];
 
-    let currentRank = 1;
-
     for (const ageGroup of ageGroupsInOrder) {
+      let currentRank = 1;
+      
       for (const leagueEntry of leagueHierarchy) {
         const teamsInCurrentCategory = teams.filter(t => {
           const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : null);
