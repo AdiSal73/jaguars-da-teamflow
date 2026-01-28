@@ -662,6 +662,18 @@ export default function Tryouts2627() {
           
           <div className="flex gap-2">
             <Button
+              onClick={async () => {
+                toast.info('Recalculating rankings...');
+                await recalculateAllRankings();
+                toast.success('Rankings recalculated!');
+              }}
+              variant="outline"
+              className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Recalculate Rankings
+            </Button>
+            <Button
               onClick={() => setShowResetDialog(true)}
               variant="outline"
               className="border-red-600 text-red-600 hover:bg-red-50"
