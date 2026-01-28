@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle, Sparkles, Upload, X } from 'lucide-react';
+import { Search, Users, User, Plus, Trash2, ChevronDown, ChevronUp, Send, CheckCircle, Sparkles, Upload, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { BRANCH_OPTIONS } from '../components/constants/leagueOptions';
 import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
@@ -852,6 +852,62 @@ export default function TeamTryout() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button 
+            onClick={async () => {
+              try {
+                // Get all players from current season teams
+                const currentSeasonPlayers = players.filter(p => {
+                  const team = teams.find(t => t.id === p.team_id);
+                  return team && !team.season?.includes('26/27');
+                });
+
+                let assignedCount = 0;
+                for (const player of currentSeasonPlayers) {
+                  const currentTeam = teams.find(t => t.id === player.team_id);
+                  if (!currentTeam) continue;
+
+                  // Calculate new age group
+                  const newAgeGroup = calculateNextYearAgeGroup(player.date_of_birth);
+                  if (!newAgeGroup) continue;
+
+                  // Determine pathway from current team name
+                  let pathway = '';
+                  if (currentTeam.name?.includes('Girls Academy')) pathway = 'Girls Academy';
+                  else if (currentTeam.name?.includes('Aspire')) pathway = 'Aspire';
+                  else if (currentTeam.name?.includes('Green')) pathway = 'Green';
+                  else if (currentTeam.name?.includes('White')) pathway = 'White';
+                  else if (currentTeam.name?.includes('Black')) pathway = 'Black';
+                  else if (currentTeam.name?.includes('Pre GA')) pathway = 'Pre GA 1';
+                  
+                  if (!pathway) continue;
+
+                  // Find matching 26/27 team
+                  const targetTeam = teams.find(t => 
+                    t.season === '26/27' && 
+                    t.age_group === newAgeGroup && 
+                    t.gender === player.gender &&
+                    t.name?.includes(pathway)
+                  );
+
+                  if (targetTeam) {
+                    await updateTryoutMutation.mutateAsync({
+                      playerId: player.id,
+                      data: { next_year_team: targetTeam.name }
+                    });
+                    assignedCount++;
+                  }
+                }
+                
+                toast.success(`Auto-assigned ${assignedCount} players to 26/27 teams`);
+              } catch (error) {
+                toast.error('Failed to auto-assign players');
+              }
+            }}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg"
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Auto-Assign from 25/26
+          </Button>
           <Button onClick={() => setShowAIFormationDialog(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
             <Sparkles className="w-4 h-4 mr-2" />
             Auto Team Formation
@@ -956,7 +1012,7 @@ export default function TeamTryout() {
               </CardContent>
             </Card>
 
-                  <div className="space-y-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
+                  <div className="grid grid-cols-2 gap-4" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
                     {filteredTeams?.map(team => {
               const teamPlayers = getTeamPlayers(team.name);
               const acceptedCount = teamPlayers.filter(p => p.tryout?.next_season_status === 'Accepted Offer').length;
