@@ -53,7 +53,7 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true 
                     )}
                     <span className="font-medium">{player.primary_position}</span>
                     {player.date_of_birth && (
-                      <Badge className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5">{player.date_of_birth}</Badge>
+                      <Badge className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5">{new Date(player.date_of_birth).getFullYear()}</Badge>
                     )}
                     {player.grad_year && (
                       <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5">{player.grad_year}</Badge>
