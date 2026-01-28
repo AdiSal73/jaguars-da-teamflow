@@ -1,114 +1,133 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, Trash2, Users, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export default function ResetTeamsDialog({ open, onClose, onComplete }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [currentStep, setCurrentStep] = useState(null);
+  const [currentStep, setCurrentStep] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
 
-  const executeOperation = async (operation, stepName) => {
-    setCurrentStep(stepName);
-    setLogs(prev => [...prev, { type: 'info', message: `Starting: ${stepName}...` }]);
+  const handleReset = async () => {
+    setIsProcessing(true);
+    setIsComplete(false);
+    setLogs([]);
 
     try {
-      const response = await base44.functions.invoke('resetTeamsFor2627', { operation });
+      // Step 1: Remove players from 26/27 teams
+      setCurrentStep('Removing players from 26/27 teams...');
+      setLogs(prev => [...prev, { type: 'info', message: '🔄 Removing players from 26/27 teams...' }]);
       
-      if (response.data.logs) {
-        setLogs(prev => [...prev, ...response.data.logs]);
+      const removeResponse = await base44.functions.invoke('resetTeamsFor2627', { 
+        operation: 'remove_players_26_27' 
+      });
+      
+      if (removeResponse.data?.logs) {
+        setLogs(prev => [...prev, ...removeResponse.data.logs]);
       }
+      setLogs(prev => [...prev, { type: 'success', message: `✅ ${removeResponse.data.message}` }]);
+
+      // Step 2: Delete 26/27 teams
+      setCurrentStep('Deleting 26/27 teams...');
+      setLogs(prev => [...prev, { type: 'info', message: '🗑️ Deleting 26/27 teams...' }]);
       
-      setLogs(prev => [...prev, { type: 'success', message: `✅ ${response.data.message}` }]);
-      return true;
+      const deleteResponse = await base44.functions.invoke('resetTeamsFor2627', { 
+        operation: 'delete_26_27_teams' 
+      });
+      
+      if (deleteResponse.data?.logs) {
+        setLogs(prev => [...prev, ...deleteResponse.data.logs]);
+      }
+      setLogs(prev => [...prev, { type: 'success', message: `✅ ${deleteResponse.data.message}` }]);
+
+      // Done
+      setLogs(prev => [...prev, { type: 'success', message: '\n🎉 Reset complete! All 26/27 teams deleted and players unassigned.' }]);
+      setIsComplete(true);
+      toast.success('Reset complete');
+      
+      if (onComplete) {
+        onComplete();
+      }
     } catch (error) {
-      setLogs(prev => [...prev, { type: 'error', message: `❌ ${stepName} failed: ${error.message}` }]);
-      toast.error(`${stepName} failed`);
-      return false;
+      setLogs(prev => [...prev, { type: 'error', message: `❌ Error: ${error.message}` }]);
+      toast.error('Reset failed');
+    } finally {
+      setIsProcessing(false);
+      setCurrentStep('');
     }
   };
 
-  const handleResetAll = async () => {
-    setIsProcessing(true);
-    setLogs([]);
-
-    // Step 1: Reset 25/26 teams
-    const step1Success = await executeOperation('reset_25_26_teams', 'Reset 25/26 Teams');
-    if (!step1Success) {
-      setIsProcessing(false);
-      return;
-    }
-
-    // Step 2: Remove players from 26/27 teams
-    const step2Success = await executeOperation('remove_players_26_27', 'Remove Players from 26/27');
-    if (!step2Success) {
-      setIsProcessing(false);
-      return;
-    }
-
-    // Step 3: Delete 26/27 teams
-    const step3Success = await executeOperation('delete_26_27_teams', 'Delete 26/27 Teams');
-    if (!step3Success) {
-      setIsProcessing(false);
-      return;
-    }
-
-    setLogs(prev => [...prev, { type: 'success', message: '\n🎉 All operations completed successfully!' }]);
-    toast.success('All reset operations completed');
-    setIsProcessing(false);
-    
-    if (onComplete) {
-      onComplete();
+  const handleClose = () => {
+    if (!isProcessing) {
+      setLogs([]);
+      setIsComplete(false);
+      onClose();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertCircle className="w-5 h-5" />
-            Reset Teams for 26/27 Season
+            Reset for 26/27 Season
           </DialogTitle>
+          <DialogDescription>
+            This will delete all 26/27 teams and unassign all players.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          {!isProcessing && logs.length === 0 ? (
+        <div className="space-y-4">
+          {logs.length === 0 ? (
             <>
-              <div className="p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
-                <p className="text-sm text-orange-800 font-semibold mb-2">⚠️ WARNING: This will perform the following actions:</p>
-                <ul className="text-sm text-orange-700 space-y-1 ml-4 list-disc">
-                  <li>Reset all 25/26 season teams (remove all players)</li>
-                  <li>Remove all players from 26/27 teams</li>
-                  <li>Delete all 26/27 teams</li>
+              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                <p className="text-sm text-red-800 font-semibold mb-2">⚠️ WARNING:</p>
+                <ul className="text-sm text-red-700 space-y-1 ml-4 list-disc">
+                  <li>All players will be removed from 26/27 teams</li>
+                  <li>All 26/27 teams will be permanently deleted</li>
+                  <li>This action cannot be undone</li>
                 </ul>
-                <p className="text-sm text-orange-800 font-bold mt-3">This action cannot be undone!</p>
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={onClose} className="flex-1">
+                <Button variant="outline" onClick={handleClose} className="flex-1" disabled={isProcessing}>
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handleResetAll}
+                  onClick={handleReset}
+                  disabled={isProcessing}
                   className="flex-1 bg-red-600 hover:bg-red-700"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Proceed with Reset
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete All 26/27 Teams
+                    </>
+                  )}
                 </Button>
               </div>
             </>
           ) : (
             <>
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="text-sm font-semibold text-blue-900">
-                  {currentStep || 'Processing...'}
+              {currentStep && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-sm font-semibold text-blue-900 flex items-center gap-2">
+                    {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {currentStep}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex-1 overflow-y-auto bg-slate-900 rounded-lg p-4 font-mono text-xs space-y-1">
+              <div className="max-h-[400px] overflow-y-auto bg-slate-900 rounded-lg p-4 font-mono text-xs space-y-1">
                 {logs.map((log, idx) => (
                   <div 
                     key={idx}
@@ -126,10 +145,10 @@ export default function ResetTeamsDialog({ open, onClose, onComplete }) {
                 ))}
               </div>
 
-              {!isProcessing && (
-                <Button onClick={onClose} className="w-full">
+              {isComplete && (
+                <Button onClick={handleClose} className="w-full bg-green-600 hover:bg-green-700">
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Close
+                  Done
                 </Button>
               )}
             </>
