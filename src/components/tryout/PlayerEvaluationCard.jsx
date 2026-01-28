@@ -82,8 +82,7 @@ export default function PlayerEvaluationCard({ player, team, tryout, evaluation,
               {/* Badges */}
               <div className="flex flex-wrap gap-1 mb-2">
                 {player.age_group && <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 font-semibold">{player.age_group}</Badge>}
-                {birthYear && <Badge className="bg-slate-400 text-white text-xs px-2 py-0.5 font-bold">{birthYear}</Badge>}
-                {gradYear && <Badge className="bg-slate-600 text-white text-xs px-2 py-0.5 font-bold">'{gradYear.toString().slice(-2)}</Badge>}
+                {player.date_of_birth && <Badge className="bg-slate-400 text-white text-xs px-2 py-0.5 font-bold">{new Date(player.date_of_birth).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}</Badge>}
                 {currentTeam && <Badge className="bg-blue-500 text-white text-xs px-2 py-0.5 font-semibold">{currentTeam}</Badge>}
                 {isTrapped && <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-bold">TRAPPED</Badge>}
                 {tryout?.team_role && <TeamRoleBadge role={tryout.team_role} size="small" />}
