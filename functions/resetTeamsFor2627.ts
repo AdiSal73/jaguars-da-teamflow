@@ -16,7 +16,6 @@ Deno.serve(async (req) => {
     const logs = [];
 
     if (operation === 'reset_25_26_teams') {
-      // Reset all 25/26 season teams - remove all players
       const teams = await base44.asServiceRole.entities.Team.list();
       const teams2526 = teams.filter(t => {
         const season = t.season || (t.name?.includes('25/26') ? '25/26' : null);
@@ -45,7 +44,6 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'remove_players_26_27') {
-      // Remove all players from 26/27 teams
       const teams = await base44.asServiceRole.entities.Team.list();
       const teams2627 = teams.filter(t => {
         const season = t.season || (t.name?.includes('26/27') ? '26/27' : null);
@@ -76,7 +74,6 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'delete_26_27_teams') {
-      // Delete all 26/27 teams
       const teams = await base44.asServiceRole.entities.Team.list();
       const teams2627 = teams.filter(t => {
         const season = t.season || (t.name?.includes('26/27') ? '26/27' : null);
@@ -86,14 +83,18 @@ Deno.serve(async (req) => {
       logs.push({ type: 'info', message: `Found ${teams2627.length} teams to delete in 26/27 season` });
 
       for (const team of teams2627) {
-        await base44.asServiceRole.entities.Team.delete(team.id);
-        logs.push({ type: 'success', message: `Deleted team: ${team.name}` });
+        try {
+          await base44.asServiceRole.entities.Team.delete(team.id);
+          logs.push({ type: 'success', message: `Deleted team: ${team.name}` });
+        } catch (err) {
+          logs.push({ type: 'error', message: `Failed to delete ${team.name}: ${err.message}` });
+        }
         await delay(200);
       }
 
       return Response.json({ 
         success: true, 
-        message: `Deleted ${teams2627.length} teams from 26/27 season`,
+        message: `Processed ${teams2627.length} teams from 26/27 season`,
         logs 
       });
     }
@@ -101,6 +102,10 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Invalid operation' }, { status: 400 });
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error in resetTeamsFor2627:', error);
+    return Response.json({ 
+      error: error.message || 'Unknown error occurred',
+      stack: error.stack
+    }, { status: 500 });
   }
 });

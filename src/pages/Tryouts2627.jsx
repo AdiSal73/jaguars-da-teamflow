@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2 } from 'lucide-react';
+import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -69,7 +69,6 @@ export default function Tryouts2627() {
     });
   };
 
-  // Filter only 26/27 season teams
   const teamColumns = useMemo(() => {
     let filtered = teams.filter(t => {
       if (!t.name || typeof t.name !== 'string') return false;
@@ -87,7 +86,6 @@ export default function Tryouts2627() {
       filtered = filtered.filter(t => t.coach_ids?.includes(selectedCoach));
     }
 
-    // Sort teams into columns based on name and league
     const gaTeams = sortTeamsByAge(filtered.filter(t => {
       const name = t.name?.toLowerCase() || '';
       const isAspire = name.includes('aspire') || name.includes('pre-ga 2');
@@ -107,7 +105,6 @@ export default function Tryouts2627() {
       !t.name?.toLowerCase().includes('aspire')
     );
 
-    // Sort other teams: DPL > Green > White > Black
     const sortedOtherTeams = otherTeams.sort((a, b) => {
       const leagueOrder = { 'DPL': 1, 'Green': 2, 'White': 3, 'Black': 4 };
       const getOrder = (team) => {
@@ -118,7 +115,6 @@ export default function Tryouts2627() {
       const orderDiff = getOrder(a) - getOrder(b);
       if (orderDiff !== 0) return orderDiff;
       
-      // Within same league, sort by age
       const extractAge = (ageGroup) => {
         const match = ageGroup?.match(/U-?(\d+)/i);
         return match ? parseInt(match[1]) : 0;
@@ -151,17 +147,11 @@ export default function Tryouts2627() {
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     
-    if (!destination) {
-      return;
-    }
-    
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return;
-    }
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const playerId = draggableId.replace('player-', '');
     
-    // Only update if moving to a different team
     if (source.droppableId !== destination.droppableId) {
       const destTeamId = destination.droppableId.replace('team-', '');
 
@@ -182,6 +172,128 @@ export default function Tryouts2627() {
     }
   };
 
+  const retryFailedImports = async () => {
+    if (!importProgress?.errors || importProgress.errors.length === 0) {
+      toast.error('No failed imports to retry');
+      return;
+    }
+
+    const failedRows = importProgress.failedRows || [];
+    if (failedRows.length === 0) {
+      toast.error('No row data available for retry');
+      return;
+    }
+
+    setImportProgress(prev => ({
+      ...prev,
+      total: failedRows.length,
+      processed: 0,
+      errors: [],
+      logs: [...prev.logs, { type: 'info', message: `🔄 Retrying ${failedRows.length} failed imports...` }]
+    }));
+
+    const createdTeams = {};
+    for (const teamName of [...new Set(failedRows.map(r => r.newTeam).filter(Boolean))]) {
+      const existingTeam = teams.find(t => t.name === teamName);
+      if (existingTeam) {
+        createdTeams[teamName] = existingTeam.id;
+      }
+    }
+
+    for (let i = 0; i < failedRows.length; i++) {
+      const row = failedRows[i];
+      try {
+        const fullName = `${row.firstName} ${row.lastName}`.trim();
+        if (!fullName || fullName.length < 2) continue;
+        
+        const teamId = createdTeams[row.newTeam];
+        if (!teamId) throw new Error(`Team "${row.newTeam}" not found`);
+
+        const existingPlayer = players.find(p => {
+          const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
+          const birthdateMatch = row.birthdate && p.date_of_birth === row.birthdate;
+          return nameMatch || birthdateMatch;
+        });
+
+        if (existingPlayer) {
+          const updateData = { team_id: teamId };
+          if (row.gradYear && !existingPlayer.grad_year) updateData.grad_year = parseInt(row.gradYear);
+          if (row.birthdate && !existingPlayer.date_of_birth) updateData.date_of_birth = row.birthdate;
+          if (row.position && !existingPlayer.primary_position) updateData.primary_position = row.position;
+          if (row.currentTeam && !existingPlayer.current_2526_team) updateData.current_2526_team = row.currentTeam;
+          
+          if (row.comments) {
+            const commentLog = existingPlayer.comment_log || [];
+            commentLog.push({
+              comment: row.comments,
+              created_date: new Date().toISOString(),
+              created_by: 'CSV Retry'
+            });
+            updateData.comment_log = commentLog;
+            updateData.comment = row.comments;
+          }
+          
+          await base44.entities.Player.update(existingPlayer.id, updateData);
+          
+          setImportProgress(prev => ({
+            ...prev,
+            matched: prev.matched + 1,
+            processed: prev.processed + 1,
+            logs: [...prev.logs, { type: 'success', message: `✅ Matched "${fullName}" to ${row.newTeam}` }]
+          }));
+        } else {
+          const gradYearNum = row.gradYear ? parseInt(row.gradYear) : undefined;
+          const newPlayerData = {
+            full_name: fullName,
+            date_of_birth: row.birthdate || undefined,
+            grad_year: gradYearNum,
+            primary_position: row.position || undefined,
+            current_2526_team: row.currentTeam || undefined,
+            team_id: teamId,
+            gender: 'Female',
+            is_tryout_player: true
+          };
+          
+          if (row.comments) {
+            newPlayerData.comment = row.comments;
+            newPlayerData.comment_log = [{
+              comment: row.comments,
+              created_date: new Date().toISOString(),
+              created_by: 'CSV Retry'
+            }];
+          }
+          
+          await base44.entities.Player.create(newPlayerData);
+
+          setImportProgress(prev => ({
+            ...prev,
+            processed: prev.processed + 1,
+            logs: [...prev.logs, { type: 'info', message: `✅ Created "${fullName}" in ${row.newTeam}` }]
+          }));
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 250));
+      } catch (error) {
+        setImportProgress(prev => ({
+          ...prev,
+          processed: prev.processed + 1,
+          errors: [...prev.errors, `${row.firstName} ${row.lastName}: ${error.message}`],
+          logs: [...prev.logs, { type: 'error', message: `❌ ${row.firstName} ${row.lastName}: ${error.message}` }]
+        }));
+      }
+    }
+
+    queryClient.invalidateQueries(['teams']);
+    queryClient.invalidateQueries(['players']);
+    
+    setImportProgress(prev => ({
+      ...prev,
+      logs: [...prev.logs, { type: 'success', message: `✅ Retry complete! ${prev.errors.length} remaining errors` }]
+    }));
+
+    toast.success('Retry completed');
+  };
+
   const handleCSVImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -193,7 +305,6 @@ export default function Tryouts2627() {
         const lines = csv.split('\n');
         const headers = lines[0].split(/[,\t]/).map(h => h.trim());
 
-        // Expected headers: First Name, Last Name, Current Team, Position, Grad Year, Birthdate, Comments, 26/27 team
         const rows = [];
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
@@ -204,7 +315,6 @@ export default function Tryouts2627() {
           const lastName = values[1];
           const fullName = `${firstName} ${lastName}`.trim();
           
-          // Skip rows with blank names
           if (!fullName || fullName.length < 2) continue;
 
           rows.push({
@@ -225,16 +335,16 @@ export default function Tryouts2627() {
           created: 0,
           matched: 0,
           errors: [],
-          logs: []
+          logs: [],
+          failedRows: []
         });
         setShowImportDialog(true);
 
-        // Delete players with blank names first
         const blankPlayers = players.filter(p => !p.full_name || p.full_name.trim().length < 2);
         if (blankPlayers.length > 0) {
           setImportProgress(prev => ({
             ...prev,
-            logs: [...prev.logs, { type: 'info', message: `Deleting ${blankPlayers.length} players with blank names...` }]
+            logs: [...prev.logs, { type: 'info', message: `🗑️ Deleting ${blankPlayers.length} players with blank names...` }]
           }));
           
           for (const player of blankPlayers) {
@@ -248,31 +358,27 @@ export default function Tryouts2627() {
           
           setImportProgress(prev => ({
             ...prev,
-            logs: [...prev.logs, { type: 'success', message: `Deleted ${blankPlayers.length} blank players` }]
+            logs: [...prev.logs, { type: 'success', message: `✅ Deleted ${blankPlayers.length} blank players` }]
           }));
         }
 
-        // Step 1: Create unique teams
         const uniqueTeams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
         const createdTeams = {};
         
         for (const teamName of uniqueTeams) {
           try {
-            // Check if team already exists
             const existingTeam = teams.find(t => t.name === teamName);
             if (existingTeam) {
               createdTeams[teamName] = existingTeam.id;
               setImportProgress(prev => ({
                 ...prev,
-                logs: [...prev.logs, { type: 'info', message: `Team "${teamName}" already exists` }]
+                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamName}" already exists` }]
               }));
             } else {
-              // Parse team name to extract age group (e.g., "U15 Green 26/27")
               const ageMatch = teamName.match(/U-?(\d+)/i);
               const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
               
-              // Determine gender and league from team name
-              const gender = 'Female'; // Default, can be enhanced
+              const gender = 'Female';
               let league = 'Green';
               if (teamName.toUpperCase().includes('GIRLS ACADEMY')) league = 'Girls Academy';
               else if (teamName.toUpperCase().includes('ASPIRE')) league = 'Aspire';
@@ -291,7 +397,7 @@ export default function Tryouts2627() {
               setImportProgress(prev => ({
                 ...prev,
                 created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `Created team "${teamName}"` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Created team "${teamName}"` }]
               }));
               
               await new Promise(resolve => setTimeout(resolve, 200));
@@ -300,23 +406,21 @@ export default function Tryouts2627() {
             setImportProgress(prev => ({
               ...prev,
               errors: [...prev.errors, `Failed to create team "${teamName}": ${error.message}`],
-              logs: [...prev.logs, { type: 'error', message: `Failed to create team "${teamName}": ${error.message}` }]
+              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create team "${teamName}": ${error.message}` }]
             }));
           }
         }
 
-        // Step 2: Process players one by one with delays
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
             try {
               const fullName = `${row.firstName} ${row.lastName}`.trim();
               
-              // Skip if name is blank
               if (!fullName || fullName.length < 2) {
                 setImportProgress(prev => ({
                   ...prev,
                   processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'error', message: `Skipped row with blank name` }]
+                  logs: [...prev.logs, { type: 'error', message: `⚠️ Skipped row with blank name` }]
                 }));
                 continue;
               }
@@ -327,7 +431,6 @@ export default function Tryouts2627() {
                 throw new Error(`Team "${row.newTeam}" not found`);
               }
 
-              // Try to match existing player
               const existingPlayer = players.find(p => {
                 const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
                 const birthdateMatch = row.birthdate && p.date_of_birth === row.birthdate;
@@ -335,7 +438,6 @@ export default function Tryouts2627() {
               });
 
               if (existingPlayer) {
-                // Update existing player's team and missing info
                 const updateData = { team_id: teamId };
                 
                 if (row.gradYear && !existingPlayer.grad_year) {
@@ -351,7 +453,6 @@ export default function Tryouts2627() {
                   updateData.current_2526_team = row.currentTeam;
                 }
                 
-                // Add comment to log
                 if (row.comments) {
                   const commentLog = existingPlayer.comment_log || [];
                   commentLog.push({
@@ -369,12 +470,11 @@ export default function Tryouts2627() {
                   ...prev,
                   matched: prev.matched + 1,
                   processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'success', message: `Matched "${fullName}" to ${row.newTeam}` }]
+                  logs: [...prev.logs, { type: 'success', message: `✅ Matched "${fullName}" to ${row.newTeam}` }]
                 }));
                 
                 await new Promise(resolve => setTimeout(resolve, 200));
               } else {
-                // Create new player
                 const gradYearNum = row.gradYear ? parseInt(row.gradYear) : undefined;
                 const newPlayerData = {
                   full_name: fullName,
@@ -387,7 +487,6 @@ export default function Tryouts2627() {
                   is_tryout_player: true
                 };
                 
-                // Add comment to log
                 if (row.comments) {
                   newPlayerData.comment = row.comments;
                   newPlayerData.comment_log = [{
@@ -402,7 +501,7 @@ export default function Tryouts2627() {
                 setImportProgress(prev => ({
                   ...prev,
                   processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'info', message: `Created new player "${fullName}" in ${row.newTeam}` }]
+                  logs: [...prev.logs, { type: 'info', message: `✅ Created new player "${fullName}" in ${row.newTeam}` }]
                 }));
                 
                 await new Promise(resolve => setTimeout(resolve, 200));
@@ -412,7 +511,8 @@ export default function Tryouts2627() {
                 ...prev,
                 processed: prev.processed + 1,
                 errors: [...prev.errors, `${row.firstName} ${row.lastName}: ${error.message}`],
-                logs: [...prev.logs, { type: 'error', message: `${row.firstName} ${row.lastName}: ${error.message}` }]
+                failedRows: [...prev.failedRows, row],
+                logs: [...prev.logs, { type: 'error', message: `❌ ${row.firstName} ${row.lastName}: ${error.message}` }]
               }));
             }
             
@@ -607,7 +707,6 @@ export default function Tryouts2627() {
           </div>
         </div>
 
-        {/* Import Progress Dialog */}
         <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
@@ -668,20 +767,30 @@ export default function Tryouts2627() {
                 </div>
 
                 {importProgress.processed === importProgress.total && (
-                  <Button 
-                    onClick={() => setShowImportDialog(false)}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Close
-                  </Button>
+                  <div className="flex gap-2">
+                    {importProgress.errors.length > 0 && (
+                      <Button 
+                        onClick={retryFailedImports}
+                        className="flex-1 bg-gradient-to-r from-orange-600 to-red-600"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Retry Failed ({importProgress.errors.length})
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={() => setShowImportDialog(false)}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Close
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Reset Teams Dialog */}
         <ResetTeamsDialog
           open={showResetDialog}
           onClose={() => setShowResetDialog(false)}
