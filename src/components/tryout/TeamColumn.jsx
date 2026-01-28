@@ -14,7 +14,7 @@ export default function TeamColumn({ team, players }) {
           {...provided.droppableProps}
           className={`
             border-2 border-slate-200 transition-all duration-200 shadow-lg hover:shadow-xl
-            ${snapshot.isDraggingOver ? 'ring-4 ring-emerald-400 shadow-2xl scale-[1.02] bg-emerald-50' : ''}
+            ${snapshot.isDraggingOver ? 'ring-4 ring-emerald-500 shadow-2xl scale-[1.03] bg-emerald-100 border-emerald-400' : ''}
           `}
         >
           <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b-2 border-slate-200 p-4">
@@ -36,9 +36,9 @@ export default function TeamColumn({ team, players }) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-3 space-y-2 min-h-[100px]">
+          <CardContent className={`p-3 space-y-2 min-h-[120px] transition-colors ${snapshot.isDraggingOver ? 'bg-emerald-50' : ''}`}>
             {players.length === 0 ? (
-              <p className="text-center text-slate-400 text-sm py-8 italic">Drop players here</p>
+              <p className="text-center text-slate-400 text-sm py-10 italic font-semibold">Drop players here</p>
             ) : (
               players.map((player, index) => (
                 <DraggablePlayerCard key={player.id} player={player} index={index} />
