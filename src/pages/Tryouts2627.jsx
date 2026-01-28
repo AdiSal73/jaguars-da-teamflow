@@ -18,7 +18,9 @@ export default function Tryouts2627() {
   const queryClient = useQueryClient();
   const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
   const [selectedCoach, setSelectedCoach] = useState('all');
-  const [selectedGender, setSelectedGender] = useState('all');
+  const [selectedBirthYear, setSelectedBirthYear] = useState('all');
+  const [selectedGradYear, setSelectedGradYear] = useState('all');
+  const [selectedTryoutStatus, setSelectedTryoutStatus] = useState('all');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -76,9 +78,6 @@ export default function Tryouts2627() {
       return teamSeason === '26/27';
     });
 
-    if (selectedGender !== 'all') {
-      filtered = filtered.filter(t => t.gender === selectedGender);
-    }
     if (selectedAgeGroup !== 'all') {
       filtered = filtered.filter(t => t.age_group === selectedAgeGroup);
     }
@@ -133,16 +132,33 @@ export default function Tryouts2627() {
     const teamPlayers = players.filter(p => p.team_id === team.id);
     const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
     
-    return playersWithTryout.sort((a, b) => {
+    let filteredPlayers = playersWithTryout;
+
+    if (selectedBirthYear !== 'all') {
+      filteredPlayers = filteredPlayers.filter(p => {
+        const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null;
+        return birthYear === parseInt(selectedBirthYear);
+      });
+    }
+
+    if (selectedGradYear !== 'all') {
+      filteredPlayers = filteredPlayers.filter(p => p.grad_year === parseInt(selectedGradYear));
+    }
+
+    if (selectedTryoutStatus !== 'all') {
+      filteredPlayers = filteredPlayers.filter(p => p.tryout?.next_season_status === selectedTryoutStatus);
+    }
+
+    return filteredPlayers.sort((a, b) => {
       const rankA = a.tryout?.age_group_ranking || 999;
       const rankB = b.tryout?.age_group_ranking || 999;
       if (rankA !== rankB) return rankA - rankB;
-      
+
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
     });
-  }, [players, getPlayerTryoutData]);
+    }, [players, getPlayerTryoutData, selectedBirthYear, selectedGradYear, selectedTryoutStatus]);
 
   const recalculateAllRankings = async () => {
     const ageGroupsInOrder = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11'];
@@ -327,7 +343,6 @@ export default function Tryouts2627() {
           if (row.gradYear && !existingPlayer.grad_year) updateData.grad_year = parseInt(row.gradYear);
           if (row.birthdate && !existingPlayer.date_of_birth) updateData.date_of_birth = row.birthdate;
           if (row.position && !existingPlayer.primary_position) updateData.primary_position = row.position;
-          if (row.currentTeam) updateData.current_2526_team = row.currentTeam;
           
           if (row.comments) {
             const commentLog = existingPlayer.comment_log || [];
@@ -355,7 +370,6 @@ export default function Tryouts2627() {
             date_of_birth: row.birthdate || undefined,
             grad_year: gradYearNum,
             primary_position: row.position || undefined,
-            current_2526_team: row.currentTeam || row.team2526 || undefined,
             current_25_26_team: team2526Id || undefined,
             current_26_27_team: teamId,
             team_id: teamId,
@@ -448,13 +462,12 @@ export default function Tryouts2627() {
           rows.push({
             firstName,
             lastName,
-            currentTeam: values[2] || '',
+            team2526: values[2] || '',
             position: parsePositionFromNumber(values[3]) || '',
             gradYear: values[4] || '',
             birthdate: values[5] || '',
             comments: values[6] || '',
-            newTeam: values[7] || '',
-            team2526: values[8] || ''
+            newTeam: values[7] || ''
           });
         }
 
@@ -589,9 +602,6 @@ export default function Tryouts2627() {
                 if (row.position && !existingPlayer.primary_position) {
                   updateData.primary_position = row.position;
                 }
-                if (row.currentTeam) {
-                  updateData.current_2526_team = row.currentTeam;
-                }
                 
                 if (row.comments) {
                   const commentLog = existingPlayer.comment_log || [];
@@ -621,7 +631,6 @@ export default function Tryouts2627() {
                   date_of_birth: row.birthdate || undefined,
                   grad_year: gradYearNum,
                   primary_position: row.position || undefined,
-                  current_2526_team: row.currentTeam || row.team2526 || undefined,
                   current_25_26_team: team2526Id || undefined,
                   current_26_27_team: teamId,
                   team_id: teamId,
@@ -741,21 +750,7 @@ export default function Tryouts2627() {
 
         <Card className="border-none shadow-xl mb-4 md:mb-6 bg-gradient-to-br from-white via-slate-50 to-emerald-50">
           <CardContent className="p-3 md:p-4 lg:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 lg:gap-4">
-              <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Gender</label>
-                <Select value={selectedGender} onValueChange={setSelectedGender}>
-                  <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Male">Boys</SelectItem>
-                    <SelectItem value="Female">Girls</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Age Group</label>
                 <Select value={selectedAgeGroup} onValueChange={setSelectedAgeGroup}>
@@ -781,16 +776,50 @@ export default function Tryouts2627() {
               </div>
 
               <div>
-                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Coach</label>
-                <Select value={selectedCoach} onValueChange={setSelectedCoach}>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Birth Year</label>
+                <Select value={selectedBirthYear} onValueChange={setSelectedBirthYear}>
                   <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
-                    <SelectValue placeholder="All Coaches" />
+                    <SelectValue placeholder="All Years" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Coaches</SelectItem>
-                    {coaches.map(coach => (
-                      <SelectItem key={coach.id} value={coach.id}>{coach.full_name}</SelectItem>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {[...new Set(players.filter(p => p.date_of_birth).map(p => new Date(p.date_of_birth).getFullYear()))].sort((a, b) => b - a).map(year => (
+                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Grad Year</label>
+                <Select value={selectedGradYear} onValueChange={setSelectedGradYear}>
+                  <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue placeholder="All Years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {[...new Set(players.filter(p => p.grad_year).map(p => p.grad_year))].sort((a, b) => a - b).map(year => (
+                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Tryout Status</label>
+                <Select value={selectedTryoutStatus} onValueChange={setSelectedTryoutStatus}>
+                  <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="N/A">N/A</SelectItem>
+                    <SelectItem value="Offer Sent">Offer Sent</SelectItem>
+                    <SelectItem value="Accepted Offer">Accepted</SelectItem>
+                    <SelectItem value="Rejected Offer">Rejected</SelectItem>
+                    <SelectItem value="Considering Offer">Considering</SelectItem>
+                    <SelectItem value="Roster Finalized">Finalized</SelectItem>
+                    <SelectItem value="Not Offered">Not Offered</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -802,7 +831,9 @@ export default function Tryouts2627() {
                   onClick={() => {
                     setSelectedAgeGroup('all');
                     setSelectedCoach('all');
-                    setSelectedGender('all');
+                    setSelectedBirthYear('all');
+                    setSelectedGradYear('all');
+                    setSelectedTryoutStatus('all');
                   }}
                   className="w-full h-9 md:h-10 lg:h-12 text-xs md:text-sm"
                 >
