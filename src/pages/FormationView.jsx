@@ -16,6 +16,7 @@ import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import TeamRoleBadge from '@/components/utils/teamRoleBadge';
 
 const positionMapping = {
   'GK': 'GK',
