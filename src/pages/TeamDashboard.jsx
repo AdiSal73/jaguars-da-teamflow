@@ -22,6 +22,7 @@ import AddPlayerDialog from '../components/team/AddPlayerDialog';
 import AssignCoachDialog from '../components/team/AssignCoachDialog';
 import AddTryoutPlayerDialog from '../components/team/AddTryoutPlayerDialog';
 import MessageTeamDialog from '../components/team/MessageTeamDialog';
+import FormationTab from '../components/team/FormationTab';
 
 export default function TeamDashboard() {
   const navigate = useNavigate();
@@ -53,10 +54,14 @@ export default function TeamDashboard() {
     enabled: !!teamId
   });
 
-  const { data: players = [] } = useQuery({
-    queryKey: ['teamPlayers', teamId],
-    queryFn: () => base44.entities.Player.filter({ team_id: teamId }),
-    enabled: !!teamId
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list()
+  });
+
+  const players = allPlayers.filter(p => {
+    const currentTeamIds = p.current_team_ids || [];
+    return currentTeamIds.includes(teamId);
   });
 
   const { data: allTeams = [] } = useQuery({
@@ -348,12 +353,21 @@ Format with clear headers and structure.`;
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl mb-6">
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl mb-6">
             <TabsTrigger value="roster">Roster Cards</TabsTrigger>
             <TabsTrigger value="table">Roster Table</TabsTrigger>
+            <TabsTrigger value="formation">Formation</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="formation">
+            <FormationTab 
+              team={team}
+              players={players}
+              tryouts={tryouts}
+            />
+          </TabsContent>
 
           <TabsContent value="analytics">
             <TeamAnalyticsDashboard 

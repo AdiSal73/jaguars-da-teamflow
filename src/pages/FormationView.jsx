@@ -232,18 +232,18 @@ export default function FormationView() {
   const players = useMemo(() => {
     return allPlayers.filter((player) => {
       if (selectedTeam !== 'all') {
-        return player.team_id === selectedTeam;
+        const currentTeamIds = player.current_team_ids || [];
+        return currentTeamIds.includes(selectedTeam);
       }
       if (selectedAgeGroup !== 'all') {
-        const team = teams.find((t) => t.id === player.team_id);
-        return team?.age_group === selectedAgeGroup;
+        return player.age_group === selectedAgeGroup;
       }
       if (selectedGender !== 'all') {
         return player.gender === selectedGender;
       }
       return true;
     });
-  }, [allPlayers, selectedTeam, selectedAgeGroup, selectedGender, teams]);
+  }, [allPlayers, selectedTeam, selectedAgeGroup, selectedGender]);
 
   const team = teams.find((t) => t.id === selectedTeam) || (selectedAgeGroup !== 'all' ? { name: `${selectedAgeGroup} Players` } : { name: 'All Players' });
 

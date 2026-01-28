@@ -1,9 +1,13 @@
 import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import DraggablePlayerCard from './DraggablePlayerCard';
 
 export default function TeamColumn({ team, players }) {
+  const navigate = useNavigate();
+  
   if (!team.id) return null;
 
   return (
@@ -27,7 +31,10 @@ export default function TeamColumn({ team, players }) {
                   {team.age_group || (team.name && typeof team.name === 'string' ? team.name.charAt(0) : '?')}
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 text-lg">
+                  <div 
+                    className="font-bold text-slate-900 text-lg cursor-pointer hover:text-emerald-600 transition-colors"
+                    onClick={() => navigate(`${createPageUrl('TeamDashboard')}?teamId=${team.id}`)}
+                  >
                     {team.name && typeof team.name === 'string' ? team.name : 'Unknown'}
                   </div>
                   <div className="text-xs text-slate-600 font-medium flex items-center gap-2">
@@ -44,7 +51,7 @@ export default function TeamColumn({ team, players }) {
               <p className="text-center text-slate-400 text-sm py-10 italic font-semibold">Drop players here</p>
             ) : (
               players.map((player, index) => (
-                <DraggablePlayerCard key={player.id} player={player} index={index} />
+                <DraggablePlayerCard key={player.id} player={player} index={index} team={team} />
               ))
             )}
             {provided.placeholder}
