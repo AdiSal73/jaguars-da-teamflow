@@ -193,7 +193,7 @@ export default function Tryouts2627() {
                 });
               }
               currentRank++;
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise(resolve => setTimeout(resolve, 250));
             } catch (error) {
               console.error(`Failed to update ranking for player ${player.id}:`, error);
             }
