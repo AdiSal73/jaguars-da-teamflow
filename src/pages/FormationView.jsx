@@ -831,7 +831,9 @@ export default function FormationView() {
                 <div className="space-y-1.5 p-2.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'calc(100vh - 450px)' }}>
                   {unassignedPlayers?.map((player, index) => {
                     const team = teams.find(t => t.id === player.team_id);
+                    const birthYear = player.date_of_birth ? new Date(player.date_of_birth).getFullYear() : null;
                     const age = player.date_of_birth ? new Date().getFullYear() - new Date(player.date_of_birth).getFullYear() : null;
+                    const tryout = player.tryout;
                     const isTrapped = player.date_of_birth ? (() => {
                       const dob = new Date(player.date_of_birth);
                       const month = dob.getMonth();
