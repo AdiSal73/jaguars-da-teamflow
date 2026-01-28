@@ -152,7 +152,7 @@ export default function Layout({ children, currentPageName }) {
       roles: ["admin", "director"],
       submenu: [
         { title: "Tryout Board", url: createPageUrl("Tryouts") },
-        { title: "Team Assignments", url: createPageUrl("TeamTryout") },
+        { title: "2026-27 Tryouts", url: createPageUrl("Tryouts2627") },
         { title: "Position Assignments", url: createPageUrl("PositionAssignments") },
         { title: "Outside Players", url: createPageUrl("TryoutPlayers") },
         { title: "Scouting Pipeline", url: createPageUrl("ScoutingPipeline") },
