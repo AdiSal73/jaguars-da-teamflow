@@ -47,7 +47,7 @@ export default function Tryouts2627() {
 
   const updatePlayerTeamMutation = useMutation({
     mutationFn: async ({ playerId, teamId }) => {
-      await base44.entities.Player.update(playerId, { team_id: teamId });
+      await base44.entities.Player.update(playerId, { team_id: teamId, current_26_27_team: teamId });
       await base44.functions.invoke('updatePlayerRankings', {});
     },
     onSuccess: () => {
@@ -136,7 +136,7 @@ export default function Tryouts2627() {
     }, [teams, selectedAgeGroup, selectedCoach]);
 
   const getTeamPlayers = useCallback((team) => {
-    const teamPlayers = players.filter(p => p.team_id === team.id);
+    const teamPlayers = players.filter(p => p.current_26_27_team === team.id);
     const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
     
     let filteredPlayers = playersWithTryout;
@@ -171,13 +171,13 @@ export default function Tryouts2627() {
     const ageGroupsInOrder = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11'];
     const leagueOrder = { 
       'Girls Academy': 1, 
-      'Pre-GA 1': 2, 
-      'Aspire': 3, 
-      'Pre-GA 2': 4, 
-      'DPL': 5, 
-      'Green': 6, 
-      'White': 7, 
-      'Black': 8 
+      'Pre-GA 1': 1, 
+      'Aspire': 2, 
+      'Pre-GA 2': 2, 
+      'DPL': 3, 
+      'Green': 4, 
+      'White': 5, 
+      'Black': 6 
     };
 
     toast.info('Recalculating rankings across all age groups...');
@@ -189,7 +189,7 @@ export default function Tryouts2627() {
         const team = teams.find(t => t.id === p.current_26_27_team);
         if (!team) return null;
         
-        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
+        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : (team.name?.includes('25/26') ? '25/26' : null));
         if (teamSeason !== '26/27') return null;
 
         let determinedLeague = team.league;
@@ -222,6 +222,11 @@ export default function Tryouts2627() {
         const leagueA = leagueOrder[a.league] || 999;
         const leagueB = leagueOrder[b.league] || 999;
         if (leagueA !== leagueB) return leagueA - leagueB;
+
+        const teamNameA = a.team.name || '';
+        const teamNameB = b.team.name || '';
+        const teamNameComparison = teamNameA.localeCompare(teamNameB);
+        if (teamNameComparison !== 0) return teamNameComparison;
         
         if (a.teamRanking !== b.teamRanking) return a.teamRanking - b.teamRanking;
         
@@ -265,19 +270,18 @@ export default function Tryouts2627() {
     const sourceTeamId = source.droppableId.replace('team-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
 
-    // Moving to a different team
     if (sourceTeamId !== destTeamId) {
       queryClient.setQueryData(['players'], (old) => {
         return old?.map(p => 
-          p.id === playerId ? { ...p, team_id: destTeamId } : p
+          p.id === playerId ? { ...p, team_id: destTeamId, current_26_27_team: destTeamId } : p
         ) || old;
       });
 
       try {
         await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
-        
         await recalculateAllRankings();
-        
+        queryClient.refetchQueries(['players']);
+        queryClient.refetchQueries(['teams']);
         toast.success('Player moved successfully');
       } catch (error) {
         console.error('Failed to update player team:', error);
@@ -285,27 +289,10 @@ export default function Tryouts2627() {
         queryClient.invalidateQueries(['players']);
       }
     } else {
-      // Reordering within the same team
-      const team = teams.find(t => t.id === sourceTeamId);
-      const teamPlayers = getTeamPlayers(team);
-      
-      const reorderedPlayers = Array.from(teamPlayers);
-      const [movedPlayer] = reorderedPlayers.splice(source.index, 1);
-      reorderedPlayers.splice(destination.index, 0, movedPlayer);
-
-      // Optimistically update UI
-      queryClient.setQueryData(['tryouts'], (old) => {
-        return old?.map(tryout => {
-          const playerIndex = reorderedPlayers.findIndex(p => p.id === tryout.player_id);
-          if (playerIndex !== -1) {
-            return { ...tryout, age_group_ranking: playerIndex + 1 };
-          }
-          return tryout;
-        }) || old;
-      });
-
       try {
         await recalculateAllRankings();
+        queryClient.refetchQueries(['players']);
+        queryClient.refetchQueries(['teams']);
         toast.success('Rankings updated');
       } catch (error) {
         console.error('Failed to update rankings:', error);
@@ -336,10 +323,20 @@ export default function Tryouts2627() {
     }));
 
     const createdTeams = {};
-    for (const teamName of [...new Set(failedRows.map(r => r.newTeam).filter(Boolean))]) {
-      const existingTeam = teams.find(t => t.name === teamName);
+    
+    for (const baseName of [...new Set(failedRows.map(r => r.newTeam).filter(Boolean))]) {
+      const teamNameWithSeason = `${baseName} 26/27`;
+      const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
       if (existingTeam) {
-        createdTeams[teamName] = existingTeam.id;
+        createdTeams[baseName] = existingTeam.id;
+      }
+    }
+
+    for (const baseName of [...new Set(failedRows.map(r => r.team2526).filter(Boolean))]) {
+      const teamNameWithSeason = `${baseName} 25/26`;
+      const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
+      if (existingTeam) {
+        createdTeams[`${baseName}_2526`] = existingTeam.id;
       }
     }
 
@@ -349,10 +346,10 @@ export default function Tryouts2627() {
         const fullName = `${row.firstName} ${row.lastName}`.trim();
         if (!fullName || fullName.length < 2) continue;
         
-        const teamId = createdTeams[row.newTeam];
-        if (!teamId) throw new Error(`Team "${row.newTeam}" not found`);
+        const team2627Id = createdTeams[row.newTeam];
+        if (!team2627Id) throw new Error(`26/27 Team "${row.newTeam}" not found`);
 
-        const team2526Id = row.team2526 ? createdTeams[row.team2526] : null;
+        const team2526Id = row.team2526 ? createdTeams[`${row.team2526}_2526`] : null;
 
         const existingPlayer = players.find(p => {
           const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
@@ -362,8 +359,8 @@ export default function Tryouts2627() {
 
         if (existingPlayer) {
           const updateData = { 
-            current_26_27_team: teamId,
-            team_id: teamId
+            current_26_27_team: team2627Id,
+            team_id: team2627Id
           };
           if (team2526Id) updateData.current_25_26_team = team2526Id;
           if (row.gradYear && !existingPlayer.grad_year) updateData.grad_year = parseInt(row.gradYear);
@@ -397,8 +394,8 @@ export default function Tryouts2627() {
             grad_year: gradYearNum,
             primary_position: row.position || undefined,
             current_25_26_team: team2526Id || undefined,
-            current_26_27_team: teamId,
-            team_id: teamId,
+            current_26_27_team: team2627Id,
+            team_id: team2627Id,
             gender: 'Female',
             is_tryout_player: true
           };
@@ -433,7 +430,9 @@ export default function Tryouts2627() {
     }
 
     queryClient.invalidateQueries(['teams']);
+    queryClient.refetchQueries(['teams']);
     queryClient.invalidateQueries(['players']);
+    queryClient.refetchQueries(['players']);
     
     setImportProgress(prev => ({
       ...prev,
@@ -534,7 +533,6 @@ export default function Tryouts2627() {
         const unique2526Teams = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
         const createdTeams = {};
 
-        // Create 26/27 teams
         for (const baseName of unique2627Teams) {
           try {
             const teamNameWithSeason = `${baseName} 26/27`;
@@ -587,7 +585,6 @@ export default function Tryouts2627() {
           }
         }
 
-        // Create 25/26 teams
         for (const baseName of unique2526Teams) {
           try {
             const teamNameWithSeason = `${baseName} 25/26`;
@@ -654,9 +651,9 @@ export default function Tryouts2627() {
                 continue;
               }
               
-              const teamId = createdTeams[row.newTeam];
+              const team2627Id = createdTeams[row.newTeam];
 
-              if (!teamId) {
+              if (!team2627Id) {
                 throw new Error(`26/27 Team "${row.newTeam}" not found`);
               }
 
@@ -670,8 +667,8 @@ export default function Tryouts2627() {
 
               if (existingPlayer) {
                 const updateData = { 
-                  current_26_27_team: teamId,
-                  team_id: teamId
+                  current_26_27_team: team2627Id,
+                  team_id: team2627Id
                 };
                 
                 if (team2526Id) {
@@ -725,13 +722,14 @@ export default function Tryouts2627() {
                   grad_year: gradYearNum,
                   primary_position: row.position || undefined,
                   current_25_26_team: team2526Id || undefined,
-                  current_26_27_team: teamId,
-                  team_id: teamId,
+                  current_26_27_team: team2627Id,
+                  team_id: team2627Id,
                   gender: 'Female',
                   is_tryout_player: true
                 };
                 
                 if (team2526Id) {
+                  newPlayerData.current_25_26_team = team2526Id;
                   setImportProgress(prev => ({
                     ...prev,
                     logs: [...prev.logs, { type: 'info', message: `🔗 Assigned "${fullName}" to 25/26 team: ${row.team2526}` }]
@@ -776,7 +774,9 @@ export default function Tryouts2627() {
         }
 
         queryClient.invalidateQueries(['teams']);
+        queryClient.refetchQueries(['teams']);
         queryClient.invalidateQueries(['players']);
+        queryClient.refetchQueries(['players']);
         
         setImportProgress(prev => ({
           ...prev,
@@ -809,6 +809,8 @@ export default function Tryouts2627() {
               onClick={async () => {
                 toast.info('Recalculating rankings...');
                 await recalculateAllRankings();
+                queryClient.refetchQueries(['players']);
+                queryClient.refetchQueries(['teams']);
                 toast.success('Rankings recalculated!');
               }}
               variant="outline"
@@ -1101,7 +1103,9 @@ export default function Tryouts2627() {
           onClose={() => setShowResetDialog(false)}
           onComplete={() => {
             queryClient.invalidateQueries(['teams']);
+            queryClient.refetchQueries(['teams']);
             queryClient.invalidateQueries(['players']);
+            queryClient.refetchQueries(['players']);
             setShowResetDialog(false);
           }}
         />
