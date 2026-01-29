@@ -126,7 +126,7 @@ export default function Tryouts2627() {
       aspire: aspireTeams,
       other: sortedOtherTeams
     };
-  }, [teams, selectedAgeGroup, selectedCoach, selectedGender]);
+    }, [teams, selectedAgeGroup, selectedCoach]);
 
   const getTeamPlayers = useCallback((team) => {
     const teamPlayers = players.filter(p => p.team_id === team.id);
