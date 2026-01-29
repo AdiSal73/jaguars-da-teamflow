@@ -162,7 +162,16 @@ export default function Tryouts2627() {
 
   const recalculateAllRankings = async () => {
     const ageGroupsInOrder = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11'];
-    const leagueOrder = { 'Girls Academy': 1, 'Aspire': 2, 'DPL': 3, 'Green': 4, 'White': 5, 'Black': 6 };
+    const leagueOrder = { 
+      'Girls Academy': 1, 
+      'Pre-GA 1': 2, 
+      'Aspire': 3, 
+      'Pre-GA 2': 4, 
+      'DPL': 5, 
+      'Green': 6, 
+      'White': 7, 
+      'Black': 8 
+    };
 
     for (const ageGroup of ageGroupsInOrder) {
       const allPlayersInAge = players.filter(p => p.age_group === ageGroup && p.current_26_27_team);
@@ -174,13 +183,17 @@ export default function Tryouts2627() {
         const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
         if (teamSeason !== '26/27') return null;
 
-        let league = team.league;
+        let determinedLeague = team.league;
         const teamNameLower = team.name?.toLowerCase() || '';
         
-        if ((league === 'Girls Academy' || teamNameLower.includes('pre-ga 1')) && !teamNameLower.includes('aspire') && !teamNameLower.includes('pre-ga 2')) {
-          league = 'Girls Academy';
-        } else if (league === 'Aspire' || teamNameLower.includes('aspire') || teamNameLower.includes('pre-ga 2')) {
-          league = 'Aspire';
+        if (teamNameLower.includes('pre-ga 1')) {
+          determinedLeague = 'Pre-GA 1';
+        } else if (teamNameLower.includes('pre-ga 2')) {
+          determinedLeague = 'Pre-GA 2';
+        } else if (teamNameLower.includes('girls academy')) {
+          determinedLeague = 'Girls Academy';
+        } else if (teamNameLower.includes('aspire')) {
+          determinedLeague = 'Aspire';
         }
 
         const tryout = tryouts.find(t => t.player_id === p.id);
@@ -188,7 +201,7 @@ export default function Tryouts2627() {
         return {
           player: p,
           team,
-          league,
+          league: determinedLeague,
           teamRanking: tryout?.team_ranking || 999,
           lastName: p.full_name?.split(' ').pop() || ''
         };
@@ -207,16 +220,17 @@ export default function Tryouts2627() {
       for (let i = 0; i < playersWithTeamData.length; i++) {
         const { player } = playersWithTeamData[i];
         const existingTryout = tryouts.find(t => t.player_id === player.id);
+        const ranking = i < 300 ? i + 1 : null;
         
         try {
           if (existingTryout) {
             await base44.entities.PlayerTryout.update(existingTryout.id, {
-              age_group_ranking: i + 1
+              age_group_ranking: ranking
             });
-          } else {
+          } else if (ranking !== null) {
             await base44.entities.PlayerTryout.create({
               player_id: player.id,
-              age_group_ranking: i + 1
+              age_group_ranking: ranking
             });
           }
           await new Promise(resolve => setTimeout(resolve, 50));
@@ -524,18 +538,23 @@ export default function Tryouts2627() {
               const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
               
               const gender = 'Female';
-              let league = 'Green';
-              if (teamName.toUpperCase().includes('GIRLS ACADEMY')) league = 'Girls Academy';
-              else if (teamName.toUpperCase().includes('ASPIRE')) league = 'Aspire';
-              else if (teamName.toUpperCase().includes('WHITE')) league = 'White';
-              else if (teamName.toUpperCase().includes('BLACK')) league = 'Black';
+              let determinedLeague = 'Green';
+              if (teamName.toUpperCase().includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
+              else if (teamName.toUpperCase().includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
+              else if (teamName.toUpperCase().includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
+              else if (teamName.toUpperCase().includes('ASPIRE')) determinedLeague = 'Aspire';
+              else if (teamName.toUpperCase().includes('WHITE')) determinedLeague = 'White';
+              else if (teamName.toUpperCase().includes('BLACK')) determinedLeague = 'Black';
+
+              const is2526TeamOnly = rows.every(r => r.newTeam !== teamName) && rows.some(r => r.team2526 === teamName);
+              const teamSeason = is2526TeamOnly ? '25/26' : '26/27';
 
               const newTeam = await base44.entities.Team.create({
                 name: teamName,
                 age_group: ageGroup,
                 gender: gender,
-                league: league,
-                season: '26/27'
+                league: determinedLeague,
+                season: teamSeason
               });
 
               createdTeams[teamName] = newTeam.id;
@@ -592,6 +611,15 @@ export default function Tryouts2627() {
                 
                 if (team2526Id) {
                   updateData.current_25_26_team = team2526Id;
+                  setImportProgress(prev => ({
+                    ...prev,
+                    logs: [...prev.logs, { type: 'info', message: `🔗 Assigned "${fullName}" to 25/26 team: ${row.team2526}` }]
+                  }));
+                } else if (row.team2526) {
+                  setImportProgress(prev => ({
+                    ...prev,
+                    logs: [...prev.logs, { type: 'warn', message: `⚠️ Could not assign "${fullName}" to 25/26 team: Team "${row.team2526}" not found` }]
+                  }));
                 }
                 if (row.gradYear && !existingPlayer.grad_year) {
                   updateData.grad_year = parseInt(row.gradYear);
@@ -637,6 +665,18 @@ export default function Tryouts2627() {
                   gender: 'Female',
                   is_tryout_player: true
                 };
+                
+                if (team2526Id) {
+                  setImportProgress(prev => ({
+                    ...prev,
+                    logs: [...prev.logs, { type: 'info', message: `🔗 Assigned "${fullName}" to 25/26 team: ${row.team2526}` }]
+                  }));
+                } else if (row.team2526) {
+                  setImportProgress(prev => ({
+                    ...prev,
+                    logs: [...prev.logs, { type: 'warn', message: `⚠️ Could not assign "${fullName}" to 25/26 team: Team "${row.team2526}" not found` }]
+                  }));
+                }
                 
                 if (row.comments) {
                   newPlayerData.comment = row.comments;

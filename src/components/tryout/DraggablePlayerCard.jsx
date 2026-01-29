@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, Mail, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { User, Mail, CheckCircle2, Clock, XCircle, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getPositionBorderColor } from '@/components/player/positionColors';
@@ -17,6 +17,27 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showOfferDialog, setShowOfferDialog] = useState(false);
+
+  const assignToRosterMutation = useMutation({
+    mutationFn: async () => {
+      const assignedTeamId = player.current_26_27_team;
+      if (!assignedTeamId) {
+        throw new Error('Player has no assigned 26/27 team');
+      }
+      
+      await base44.entities.Player.update(player.id, {
+        team_id: assignedTeamId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['players']);
+      queryClient.invalidateQueries(['tryouts']);
+      toast.success('Player added to roster');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to add player to roster');
+    }
+  });
 
   const sendOfferMutation = useMutation({
     mutationFn: async (message) => {
@@ -149,19 +170,35 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
               {player.tryout?.team_role && (
                 <TeamRoleBadge role={player.tryout.team_role} size="default" />
               )}
-              {!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A' ? (
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowOfferDialog(true);
-                  }}
-                  className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-xs px-2 py-1 h-auto"
-                >
-                  <Mail className="w-3 h-3 mr-1" />
-                  Send Offer
-                </Button>
-              ) : null}
+              <div className="flex gap-1 flex-col">
+                {player.current_26_27_team && player.current_26_27_team !== player.team_id && (
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      assignToRosterMutation.mutate();
+                    }}
+                    disabled={assignToRosterMutation.isPending}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs px-2 py-1 h-auto"
+                  >
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    Add to Roster
+                  </Button>
+                )}
+                {!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A' ? (
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowOfferDialog(true);
+                    }}
+                    className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-xs px-2 py-1 h-auto"
+                  >
+                    <Mail className="w-3 h-3 mr-1" />
+                    Send Offer
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
