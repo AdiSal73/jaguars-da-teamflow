@@ -48,10 +48,10 @@ export default function Tryouts2627() {
   const updatePlayerTeamMutation = useMutation({
     mutationFn: async ({ playerId, teamId }) => {
       await base44.entities.Player.update(playerId, { team_id: teamId, current_26_27_team: teamId });
-      await base44.functions.invoke('updatePlayerRankings', {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
+      queryClient.refetchQueries(['players']);
       queryClient.invalidateQueries(['tryouts']);
     }
   });
@@ -195,16 +195,18 @@ export default function Tryouts2627() {
         let determinedLeague = team.league;
         const teamNameLower = team.name?.toLowerCase() || '';
         
-        if (teamNameLower.includes('pre-ga 1')) {
-          determinedLeague = 'Pre-GA 1';
-        } else if (teamNameLower.includes('pre-ga 2')) {
-          determinedLeague = 'Pre-GA 2';
-        } else if (teamNameLower.includes('girls academy')) {
+        if (teamNameLower.includes('pre-ga 1') || (teamNameLower.includes('girls academy') && !teamNameLower.includes('aspire'))) {
           determinedLeague = 'Girls Academy';
-        } else if (teamNameLower.includes('aspire')) {
+        } else if (teamNameLower.includes('pre-ga 2') || teamNameLower.includes('aspire')) {
           determinedLeague = 'Aspire';
         } else if (teamNameLower.includes('dpl')) {
           determinedLeague = 'DPL';
+        } else if (teamNameLower.includes('green')) {
+          determinedLeague = 'Green';
+        } else if (teamNameLower.includes('white')) {
+          determinedLeague = 'White';
+        } else if (teamNameLower.includes('black')) {
+          determinedLeague = 'Black';
         }
 
         const tryout = tryouts.find(t => t.player_id === p.id);
@@ -236,14 +238,14 @@ export default function Tryouts2627() {
       for (let i = 0; i < playersWithTeamData.length; i++) {
         const { player } = playersWithTeamData[i];
         const existingTryout = tryouts.find(t => t.player_id === player.id);
-        const ranking = i < 300 ? i + 1 : null;
+        const ranking = i + 1;
         
         try {
           if (existingTryout) {
             await base44.entities.PlayerTryout.update(existingTryout.id, {
               age_group_ranking: ranking
             });
-          } else if (ranking !== null) {
+          } else {
             await base44.entities.PlayerTryout.create({
               player_id: player.id,
               age_group_ranking: ranking
@@ -256,7 +258,7 @@ export default function Tryouts2627() {
       }
     }
 
-    queryClient.invalidateQueries(['tryouts']);
+    await queryClient.refetchQueries(['tryouts']);
     toast.success('Rankings recalculated successfully!');
   };
 
@@ -278,10 +280,13 @@ export default function Tryouts2627() {
       });
 
       try {
-        await updatePlayerTeamMutation.mutateAsync({ playerId, teamId: destTeamId });
+        await base44.entities.Player.update(playerId, { 
+          team_id: destTeamId, 
+          current_26_27_team: destTeamId 
+        });
         await recalculateAllRankings();
-        queryClient.refetchQueries(['players']);
-        queryClient.refetchQueries(['teams']);
+        await queryClient.refetchQueries(['players']);
+        await queryClient.refetchQueries(['tryouts']);
         toast.success('Player moved successfully');
       } catch (error) {
         console.error('Failed to update player team:', error);
@@ -291,8 +296,8 @@ export default function Tryouts2627() {
     } else {
       try {
         await recalculateAllRankings();
-        queryClient.refetchQueries(['players']);
-        queryClient.refetchQueries(['teams']);
+        await queryClient.refetchQueries(['players']);
+        await queryClient.refetchQueries(['tryouts']);
         toast.success('Rankings updated');
       } catch (error) {
         console.error('Failed to update rankings:', error);
@@ -545,19 +550,28 @@ export default function Tryouts2627() {
                 logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
               }));
             } else {
-              const ageMatch = baseName.match(/U-?(\d+)/i);
-              const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
+              const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
+              let ageGroup = 'U15';
+              if (ageMatch) {
+                if (ageMatch[1]) {
+                  ageGroup = `U${ageMatch[1]}`;
+                } else if (ageMatch[2]) {
+                  const birthYear = parseInt(ageMatch[2]);
+                  const currentYear = 2026;
+                  const age = currentYear - birthYear;
+                  ageGroup = `U${age}`;
+                }
+              }
 
               const gender = 'Female';
               let determinedLeague = 'Green';
               const nameUpper = baseName.toUpperCase();
-              if (nameUpper.includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
-              else if (nameUpper.includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
-              else if (nameUpper.includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
-              else if (nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
+              if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) determinedLeague = 'Girls Academy';
+              else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
               else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
               else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
               else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
+              else if (nameUpper.includes('GREEN')) determinedLeague = 'Green';
 
               const newTeam = await base44.entities.Team.create({
                 name: teamNameWithSeason,
@@ -571,7 +585,7 @@ export default function Tryouts2627() {
               setImportProgress(prev => ({
                 ...prev,
                 created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team "${teamNameWithSeason}"` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team "${teamNameWithSeason}" (${ageGroup})` }]
               }));
 
               await new Promise(resolve => setTimeout(resolve, 200));
@@ -597,19 +611,28 @@ export default function Tryouts2627() {
                 logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
               }));
             } else {
-              const ageMatch = baseName.match(/U-?(\d+)/i);
-              const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
+              const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
+              let ageGroup = 'U15';
+              if (ageMatch) {
+                if (ageMatch[1]) {
+                  ageGroup = `U${ageMatch[1]}`;
+                } else if (ageMatch[2]) {
+                  const birthYear = parseInt(ageMatch[2]);
+                  const currentYear = 2025;
+                  const age = currentYear - birthYear;
+                  ageGroup = `U${age}`;
+                }
+              }
 
               const gender = 'Female';
               let determinedLeague = 'Green';
               const nameUpper = baseName.toUpperCase();
-              if (nameUpper.includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
-              else if (nameUpper.includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
-              else if (nameUpper.includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
-              else if (nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
+              if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) determinedLeague = 'Girls Academy';
+              else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
               else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
               else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
               else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
+              else if (nameUpper.includes('GREEN')) determinedLeague = 'Green';
 
               const newTeam = await base44.entities.Team.create({
                 name: teamNameWithSeason,
@@ -623,7 +646,7 @@ export default function Tryouts2627() {
               setImportProgress(prev => ({
                 ...prev,
                 created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team "${teamNameWithSeason}"` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team "${teamNameWithSeason}" (${ageGroup})` }]
               }));
 
               await new Promise(resolve => setTimeout(resolve, 200));
