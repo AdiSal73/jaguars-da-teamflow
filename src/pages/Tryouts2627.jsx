@@ -96,24 +96,30 @@ export default function Tryouts2627() {
       return t.league === 'Aspire' || name.includes('aspire') || name.includes('pre-ga 2');
     }));
     
+    const dplTeams = sortTeamsByAge(filtered.filter(t => 
+      t.league === 'DPL' || t.name?.toUpperCase().includes('DPL')
+    ));
+
     const otherTeams = filtered.filter(t => 
       t.league !== 'Girls Academy' && 
-      t.league !== 'Aspire' && 
+      t.league !== 'Aspire' &&
+      t.league !== 'DPL' &&
       !t.name?.toLowerCase().includes('pre-ga 1') &&
       !t.name?.toLowerCase().includes('pre-ga 2') &&
-      !t.name?.toLowerCase().includes('aspire')
+      !t.name?.toLowerCase().includes('aspire') &&
+      !t.name?.toUpperCase().includes('DPL')
     );
 
     const sortedOtherTeams = otherTeams.sort((a, b) => {
-      const leagueOrder = { 'DPL': 1, 'Green': 2, 'White': 3, 'Black': 4 };
+      const leagueOrder = { 'Green': 1, 'White': 2, 'Black': 3 };
       const getOrder = (team) => {
         const league = team.league || '';
         return leagueOrder[league] || 999;
       };
-      
+
       const orderDiff = getOrder(a) - getOrder(b);
       if (orderDiff !== 0) return orderDiff;
-      
+
       const extractAge = (ageGroup) => {
         const match = ageGroup?.match(/U-?(\d+)/i);
         return match ? parseInt(match[1]) : 0;
@@ -124,7 +130,72 @@ export default function Tryouts2627() {
     return {
       girlsAcademy: gaTeams,
       aspire: aspireTeams,
+      dpl: dplTeams,
       other: sortedOtherTeams
+    };
+    }, [teams, selectedAgeGroup, selectedCoach]);
+
+    const teamColumns = useMemo(() => {
+    let filtered = teams.filter(t => {
+    if (!t.name || typeof t.name !== 'string') return false;
+    const teamSeason = t.season || (t.name?.includes('26/27') ? '26/27' : null);
+    return teamSeason === '26/27';
+    });
+
+    if (selectedAgeGroup !== 'all') {
+    filtered = filtered.filter(t => t.age_group === selectedAgeGroup);
+    }
+    if (selectedCoach !== 'all') {
+    filtered = filtered.filter(t => t.coach_ids?.includes(selectedCoach));
+    }
+
+    const gaTeams = sortTeamsByAge(filtered.filter(t => {
+    const name = t.name?.toLowerCase() || '';
+    const isAspire = name.includes('aspire') || name.includes('pre-ga 2');
+    return (t.league === 'Girls Academy' || name.includes('pre-ga 1')) && !isAspire;
+    }));
+
+    const aspireTeams = sortTeamsByAge(filtered.filter(t => {
+    const name = t.name?.toLowerCase() || '';
+    return t.league === 'Aspire' || name.includes('aspire') || name.includes('pre-ga 2');
+    }));
+
+    const dplTeams = sortTeamsByAge(filtered.filter(t => 
+    t.league === 'DPL' || t.name?.toUpperCase().includes('DPL')
+    ));
+
+    const otherTeams = filtered.filter(t => 
+    t.league !== 'Girls Academy' && 
+    t.league !== 'Aspire' &&
+    t.league !== 'DPL' &&
+    !t.name?.toLowerCase().includes('pre-ga 1') &&
+    !t.name?.toLowerCase().includes('pre-ga 2') &&
+    !t.name?.toLowerCase().includes('aspire') &&
+    !t.name?.toUpperCase().includes('DPL')
+    );
+
+    const sortedOtherTeams = otherTeams.sort((a, b) => {
+    const leagueOrder = { 'Green': 1, 'White': 2, 'Black': 3 };
+    const getOrder = (team) => {
+    const league = team.league || '';
+    return leagueOrder[league] || 999;
+    };
+
+    const orderDiff = getOrder(a) - getOrder(b);
+    if (orderDiff !== 0) return orderDiff;
+
+    const extractAge = (ageGroup) => {
+    const match = ageGroup?.match(/U-?(\d+)/i);
+    return match ? parseInt(match[1]) : 0;
+    };
+    return extractAge(b.age_group) - extractAge(a.age_group);
+    });
+
+    return {
+    girlsAcademy: gaTeams,
+    aspire: aspireTeams,
+    dpl: dplTeams,
+    other: sortedOtherTeams
     };
     }, [teams, selectedAgeGroup, selectedCoach]);
 
@@ -173,6 +244,8 @@ export default function Tryouts2627() {
       'Black': 8 
     };
 
+    toast.info('Recalculating rankings across all age groups...');
+
     for (const ageGroup of ageGroupsInOrder) {
       const allPlayersInAge = players.filter(p => p.age_group === ageGroup && p.current_26_27_team);
       
@@ -194,6 +267,8 @@ export default function Tryouts2627() {
           determinedLeague = 'Girls Academy';
         } else if (teamNameLower.includes('aspire')) {
           determinedLeague = 'Aspire';
+        } else if (teamNameLower.includes('dpl')) {
+          determinedLeague = 'DPL';
         }
 
         const tryout = tryouts.find(t => t.player_id === p.id);
@@ -241,6 +316,7 @@ export default function Tryouts2627() {
     }
 
     queryClient.invalidateQueries(['tryouts']);
+    toast.success('Rankings recalculated successfully!');
   };
 
   const onDragEnd = async (result) => {
@@ -518,59 +594,112 @@ export default function Tryouts2627() {
           }));
         }
 
-        const allUniqueTeams = [...new Set([
-          ...rows.map(r => r.newTeam).filter(Boolean),
-          ...rows.map(r => r.team2526).filter(Boolean)
-        ])];
+        const unique2627Teams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
+        const unique2526Teams = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
         const createdTeams = {};
-        
-        for (const teamName of allUniqueTeams) {
+
+        // Create 26/27 teams
+        for (const baseName of unique2627Teams) {
           try {
-            const existingTeam = teams.find(t => t.name === teamName);
+            const teamNameWithSeason = `${baseName} 26/27`;
+            const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
+
             if (existingTeam) {
-              createdTeams[teamName] = existingTeam.id;
+              createdTeams[baseName] = existingTeam.id;
               setImportProgress(prev => ({
                 ...prev,
-                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamName}" already exists` }]
+                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
               }));
             } else {
-              const ageMatch = teamName.match(/U-?(\d+)/i);
+              const ageMatch = baseName.match(/U-?(\d+)/i);
               const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
-              
+
               const gender = 'Female';
               let determinedLeague = 'Green';
-              if (teamName.toUpperCase().includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
-              else if (teamName.toUpperCase().includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
-              else if (teamName.toUpperCase().includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
-              else if (teamName.toUpperCase().includes('ASPIRE')) determinedLeague = 'Aspire';
-              else if (teamName.toUpperCase().includes('WHITE')) determinedLeague = 'White';
-              else if (teamName.toUpperCase().includes('BLACK')) determinedLeague = 'Black';
-
-              const is2526TeamOnly = rows.every(r => r.newTeam !== teamName) && rows.some(r => r.team2526 === teamName);
-              const teamSeason = is2526TeamOnly ? '25/26' : '26/27';
+              const nameUpper = baseName.toUpperCase();
+              if (nameUpper.includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
+              else if (nameUpper.includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
+              else if (nameUpper.includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
+              else if (nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
+              else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
+              else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
+              else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
 
               const newTeam = await base44.entities.Team.create({
-                name: teamName,
+                name: teamNameWithSeason,
                 age_group: ageGroup,
                 gender: gender,
                 league: determinedLeague,
-                season: teamSeason
+                season: '26/27'
               });
 
-              createdTeams[teamName] = newTeam.id;
+              createdTeams[baseName] = newTeam.id;
               setImportProgress(prev => ({
                 ...prev,
                 created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created team "${teamName}"` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team "${teamNameWithSeason}"` }]
               }));
-              
+
               await new Promise(resolve => setTimeout(resolve, 200));
             }
           } catch (error) {
             setImportProgress(prev => ({
               ...prev,
-              errors: [...prev.errors, `Failed to create team "${teamName}": ${error.message}`],
-              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create team "${teamName}": ${error.message}` }]
+              errors: [...prev.errors, `Failed to create 26/27 team "${baseName}": ${error.message}`],
+              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create 26/27 team "${baseName}": ${error.message}` }]
+            }));
+          }
+        }
+
+        // Create 25/26 teams
+        for (const baseName of unique2526Teams) {
+          try {
+            const teamNameWithSeason = `${baseName} 25/26`;
+            const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
+
+            if (existingTeam) {
+              createdTeams[`${baseName}_2526`] = existingTeam.id;
+              setImportProgress(prev => ({
+                ...prev,
+                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
+              }));
+            } else {
+              const ageMatch = baseName.match(/U-?(\d+)/i);
+              const ageGroup = ageMatch ? `U${ageMatch[1]}` : 'U15';
+
+              const gender = 'Female';
+              let determinedLeague = 'Green';
+              const nameUpper = baseName.toUpperCase();
+              if (nameUpper.includes('PRE-GA 1')) determinedLeague = 'Pre-GA 1';
+              else if (nameUpper.includes('PRE-GA 2')) determinedLeague = 'Pre-GA 2';
+              else if (nameUpper.includes('GIRLS ACADEMY')) determinedLeague = 'Girls Academy';
+              else if (nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
+              else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
+              else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
+              else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
+
+              const newTeam = await base44.entities.Team.create({
+                name: teamNameWithSeason,
+                age_group: ageGroup,
+                gender: gender,
+                league: determinedLeague,
+                season: '25/26'
+              });
+
+              createdTeams[`${baseName}_2526`] = newTeam.id;
+              setImportProgress(prev => ({
+                ...prev,
+                created: prev.created + 1,
+                logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team "${teamNameWithSeason}"` }]
+              }));
+
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+          } catch (error) {
+            setImportProgress(prev => ({
+              ...prev,
+              errors: [...prev.errors, `Failed to create 25/26 team "${baseName}": ${error.message}`],
+              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create 25/26 team "${baseName}": ${error.message}` }]
             }));
           }
         }
@@ -592,10 +721,10 @@ export default function Tryouts2627() {
               const teamId = createdTeams[row.newTeam];
 
               if (!teamId) {
-                throw new Error(`Team "${row.newTeam}" not found`);
+                throw new Error(`26/27 Team "${row.newTeam}" not found`);
               }
 
-              const team2526Id = row.team2526 ? createdTeams[row.team2526] : null;
+              const team2526Id = row.team2526 ? createdTeams[`${row.team2526}_2526`] : null;
 
               const existingPlayer = players.find(p => {
                 const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
@@ -885,7 +1014,7 @@ export default function Tryouts2627() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
           <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-500 p-4">
             <h2 className="text-xl font-bold text-emerald-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-emerald-200">
               Girls Academy Teams
@@ -907,6 +1036,21 @@ export default function Tryouts2627() {
             </h2>
             <div className="space-y-3">
               {teamColumns.aspire.map(team => (
+                <TeamColumn 
+                  key={team.id} 
+                  team={team} 
+                  players={getTeamPlayers(team)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg border-2 border-purple-500 p-4">
+            <h2 className="text-xl font-bold text-purple-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-purple-200">
+              DPL Teams
+            </h2>
+            <div className="space-y-3">
+              {teamColumns.dpl.map(team => (
                 <TeamColumn 
                   key={team.id} 
                   team={team} 
