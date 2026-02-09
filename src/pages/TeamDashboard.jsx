@@ -295,71 +295,145 @@ Format with clear headers and structure.`;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-blue-50">
-      <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-2xl">
-        <div className="max-w-[1800px] mx-auto p-6 md:p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-white hover:bg-white/20">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold">{team.name}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge className="bg-emerald-500/30 backdrop-blur-sm text-white border-emerald-300/40">
-                    {team.age_group}
-                  </Badge>
-                  <Badge className="bg-green-500/30 backdrop-blur-sm text-white border-green-300/40">
-                    {team.league}
-                  </Badge>
-                  <Badge className="bg-blue-500/30 backdrop-blur-sm text-white border-blue-300/40">
-                    {players.length} Players
-                  </Badge>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-blue-600 to-purple-600 opacity-90"></div>
+        <div className="relative max-w-[1800px] mx-auto p-6 md:p-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-white hover:bg-white/20 rounded-xl">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl border-2 border-white/30">
+              <span className="text-3xl font-bold text-white">{team.age_group?.charAt(0) || 'T'}</span>
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">{team.name}</h1>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 shadow-lg">
+                  <Users className="w-3 h-3 mr-1" />
+                  {players.length} Players
+                </Badge>
+                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 shadow-lg">
+                  {team.age_group}
+                </Badge>
+                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 shadow-lg">
+                  {team.league}
+                </Badge>
               </div>
-
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => setShowAddPlayerDialog(true)}
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 shadow-lg"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Player
+              </Button>
+              <Button
+                onClick={() => setShowAssignCoachDialog(true)}
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 shadow-lg"
+              >
+                <UserCog className="w-4 h-4 mr-2" />
+                Assign Coach
+              </Button>
+              <Button
+                onClick={() => setShowMessageDialog(true)}
+                className="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/30 shadow-lg"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Message Team
+              </Button>
+              <Button
+                onClick={() => setShowEvalDialog(true)}
+                className="bg-white hover:bg-white/90 text-emerald-600 shadow-xl font-semibold"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Evaluate Team
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto p-4 md:p-6 -mt-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold">{players.length}</div>
-              <div className="text-xs opacity-90">Total Players</div>
+      <div className="max-w-[1800px] mx-auto p-4 md:p-6 -mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-purple-600">Total Players</p>
+                  <p className="text-4xl font-bold text-purple-900 mt-2">{players.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold">{teamAssessments.length}</div>
-              <div className="text-xs opacity-90">Assessments</div>
+
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 shadow-xl hover:shadow-2xl transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-600">Assessments</p>
+                  <p className="text-4xl font-bold text-blue-900 mt-2">{teamAssessments.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold">{teamPlayerEvals.length}</div>
-              <div className="text-xs opacity-90">Evaluations</div>
+
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-2 border-emerald-200 shadow-xl hover:shadow-2xl transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-600">Evaluations</p>
+                  <p className="text-4xl font-bold text-emerald-900 mt-2">{teamPlayerEvals.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold">{avgPhysicalScores.speed}</div>
-              <div className="text-xs opacity-90">Avg Speed</div>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 shadow-xl hover:shadow-2xl transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-orange-600">Avg Speed</p>
+                  <p className="text-4xl font-bold text-orange-900 mt-2">{avgPhysicalScores.speed}</p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-3xl mb-6">
-            <TabsTrigger value="roster">Roster Cards</TabsTrigger>
-            <TabsTrigger value="table">Roster Table</TabsTrigger>
-            <TabsTrigger value="formation">Formation</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="evaluation">Evaluation</TabsTrigger>
-          </TabsList>
+        <Card className="border-none shadow-xl bg-white mb-6">
+          <CardContent className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-5 max-w-4xl mb-6 bg-slate-100 p-1">
+                <TabsTrigger value="roster" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
+                  Roster Cards
+                </TabsTrigger>
+                <TabsTrigger value="table" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
+                  Roster Table
+                </TabsTrigger>
+                <TabsTrigger value="formation" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
+                  Formation
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="evaluation" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-blue-500 data-[state=active]:text-white">
+                  Evaluation
+                </TabsTrigger>
+              </TabsList>
 
           <TabsContent value="formation">
             <FormationTab 
@@ -759,7 +833,9 @@ Format with clear headers and structure.`;
           </CardContent>
         </Card>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Team Evaluation Dialog */}
