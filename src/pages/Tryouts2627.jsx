@@ -47,7 +47,19 @@ export default function Tryouts2627() {
 
   const updatePlayerTeamMutation = useMutation({
     mutationFn: async ({ playerId, teamId }) => {
-      await base44.entities.Player.update(playerId, { team_id: teamId, current_26_27_team: teamId });
+      const player = players.find(p => p.id === playerId);
+      const currentTeamIds = player?.current_team_ids || [];
+      
+      const newTeamIds = [...new Set([...currentTeamIds.filter(id => {
+        const t = teams.find(team => team.id === id);
+        return t?.season !== '26/27';
+      }), teamId])];
+      
+      await base44.entities.Player.update(playerId, { 
+        team_id: teamId, 
+        current_26_27_team: teamId,
+        current_team_ids: newTeamIds
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
@@ -136,7 +148,12 @@ export default function Tryouts2627() {
     }, [teams, selectedAgeGroup, selectedCoach]);
 
   const getTeamPlayers = useCallback((team) => {
-    const teamPlayers = players.filter(p => p.current_26_27_team === team.id);
+    const teamPlayers = players.filter(p => {
+      if (p.current_team_ids && Array.isArray(p.current_team_ids)) {
+        return p.current_team_ids.includes(team.id);
+      }
+      return p.current_26_27_team === team.id;
+    });
     const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
     
     let filteredPlayers = playersWithTryout;
