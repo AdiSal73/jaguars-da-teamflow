@@ -211,8 +211,18 @@ export default function Teams() {
       let aVal = a[sortField] || '';
       let bVal = b[sortField] || '';
       if (sortField === 'playerCount') {
-        aVal = players.filter(p => p.team_id === a.id).length;
-        bVal = players.filter(p => p.team_id === b.id).length;
+        aVal = players.filter(p => {
+          if (p.team_assignments && Array.isArray(p.team_assignments)) {
+            return p.team_assignments.some(assign => assign.team_id === a.id && assign.season === a.season);
+          }
+          return p.current_team_ids?.includes(a.id) || p.team_id === a.id;
+        }).length;
+        bVal = players.filter(p => {
+          if (p.team_assignments && Array.isArray(p.team_assignments)) {
+            return p.team_assignments.some(assign => assign.team_id === b.id && assign.season === b.season);
+          }
+          return p.current_team_ids?.includes(b.id) || p.team_id === b.id;
+        }).length;
       }
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         aVal = aVal.toLowerCase();
@@ -360,7 +370,12 @@ export default function Teams() {
       {viewMode === 'cards' ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTeams?.map(team => {
-            const teamPlayers = players.filter(p => p.team_id === team.id);
+            const teamPlayers = players.filter(p => {
+              if (p.team_assignments && Array.isArray(p.team_assignments)) {
+                return p.team_assignments.some(a => a.team_id === team.id && a.season === team.season);
+              }
+              return p.current_team_ids?.includes(team.id) || p.team_id === team.id;
+            });
             const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
             const isMaleTeam = team.gender === 'Male';
             const borderColorClass = getTeamBorderColor(team.league);
@@ -483,7 +498,12 @@ export default function Teams() {
                 <tbody>
                   {filteredTeams?.map((team, idx) => {
                     const teamCoaches = coaches.filter(c => c.team_ids?.includes(team.id));
-                    const teamPlayers = players.filter(p => p.team_id === team.id);
+                    const teamPlayers = players.filter(p => {
+                      if (p.team_assignments && Array.isArray(p.team_assignments)) {
+                        return p.team_assignments.some(a => a.team_id === team.id && a.season === team.season);
+                      }
+                      return p.current_team_ids?.includes(team.id) || p.team_id === team.id;
+                    });
                     const leagueOptions = getLeaguesForGender(team.gender);
                     return (
                       <tr key={team.id} className={`border-b hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>

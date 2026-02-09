@@ -48,17 +48,18 @@ export default function Tryouts2627() {
   const updatePlayerTeamMutation = useMutation({
     mutationFn: async ({ playerId, teamId }) => {
       const player = players.find(p => p.id === playerId);
-      const currentTeamIds = player?.current_team_ids || [];
+      const teamAssignments = player?.team_assignments || [];
       
-      const newTeamIds = [...new Set([...currentTeamIds.filter(id => {
-        const t = teams.find(team => team.id === id);
-        return t?.season !== '26/27';
-      }), teamId])];
+      const updatedAssignments = teamAssignments.filter(a => a.season !== '26/27');
+      updatedAssignments.push({ team_id: teamId, season: '26/27' });
+      
+      const currentTeamIds = updatedAssignments.map(a => a.team_id);
       
       await base44.entities.Player.update(playerId, { 
         team_id: teamId, 
         current_26_27_team: teamId,
-        current_team_ids: newTeamIds
+        team_assignments: updatedAssignments,
+        current_team_ids: currentTeamIds
       });
     },
     onSuccess: () => {
@@ -149,6 +150,9 @@ export default function Tryouts2627() {
 
   const getTeamPlayers = useCallback((team) => {
     const teamPlayers = players.filter(p => {
+      if (p.team_assignments && Array.isArray(p.team_assignments)) {
+        return p.team_assignments.some(a => a.team_id === team.id && a.season === team.season);
+      }
       if (p.current_team_ids && Array.isArray(p.current_team_ids)) {
         return p.current_team_ids.includes(team.id);
       }
@@ -663,11 +667,20 @@ export default function Tryouts2627() {
               (row.birthdate && p.date_of_birth === row.birthdate)
             );
 
-            const currentTeamIds = [];
-            if (team2526Id) currentTeamIds.push(team2526Id);
-            if (team2627Id) currentTeamIds.push(team2627Id);
+            const teamAssignments = existingPlayer?.team_assignments || [];
+            const existingAssignments = teamAssignments.filter(a => a.season !== '25/26' && a.season !== '26/27');
+            
+            if (team2526Id) {
+              existingAssignments.push({ team_id: team2526Id, season: '25/26' });
+            }
+            if (team2627Id) {
+              existingAssignments.push({ team_id: team2627Id, season: '26/27' });
+            }
+
+            const currentTeamIds = existingAssignments.map(a => a.team_id);
 
             const playerData = {
+              team_assignments: existingAssignments,
               current_team_ids: currentTeamIds,
               current_25_26_team: team2526Id || undefined,
               current_26_27_team: team2627Id,
