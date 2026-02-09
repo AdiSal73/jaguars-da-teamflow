@@ -486,8 +486,7 @@ export default function Tryouts2627() {
       try {
         const csv = event.target.result;
         const lines = csv.split('\n');
-        const headers = lines[0].split(/[,\t]/).map(h => h.trim());
-
+        
         const rows = [];
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
@@ -518,320 +517,206 @@ export default function Tryouts2627() {
           created: 0,
           matched: 0,
           errors: [],
-          logs: [],
+          logs: [{ type: 'info', message: `🚀 Starting import of ${rows.length} players...` }],
           failedRows: []
         });
         setShowImportDialog(true);
 
-        const blankPlayers = players.filter(p => !p.full_name || p.full_name.trim().length < 2);
-        if (blankPlayers.length > 0) {
-          setImportProgress(prev => ({
-            ...prev,
-            logs: [...prev.logs, { type: 'info', message: `🗑️ Deleting ${blankPlayers.length} players with blank names...` }]
-          }));
-          
-          for (const player of blankPlayers) {
-            try {
-              await base44.entities.Player.delete(player.id);
-              await new Promise(resolve => setTimeout(resolve, 100));
-            } catch (error) {
-              console.error('Failed to delete blank player:', error);
-            }
-          }
-          
-          setImportProgress(prev => ({
-            ...prev,
-            logs: [...prev.logs, { type: 'success', message: `✅ Deleted ${blankPlayers.length} blank players` }]
-          }));
-        }
+        await new Promise(resolve => setTimeout(resolve, 500));
 
+        const teamMap = {};
+        
         const unique2627Teams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
-        const unique2526Teams = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
-        const createdTeams = {};
-
         for (const baseName of unique2627Teams) {
-          try {
-            const teamNameWithSeason = `${baseName} 26/27`;
-            const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
+          const teamNameWithSeason = `${baseName} 26/27`;
+          let existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
 
-            if (existingTeam) {
-              createdTeams[baseName] = existingTeam.id;
-              setImportProgress(prev => ({
-                ...prev,
-                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
-              }));
-            } else {
-              const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
-              let ageGroup = 'U15';
-              if (ageMatch) {
-                if (ageMatch[1]) {
-                  ageGroup = `U${ageMatch[1]}`;
-                } else if (ageMatch[2]) {
-                  const birthYear = parseInt(ageMatch[2]);
-                  const currentYear = 2026;
-                  const age = currentYear - birthYear;
-                  ageGroup = `U${age}`;
-                }
-              }
-
-              const gender = 'Female';
-              let determinedLeague = 'Green';
-              const nameUpper = baseName.toUpperCase();
-              if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) determinedLeague = 'Girls Academy';
-              else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
-              else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
-              else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
-              else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
-              else if (nameUpper.includes('GREEN')) determinedLeague = 'Green';
-
-              const newTeam = await base44.entities.Team.create({
-                name: teamNameWithSeason,
-                age_group: ageGroup,
-                gender: gender,
-                league: determinedLeague,
-                season: '26/27'
-              });
-
-              createdTeams[baseName] = newTeam.id;
-              setImportProgress(prev => ({
-                ...prev,
-                created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team "${teamNameWithSeason}" (${ageGroup})` }]
-              }));
-
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-          } catch (error) {
+          if (existingTeam) {
+            teamMap[`${baseName}_2627`] = existingTeam.id;
             setImportProgress(prev => ({
               ...prev,
-              errors: [...prev.errors, `Failed to create 26/27 team "${baseName}": ${error.message}`],
-              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create 26/27 team "${baseName}": ${error.message}` }]
+              logs: [...prev.logs, { type: 'info', message: `✓ Found 26/27 team: ${teamNameWithSeason}` }]
             }));
+          } else {
+            const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
+            let ageGroup = 'U15';
+            if (ageMatch) {
+              if (ageMatch[1]) {
+                ageGroup = `U${ageMatch[1]}`;
+              } else if (ageMatch[2]) {
+                const birthYear = parseInt(ageMatch[2]);
+                const age = 2026 - birthYear;
+                ageGroup = `U${age}`;
+              }
+            }
+
+            const nameUpper = baseName.toUpperCase();
+            let league = 'Green';
+            if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) league = 'Girls Academy';
+            else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) league = 'Aspire';
+            else if (nameUpper.includes('DPL')) league = 'DPL';
+            else if (nameUpper.includes('WHITE')) league = 'White';
+            else if (nameUpper.includes('BLACK')) league = 'Black';
+
+            const newTeam = await base44.entities.Team.create({
+              name: teamNameWithSeason,
+              age_group: ageGroup,
+              gender: 'Female',
+              league: league,
+              season: '26/27'
+            });
+
+            teamMap[`${baseName}_2627`] = newTeam.id;
+            setImportProgress(prev => ({
+              ...prev,
+              created: prev.created + 1,
+              logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team: ${teamNameWithSeason}` }]
+            }));
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
 
+        const unique2526Teams = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
         for (const baseName of unique2526Teams) {
-          try {
-            const teamNameWithSeason = `${baseName} 25/26`;
-            const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
+          const teamNameWithSeason = `${baseName} 25/26`;
+          let existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
 
-            if (existingTeam) {
-              createdTeams[`${baseName}_2526`] = existingTeam.id;
-              setImportProgress(prev => ({
-                ...prev,
-                logs: [...prev.logs, { type: 'info', message: `ℹ️ Team "${teamNameWithSeason}" already exists` }]
-              }));
-            } else {
-              const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
-              let ageGroup = 'U15';
-              if (ageMatch) {
-                if (ageMatch[1]) {
-                  ageGroup = `U${ageMatch[1]}`;
-                } else if (ageMatch[2]) {
-                  const birthYear = parseInt(ageMatch[2]);
-                  const currentYear = 2025;
-                  const age = currentYear - birthYear;
-                  ageGroup = `U${age}`;
-                }
-              }
-
-              const gender = 'Female';
-              let determinedLeague = 'Green';
-              const nameUpper = baseName.toUpperCase();
-              if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) determinedLeague = 'Girls Academy';
-              else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) determinedLeague = 'Aspire';
-              else if (nameUpper.includes('DPL')) determinedLeague = 'DPL';
-              else if (nameUpper.includes('WHITE')) determinedLeague = 'White';
-              else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
-              else if (nameUpper.includes('GREEN')) determinedLeague = 'Green';
-
-              const birthYear = baseName.match(/(\d{4})/)?.[1];
-              let calculatedAgeGroup = 'U15';
-              if (birthYear) {
-                const age = 2025 - parseInt(birthYear);
-                calculatedAgeGroup = `U${age}`;
-              } else if (ageMatch?.[1]) {
-                calculatedAgeGroup = `U${ageMatch[1]}`;
-              }
-
-              const newTeam = await base44.entities.Team.create({
-                name: teamNameWithSeason,
-                age_group: calculatedAgeGroup,
-                gender: gender,
-                league: determinedLeague,
-                season: '25/26'
-              });
-
-              createdTeams[`${baseName}_2526`] = newTeam.id;
-              setImportProgress(prev => ({
-                ...prev,
-                created: prev.created + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team "${teamNameWithSeason}" (${ageGroup})` }]
-              }));
-
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-          } catch (error) {
+          if (existingTeam) {
+            teamMap[`${baseName}_2526`] = existingTeam.id;
             setImportProgress(prev => ({
               ...prev,
-              errors: [...prev.errors, `Failed to create 25/26 team "${baseName}": ${error.message}`],
-              logs: [...prev.logs, { type: 'error', message: `❌ Failed to create 25/26 team "${baseName}": ${error.message}` }]
+              logs: [...prev.logs, { type: 'info', message: `✓ Found 25/26 team: ${teamNameWithSeason}` }]
             }));
-          }
-        }
-
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-            try {
-              const fullName = `${row.firstName} ${row.lastName}`.trim();
-              
-              if (!fullName || fullName.length < 2) {
-                setImportProgress(prev => ({
-                  ...prev,
-                  processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'error', message: `⚠️ Skipped row with blank name` }]
-                }));
-                continue;
+          } else {
+            const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
+            let ageGroup = 'U15';
+            if (ageMatch) {
+              if (ageMatch[1]) {
+                ageGroup = `U${ageMatch[1]}`;
+              } else if (ageMatch[2]) {
+                const birthYear = parseInt(ageMatch[2]);
+                const age = 2025 - birthYear;
+                ageGroup = `U${age}`;
               }
-              
-              const team2627Id = createdTeams[row.newTeam];
-
-              if (!team2627Id) {
-                throw new Error(`26/27 Team "${row.newTeam}" not found`);
-              }
-
-              const team2526Id = row.team2526 ? createdTeams[`${row.team2526}_2526`] : null;
-
-              const existingPlayer = players.find(p => {
-                const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
-                const birthdateMatch = row.birthdate && p.date_of_birth === row.birthdate;
-                return nameMatch || birthdateMatch;
-              });
-
-              if (existingPlayer) {
-                const updateData = { 
-                  current_26_27_team: team2627Id,
-                  team_id: team2627Id
-                };
-                
-                if (team2526Id) {
-                  updateData.current_25_26_team = team2526Id;
-                  setImportProgress(prev => ({
-                    ...prev,
-                    logs: [...prev.logs, { type: 'info', message: `🔗 Assigned "${fullName}" to 25/26 team: ${row.team2526}` }]
-                  }));
-                } else if (row.team2526) {
-                  setImportProgress(prev => ({
-                    ...prev,
-                    logs: [...prev.logs, { type: 'warn', message: `⚠️ Could not assign "${fullName}" to 25/26 team: Team "${row.team2526}" not found` }]
-                  }));
-                }
-                if (row.gradYear && !existingPlayer.grad_year) {
-                  updateData.grad_year = parseInt(row.gradYear);
-                }
-                if (row.birthdate && !existingPlayer.date_of_birth) {
-                  updateData.date_of_birth = row.birthdate;
-                }
-                if (row.position && !existingPlayer.primary_position) {
-                  updateData.primary_position = row.position;
-                }
-                
-                if (row.comments) {
-                  const commentLog = existingPlayer.comment_log || [];
-                  commentLog.push({
-                    comment: row.comments,
-                    created_date: new Date().toISOString(),
-                    created_by: 'CSV Import'
-                  });
-                  updateData.comment_log = commentLog;
-                  updateData.comment = row.comments;
-                }
-                
-                await base44.entities.Player.update(existingPlayer.id, updateData);
-                
-                setImportProgress(prev => ({
-                  ...prev,
-                  matched: prev.matched + 1,
-                  processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'success', message: `✅ Matched "${fullName}" to ${row.newTeam}` }]
-                }));
-                
-                await new Promise(resolve => setTimeout(resolve, 200));
-              } else {
-                const gradYearNum = row.gradYear ? parseInt(row.gradYear) : undefined;
-                const newPlayerData = {
-                  full_name: fullName,
-                  date_of_birth: row.birthdate || undefined,
-                  grad_year: gradYearNum,
-                  primary_position: row.position || undefined,
-                  current_25_26_team: team2526Id || undefined,
-                  current_26_27_team: team2627Id,
-                  team_id: team2627Id,
-                  gender: 'Female',
-                  is_tryout_player: true
-                };
-                
-                if (team2526Id) {
-                  newPlayerData.current_25_26_team = team2526Id;
-                  setImportProgress(prev => ({
-                    ...prev,
-                    logs: [...prev.logs, { type: 'info', message: `🔗 Assigned "${fullName}" to 25/26 team: ${row.team2526}` }]
-                  }));
-                } else if (row.team2526) {
-                  setImportProgress(prev => ({
-                    ...prev,
-                    logs: [...prev.logs, { type: 'warn', message: `⚠️ Could not assign "${fullName}" to 25/26 team: Team "${row.team2526}" not found` }]
-                  }));
-                }
-                
-                if (row.comments) {
-                  newPlayerData.comment = row.comments;
-                  newPlayerData.comment_log = [{
-                    comment: row.comments,
-                    created_date: new Date().toISOString(),
-                    created_by: 'CSV Import'
-                  }];
-                }
-                
-                await base44.entities.Player.create(newPlayerData);
-
-                setImportProgress(prev => ({
-                  ...prev,
-                  processed: prev.processed + 1,
-                  logs: [...prev.logs, { type: 'info', message: `✅ Created new player "${fullName}" in ${row.newTeam}` }]
-                }));
-                
-                await new Promise(resolve => setTimeout(resolve, 200));
-              }
-            } catch (error) {
-              setImportProgress(prev => ({
-                ...prev,
-                processed: prev.processed + 1,
-                errors: [...prev.errors, `${row.firstName} ${row.lastName}: ${error.message}`],
-                failedRows: [...prev.failedRows, row],
-                logs: [...prev.logs, { type: 'error', message: `❌ ${row.firstName} ${row.lastName}: ${error.message}` }]
-              }));
             }
-            
-          await new Promise(resolve => setTimeout(resolve, 250));
+
+            const nameUpper = baseName.toUpperCase();
+            let league = 'Green';
+            if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) league = 'Girls Academy';
+            else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) league = 'Aspire';
+            else if (nameUpper.includes('DPL')) league = 'DPL';
+            else if (nameUpper.includes('WHITE')) league = 'White';
+            else if (nameUpper.includes('BLACK')) league = 'Black';
+
+            const newTeam = await base44.entities.Team.create({
+              name: teamNameWithSeason,
+              age_group: ageGroup,
+              gender: 'Female',
+              league: league,
+              season: '25/26'
+            });
+
+            teamMap[`${baseName}_2526`] = newTeam.id;
+            setImportProgress(prev => ({
+              ...prev,
+              created: prev.created + 1,
+              logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team: ${teamNameWithSeason}` }]
+            }));
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
         }
 
         await queryClient.invalidateQueries(['teams']);
+        await queryClient.refetchQueries(['teams']);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          try {
+            const fullName = `${row.firstName} ${row.lastName}`.trim();
+            const team2627Id = teamMap[`${row.newTeam}_2627`];
+            const team2526Id = row.team2526 ? teamMap[`${row.team2526}_2526`] : null;
+
+            if (!team2627Id) {
+              throw new Error(`26/27 Team "${row.newTeam}" not found in map`);
+            }
+
+            const existingPlayer = players.find(p => 
+              p.full_name?.toLowerCase() === fullName.toLowerCase() ||
+              (row.birthdate && p.date_of_birth === row.birthdate)
+            );
+
+            const currentTeamIds = [];
+            if (team2526Id) currentTeamIds.push(team2526Id);
+            if (team2627Id) currentTeamIds.push(team2627Id);
+
+            const playerData = {
+              current_team_ids: currentTeamIds,
+              current_25_26_team: team2526Id || undefined,
+              current_26_27_team: team2627Id,
+              team_id: team2627Id
+            };
+
+            if (row.gradYear) playerData.grad_year = parseInt(row.gradYear);
+            if (row.birthdate) playerData.date_of_birth = row.birthdate;
+            if (row.position) playerData.primary_position = row.position;
+
+            if (row.comments) {
+              const commentLog = existingPlayer?.comment_log || [];
+              commentLog.push({
+                comment: row.comments,
+                created_date: new Date().toISOString(),
+                created_by: 'CSV Import'
+              });
+              playerData.comment_log = commentLog;
+              playerData.comment = row.comments;
+            }
+
+            if (existingPlayer) {
+              await base44.entities.Player.update(existingPlayer.id, playerData);
+              setImportProgress(prev => ({
+                ...prev,
+                matched: prev.matched + 1,
+                processed: prev.processed + 1,
+                logs: [...prev.logs, { type: 'success', message: `✅ Updated ${fullName} → 26/27: ${row.newTeam}${team2526Id ? ` | 25/26: ${row.team2526}` : ''}` }]
+              }));
+            } else {
+              await base44.entities.Player.create({
+                ...playerData,
+                full_name: fullName,
+                gender: 'Female',
+                is_tryout_player: true
+              });
+              setImportProgress(prev => ({
+                ...prev,
+                processed: prev.processed + 1,
+                logs: [...prev.logs, { type: 'success', message: `✅ Created ${fullName} → 26/27: ${row.newTeam}${team2526Id ? ` | 25/26: ${row.team2526}` : ''}` }]
+              }));
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (error) {
+            setImportProgress(prev => ({
+              ...prev,
+              processed: prev.processed + 1,
+              errors: [...prev.errors, `${row.firstName} ${row.lastName}: ${error.message}`],
+              failedRows: [...prev.failedRows, row],
+              logs: [...prev.logs, { type: 'error', message: `❌ ${row.firstName} ${row.lastName}: ${error.message}` }]
+            }));
+          }
+        }
+
         await queryClient.invalidateQueries(['players']);
         await queryClient.invalidateQueries(['tryouts']);
-        
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        await queryClient.refetchQueries(['teams']);
         await queryClient.refetchQueries(['players']);
         await queryClient.refetchQueries(['tryouts']);
-        
+
         setImportProgress(prev => ({
           ...prev,
-          logs: [...prev.logs, { type: 'success', message: `✅ Import complete! Created ${prev.created} teams, matched ${prev.matched} players` }]
+          logs: [...prev.logs, { type: 'success', message: `🎉 Import complete! Teams: ${prev.created} | Players: ${prev.matched + (prev.processed - prev.matched - prev.errors.length)}` }]
         }));
 
-        toast.success('CSV import completed - rosters updated!');
+        toast.success('Import complete! Players added to rosters.');
       } catch (error) {
         toast.error(`Import failed: ${error.message}`);
         setImportProgress(null);
