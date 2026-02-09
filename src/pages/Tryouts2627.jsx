@@ -284,9 +284,15 @@ export default function Tryouts2627() {
           team_id: destTeamId, 
           current_26_27_team: destTeamId 
         });
-        await recalculateAllRankings();
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        await queryClient.invalidateQueries(['players']);
+        await queryClient.invalidateQueries(['tryouts']);
         await queryClient.refetchQueries(['players']);
         await queryClient.refetchQueries(['tryouts']);
+        await recalculateAllRankings();
+        
         toast.success('Player moved successfully');
       } catch (error) {
         console.error('Failed to update player team:', error);
@@ -434,17 +440,22 @@ export default function Tryouts2627() {
       }
     }
 
-    queryClient.invalidateQueries(['teams']);
-    queryClient.refetchQueries(['teams']);
-    queryClient.invalidateQueries(['players']);
-    queryClient.refetchQueries(['players']);
+    await queryClient.invalidateQueries(['teams']);
+    await queryClient.invalidateQueries(['players']);
+    await queryClient.invalidateQueries(['tryouts']);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    await queryClient.refetchQueries(['teams']);
+    await queryClient.refetchQueries(['players']);
+    await queryClient.refetchQueries(['tryouts']);
     
     setImportProgress(prev => ({
       ...prev,
       logs: [...prev.logs, { type: 'success', message: `✅ Retry complete! ${prev.errors.length} remaining errors` }]
     }));
 
-    toast.success('Retry completed');
+    toast.success('Retry completed - rosters updated!');
   };
 
   const parsePositionFromNumber = (positionValue) => {
@@ -634,9 +645,18 @@ export default function Tryouts2627() {
               else if (nameUpper.includes('BLACK')) determinedLeague = 'Black';
               else if (nameUpper.includes('GREEN')) determinedLeague = 'Green';
 
+              const birthYear = baseName.match(/(\d{4})/)?.[1];
+              let calculatedAgeGroup = 'U15';
+              if (birthYear) {
+                const age = 2025 - parseInt(birthYear);
+                calculatedAgeGroup = `U${age}`;
+              } else if (ageMatch?.[1]) {
+                calculatedAgeGroup = `U${ageMatch[1]}`;
+              }
+
               const newTeam = await base44.entities.Team.create({
                 name: teamNameWithSeason,
-                age_group: ageGroup,
+                age_group: calculatedAgeGroup,
                 gender: gender,
                 league: determinedLeague,
                 season: '25/26'
@@ -796,17 +816,22 @@ export default function Tryouts2627() {
           await new Promise(resolve => setTimeout(resolve, 250));
         }
 
-        queryClient.invalidateQueries(['teams']);
-        queryClient.refetchQueries(['teams']);
-        queryClient.invalidateQueries(['players']);
-        queryClient.refetchQueries(['players']);
+        await queryClient.invalidateQueries(['teams']);
+        await queryClient.invalidateQueries(['players']);
+        await queryClient.invalidateQueries(['tryouts']);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await queryClient.refetchQueries(['teams']);
+        await queryClient.refetchQueries(['players']);
+        await queryClient.refetchQueries(['tryouts']);
         
         setImportProgress(prev => ({
           ...prev,
           logs: [...prev.logs, { type: 'success', message: `✅ Import complete! Created ${prev.created} teams, matched ${prev.matched} players` }]
         }));
 
-        toast.success('CSV import completed');
+        toast.success('CSV import completed - rosters updated!');
       } catch (error) {
         toast.error(`Import failed: ${error.message}`);
         setImportProgress(null);
