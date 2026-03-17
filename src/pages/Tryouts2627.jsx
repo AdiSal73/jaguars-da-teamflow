@@ -508,6 +508,7 @@ export default function Tryouts2627() {
 
     const reader = new FileReader();
     reader.onload = async (event) => {
+      try {
       const csv = event.target.result;
       const lines = csv.split('\n');
       const rows = [];
