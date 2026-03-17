@@ -919,18 +919,35 @@ export default function Tryouts2627() {
           </CardContent>
         </Card>
 
+        {/* Mobile: tab switcher to pick which column to show */}
+        <div className="flex lg:hidden gap-1 mb-3 bg-slate-100 p-1 rounded-xl">
+          {[
+            { key: 'ga', label: 'GA', color: 'emerald' },
+            { key: 'aspire', label: 'Aspire', color: 'blue' },
+            { key: 'other', label: 'DPL+', color: 'purple' },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setMobileTab(tab.key)}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                mobileTab === tab.key 
+                  ? `bg-white shadow text-${tab.color}-700` 
+                  : 'text-slate-500'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-500 p-4">
-            <h2 className="text-xl font-bold text-emerald-700 mb-4 pb-2 border-b-2 border-emerald-200">
+          <div className={`bg-white rounded-xl shadow-lg border-2 border-emerald-500 p-3 md:p-4 ${mobileTab !== 'ga' ? 'hidden lg:block' : ''}`}>
+            <h2 className="text-lg md:text-xl font-bold text-emerald-700 mb-3 md:mb-4 pb-2 border-b-2 border-emerald-200">
               Girls Academy Teams
             </h2>
             <div className="space-y-3">
               {teamColumns.girlsAcademy.map(team => (
-                <TeamColumn 
-                  key={team.id} 
-                  team={team} 
-                  players={getTeamPlayers(team)}
-                />
+                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} />
               ))}
               {teamColumns.girlsAcademy.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No Girls Academy teams</p>
@@ -938,17 +955,13 @@ export default function Tryouts2627() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border-2 border-blue-500 p-4">
-            <h2 className="text-xl font-bold text-blue-700 mb-4 pb-2 border-b-2 border-blue-200">
+          <div className={`bg-white rounded-xl shadow-lg border-2 border-blue-500 p-3 md:p-4 ${mobileTab !== 'aspire' ? 'hidden lg:block' : ''}`}>
+            <h2 className="text-lg md:text-xl font-bold text-blue-700 mb-3 md:mb-4 pb-2 border-b-2 border-blue-200">
               Girls Aspire Teams
             </h2>
             <div className="space-y-3">
               {teamColumns.aspire.map(team => (
-                <TeamColumn 
-                  key={team.id} 
-                  team={team} 
-                  players={getTeamPlayers(team)}
-                />
+                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} />
               ))}
               {teamColumns.aspire.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No Aspire teams</p>
@@ -956,17 +969,13 @@ export default function Tryouts2627() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg border-2 border-purple-500 p-4">
-            <h2 className="text-xl font-bold text-purple-700 mb-4 pb-2 border-b-2 border-purple-200">
+          <div className={`bg-white rounded-xl shadow-lg border-2 border-purple-500 p-3 md:p-4 ${mobileTab !== 'other' ? 'hidden lg:block' : ''}`}>
+            <h2 className="text-lg md:text-xl font-bold text-purple-700 mb-3 md:mb-4 pb-2 border-b-2 border-purple-200">
               DPL &amp; Other Teams
             </h2>
             <div className="space-y-3">
               {teamColumns.dplAndOther.map(team => (
-                <TeamColumn 
-                  key={team.id} 
-                  team={team} 
-                  players={getTeamPlayers(team)}
-                />
+                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} />
               ))}
               {teamColumns.dplAndOther.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No DPL/other teams</p>
