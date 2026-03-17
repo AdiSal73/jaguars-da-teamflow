@@ -765,42 +765,47 @@ export default function Tryouts2627() {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="p-4 md:p-6 lg:p-8 max-w-[1900px] mx-auto">
-        <div className="mb-4 md:mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-              2026-27 Tryouts Board
-            </h1>
-            <p className="text-sm md:text-base lg:text-lg text-slate-600">Manage 26/27 season teams and player assignments</p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              onClick={async () => {
-                toast.info('Recalculating rankings...');
-                await recalculateAllRankings(players, teams);
-                toast.success('Rankings recalculated!');
-              }}
-              variant="outline"
-              className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Recalculate Rankings
-            </Button>
-            <Button
-              onClick={() => setShowResetDialog(true)}
-              variant="outline"
-              className="border-red-600 text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Reset for 26/27
-            </Button>
-            <Button
-              onClick={() => document.getElementById('csv-import').click()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import CSV
-            </Button>
+        <div className="mb-4 md:mb-6">
+          <div className="flex justify-between items-start gap-2 flex-wrap">
+            <div>
+              <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-1 bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                2026-27 Tryouts Board
+              </h1>
+              <p className="text-xs md:text-base lg:text-lg text-slate-600 hidden sm:block">Manage 26/27 season teams and player assignments</p>
+            </div>
+            
+            <div className="flex gap-1 md:gap-2 flex-wrap justify-end">
+              <Button
+                onClick={async () => {
+                  toast.info('Recalculating rankings...');
+                  await recalculateAllRankings(players, teams);
+                  toast.success('Rankings recalculated!');
+                }}
+                variant="outline"
+                size="sm"
+                className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 text-xs md:text-sm"
+              >
+                <RefreshCw className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Recalculate Rankings</span>
+              </Button>
+              <Button
+                onClick={() => setShowResetDialog(true)}
+                variant="outline"
+                size="sm"
+                className="border-red-600 text-red-600 hover:bg-red-50 text-xs md:text-sm"
+              >
+                <Trash2 className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Reset for 26/27</span>
+              </Button>
+              <Button
+                onClick={() => document.getElementById('csv-import').click()}
+                size="sm"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-xs md:text-sm"
+              >
+                <Upload className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Import CSV</span>
+              </Button>
+            </div>
           </div>
           <input
             id="csv-import"
