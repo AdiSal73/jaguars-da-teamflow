@@ -230,9 +230,9 @@ export default function Tryouts2627() {
 
       for (const team of sortedTeams) {
         // Get all players on this team, using the same sort as the visual board
+        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
         const teamPlayers = pList.filter(p => {
-          const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
-          if (p.team_assignments?.length > 0 && teamSeason) {
+          if (p.team_assignments?.length > 0) {
             return p.team_assignments.some(a => a.team_id === team.id && a.season === teamSeason);
           }
           return p.current_26_27_team === team.id;
