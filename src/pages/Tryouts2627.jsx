@@ -839,8 +839,9 @@ export default function Tryouts2627() {
             <div className="flex gap-1 md:gap-2 flex-wrap justify-end">
               <Button
                 onClick={async () => {
-                  toast.info('Recalculating rankings...');
+                  const t = toast.loading('Recalculating rankings... (this may take ~30s)');
                   await recalculateAllRankings(players, teams);
+                  toast.dismiss(t);
                   toast.success('Rankings recalculated!');
                 }}
                 variant="outline"
