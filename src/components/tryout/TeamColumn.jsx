@@ -49,7 +49,7 @@ export default function TeamColumn({ team, players, onManualRank }) {
               <p className="text-center text-slate-400 text-sm py-8 italic font-semibold">Drop players here</p>
             ) : (
               players.map((player, index) => (
-                <DraggablePlayerCard key={player.id} player={player} index={index} team={team} />
+                <DraggablePlayerCard key={player.id} player={player} index={index} team={team} onManualRank={onManualRank} />
               ))
             )}
             {provided.placeholder}
