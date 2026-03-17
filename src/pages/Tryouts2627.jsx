@@ -321,11 +321,8 @@ export default function Tryouts2627() {
 
     toast.info(`Setting rank #${newRank}...`);
 
-    // Persist sequentially
-    for (const u of updates) {
-      await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
-      await new Promise(resolve => setTimeout(resolve, 600));
-    }
+    // Persist via backend function to avoid frontend rate limits
+    await base44.functions.invoke('saveRankings', { updates });
 
     toast.success(`Ranking updated to #${newRank}`);
   };
