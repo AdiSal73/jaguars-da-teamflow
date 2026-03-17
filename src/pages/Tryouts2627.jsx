@@ -877,6 +877,7 @@ export default function Tryouts2627() {
                     setSelectedBirthYear('all');
                     setSelectedGradYear('all');
                     setSelectedTryoutStatus('all');
+                    window.history.replaceState(null, '', window.location.pathname);
                   }}
                   className="w-full h-9 md:h-10 lg:h-12 text-xs md:text-sm"
                 >
