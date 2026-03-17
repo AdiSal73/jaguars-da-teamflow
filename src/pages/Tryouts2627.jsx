@@ -193,37 +193,46 @@ export default function Tryouts2627() {
     }, [players, getPlayerTryoutData, selectedBirthYear, selectedGradYear, selectedTryoutStatus]);
 
   // Recalculate age_group_ranking for all players across all age groups.
-  // Rankings are saved directly on Player.age_group_ranking.
-  // Order: GA (rank 1 = best) → Aspire → DPL → Green → White → Black
-  // Within a team, order is by team_position_order (drag position).
+  // Each age group gets its own sequential ranking: 1, 2, 3... (unique per age group)
+  // Order: GA → Aspire → DPL → Green → White → Black
+  // Within a team: sorted by team_position_order, then last name as tiebreaker
   const recalculateAllRankings = async (currentPlayers, currentTeams) => {
     const pList = currentPlayers || players;
     const tList = currentTeams || teams;
 
-    const uniqueAgeGroups = [...new Set(pList.map(p => p.age_group).filter(Boolean))];
+    // Build a map of team id → team for quick lookup
+    const teamById = Object.fromEntries(tList.map(t => [t.id, t]));
+
+    // Group players by age_group, only those assigned to a 26/27 team
+    const byAgeGroup = {};
+    for (const p of pList) {
+      if (!p.current_26_27_team) continue;
+      const team = teamById[p.current_26_27_team];
+      if (!team) continue;
+      const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
+      if (teamSeason !== '26/27') continue;
+      const ag = p.age_group || 'Unknown';
+      if (!byAgeGroup[ag]) byAgeGroup[ag] = [];
+      byAgeGroup[ag].push(p);
+    }
 
     const updates = []; // { playerId, ranking }
 
-    for (const ageGroup of uniqueAgeGroups) {
-      const agePlayers = pList.filter(p => p.age_group === ageGroup && p.current_26_27_team);
-
-      // Map each player to their league priority + position order
+    for (const [ageGroup, agePlayers] of Object.entries(byAgeGroup)) {
+      // Annotate with sort keys
       const withMeta = agePlayers.map(p => {
-        const team = tList.find(t => t.id === p.current_26_27_team);
-        if (!team) return null;
-        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : team.name?.includes('25/26') ? '25/26' : null);
-        if (teamSeason !== '26/27') return null;
+        const team = teamById[p.current_26_27_team];
         const league = getTeamLeague(team);
         return {
           player: p,
           leaguePriority: LEAGUE_PRIORITY[league] || 99,
           teamName: team.name || '',
-          posOrder: p.team_position_order ?? 999999,
-          lastName: p.full_name?.split(' ').pop() || ''
+          posOrder: typeof p.team_position_order === 'number' ? p.team_position_order : 999999,
+          lastName: p.full_name?.split(' ').pop()?.toLowerCase() || ''
         };
-      }).filter(Boolean);
+      });
 
-      // Sort: league priority → team name (alpha) → position order within team → last name
+      // Sort: league tier → team name → position order → last name
       withMeta.sort((a, b) => {
         if (a.leaguePriority !== b.leaguePriority) return a.leaguePriority - b.leaguePriority;
         const teamCmp = a.teamName.localeCompare(b.teamName);
@@ -232,19 +241,20 @@ export default function Tryouts2627() {
         return a.lastName.localeCompare(b.lastName);
       });
 
+      // Assign unique sequential ranks 1..N for this age group
       withMeta.forEach((item, i) => {
         updates.push({ playerId: item.player.id, ranking: i + 1 });
       });
     }
 
-    // Optimistically update local cache
+    // Optimistic cache update
     queryClient.setQueryData(['players'], (old) => {
       if (!old) return old;
       const rankMap = Object.fromEntries(updates.map(u => [u.playerId, u.ranking]));
       return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
     });
 
-    // Persist to DB in parallel batches of 10
+    // Persist to DB in batches of 10
     const BATCH = 10;
     for (let i = 0; i < updates.length; i += BATCH) {
       const batch = updates.slice(i, i + BATCH);
