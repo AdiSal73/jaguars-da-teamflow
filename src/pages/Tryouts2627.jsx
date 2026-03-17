@@ -1013,7 +1013,7 @@ export default function Tryouts2627() {
             </h2>
             <div className="space-y-3">
               {teamColumns.girlsAcademy.map(team => (
-                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} />
+                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} onManualRank={handleManualRank} />
               ))}
               {teamColumns.girlsAcademy.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No Girls Academy teams</p>
