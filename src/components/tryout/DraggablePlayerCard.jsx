@@ -189,9 +189,9 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
               </div>
             </div>
             <div className="flex flex-col gap-1 items-end flex-shrink-0">
-              {player.tryout?.age_group_ranking && (
+              {(player.age_group_ranking || player.tryout?.age_group_ranking) && (
                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white text-lg px-3 py-1 rounded-lg font-black shadow-md">
-                  #{player.tryout.age_group_ranking}
+                  #{player.age_group_ranking || player.tryout?.age_group_ranking}
                 </div>
               )}
               {player.tryout?.next_season_status && player.tryout.next_season_status !== 'N/A' && (
