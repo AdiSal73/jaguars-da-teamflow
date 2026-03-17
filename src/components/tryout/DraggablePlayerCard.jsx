@@ -39,6 +39,8 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
   const queryClient = useQueryClient();
   const [showOfferDialog, setShowOfferDialog] = useState(false);
 
+  const [rankUpdating, setRankUpdating] = useState(false);
+
   const assignToRosterMutation = useMutation({
     mutationFn: async () => {
       const assignedTeamId = player.current_26_27_team;
