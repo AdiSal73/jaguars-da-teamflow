@@ -1027,7 +1027,7 @@ export default function Tryouts2627() {
             </h2>
             <div className="space-y-3">
               {teamColumns.aspire.map(team => (
-                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} />
+                <TeamColumn key={team.id} team={team} players={getTeamPlayers(team)} onManualRank={handleManualRank} />
               ))}
               {teamColumns.aspire.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No Aspire teams</p>
