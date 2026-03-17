@@ -549,193 +549,167 @@ export default function Tryouts2627() {
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        const teamMap = {};
+        // Helper: derive age group and league from team base name
+        const deriveTeamMeta = (baseName, baseYear) => {
+          const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
+          let ageGroup = 'U15';
+          if (ageMatch) {
+            if (ageMatch[1]) ageGroup = `U${ageMatch[1]}`;
+            else if (ageMatch[2]) ageGroup = `U${baseYear - parseInt(ageMatch[2])}`;
+          }
+          const nameUpper = baseName.toUpperCase();
+          let league = 'Green';
+          if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) league = 'Girls Academy';
+          else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) league = 'Aspire';
+          else if (nameUpper.includes('DPL')) league = 'DPL';
+          else if (nameUpper.includes('WHITE')) league = 'White';
+          else if (nameUpper.includes('BLACK')) league = 'Black';
+          return { ageGroup, league };
+        };
+
+        // Fetch fresh teams from DB so we never use stale cache
+        const freshTeamsRaw = await base44.entities.Team.list();
         
-        const unique2627Teams = [...new Set(rows.map(r => r.newTeam).filter(Boolean))];
-        for (const baseName of unique2627Teams) {
-          const teamNameWithSeason = `${baseName} 26/27`;
-          let existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
+        const teamMap = {}; // key: "baseName_season" → team id
 
-          if (existingTeam) {
-            teamMap[`${baseName}_2627`] = existingTeam.id;
-            setImportProgress(prev => ({
-              ...prev,
-              logs: [...prev.logs, { type: 'info', message: `✓ Found 26/27 team: ${teamNameWithSeason}` }]
-            }));
-          } else {
-            const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
-            let ageGroup = 'U15';
-            if (ageMatch) {
-              if (ageMatch[1]) {
-                ageGroup = `U${ageMatch[1]}`;
-              } else if (ageMatch[2]) {
-                const birthYear = parseInt(ageMatch[2]);
-                const age = 2026 - birthYear;
-                ageGroup = `U${age}`;
-              }
-            }
+        const findOrCreateTeam = async (baseName, season, baseYear) => {
+          if (!baseName) return null;
+          const key = `${baseName}_${season}`;
+          if (teamMap[key]) return teamMap[key];
 
-            const nameUpper = baseName.toUpperCase();
-            let league = 'Green';
-            if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) league = 'Girls Academy';
-            else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) league = 'Aspire';
-            else if (nameUpper.includes('DPL')) league = 'DPL';
-            else if (nameUpper.includes('WHITE')) league = 'White';
-            else if (nameUpper.includes('BLACK')) league = 'Black';
-
-            const newTeam = await base44.entities.Team.create({
-              name: teamNameWithSeason,
-              age_group: ageGroup,
-              gender: 'Female',
-              league: league,
-              season: '26/27'
-            });
-
-            teamMap[`${baseName}_2627`] = newTeam.id;
-            setImportProgress(prev => ({
-              ...prev,
-              created: prev.created + 1,
-              logs: [...prev.logs, { type: 'success', message: `✅ Created 26/27 team: ${teamNameWithSeason}` }]
-            }));
-            await new Promise(resolve => setTimeout(resolve, 300));
+          // Try to find by exact name+season OR by name containing baseName and matching season
+          const teamNameFull = `${baseName} ${season}`;
+          let existing = freshTeamsRaw.find(t =>
+            t.season === season && (
+              t.name === teamNameFull ||
+              t.name === baseName ||
+              t.name?.toLowerCase() === baseName.toLowerCase()
+            )
+          );
+          // Also try fuzzy: team name includes the base name (for existing teams named differently)
+          if (!existing) {
+            existing = freshTeamsRaw.find(t =>
+              t.season === season &&
+              t.name?.toLowerCase().includes(baseName.toLowerCase())
+            );
           }
-        }
 
-        const unique2526Teams = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
-        for (const baseName of unique2526Teams) {
-          const teamNameWithSeason = `${baseName} 25/26`;
-          let existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
-
-          if (existingTeam) {
-            teamMap[`${baseName}_2526`] = existingTeam.id;
+          if (existing) {
+            teamMap[key] = existing.id;
             setImportProgress(prev => ({
               ...prev,
-              logs: [...prev.logs, { type: 'info', message: `✓ Found 25/26 team: ${teamNameWithSeason}` }]
+              logs: [...prev.logs, { type: 'info', message: `✓ Found ${season} team: ${existing.name}` }]
             }));
-          } else {
-            const ageMatch = baseName.match(/U-?(\d+)|(\d{4})/i);
-            let ageGroup = 'U15';
-            if (ageMatch) {
-              if (ageMatch[1]) {
-                ageGroup = `U${ageMatch[1]}`;
-              } else if (ageMatch[2]) {
-                const birthYear = parseInt(ageMatch[2]);
-                const age = 2025 - birthYear;
-                ageGroup = `U${age}`;
-              }
-            }
-
-            const nameUpper = baseName.toUpperCase();
-            let league = 'Green';
-            if (nameUpper.includes('PRE-GA 1') || (nameUpper.includes('GIRLS ACADEMY') && !nameUpper.includes('ASPIRE'))) league = 'Girls Academy';
-            else if (nameUpper.includes('PRE-GA 2') || nameUpper.includes('ASPIRE')) league = 'Aspire';
-            else if (nameUpper.includes('DPL')) league = 'DPL';
-            else if (nameUpper.includes('WHITE')) league = 'White';
-            else if (nameUpper.includes('BLACK')) league = 'Black';
-
-            const newTeam = await base44.entities.Team.create({
-              name: teamNameWithSeason,
-              age_group: ageGroup,
-              gender: 'Female',
-              league: league,
-              season: '25/26'
-            });
-
-            teamMap[`${baseName}_2526`] = newTeam.id;
-            setImportProgress(prev => ({
-              ...prev,
-              created: prev.created + 1,
-              logs: [...prev.logs, { type: 'success', message: `✅ Created 25/26 team: ${teamNameWithSeason}` }]
-            }));
-            await new Promise(resolve => setTimeout(resolve, 300));
+            return existing.id;
           }
-        }
+
+          const { ageGroup, league } = deriveTeamMeta(baseName, baseYear);
+          const newTeam = await base44.entities.Team.create({
+            name: teamNameFull,
+            age_group: ageGroup,
+            gender: 'Female',
+            league,
+            season
+          });
+          freshTeamsRaw.push(newTeam); // keep local list updated
+          teamMap[key] = newTeam.id;
+          setImportProgress(prev => ({
+            ...prev,
+            created: prev.created + 1,
+            logs: [...prev.logs, { type: 'success', message: `✅ Created ${season} team: ${teamNameFull}` }]
+          }));
+          await new Promise(resolve => setTimeout(resolve, 200));
+          return newTeam.id;
+        };
+
+        // Pre-create all unique teams
+        const unique2627 = [...new Set(rows.map(r => r.team2627).filter(Boolean))];
+        const unique2526 = [...new Set(rows.map(r => r.team2526).filter(Boolean))];
+        for (const n of unique2627) await findOrCreateTeam(n, '26/27', 2026);
+        for (const n of unique2526) await findOrCreateTeam(n, '25/26', 2025);
 
         await queryClient.invalidateQueries(['teams']);
         await queryClient.refetchQueries(['teams']);
-        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Fetch fresh players too so name matching is accurate
+        const freshPlayers = await base44.entities.Player.list();
 
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           try {
-            const fullName = `${row.firstName} ${row.lastName}`.trim();
-            const team2627Id = teamMap[`${row.newTeam}_2627`];
-            const team2526Id = row.team2526 ? teamMap[`${row.team2526}_2526`] : null;
+            const fullName = row.fullName;
+            const team2627Id = row.team2627 ? teamMap[`${row.team2627}_26/27`] : null;
+            const team2526Id = row.team2526 ? teamMap[`${row.team2526}_25/26`] : null;
 
-            if (!team2627Id) {
-              throw new Error(`26/27 Team "${row.newTeam}" not found in map`);
+            if (!team2627Id && !team2526Id) {
+              throw new Error(`No valid team found for this player`);
             }
 
-            const existingPlayer = players.find(p => 
-              p.full_name?.toLowerCase() === fullName.toLowerCase() ||
-              (row.birthdate && p.date_of_birth === row.birthdate)
+            const existingPlayer = freshPlayers.find(p =>
+              p.full_name?.toLowerCase().trim() === fullName.toLowerCase().trim() ||
+              (row.birthdate && row.birthdate.length > 0 && p.date_of_birth === row.birthdate)
             );
 
-            const teamAssignments = existingPlayer?.team_assignments || [];
-            const existingAssignments = teamAssignments.filter(a => a.season !== '25/26' && a.season !== '26/27');
-            
-            if (team2526Id) {
-              existingAssignments.push({ team_id: team2526Id, season: '25/26' });
-            }
-            if (team2627Id) {
-              existingAssignments.push({ team_id: team2627Id, season: '26/27' });
-            }
-
-            const currentTeamIds = existingAssignments.map(a => a.team_id);
+            // Build team_assignments — preserve any seasons we're NOT importing
+            const baseAssignments = (existingPlayer?.team_assignments || []).filter(
+              a => a.season !== '25/26' && a.season !== '26/27'
+            );
+            if (team2526Id) baseAssignments.push({ team_id: team2526Id, season: '25/26' });
+            if (team2627Id) baseAssignments.push({ team_id: team2627Id, season: '26/27' });
 
             const playerData = {
-              team_assignments: existingAssignments,
-              current_team_ids: currentTeamIds,
-              current_25_26_team: team2526Id || undefined,
-              current_26_27_team: team2627Id,
-              team_id: team2627Id
+              team_assignments: baseAssignments,
+              current_25_26_team: team2526Id || existingPlayer?.current_25_26_team || undefined,
+              current_26_27_team: team2627Id || existingPlayer?.current_26_27_team || undefined
             };
 
             if (row.gradYear) playerData.grad_year = parseInt(row.gradYear);
             if (row.birthdate) playerData.date_of_birth = row.birthdate;
             if (row.position) playerData.primary_position = row.position;
-
             if (row.comments) {
               const commentLog = existingPlayer?.comment_log || [];
-              commentLog.push({
-                comment: row.comments,
-                created_date: new Date().toISOString(),
-                created_by: 'CSV Import'
-              });
+              commentLog.push({ comment: row.comments, created_date: new Date().toISOString(), created_by: 'CSV Import' });
               playerData.comment_log = commentLog;
               playerData.comment = row.comments;
             }
 
+            const seasonLabel = [
+              team2526Id ? `25/26: ${row.team2526}` : null,
+              team2627Id ? `26/27: ${row.team2627}` : null
+            ].filter(Boolean).join(' | ');
+
             if (existingPlayer) {
               await base44.entities.Player.update(existingPlayer.id, playerData);
+              freshPlayers[freshPlayers.findIndex(p => p.id === existingPlayer.id)] = { ...existingPlayer, ...playerData };
               setImportProgress(prev => ({
                 ...prev,
                 matched: prev.matched + 1,
                 processed: prev.processed + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Updated ${fullName} → 26/27: ${row.newTeam}${team2526Id ? ` | 25/26: ${row.team2526}` : ''}` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Updated ${fullName} → ${seasonLabel}` }]
               }));
             } else {
-              await base44.entities.Player.create({
+              const created = await base44.entities.Player.create({
                 ...playerData,
                 full_name: fullName,
                 gender: 'Female',
                 is_tryout_player: true
               });
+              freshPlayers.push(created);
               setImportProgress(prev => ({
                 ...prev,
                 processed: prev.processed + 1,
-                logs: [...prev.logs, { type: 'success', message: `✅ Created ${fullName} → 26/27: ${row.newTeam}${team2526Id ? ` | 25/26: ${row.team2526}` : ''}` }]
+                logs: [...prev.logs, { type: 'success', message: `✅ Created ${fullName} → ${seasonLabel}` }]
               }));
             }
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 80));
           } catch (error) {
             setImportProgress(prev => ({
               ...prev,
               processed: prev.processed + 1,
-              errors: [...prev.errors, `${row.firstName} ${row.lastName}: ${error.message}`],
+              errors: [...prev.errors, `${row.fullName}: ${error.message}`],
               failedRows: [...prev.failedRows, row],
-              logs: [...prev.logs, { type: 'error', message: `❌ ${row.firstName} ${row.lastName}: ${error.message}` }]
+              logs: [...prev.logs, { type: 'error', message: `❌ ${row.fullName}: ${error.message}` }]
             }));
           }
         }
