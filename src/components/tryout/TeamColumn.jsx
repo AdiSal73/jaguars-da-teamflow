@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import DraggablePlayerCard from './DraggablePlayerCard';
 
-export default function TeamColumn({ team, players }) {
+export default function TeamColumn({ team, players, onManualRank }) {
   const navigate = useNavigate();
 
   if (!team.id) return null;
