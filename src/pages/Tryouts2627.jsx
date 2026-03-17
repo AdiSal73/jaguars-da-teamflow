@@ -305,10 +305,11 @@ export default function Tryouts2627() {
       // Optimistic update
       queryClient.setQueryData(['players'], updatedPlayers);
 
-      // Persist position orders in background
-      await Promise.all(posUpdates.map(u =>
-        base44.entities.Player.update(u.id, { team_position_order: u.order })
-      ));
+      // Persist position orders sequentially to avoid rate limits
+      for (const u of posUpdates) {
+        await base44.entities.Player.update(u.id, { team_position_order: u.order });
+        await new Promise(resolve => setTimeout(resolve, 60));
+      }
 
     } else {
       // --- Move to different team ---
