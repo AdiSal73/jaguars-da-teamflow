@@ -13,15 +13,22 @@ Deno.serve(async (req) => {
 
     const results = { success: 0, failed: 0, errors: [] };
 
-    for (const u of updates) {
-      try {
-        await base44.asServiceRole.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
-        results.success++;
-        // Small delay to be safe
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (err) {
-        results.failed++;
-        results.errors.push(`${u.playerId}: ${err.message}`);
+    // Process in parallel batches of 10 to stay fast but avoid overwhelming the DB
+    const batchSize = 10;
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = updates.slice(i, i + batchSize);
+      await Promise.all(batch.map(async (u) => {
+        try {
+          await base44.asServiceRole.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
+          results.success++;
+        } catch (err) {
+          results.failed++;
+          results.errors.push(`${u.playerId}: ${err.message}`);
+        }
+      }));
+      // Brief pause between batches
+      if (i + batchSize < updates.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
 
