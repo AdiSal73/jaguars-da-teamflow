@@ -328,8 +328,13 @@ export default function Tryouts2627() {
 
     toast.info(`Setting rank #${newRank}...`);
 
-    // Persist via backend function to avoid frontend rate limits
-    await base44.functions.invoke('saveRankings', { updates });
+    // Persist via backend function in chunks
+    const chunkSize = 15;
+    for (let i = 0; i < updates.length; i += chunkSize) {
+      const chunk = updates.slice(i, i + chunkSize);
+      await base44.functions.invoke('saveRankings', { updates: chunk });
+      if (i + chunkSize < updates.length) await new Promise(resolve => setTimeout(resolve, 300));
+    }
 
     toast.success(`Ranking updated to #${newRank}`);
   };
