@@ -192,99 +192,66 @@ export default function Tryouts2627() {
     });
     }, [players, getPlayerTryoutData, selectedBirthYear, selectedGradYear, selectedTryoutStatus]);
 
-  const recalculateAllRankings = async () => {
-    const ageGroupsInOrder = ['U19', 'U18', 'U17', 'U16', 'U15', 'U14', 'U13', 'U12', 'U11'];
-    const leagueOrder = { 
-      'Girls Academy': 1, 
-      'Pre-GA 1': 1, 
-      'Aspire': 2, 
-      'Pre-GA 2': 2, 
-      'DPL': 3,
-      'Green': 4, 
-      'White': 5, 
-      'Black': 6
-    };
+  // Recalculate age_group_ranking for all players across all age groups.
+  // Rankings are saved directly on Player.age_group_ranking.
+  // Order: GA (rank 1 = best) → Aspire → DPL → Green → White → Black
+  // Within a team, order is by team_position_order (drag position).
+  const recalculateAllRankings = async (currentPlayers, currentTeams) => {
+    const pList = currentPlayers || players;
+    const tList = currentTeams || teams;
 
-    toast.info('Recalculating rankings across all age groups...');
+    const uniqueAgeGroups = [...new Set(pList.map(p => p.age_group).filter(Boolean))];
 
-    for (const ageGroup of ageGroupsInOrder) {
-      const allPlayersInAge = players.filter(p => p.age_group === ageGroup && p.current_26_27_team);
-      
-      const playersWithTeamData = allPlayersInAge.map(p => {
-        const team = teams.find(t => t.id === p.current_26_27_team);
+    const updates = []; // { playerId, ranking }
+
+    for (const ageGroup of uniqueAgeGroups) {
+      const agePlayers = pList.filter(p => p.age_group === ageGroup && p.current_26_27_team);
+
+      // Map each player to their league priority + position order
+      const withMeta = agePlayers.map(p => {
+        const team = tList.find(t => t.id === p.current_26_27_team);
         if (!team) return null;
-        
-        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : (team.name?.includes('25/26') ? '25/26' : null));
+        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : team.name?.includes('25/26') ? '25/26' : null);
         if (teamSeason !== '26/27') return null;
-
-        let determinedLeague = team.league;
-        const teamNameLower = team.name?.toLowerCase() || '';
-        
-        if (teamNameLower.includes('pre-ga 1') || (teamNameLower.includes('girls academy') && !teamNameLower.includes('aspire'))) {
-          determinedLeague = 'Girls Academy';
-        } else if (teamNameLower.includes('pre-ga 2') || teamNameLower.includes('aspire')) {
-          determinedLeague = 'Aspire';
-        } else if (teamNameLower.includes('dpl')) {
-          determinedLeague = 'DPL';
-        } else if (teamNameLower.includes('green')) {
-          determinedLeague = 'Green';
-        } else if (teamNameLower.includes('white')) {
-          determinedLeague = 'White';
-        } else if (teamNameLower.includes('black')) {
-          determinedLeague = 'Black';
-        }
-
-        const tryout = tryouts.find(t => t.player_id === p.id);
-        
+        const league = getTeamLeague(team);
         return {
           player: p,
-          team,
-          league: determinedLeague,
-          teamRanking: tryout?.team_ranking || 999,
+          leaguePriority: LEAGUE_PRIORITY[league] || 99,
+          teamName: team.name || '',
+          posOrder: p.team_position_order ?? 999999,
           lastName: p.full_name?.split(' ').pop() || ''
         };
       }).filter(Boolean);
 
-      playersWithTeamData.sort((a, b) => {
-        const leagueA = leagueOrder[a.league] || 999;
-        const leagueB = leagueOrder[b.league] || 999;
-        if (leagueA !== leagueB) return leagueA - leagueB;
-
-        const teamNameA = a.team.name || '';
-        const teamNameB = b.team.name || '';
-        const teamNameComparison = teamNameA.localeCompare(teamNameB);
-        if (teamNameComparison !== 0) return teamNameComparison;
-        
-        if (a.teamRanking !== b.teamRanking) return a.teamRanking - b.teamRanking;
-        
+      // Sort: league priority → team name (alpha) → position order within team → last name
+      withMeta.sort((a, b) => {
+        if (a.leaguePriority !== b.leaguePriority) return a.leaguePriority - b.leaguePriority;
+        const teamCmp = a.teamName.localeCompare(b.teamName);
+        if (teamCmp !== 0) return teamCmp;
+        if (a.posOrder !== b.posOrder) return a.posOrder - b.posOrder;
         return a.lastName.localeCompare(b.lastName);
       });
 
-      for (let i = 0; i < playersWithTeamData.length; i++) {
-        const { player } = playersWithTeamData[i];
-        const existingTryout = tryouts.find(t => t.player_id === player.id);
-        const ranking = i + 1;
-        
-        try {
-          if (existingTryout) {
-            await base44.entities.PlayerTryout.update(existingTryout.id, {
-              age_group_ranking: ranking
-            });
-          } else {
-            await base44.entities.PlayerTryout.create({
-              player_id: player.id,
-              age_group_ranking: ranking
-            });
-          }
-          await new Promise(resolve => setTimeout(resolve, 50));
-        } catch (error) {
-          console.error(`Failed to update ranking for player ${player.id}:`, error);
-        }
-      }
+      withMeta.forEach((item, i) => {
+        updates.push({ playerId: item.player.id, ranking: i + 1 });
+      });
     }
 
-    await queryClient.refetchQueries(['tryouts']);
-    toast.success('Rankings recalculated successfully!');
+    // Optimistically update local cache
+    queryClient.setQueryData(['players'], (old) => {
+      if (!old) return old;
+      const rankMap = Object.fromEntries(updates.map(u => [u.playerId, u.ranking]));
+      return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
+    });
+
+    // Persist to DB in parallel batches of 10
+    const BATCH = 10;
+    for (let i = 0; i < updates.length; i += BATCH) {
+      const batch = updates.slice(i, i + BATCH);
+      await Promise.all(batch.map(u =>
+        base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking })
+      ));
+    }
   };
 
   const onDragEnd = async (result) => {
