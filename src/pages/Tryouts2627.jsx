@@ -889,9 +889,9 @@ export default function Tryouts2627() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-500 p-4">
-            <h2 className="text-xl font-bold text-emerald-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-emerald-200">
+            <h2 className="text-xl font-bold text-emerald-700 mb-4 pb-2 border-b-2 border-emerald-200">
               Girls Academy Teams
             </h2>
             <div className="space-y-3">
@@ -902,11 +902,14 @@ export default function Tryouts2627() {
                   players={getTeamPlayers(team)}
                 />
               ))}
+              {teamColumns.girlsAcademy.length === 0 && (
+                <p className="text-center text-slate-400 text-sm py-10 italic">No Girls Academy teams</p>
+              )}
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg border-2 border-blue-500 p-4">
-            <h2 className="text-xl font-bold text-blue-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-blue-200">
+            <h2 className="text-xl font-bold text-blue-700 mb-4 pb-2 border-b-2 border-blue-200">
               Girls Aspire Teams
             </h2>
             <div className="space-y-3">
@@ -917,36 +920,27 @@ export default function Tryouts2627() {
                   players={getTeamPlayers(team)}
                 />
               ))}
+              {teamColumns.aspire.length === 0 && (
+                <p className="text-center text-slate-400 text-sm py-10 italic">No Aspire teams</p>
+              )}
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg border-2 border-purple-500 p-4">
-            <h2 className="text-xl font-bold text-purple-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-purple-200">
-              DPL Teams
+            <h2 className="text-xl font-bold text-purple-700 mb-4 pb-2 border-b-2 border-purple-200">
+              DPL &amp; Other Teams
             </h2>
             <div className="space-y-3">
-              {teamColumns.dpl.map(team => (
+              {teamColumns.dplAndOther.map(team => (
                 <TeamColumn 
                   key={team.id} 
                   team={team} 
                   players={getTeamPlayers(team)}
                 />
               ))}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg border-2 border-slate-500 p-4">
-            <h2 className="text-xl font-bold text-slate-700 mb-4 sticky top-0 bg-white pb-2 border-b-2 border-slate-200">
-              All Other Teams
-            </h2>
-            <div className="space-y-3">
-              {teamColumns.other.map(team => (
-                <TeamColumn 
-                  key={team.id} 
-                  team={team} 
-                  players={getTeamPlayers(team)}
-                />
-              ))}
+              {teamColumns.dplAndOther.length === 0 && (
+                <p className="text-center text-slate-400 text-sm py-10 italic">No DPL/other teams</p>
+              )}
             </div>
           </div>
         </div>
