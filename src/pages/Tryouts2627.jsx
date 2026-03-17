@@ -261,11 +261,18 @@ export default function Tryouts2627() {
       return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
     });
 
-    // Persist via backend function to avoid frontend rate limits
-    const res = await base44.functions.invoke('saveRankings', { updates });
-    if (res.data?.failed > 0) {
-      toast.warning(`${res.data.failed} rankings failed to save`);
+    // Persist via backend function in chunks of 15 to avoid timeouts
+    const chunkSize = 15;
+    let totalFailed = 0;
+    for (let i = 0; i < updates.length; i += chunkSize) {
+      const chunk = updates.slice(i, i + chunkSize);
+      const res = await base44.functions.invoke('saveRankings', { updates: chunk });
+      totalFailed += res.data?.failed || 0;
+      if (i + chunkSize < updates.length) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
     }
+    if (totalFailed > 0) toast.warning(`${totalFailed} rankings failed to save`);
   };
 
   // Manual rank: set player to a specific rank, shift others in same age group
