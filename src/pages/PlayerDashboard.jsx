@@ -33,6 +33,7 @@ export default function PlayerDashboard() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const playerId = urlParams.get('id');
+  const backUrl = urlParams.get('back') ? decodeURIComponent(urlParams.get('back')) : null;
 
   const [assessmentIndex, setAssessmentIndex] = useState(0);
   const [evaluationIndex, setEvaluationIndex] = useState(0);
