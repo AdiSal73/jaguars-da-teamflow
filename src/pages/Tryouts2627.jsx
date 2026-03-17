@@ -183,10 +183,9 @@ export default function Tryouts2627() {
     }
 
     return filteredPlayers.sort((a, b) => {
-      const rankA = a.tryout?.age_group_ranking || 999;
-      const rankB = b.tryout?.age_group_ranking || 999;
-      if (rankA !== rankB) return rankA - rankB;
-
+      const orderA = a.team_position_order ?? 999999;
+      const orderB = b.team_position_order ?? 999999;
+      if (orderA !== orderB) return orderA - orderB;
       const lastNameA = a.full_name?.split(' ').pop() || '';
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
