@@ -261,13 +261,10 @@ export default function Tryouts2627() {
       return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
     });
 
-    // Persist to DB in batches of 10
-    const BATCH = 10;
-    for (let i = 0; i < updates.length; i += BATCH) {
-      const batch = updates.slice(i, i + BATCH);
-      await Promise.all(batch.map(u =>
-        base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking })
-      ));
+    // Persist to DB sequentially with a small delay to avoid rate limits
+    for (const u of updates) {
+      await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
+      await new Promise(resolve => setTimeout(resolve, 80));
     }
   };
 
