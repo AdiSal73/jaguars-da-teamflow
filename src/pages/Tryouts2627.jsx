@@ -76,6 +76,21 @@ export default function Tryouts2627() {
     }
   });
 
+  // League priority for ranking (lower = higher rank)
+  const LEAGUE_PRIORITY = { 'Girls Academy': 1, 'Pre-GA 1': 1, 'Aspire': 2, 'Pre-GA 2': 2, 'DPL': 3, 'Green': 4, 'White': 5, 'Black': 6 };
+
+  const getTeamLeague = (team) => {
+    if (!team) return 'Unknown';
+    const n = team.name?.toLowerCase() || '';
+    if (n.includes('pre-ga 1') || (team.league === 'Girls Academy')) return 'Girls Academy';
+    if (n.includes('pre-ga 2') || n.includes('aspire') || team.league === 'Aspire') return 'Aspire';
+    if (n.includes('dpl') || team.league === 'DPL') return 'DPL';
+    if (n.includes('green') || team.league === 'Green') return 'Green';
+    if (n.includes('white') || team.league === 'White') return 'White';
+    if (n.includes('black') || team.league === 'Black') return 'Black';
+    return team.league || 'Unknown';
+  };
+
   const getPlayerTryoutData = useCallback((player) => {
     const tryout = tryouts.find((t) => t.player_id === player.id);
     return { ...player, tryout };
