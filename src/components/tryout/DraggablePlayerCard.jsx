@@ -5,13 +5,33 @@ import { createPageUrl } from '@/utils';
 import { User, Mail, CheckCircle2, Clock, XCircle, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getPositionBorderColor } from '@/components/player/positionColors';
 import { isTrappedPlayer } from '@/components/utils/trappedPlayer';
-import { TeamRoleBadge } from '@/components/utils/teamRoleBadge';
 import SendOfferDialog from './SendOfferDialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+
+const TEAM_ROLES = [
+  'Indispensable Player',
+  'GA Starter',
+  'GA Rotation',
+  'Aspire Starter',
+  'Aspire Rotation',
+  'United Starter',
+  'United Rotation'
+];
+
+const ROLE_COLORS = {
+  'Indispensable Player': 'bg-yellow-500',
+  'GA Starter': 'bg-emerald-600',
+  'GA Rotation': 'bg-emerald-400',
+  'Aspire Starter': 'bg-blue-600',
+  'Aspire Rotation': 'bg-blue-400',
+  'United Starter': 'bg-purple-600',
+  'United Rotation': 'bg-purple-400',
+};
 
 export default function DraggablePlayerCard({ player, index, isDraggable = true, team }) {
   const navigate = useNavigate();
@@ -21,13 +41,8 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
   const assignToRosterMutation = useMutation({
     mutationFn: async () => {
       const assignedTeamId = player.current_26_27_team;
-      if (!assignedTeamId) {
-        throw new Error('Player has no assigned 26/27 team');
-      }
-      
-      await base44.entities.Player.update(player.id, {
-        team_id: assignedTeamId
-      });
+      if (!assignedTeamId) throw new Error('Player has no assigned 26/27 team');
+      await base44.entities.Player.update(player.id, { team_id: assignedTeamId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['players']);
@@ -37,6 +52,26 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
     onError: (error) => {
       toast.error(error.message || 'Failed to add player to roster');
     }
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async (newRole) => {
+      const tryoutData = player.tryout || {};
+      if (tryoutData.id) {
+        await base44.entities.PlayerTryout.update(tryoutData.id, { team_role: newRole });
+      } else {
+        await base44.entities.PlayerTryout.create({
+          player_id: player.id,
+          player_name: player.full_name,
+          team_role: newRole
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tryouts']);
+      toast.success('Role updated');
+    },
+    onError: () => toast.error('Failed to update role')
   });
 
   const sendOfferMutation = useMutation({
@@ -55,7 +90,6 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
           offer_expiration_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         });
       }
-
       if (player.parent_emails?.length > 0) {
         for (const email of player.parent_emails) {
           await base44.integrations.Core.SendEmail({
@@ -72,10 +106,18 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
       setShowOfferDialog(false);
       toast.success('Offer sent successfully');
     },
-    onError: () => {
-      toast.error('Failed to send offer');
-    }
+    onError: () => toast.error('Failed to send offer')
   });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Offer Sent': return 'bg-blue-500';
+      case 'Accepted Offer': return 'bg-green-500';
+      case 'Rejected Offer': return 'bg-red-500';
+      case 'Considering Offer': return 'bg-yellow-500';
+      default: return 'bg-slate-500';
+    }
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -87,14 +129,11 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Offer Sent': return 'bg-blue-500';
-      case 'Accepted Offer': return 'bg-green-500';
-      case 'Rejected Offer': return 'bg-red-500';
-      case 'Considering Offer': return 'bg-yellow-500';
-      default: return 'bg-slate-500';
-    }
+  const handleNavigateToPlayer = (e) => {
+    if (e.defaultPrevented) return;
+    // Pass current URL (with filters) as the back destination
+    const backUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}&back=${backUrl}`);
   };
 
   return (
@@ -122,7 +161,7 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
           onClick={(e) => {
             if (!snapshot.isDragging) {
               e.stopPropagation();
-              navigate(`${createPageUrl('PlayerDashboard')}?id=${player.id}`);
+              handleNavigateToPlayer(e);
             }
           }}
         >
@@ -135,9 +174,6 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                 <div className="font-bold text-slate-900 truncate">{player.full_name}</div>
                 <div className="text-sm text-slate-600 space-y-1 mt-1">
                   <div className="flex gap-1 items-center flex-wrap">
-                    {player.current_2526_team && (
-                      <Badge className="bg-slate-100 text-slate-800 text-xs px-2 py-0.5">{player.current_2526_team}</Badge>
-                    )}
                     <span className="font-medium">{player.primary_position}</span>
                     {player.date_of_birth && (
                       <Badge className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5">{new Date(player.date_of_birth).getFullYear()}</Badge>
@@ -158,7 +194,7 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                   #{player.tryout.age_group_ranking}
                 </div>
               )}
-              {player.tryout?.next_season_status && (
+              {player.tryout?.next_season_status && player.tryout.next_season_status !== 'N/A' && (
                 <Badge className={`${getStatusColor(player.tryout.next_season_status)} text-white text-xs px-2 py-1 font-bold flex items-center gap-1`}>
                   {getStatusIcon(player.tryout.next_season_status)}
                   {player.tryout.next_season_status}
@@ -167,17 +203,29 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
               {isTrappedPlayer(player.date_of_birth) && (
                 <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">TRAPPED</Badge>
               )}
-              {player.tryout?.team_role && (
-                <TeamRoleBadge role={player.tryout.team_role} size="default" />
-              )}
+
+              {/* Team Role Dropdown */}
+              <div onClick={e => e.stopPropagation()}>
+                <Select
+                  value={player.tryout?.team_role || ''}
+                  onValueChange={(val) => updateRoleMutation.mutate(val)}
+                >
+                  <SelectTrigger className={`h-6 text-xs px-2 border-0 font-semibold text-white ${ROLE_COLORS[player.tryout?.team_role] || 'bg-slate-400'} w-auto min-w-[120px]`}>
+                    <SelectValue placeholder="Set Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TEAM_ROLES.map(role => (
+                      <SelectItem key={role} value={role} className="text-xs">{role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex gap-1 flex-col">
                 {player.current_26_27_team && player.current_26_27_team !== player.team_id && (
                   <Button
                     size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      assignToRosterMutation.mutate();
-                    }}
+                    onClick={(e) => { e.stopPropagation(); assignToRosterMutation.mutate(); }}
                     disabled={assignToRosterMutation.isPending}
                     className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs px-2 py-1 h-auto"
                   >
@@ -185,19 +233,16 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                     Add to Roster
                   </Button>
                 )}
-                {!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A' ? (
+                {(!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A') && (
                   <Button
                     size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowOfferDialog(true);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); setShowOfferDialog(true); }}
                     className="bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white text-xs px-2 py-1 h-auto"
                   >
                     <Mail className="w-3 h-3 mr-1" />
                     Send Offer
                   </Button>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
