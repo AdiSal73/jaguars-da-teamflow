@@ -245,8 +245,21 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                 </div>
               </div>
 
-              {/* Ranking badge */}
-              {ranking && (
+              {/* Ranking badge — long press to manually set */}
+              {ranking && onManualRank && (
+                <div onClick={e => e.stopPropagation()}>
+                  <RankingBadge
+                    ranking={ranking}
+                    isUpdating={rankUpdating}
+                    onManualRank={async (newRank) => {
+                      setRankUpdating(true);
+                      await onManualRank(player, newRank);
+                      setRankUpdating(false);
+                    }}
+                  />
+                </div>
+              )}
+              {ranking && !onManualRank && (
                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg font-black shadow-md flex-shrink-0">
                   #{ranking}
                 </div>
