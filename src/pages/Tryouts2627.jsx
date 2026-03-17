@@ -262,9 +262,17 @@ export default function Tryouts2627() {
     });
 
     // Persist to DB sequentially with delay to avoid rate limits
-    for (const u of updates) {
-      await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
-      await new Promise(resolve => setTimeout(resolve, 300));
+    // Process in batches of 5 with a longer pause between batches
+    const batchSize = 5;
+    for (let i = 0; i < updates.length; i += batchSize) {
+      const batch = updates.slice(i, i + batchSize);
+      for (const u of batch) {
+        await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      if (i + batchSize < updates.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
   };
 
