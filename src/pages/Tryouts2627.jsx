@@ -261,10 +261,10 @@ export default function Tryouts2627() {
       return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
     });
 
-    // Persist to DB one at a time with a 600ms gap to stay under rate limits
-    for (const u of updates) {
-      await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
-      await new Promise(resolve => setTimeout(resolve, 600));
+    // Persist via backend function to avoid frontend rate limits
+    const res = await base44.functions.invoke('saveRankings', { updates });
+    if (res.data?.failed > 0) {
+      toast.warning(`${res.data.failed} rankings failed to save`);
     }
   };
 
