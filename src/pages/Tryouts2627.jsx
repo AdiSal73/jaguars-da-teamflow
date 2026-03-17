@@ -105,43 +105,22 @@ export default function Tryouts2627() {
       return t.league === 'Aspire' || name.includes('aspire') || name.includes('pre-ga 2');
     }));
     
-    const dplTeams = sortTeamsByAge(filtered.filter(t => 
-      t.league === 'DPL' || t.name?.toUpperCase().includes('DPL')
-    ));
-
-    const otherTeams = filtered.filter(t => 
+    // DPL + Other combined into one column
+    const dplAndOther = filtered.filter(t => 
       t.league !== 'Girls Academy' && 
       t.league !== 'Aspire' &&
-      t.league !== 'DPL' &&
       !t.name?.toLowerCase().includes('pre-ga 1') &&
       !t.name?.toLowerCase().includes('pre-ga 2') &&
-      !t.name?.toLowerCase().includes('aspire') &&
-      !t.name?.toUpperCase().includes('DPL')
-    );
-
-    const sortedOtherTeams = otherTeams.sort((a, b) => {
-      const leagueOrder = { 'Green': 1, 'White': 2, 'Black': 3 };
-      const getOrder = (team) => {
-        const league = team.league || '';
-        return leagueOrder[league] || 999;
-      };
-
-      const orderDiff = getOrder(a) - getOrder(b);
+      !t.name?.toLowerCase().includes('aspire')
+    ).sort((a, b) => {
+      const leagueOrder = { 'DPL': 1, 'Green': 2, 'White': 3, 'Black': 4 };
+      const orderDiff = (leagueOrder[a.league] || 5) - (leagueOrder[b.league] || 5);
       if (orderDiff !== 0) return orderDiff;
-
-      const extractAge = (ageGroup) => {
-        const match = ageGroup?.match(/U-?(\d+)/i);
-        return match ? parseInt(match[1]) : 0;
-      };
+      const extractAge = (ag) => { const m = ag?.match(/U-?(\d+)/i); return m ? parseInt(m[1]) : 0; };
       return extractAge(b.age_group) - extractAge(a.age_group);
     });
 
-    return {
-      girlsAcademy: gaTeams,
-      aspire: aspireTeams,
-      dpl: dplTeams,
-      other: sortedOtherTeams
-    };
+    return { girlsAcademy: gaTeams, aspire: aspireTeams, dplAndOther };
     }, [teams, selectedAgeGroup, selectedCoach]);
 
   const getTeamPlayers = useCallback((team) => {
