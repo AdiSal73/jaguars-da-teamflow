@@ -760,9 +760,7 @@ export default function Tryouts2627() {
             <Button
               onClick={async () => {
                 toast.info('Recalculating rankings...');
-                await recalculateAllRankings();
-                queryClient.refetchQueries(['players']);
-                queryClient.refetchQueries(['teams']);
+                await recalculateAllRankings(players, teams);
                 toast.success('Rankings recalculated!');
               }}
               variant="outline"
