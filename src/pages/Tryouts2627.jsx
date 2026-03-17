@@ -16,14 +16,25 @@ import { toast } from 'sonner';
 
 export default function Tryouts2627() {
   const queryClient = useQueryClient();
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState('all');
-  const [selectedCoach, setSelectedCoach] = useState('all');
-  const [selectedBirthYear, setSelectedBirthYear] = useState('all');
-  const [selectedGradYear, setSelectedGradYear] = useState('all');
-  const [selectedTryoutStatus, setSelectedTryoutStatus] = useState('all');
+
+  // Persist filters in URL so back-navigation restores them
+  const urlParams = new URLSearchParams(window.location.search);
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState(urlParams.get('ageGroup') || 'all');
+  const [selectedCoach, setSelectedCoach] = useState(urlParams.get('coach') || 'all');
+  const [selectedBirthYear, setSelectedBirthYear] = useState(urlParams.get('birthYear') || 'all');
+  const [selectedGradYear, setSelectedGradYear] = useState(urlParams.get('gradYear') || 'all');
+  const [selectedTryoutStatus, setSelectedTryoutStatus] = useState(urlParams.get('status') || 'all');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
+
+  // Keep URL in sync with filter state
+  const updateFilterURL = (key, value) => {
+    const params = new URLSearchParams(window.location.search);
+    if (value === 'all') params.delete(key); else params.set(key, value);
+    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  };
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
