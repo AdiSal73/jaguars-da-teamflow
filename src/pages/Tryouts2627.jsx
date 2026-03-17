@@ -268,6 +268,68 @@ export default function Tryouts2627() {
     }
   };
 
+  // Manual rank: set player to a specific rank, shift others in same age group
+  const handleManualRank = async (player, newRank) => {
+    const pList = [...players];
+    const tList = teams;
+
+    // Find player's age group via their 26/27 team
+    const playerTeam = tList.find(t => {
+      const season = t.season || (t.name?.includes('26/27') ? '26/27' : null);
+      if (season !== '26/27') return false;
+      return player.team_assignments?.some(a => a.team_id === t.id && a.season === '26/27') ||
+             player.current_26_27_team === t.id;
+    });
+    if (!playerTeam) { toast.error('Player has no 26/27 team'); return; }
+
+    const ageGroup = playerTeam.age_group;
+
+    // Get all players in this age group with a ranking, sorted by current ranking
+    const ageGroupPlayers = pList.filter(p => {
+      const pt = tList.find(t => {
+        const season = t.season || (t.name?.includes('26/27') ? '26/27' : null);
+        if (season !== '26/27' || t.age_group !== ageGroup) return false;
+        return p.team_assignments?.some(a => a.team_id === t.id && a.season === '26/27') ||
+               p.current_26_27_team === t.id;
+      });
+      return !!pt;
+    }).filter(p => p.id !== player.id && p.age_group_ranking != null)
+      .sort((a, b) => (a.age_group_ranking || 999) - (b.age_group_ranking || 999));
+
+    // Insert player at newRank, shift others down
+    const updates = [];
+    let rank = 1;
+    let inserted = false;
+    for (const p of ageGroupPlayers) {
+      if (rank === newRank && !inserted) {
+        updates.push({ playerId: player.id, ranking: newRank });
+        inserted = true;
+        rank++;
+      }
+      updates.push({ playerId: p.id, ranking: rank++ });
+    }
+    if (!inserted) {
+      updates.push({ playerId: player.id, ranking: newRank });
+    }
+
+    // Optimistic update
+    queryClient.setQueryData(['players'], (old) => {
+      if (!old) return old;
+      const rankMap = Object.fromEntries(updates.map(u => [u.playerId, u.ranking]));
+      return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
+    });
+
+    toast.info(`Setting rank #${newRank}...`);
+
+    // Persist sequentially
+    for (const u of updates) {
+      await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+
+    toast.success(`Ranking updated to #${newRank}`);
+  };
+
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
