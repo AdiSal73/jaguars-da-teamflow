@@ -147,25 +147,37 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          style={provided.draggableProps.style}
+          style={{
+            ...provided.draggableProps.style,
+            zIndex: snapshot.isDragging ? 9999 : 'auto',
+          }}
           className={`
             ${isTrappedPlayer(player.date_of_birth)
               ? 'border-red-400 bg-gradient-to-r from-red-50 to-red-100' 
-              : `${getPositionBorderColor(player.primary_position)} bg-white hover:border-emerald-400`
+              : `${getPositionBorderColor(player.primary_position)} bg-white`
             }
-            w-full p-3 rounded-xl border-2 cursor-grab active:cursor-grabbing
-            transition-all duration-150
-            ${snapshot.isDragging ? 'shadow-2xl scale-105 ring-4 ring-emerald-500/50 opacity-90 z-[9999]' : 'hover:shadow-md'}
+            w-full p-3 rounded-xl border-2 select-none
+            transition-shadow duration-150
+            ${snapshot.isDragging
+              ? 'shadow-2xl ring-2 ring-emerald-500 opacity-95 rotate-[0.5deg]'
+              : 'hover:shadow-md hover:border-emerald-300'
+            }
           `}
           onClick={(e) => {
-            if (!snapshot.isDragging) {
-              e.stopPropagation();
-              handleNavigateToPlayer(e);
-            }
+            if (snapshot.isDragging) return;
+            e.stopPropagation();
+            handleNavigateToPlayer(e);
           }}
         >
           <div className="flex items-center justify-between gap-2">
+            {/* Dedicated drag handle */}
+            <div
+              {...provided.dragHandleProps}
+              className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded touch-none"
+              onClick={e => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4" />
+            </div>
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
                 {player.jersey_number || <User className="w-4 h-4" />}
