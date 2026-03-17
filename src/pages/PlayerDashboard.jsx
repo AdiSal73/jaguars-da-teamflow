@@ -443,7 +443,7 @@ export default function PlayerDashboard() {
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-600/20 to-blue-600/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <Button onClick={() => navigate(-1)} variant="ghost" className="text-white hover:bg-white/10 mb-4">
+          <Button onClick={() => backUrl ? navigate(backUrl) : navigate(-1)} variant="ghost" className="text-white hover:bg-white/10 mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
