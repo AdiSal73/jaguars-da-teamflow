@@ -358,22 +358,32 @@ export default function Tryouts2627() {
       logs: [...prev.logs, { type: 'info', message: `🔄 Retrying ${failedRows.length} failed imports...` }]
     }));
 
+    // Fetch fresh teams for retry lookup
+    const freshTeamsForRetry = await base44.entities.Team.list();
     const createdTeams = {};
-    
-    for (const baseName of [...new Set(failedRows.map(r => r.newTeam).filter(Boolean))]) {
-      const teamNameWithSeason = `${baseName} 26/27`;
-      const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '26/27');
-      if (existingTeam) {
-        createdTeams[baseName] = existingTeam.id;
-      }
+
+    // Build lookup for 26/27 teams (by baseName from row.team2627)
+    for (const baseName of [...new Set(failedRows.map(r => r.team2627).filter(Boolean))]) {
+      const existing = freshTeamsForRetry.find(t =>
+        t.season === '26/27' && (
+          t.name === `${baseName} 26/27` ||
+          t.name === baseName ||
+          t.name?.toLowerCase().includes(baseName.toLowerCase())
+        )
+      );
+      if (existing) createdTeams[baseName] = existing.id;
     }
 
+    // Build lookup for 25/26 teams
     for (const baseName of [...new Set(failedRows.map(r => r.team2526).filter(Boolean))]) {
-      const teamNameWithSeason = `${baseName} 25/26`;
-      const existingTeam = teams.find(t => t.name === teamNameWithSeason && t.season === '25/26');
-      if (existingTeam) {
-        createdTeams[`${baseName}_2526`] = existingTeam.id;
-      }
+      const existing = freshTeamsForRetry.find(t =>
+        t.season === '25/26' && (
+          t.name === `${baseName} 25/26` ||
+          t.name === baseName ||
+          t.name?.toLowerCase().includes(baseName.toLowerCase())
+        )
+      );
+      if (existing) createdTeams[`${baseName}_2526`] = existing.id;
     }
 
     for (let i = 0; i < failedRows.length; i++) {
