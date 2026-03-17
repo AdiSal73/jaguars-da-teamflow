@@ -53,13 +53,9 @@ export default function Tryouts2627() {
       const updatedAssignments = teamAssignments.filter(a => a.season !== '26/27');
       updatedAssignments.push({ team_id: teamId, season: '26/27' });
       
-      const currentTeamIds = updatedAssignments.map(a => a.team_id);
-      
       await base44.entities.Player.update(playerId, { 
-        team_id: teamId, 
         current_26_27_team: teamId,
-        team_assignments: updatedAssignments,
-        current_team_ids: currentTeamIds
+        team_assignments: updatedAssignments
       });
     },
     onSuccess: () => {
@@ -149,14 +145,18 @@ export default function Tryouts2627() {
     }, [teams, selectedAgeGroup, selectedCoach]);
 
   const getTeamPlayers = useCallback((team) => {
+    const effectiveSeason = team.season || (team.name?.includes('26/27') ? '26/27' : team.name?.includes('25/26') ? '25/26' : null);
     const teamPlayers = players.filter(p => {
-      if (p.team_assignments && Array.isArray(p.team_assignments)) {
-        return p.team_assignments.some(a => a.team_id === team.id && a.season === team.season);
+      if (p.team_assignments && Array.isArray(p.team_assignments) && p.team_assignments.length > 0) {
+        if (effectiveSeason) {
+          return p.team_assignments.some(a => a.team_id === team.id && a.season === effectiveSeason);
+        }
+        return p.team_assignments.some(a => a.team_id === team.id);
       }
-      if (p.current_team_ids && Array.isArray(p.current_team_ids)) {
-        return p.current_team_ids.includes(team.id);
-      }
-      return p.current_26_27_team === team.id;
+      // Fallback for legacy players without team_assignments
+      if (effectiveSeason === '26/27') return p.current_26_27_team === team.id;
+      if (effectiveSeason === '25/26') return p.current_25_26_team === team.id;
+      return false;
     });
     const playersWithTryout = teamPlayers.map(p => getPlayerTryoutData(p));
     
@@ -294,16 +294,20 @@ export default function Tryouts2627() {
     const destTeamId = destination.droppableId.replace('team-', '');
 
     if (sourceTeamId !== destTeamId) {
+      const movingPlayer = players.find(p => p.id === playerId);
+      const movedAssignments = (movingPlayer?.team_assignments || []).filter(a => a.season !== '26/27');
+      movedAssignments.push({ team_id: destTeamId, season: '26/27' });
+
       queryClient.setQueryData(['players'], (old) => {
         return old?.map(p => 
-          p.id === playerId ? { ...p, team_id: destTeamId, current_26_27_team: destTeamId } : p
+          p.id === playerId ? { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments } : p
         ) || old;
       });
 
       try {
         await base44.entities.Player.update(playerId, { 
-          team_id: destTeamId, 
-          current_26_27_team: destTeamId 
+          current_26_27_team: destTeamId,
+          team_assignments: movedAssignments
         });
         
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -504,33 +508,33 @@ export default function Tryouts2627() {
 
     const reader = new FileReader();
     reader.onload = async (event) => {
-      try {
-        const csv = event.target.result;
-        const lines = csv.split('\n');
-        
-        const rows = [];
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          const values = lines[i].split(/[,\t]/).map(v => v.trim());
-          if (values.length < 8) continue;
+      const csv = event.target.result;
+      const lines = csv.split('\n');
+      const rows = [];
 
-          const firstName = values[0];
-          const lastName = values[1];
-          const fullName = `${firstName} ${lastName}`.trim();
-          
-          if (!fullName || fullName.length < 2) continue;
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        // Handle both comma and tab delimiters, strip surrounding quotes
+        const values = lines[i].split(/[,\t]/).map(v => v.trim().replace(/^"|"$/g, ''));
+        if (values.length < 2) continue;
 
-          rows.push({
-            firstName,
-            lastName,
-            team2526: values[2] || '',
-            position: parsePositionFromNumber(values[3]) || '',
-            gradYear: values[4] || '',
-            birthdate: values[5] || '',
-            comments: values[6] || '',
-            newTeam: values[7] || ''
-          });
-        }
+        const firstName = values[0]?.trim();
+        const lastName = values[1]?.trim();
+        const fullName = `${firstName} ${lastName}`.trim();
+        if (!fullName || fullName.length < 2) continue;
+
+        rows.push({
+          firstName,
+          lastName,
+          fullName,
+          team2526: values[2]?.trim() || '',       // 25/26 team column
+          position: parsePositionFromNumber(values[3]?.trim()),
+          gradYear: values[4]?.trim() || '',
+          birthdate: values[5]?.trim() || '',
+          comments: values[6]?.trim() || '',
+          team2627: values[7]?.trim() || ''         // 26/27 team column
+        });
+      }
 
         setImportProgress({
           total: rows.length,
