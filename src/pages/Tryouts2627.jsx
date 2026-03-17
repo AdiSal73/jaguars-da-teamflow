@@ -174,10 +174,10 @@ export default function Tryouts2627() {
       'Pre-GA 1': 1, 
       'Aspire': 2, 
       'Pre-GA 2': 2, 
-      'DPL': 3, 
+      'DPL': 3,
       'Green': 4, 
       'White': 5, 
-      'Black': 6 
+      'Black': 6
     };
 
     toast.info('Recalculating rankings across all age groups...');
