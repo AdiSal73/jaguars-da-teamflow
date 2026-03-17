@@ -324,7 +324,7 @@ export default function Tryouts2627() {
     // Persist sequentially
     for (const u of updates) {
       await base44.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
-      await new Promise(resolve => setTimeout(resolve, 80));
+      await new Promise(resolve => setTimeout(resolve, 600));
     }
 
     toast.success(`Ranking updated to #${newRank}`);
