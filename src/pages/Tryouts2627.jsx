@@ -204,6 +204,7 @@ export default function Tryouts2627() {
     const teamById = Object.fromEntries(tList.map(t => [t.id, t]));
 
     // Group players by age_group, only those assigned to a 26/27 team
+    // Fall back to the team's age_group if the player doesn't have one set
     const byAgeGroup = {};
     for (const p of pList) {
       if (!p.current_26_27_team) continue;
@@ -211,7 +212,7 @@ export default function Tryouts2627() {
       if (!team) continue;
       const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
       if (teamSeason !== '26/27') continue;
-      const ag = p.age_group || 'Unknown';
+      const ag = p.age_group || team.age_group || 'Unknown';
       if (!byAgeGroup[ag]) byAgeGroup[ag] = [];
       byAgeGroup[ag].push(p);
     }
