@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getPositionBorderColor } from '@/components/player/positionColors';
 import { isTrappedPlayer } from '@/components/utils/trappedPlayer';
 import SendOfferDialog from './SendOfferDialog';
+import RankingBadge from './RankingBadge';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
