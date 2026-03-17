@@ -726,7 +726,8 @@ export default function Tryouts2627() {
         }));
 
         toast.success('Import complete! Players added to rosters.');
-      } catch (error) {
+      } catch (error) { // eslint-disable-line no-empty
+
         toast.error(`Import failed: ${error.message}`);
         setImportProgress(null);
         setShowImportDialog(false);
