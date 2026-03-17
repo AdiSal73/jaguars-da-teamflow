@@ -184,6 +184,11 @@ export default function Tryouts2627() {
     }
 
     return filteredPlayers.sort((a, b) => {
+      // Prefer age_group_ranking as it reflects manual rank changes immediately
+      const rankA = a.age_group_ranking ?? 999999;
+      const rankB = b.age_group_ranking ?? 999999;
+      if (rankA !== rankB) return rankA - rankB;
+      // Fallback to team_position_order, then last name
       const orderA = a.team_position_order ?? 999999;
       const orderB = b.team_position_order ?? 999999;
       if (orderA !== orderB) return orderA - orderB;
