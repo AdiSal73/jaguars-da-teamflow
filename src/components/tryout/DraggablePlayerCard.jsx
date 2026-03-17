@@ -34,7 +34,7 @@ const ROLE_COLORS = {
   'United Rotation': 'bg-purple-400',
 };
 
-export default function DraggablePlayerCard({ player, index, isDraggable = true, team }) {
+export default function DraggablePlayerCard({ player, index, isDraggable = true, team, onManualRank }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showOfferDialog, setShowOfferDialog] = useState(false);
