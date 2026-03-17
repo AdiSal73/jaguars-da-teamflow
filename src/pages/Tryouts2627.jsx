@@ -27,6 +27,7 @@ export default function Tryouts2627() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importProgress, setImportProgress] = useState(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [mobileTab, setMobileTab] = useState('ga');
 
   // Keep URL in sync with filter state
   const updateFilterURL = (key, value) => {
