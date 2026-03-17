@@ -324,11 +324,15 @@ export default function Tryouts2627() {
       updates.push({ playerId: player.id, ranking: newRank });
     }
 
-    // Optimistic update
+    // Optimistic update — also sync team_position_order so card order is instant
     queryClient.setQueryData(['players'], (old) => {
       if (!old) return old;
       const rankMap = Object.fromEntries(updates.map(u => [u.playerId, u.ranking]));
-      return old.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
+      return old.map(p =>
+        rankMap[p.id] !== undefined
+          ? { ...p, age_group_ranking: rankMap[p.id], team_position_order: rankMap[p.id] * 1000 }
+          : p
+      );
     });
 
     toast.info(`Setting rank #${newRank}...`);
