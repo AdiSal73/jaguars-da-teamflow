@@ -382,10 +382,9 @@ export default function Tryouts2627() {
         const fullName = `${row.firstName} ${row.lastName}`.trim();
         if (!fullName || fullName.length < 2) continue;
         
-        const team2627Id = createdTeams[row.newTeam];
-        if (!team2627Id) throw new Error(`26/27 Team "${row.newTeam}" not found`);
-
+        const team2627Id = createdTeams[row.team2627] || createdTeams[row.newTeam];
         const team2526Id = row.team2526 ? createdTeams[`${row.team2526}_2526`] : null;
+        if (!team2627Id && !team2526Id) throw new Error(`No valid team found for this player`);
 
         const existingPlayer = players.find(p => {
           const nameMatch = p.full_name?.toLowerCase() === fullName.toLowerCase();
