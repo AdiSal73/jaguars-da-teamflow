@@ -508,7 +508,6 @@ export default function Tryouts2627() {
 
     const reader = new FileReader();
     reader.onload = async (event) => {
-      try {
       const csv = event.target.result;
       const lines = csv.split('\n');
       const rows = [];
@@ -726,13 +725,8 @@ export default function Tryouts2627() {
         }));
 
         toast.success('Import complete! Players added to rosters.');
-      } catch (error) { // eslint-disable-line no-empty
-
-        toast.error(`Import failed: ${error.message}`);
-        setImportProgress(null);
-        setShowImportDialog(false);
-      }
     };
+
     reader.readAsText(file);
   };
 
