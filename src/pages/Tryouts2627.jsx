@@ -413,12 +413,6 @@ export default function Tryouts2627() {
       }
     }
 
-    // Recalculate age_group_ranking based on updated positions
-    try {
-      await recalculateAllRankings(updatedPlayers, teams);
-    } catch (err) {
-      console.error('Ranking recalc failed:', err);
-    }
   };
 
   const retryFailedImports = async () => {
