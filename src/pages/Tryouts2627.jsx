@@ -835,7 +835,7 @@ export default function Tryouts2627() {
 
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Grad Year</label>
-                <Select value={selectedGradYear} onValueChange={setSelectedGradYear}>
+                <Select value={selectedGradYear} onValueChange={v => { setSelectedGradYear(v); updateFilterURL('gradYear', v); }}>
                   <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
                     <SelectValue placeholder="All Years" />
                   </SelectTrigger>
