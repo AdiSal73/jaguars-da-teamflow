@@ -256,56 +256,91 @@ export default function Tryouts2627() {
 
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-    
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const playerId = draggableId.replace('player-', '');
+    const draggedPlayerId = draggableId.replace('player-', '');
     const sourceTeamId = source.droppableId.replace('team-', '');
     const destTeamId = destination.droppableId.replace('team-', '');
+    const destIndex = destination.index;
 
-    if (sourceTeamId !== destTeamId) {
-      const movingPlayer = players.find(p => p.id === playerId);
-      const movedAssignments = (movingPlayer?.team_assignments || []).filter(a => a.season !== '26/27');
+    // Build updated player list optimistically
+    let updatedPlayers = [...players];
+
+    if (sourceTeamId === destTeamId) {
+      // --- Reorder within same team ---
+      const teamPlayers = updatedPlayers
+        .filter(p => p.current_26_27_team === destTeamId)
+        .sort((a, b) => (a.team_position_order ?? 999999) - (b.team_position_order ?? 999999));
+
+      const fromIdx = teamPlayers.findIndex(p => p.id === draggedPlayerId);
+      if (fromIdx === -1) return;
+
+      // Move in array
+      const [moved] = teamPlayers.splice(fromIdx, 1);
+      teamPlayers.splice(destIndex, 0, moved);
+
+      // Assign new position orders
+      const posUpdates = teamPlayers.map((p, i) => ({ id: p.id, order: (i + 1) * 1000 }));
+      const posMap = Object.fromEntries(posUpdates.map(u => [u.id, u.order]));
+
+      updatedPlayers = updatedPlayers.map(p =>
+        posMap[p.id] !== undefined ? { ...p, team_position_order: posMap[p.id] } : p
+      );
+
+      // Optimistic update
+      queryClient.setQueryData(['players'], updatedPlayers);
+
+      // Persist position orders in background
+      await Promise.all(posUpdates.map(u =>
+        base44.entities.Player.update(u.id, { team_position_order: u.order })
+      ));
+
+    } else {
+      // --- Move to different team ---
+      const movingPlayer = updatedPlayers.find(p => p.id === draggedPlayerId);
+      if (!movingPlayer) return;
+
+      const movedAssignments = (movingPlayer.team_assignments || []).filter(a => a.season !== '26/27');
       movedAssignments.push({ team_id: destTeamId, season: '26/27' });
 
-      queryClient.setQueryData(['players'], (old) => {
-        return old?.map(p => 
-          p.id === playerId ? { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments } : p
-        ) || old;
-      });
+      // Compute new position order: slot into destIndex among dest team's players
+      const destTeamPlayers = updatedPlayers
+        .filter(p => p.current_26_27_team === destTeamId && p.id !== draggedPlayerId)
+        .sort((a, b) => (a.team_position_order ?? 999999) - (b.team_position_order ?? 999999));
+
+      const prevOrder = destTeamPlayers[destIndex - 1]?.team_position_order ?? 0;
+      const nextOrder = destTeamPlayers[destIndex]?.team_position_order ?? (prevOrder + 2000);
+      const newPositionOrder = Math.round((prevOrder + nextOrder) / 2);
+
+      updatedPlayers = updatedPlayers.map(p =>
+        p.id === draggedPlayerId
+          ? { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments, team_position_order: newPositionOrder }
+          : p
+      );
+
+      // Optimistic update immediately
+      queryClient.setQueryData(['players'], updatedPlayers);
 
       try {
-        await base44.entities.Player.update(playerId, { 
+        await base44.entities.Player.update(draggedPlayerId, {
           current_26_27_team: destTeamId,
-          team_assignments: movedAssignments
+          team_assignments: movedAssignments,
+          team_position_order: newPositionOrder
         });
-        
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        await queryClient.invalidateQueries(['players']);
-        await queryClient.invalidateQueries(['tryouts']);
-        await queryClient.refetchQueries(['players']);
-        await queryClient.refetchQueries(['tryouts']);
-        await recalculateAllRankings();
-        
-        toast.success('Player moved successfully');
+        toast.success('Player moved');
       } catch (error) {
-        console.error('Failed to update player team:', error);
         toast.error('Failed to move player');
         queryClient.invalidateQueries(['players']);
+        return;
       }
-    } else {
-      try {
-        await recalculateAllRankings();
-        await queryClient.refetchQueries(['players']);
-        await queryClient.refetchQueries(['tryouts']);
-        toast.success('Rankings updated');
-      } catch (error) {
-        console.error('Failed to update rankings:', error);
-        toast.error('Failed to update ranking');
-        queryClient.invalidateQueries(['tryouts']);
-      }
+    }
+
+    // Recalculate age_group_ranking based on updated positions
+    try {
+      await recalculateAllRankings(updatedPlayers, teams);
+    } catch (err) {
+      console.error('Ranking recalc failed:', err);
     }
   };
 
