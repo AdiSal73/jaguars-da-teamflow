@@ -308,7 +308,19 @@ export default function PlayerDashboard() {
 
   const currentAssessment = assessments[assessmentIndex] || null;
   const currentEvaluation = evaluations[evaluationIndex] || null;
-  const team = teams.find(t => t.id === player?.team_id);
+
+  // Season-based team lookups from team_assignments
+  const team2526 = React.useMemo(() => {
+    const a = player?.team_assignments?.find(a => a.season === '25/26');
+    return a ? teams.find(t => t.id === a.team_id) : teams.find(t => t.id === player?.current_25_26_team);
+  }, [player, teams]);
+
+  const team2627 = React.useMemo(() => {
+    const a = player?.team_assignments?.find(a => a.season === '26/27');
+    return a ? teams.find(t => t.id === a.team_id) : teams.find(t => t.id === player?.current_26_27_team);
+  }, [player, teams]);
+
+  const team = team2627 || team2526; // primary team for display
 
   const getGradeText = (value) => {
     const grades = {
@@ -445,7 +457,8 @@ export default function PlayerDashboard() {
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{player.full_name}</h1>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
                   <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{player.primary_position}</Badge>
-                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">{team?.name || 'No Team'}</Badge>
+                  {team2526 && <Badge className="bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs">25/26: {team2526.name}</Badge>}
+                  {team2627 && <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">26/27: {team2627.name}</Badge>}
                   {player.jersey_number && <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30">#{player.jersey_number}</Badge>}
                 </div>
                 {isAdminOrCoach && (
@@ -479,8 +492,12 @@ export default function PlayerDashboard() {
                     <div className="font-bold text-sm sm:text-base">{player.primary_position}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
-                    <div className="text-xs text-slate-400">Team</div>
-                    <div className="font-bold text-xs sm:text-sm">{team?.name || 'N/A'}</div>
+                    <div className="text-xs text-slate-400">25/26 Team</div>
+                    <div className="font-bold text-xs">{team2526?.name || 'N/A'}</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
+                    <div className="text-xs text-slate-400">26/27 Team</div>
+                    <div className="font-bold text-xs">{team2627?.name || 'N/A'}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
                     <div className="text-xs text-slate-400">Status</div>
