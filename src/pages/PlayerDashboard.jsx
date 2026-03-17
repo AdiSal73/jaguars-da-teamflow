@@ -409,7 +409,7 @@ export default function PlayerDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="text-center text-white">
           <p className="text-lg mb-4">No player selected</p>
-          <Button onClick={() => navigate(-1)} className="bg-emerald-600">
+          <Button onClick={() => backUrl ? navigate(backUrl) : navigate(-1)} className="bg-emerald-600">
             Go Back
           </Button>
         </div>
