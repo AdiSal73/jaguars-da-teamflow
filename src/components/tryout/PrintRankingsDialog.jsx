@@ -236,7 +236,7 @@ function buildPrintHTML(printData, players) {
               : teamPlayers.map((p) => {
                   const offerStatus = p.tryout?.next_season_status;
                   const role = p.tryout?.team_role;
-                  const offerColor = offerStatus && offerStatus !== 'N/A' ? (OFFER_STATUS_COLORS[offerStatus] || '#94a3b8') : null;
+                  const offerColor = OFFER_STATUS_COLORS[offerStatus] || '#94a3b8';
                   const roleColor = role ? (ROLE_COLOR_HEX[role] || '#64748b') : null;
                   return `
                   <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #f1f5f9;background:white">
