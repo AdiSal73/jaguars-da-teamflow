@@ -13,16 +13,24 @@ Deno.serve(async (req) => {
 
     const results = { success: 0, failed: 0, errors: [] };
 
-    // Run all updates in parallel - small chunk sizes are enforced by the caller
-    await Promise.all(updates.map(async (u) => {
+    // Sequential with delay to avoid 429 rate limiting
+    for (const u of updates) {
       try {
         await base44.asServiceRole.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
         results.success++;
       } catch (err) {
-        results.failed++;
-        results.errors.push(`${u.playerId}: ${err.message}`);
+        // Retry once after a short backoff
+        try {
+          await new Promise(r => setTimeout(r, 500));
+          await base44.asServiceRole.entities.Player.update(u.playerId, { age_group_ranking: u.ranking });
+          results.success++;
+        } catch (retryErr) {
+          results.failed++;
+          results.errors.push(`${u.playerId}: ${retryErr.message}`);
+        }
       }
-    }));
+      await new Promise(r => setTimeout(r, 120));
+    }
 
     return Response.json({ ok: true, ...results });
   } catch (error) {
