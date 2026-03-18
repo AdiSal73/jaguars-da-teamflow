@@ -111,7 +111,7 @@ export default function PrintRankingsDialog({ open, onClose, players, teams, try
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const html = buildPrintHTML(printData, players);
+    const html = buildPrintHTML(printData, playersWithTryout);
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
