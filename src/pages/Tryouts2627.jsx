@@ -976,13 +976,10 @@ export default function Tryouts2627() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="N/A">N/A</SelectItem>
-                    <SelectItem value="Offer Sent">Offer Sent</SelectItem>
-                    <SelectItem value="Accepted Offer">Accepted</SelectItem>
-                    <SelectItem value="Rejected Offer">Rejected</SelectItem>
-                    <SelectItem value="Considering Offer">Considering</SelectItem>
-                    <SelectItem value="Roster Finalized">Finalized</SelectItem>
-                    <SelectItem value="Not Offered">Not Offered</SelectItem>
+                    <SelectItem value="Not Offered Yet">Not Offered Yet</SelectItem>
+                    <SelectItem value="Considering Offer">Considering Offer</SelectItem>
+                    <SelectItem value="Accepted Offer">Accepted Offer</SelectItem>
+                    <SelectItem value="Signed">Signed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
