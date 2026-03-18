@@ -1158,6 +1158,13 @@ export default function Tryouts2627() {
           </DialogContent>
         </Dialog>
 
+        <PrintRankingsDialog
+          open={showPrintDialog}
+          onClose={() => setShowPrintDialog(false)}
+          players={players}
+          teams={teams}
+        />
+
         <ResetTeamsDialog
           open={showResetDialog}
           onClose={() => setShowResetDialog(false)}
