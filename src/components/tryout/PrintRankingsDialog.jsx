@@ -247,7 +247,7 @@ function buildPrintHTML(printData, players) {
                         ${p.primary_position ? `<span style="font-size:9px;color:#64748b;background:#f1f5f9;border-radius:3px;padding:1px 4px">${p.primary_position}</span>` : ''}
                         ${p.grad_year ? `<span style="font-size:9px;color:#94a3b8">'${String(p.grad_year).slice(-2)}</span>` : ''}
                         ${role ? `<span style="font-size:9px;color:white;background:${roleColor};border-radius:3px;padding:1px 4px;font-weight:600">${role}</span>` : ''}
-                        ${offerColor ? `<span style="font-size:9px;color:white;background:${offerColor};border-radius:3px;padding:1px 4px;font-weight:600">${offerStatus}</span>` : ''}
+                        <span style="font-size:9px;color:white;background:${offerColor};border-radius:3px;padding:1px 4px;font-weight:600">${offerStatus || 'Not Offered Yet'}</span>
                       </div>
                     </div>
                   </div>`;
