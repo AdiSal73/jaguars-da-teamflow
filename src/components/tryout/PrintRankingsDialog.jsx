@@ -177,15 +177,6 @@ export default function PrintRankingsDialog({ open, onClose, players, teams }) {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden print content */}
-      <div id="print-rankings-content" style={{ display: 'none' }} className="no-print">
-        <style>{`
-          @media print {
-            #print-rankings-content { display: block !important; }
-          }
-        `}</style>
-        <PrintContent printData={printData} getTeamPlayers={getTeamPlayers} />
-      </div>
     </>
   );
 }
