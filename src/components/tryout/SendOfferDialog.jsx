@@ -93,7 +93,7 @@ Michigan Jaguars Coaching Staff`);
                 className="text-purple-600 border-purple-300 hover:bg-purple-50"
               >
                 <Sparkles className="w-4 h-4 mr-1" />
-                {isGenerating ? 'Generating...' : 'Generate with AI'}
+                {isGenerating ? 'Generating...' : 'Generate new message'}
               </Button>
             </div>
             <Textarea
