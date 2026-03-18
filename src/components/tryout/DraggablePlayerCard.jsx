@@ -34,26 +34,15 @@ const ROLE_COLORS = {
   'United Rotation': 'bg-purple-400',
 };
 
+const OFFER_STATUSES = ['N/A', 'Offer Sent', 'Accepted Offer', 'Rejected Offer', 'Considering Offer', 'Roster Finalized', 'Not Offered'];
+
 export default function DraggablePlayerCard({ player, index, isDraggable = true, team, onManualRank }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showOfferDialog, setShowOfferDialog] = useState(false);
-
+  const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [rankUpdating, setRankUpdating] = useState(false);
-
-  const assignToRosterMutation = useMutation({
-    mutationFn: async () => {
-      const assignedTeamId = player.current_26_27_team;
-      if (!assignedTeamId) throw new Error('Player has no assigned 26/27 team');
-      await base44.entities.Player.update(player.id, { team_id: assignedTeamId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['players']);
-      queryClient.invalidateQueries(['tryouts']);
-      toast.success('Player added to roster');
-    },
-    onError: (error) => toast.error(error.message || 'Failed to add player to roster')
-  });
+  const longPressTimer = useRef(null);
 
   const updateRoleMutation = useMutation({
     mutationFn: async (newRole) => {
