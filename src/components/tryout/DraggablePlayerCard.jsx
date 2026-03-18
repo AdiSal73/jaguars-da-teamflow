@@ -103,19 +103,18 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Offer Sent': return 'bg-blue-500';
-      case 'Accepted Offer': return 'bg-green-500';
-      case 'Rejected Offer': return 'bg-red-500';
+      case 'Not Offered Yet': return 'bg-slate-400';
       case 'Considering Offer': return 'bg-yellow-500';
-      default: return 'bg-slate-500';
+      case 'Accepted Offer': return 'bg-green-500';
+      case 'Signed': return 'bg-emerald-700';
+      default: return 'bg-slate-400';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Offer Sent': return <Clock className="w-3 h-3" />;
       case 'Accepted Offer': return <CheckCircle2 className="w-3 h-3" />;
-      case 'Rejected Offer': return <XCircle className="w-3 h-3" />;
+      case 'Signed': return <CheckCircle2 className="w-3 h-3" />;
       case 'Considering Offer': return <Clock className="w-3 h-3" />;
       default: return null;
     }
