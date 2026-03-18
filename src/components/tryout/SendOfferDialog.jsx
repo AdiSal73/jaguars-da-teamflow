@@ -15,6 +15,7 @@ export default function SendOfferDialog({ open, onClose, player, team, onSendOff
   const [isGenerating, setIsGenerating] = useState(false);
 
   React.useEffect(() => {
+    if (!open) { setRegistrationUrl(''); return; }
     if (open && player && team) {
       const teamName = typeof team === 'string' ? team : team?.name || 'the team';
       setMessage(`Dear ${player.full_name} and Family,
