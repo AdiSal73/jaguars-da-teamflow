@@ -61,6 +61,19 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
     onError: () => toast.error('Failed to update role')
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus) => {
+      const tryoutData = player.tryout || {};
+      if (tryoutData.id) {
+        await base44.entities.PlayerTryout.update(tryoutData.id, { next_season_status: newStatus });
+      } else {
+        await base44.entities.PlayerTryout.create({ player_id: player.id, player_name: player.full_name, next_season_status: newStatus });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries(['tryouts']); toast.success('Status updated'); },
+    onError: () => toast.error('Failed to update status')
+  });
+
   const sendOfferMutation = useMutation({
     mutationFn: async (message) => {
       const tryoutData = player.tryout || {};
