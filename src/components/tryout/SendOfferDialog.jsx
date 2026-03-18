@@ -52,7 +52,10 @@ Michigan Jaguars Coaching Staff`);
   };
 
   const handleSend = () => {
-    onSendOffer(message);
+    const fullMessage = registrationUrl
+      ? `${message}\n\nRegistration Link: ${registrationUrl}`
+      : message;
+    onSendOffer(fullMessage);
   };
 
   if (!player) return null;
