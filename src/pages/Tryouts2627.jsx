@@ -1163,6 +1163,7 @@ export default function Tryouts2627() {
           onClose={() => setShowPrintDialog(false)}
           players={players}
           teams={teams}
+          tryouts={tryouts}
         />
 
         <ResetTeamsDialog
