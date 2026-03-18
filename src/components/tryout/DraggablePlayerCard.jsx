@@ -199,52 +199,71 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                   <div className="text-[10px] sm:text-xs text-slate-500 italic truncate mt-0.5">{player.comment}</div>
                 )}
 
-                {/* Controls row — always visible, wraps on small screens */}
-                <div className="flex flex-wrap gap-1 mt-1.5 items-center" onClick={e => e.stopPropagation()}>
-                  <Select
-                    value={player.tryout?.team_role || ''}
-                    onValueChange={(val) => updateRoleMutation.mutate(val)}
-                  >
-                    <SelectTrigger className={`h-6 text-[10px] sm:text-xs px-2 border-0 font-semibold text-white ${ROLE_COLORS[player.tryout?.team_role] || 'bg-slate-400'} min-w-[90px] sm:min-w-[120px]`}>
-                      <SelectValue placeholder="Set Role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TEAM_ROLES.map(role => (
-                        <SelectItem key={role} value={role} className="text-xs">{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Controls row */}
+                 <div className="flex flex-wrap gap-1 mt-1.5 items-center" onClick={e => e.stopPropagation()}>
+                   <Select
+                     value={player.tryout?.team_role || ''}
+                     onValueChange={(val) => updateRoleMutation.mutate(val)}
+                   >
+                     <SelectTrigger className={`h-6 text-[10px] sm:text-xs px-2 border-0 font-semibold text-white ${ROLE_COLORS[player.tryout?.team_role] || 'bg-slate-400'} min-w-[90px] sm:min-w-[120px]`}>
+                       <SelectValue placeholder="Set Role" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {TEAM_ROLES.map(role => (
+                         <SelectItem key={role} value={role} className="text-xs">{role}</SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
 
-                  {player.current_26_27_team && player.current_26_27_team !== player.team_id && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); assignToRosterMutation.mutate(); }}
-                      disabled={assignToRosterMutation.isPending}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] sm:text-xs px-2 py-0.5 h-6"
-                    >
-                      <UserPlus className="w-3 h-3 mr-0.5" />
-                      Roster
-                    </Button>
-                  )}
-
-                  {(!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A') && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); setShowOfferDialog(true); }}
-                      className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white text-[10px] sm:text-xs px-2 py-0.5 h-6"
-                    >
-                      <Mail className="w-3 h-3 mr-0.5" />
-                      Offer
-                    </Button>
-                  )}
-
-                  {player.tryout?.next_season_status && player.tryout.next_season_status !== 'N/A' && (
-                    <Badge className={`${getStatusColor(player.tryout.next_season_status)} text-white text-[10px] px-1.5 py-0 flex items-center gap-0.5`}>
-                      {getStatusIcon(player.tryout.next_season_status)}
-                      {player.tryout.next_season_status}
-                    </Badge>
-                  )}
-                </div>
+                   {/* Offer status badge — long press to edit */}
+                   <div className="relative">
+                     {(!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A') ? (
+                       <Button
+                         size="sm"
+                         onClick={(e) => { e.stopPropagation(); setShowOfferDialog(true); }}
+                         className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white text-[10px] sm:text-xs px-2 py-0.5 h-6"
+                       >
+                         <Mail className="w-3 h-3 mr-0.5" />
+                         Offer
+                       </Button>
+                     ) : (
+                       <Badge
+                         className={`${getStatusColor(player.tryout.next_season_status)} text-white text-[10px] px-1.5 py-0 flex items-center gap-0.5 cursor-pointer select-none`}
+                         onMouseDown={(e) => { e.stopPropagation(); longPressTimer.current = setTimeout(() => setShowStatusPicker(true), 600); }}
+                         onMouseUp={() => clearTimeout(longPressTimer.current)}
+                         onMouseLeave={() => clearTimeout(longPressTimer.current)}
+                         onTouchStart={(e) => { e.stopPropagation(); longPressTimer.current = setTimeout(() => setShowStatusPicker(true), 600); }}
+                         onTouchEnd={() => clearTimeout(longPressTimer.current)}
+                       >
+                         {getStatusIcon(player.tryout.next_season_status)}
+                         {player.tryout.next_season_status}
+                       </Badge>
+                     )}
+                     {showStatusPicker && (
+                       <div
+                         className="absolute z-50 left-0 top-7 bg-white border border-slate-200 rounded-lg shadow-xl p-1 min-w-[150px]"
+                         onClick={e => e.stopPropagation()}
+                       >
+                         <div className="text-[10px] font-semibold text-slate-500 px-2 py-1">Change Status</div>
+                         {OFFER_STATUSES.map(s => (
+                           <button
+                             key={s}
+                             className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-slate-100 text-slate-700"
+                             onClick={() => { updateStatusMutation.mutate(s); setShowStatusPicker(false); }}
+                           >
+                             {s}
+                           </button>
+                         ))}
+                         <button
+                           className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-red-50 text-red-500 mt-1 border-t"
+                           onClick={() => setShowStatusPicker(false)}
+                         >
+                           Cancel
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                 </div>
               </div>
 
               {/* Ranking badge — long press to manually set */}
