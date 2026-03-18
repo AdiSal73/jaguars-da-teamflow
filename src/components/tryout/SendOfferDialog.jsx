@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, Sparkles } from 'lucide-react';
+import { Mail, Send, Sparkles, Link } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export default function SendOfferDialog({ open, onClose, player, team, onSendOffer, isPending }) {
   const [message, setMessage] = useState('');
+  const [registrationUrl, setRegistrationUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   React.useEffect(() => {
