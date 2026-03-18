@@ -216,15 +216,20 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
 
                    {/* Offer status badge — long press to edit */}
                    <div className="relative">
-                     {(!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A') ? (
-                       <Button
-                         size="sm"
-                         onClick={(e) => { e.stopPropagation(); setShowOfferDialog(true); }}
-                         className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white text-[10px] sm:text-xs px-2 py-0.5 h-6"
-                       >
-                         <Mail className="w-3 h-3 mr-0.5" />
-                         Offer
-                       </Button>
+                     {(!player.tryout?.next_season_status || player.tryout?.next_season_status === 'N/A' || player.tryout?.next_season_status === 'Not Offered Yet') ? (
+                       <div className="flex items-center gap-1">
+                         <Button
+                           size="sm"
+                           onClick={(e) => { e.stopPropagation(); setShowOfferDialog(true); }}
+                           className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white text-[10px] sm:text-xs px-2 py-0.5 h-6"
+                         >
+                           <Mail className="w-3 h-3 mr-0.5" />
+                           Offer
+                         </Button>
+                         {player.tryout?.next_season_status === 'Not Offered Yet' && (
+                           <Badge className="bg-slate-400 text-white text-[10px] px-1.5 py-0">Not Offered Yet</Badge>
+                         )}
+                       </div>
                      ) : (
                        <Badge
                          className={`${getStatusColor(player.tryout.next_season_status)} text-white text-[10px] px-1.5 py-0 flex items-center gap-0.5 cursor-pointer select-none`}
