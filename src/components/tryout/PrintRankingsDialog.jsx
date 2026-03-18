@@ -27,7 +27,12 @@ const COLUMN_COLORS = {
   'Unknown':       { header: '#475569', light: '#f8fafc', border: '#e2e8f0' },
 };
 
-export default function PrintRankingsDialog({ open, onClose, players, teams }) {
+export default function PrintRankingsDialog({ open, onClose, players, teams, tryouts = [] }) {
+  // Merge tryout data onto players so print has role/offer status
+  const playersWithTryout = React.useMemo(() =>
+    players.map(p => ({ ...p, tryout: tryouts.find(t => t.player_id === p.id) })),
+    [players, tryouts]
+  );
   const allAgeGroups = useMemo(() => {
     const ags = [...new Set(
       teams.filter(t => {
