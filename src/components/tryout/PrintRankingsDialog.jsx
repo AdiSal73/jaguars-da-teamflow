@@ -181,6 +181,25 @@ export default function PrintRankingsDialog({ open, onClose, players, teams }) {
   );
 }
 
+const OFFER_STATUS_COLORS = {
+  'Offer Sent': '#3b82f6',
+  'Accepted Offer': '#22c55e',
+  'Rejected Offer': '#ef4444',
+  'Considering Offer': '#eab308',
+  'Roster Finalized': '#8b5cf6',
+  'Not Offered': '#94a3b8',
+};
+
+const ROLE_COLOR_HEX = {
+  'Indispensable Player': '#eab308',
+  'GA Starter': '#059669',
+  'GA Rotation': '#34d399',
+  'Aspire Starter': '#2563eb',
+  'Aspire Rotation': '#60a5fa',
+  'United Starter': '#7c3aed',
+  'United Rotation': '#a78bfa',
+};
+
 function getPlayersForTeam(team, players) {
   const season = team.season || (team.name?.includes('26/27') ? '26/27' : null);
   return players.filter(p => {
@@ -209,22 +228,34 @@ function buildPrintHTML(printData, players) {
         ? `<div style="padding:12px;color:#94a3b8;font-size:11px;font-style:italic;text-align:center">No teams</div>`
         : col.teams.map(team => {
             const teamPlayers = getPlayersForTeam(team, players);
-            const rowsHTML = teamPlayers.length === 0
+            const cardsHTML = teamPlayers.length === 0
               ? `<div style="padding:6px 10px;color:#94a3b8;font-size:10px;font-style:italic">No players</div>`
-              : teamPlayers.map((p, idx) => `
-                <div style="display:flex;align-items:center;gap:8px;padding:4px 10px;background:${idx % 2 === 0 ? 'white' : '#f8fafc'};border-bottom:1px solid #f1f5f9">
-                  <span style="min-width:24px;height:20px;background:${cc.header};color:white;border-radius:4px;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center">#${p.age_group_ranking ?? '—'}</span>
-                  <span style="font-size:11px;font-weight:500;flex:1;color:#1e293b">${p.full_name || ''}</span>
-                  ${p.primary_position ? `<span style="font-size:9px;color:#64748b;background:#f1f5f9;border-radius:3px;padding:1px 4px;white-space:nowrap">${p.primary_position}</span>` : ''}
-                  ${p.grad_year ? `<span style="font-size:9px;color:#94a3b8">'${String(p.grad_year).slice(-2)}</span>` : ''}
-                </div>`).join('');
+              : teamPlayers.map((p) => {
+                  const offerStatus = p.tryout?.next_season_status;
+                  const role = p.tryout?.team_role;
+                  const offerColor = offerStatus && offerStatus !== 'N/A' ? (OFFER_STATUS_COLORS[offerStatus] || '#94a3b8') : null;
+                  const roleColor = role ? (ROLE_COLOR_HEX[role] || '#64748b') : null;
+                  return `
+                  <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #f1f5f9;background:white">
+                    <span style="min-width:26px;height:22px;background:${cc.header};color:white;border-radius:4px;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">#${p.age_group_ranking ?? '—'}</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:11px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.full_name || ''}</div>
+                      <div style="display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;align-items:center">
+                        ${p.primary_position ? `<span style="font-size:9px;color:#64748b;background:#f1f5f9;border-radius:3px;padding:1px 4px">${p.primary_position}</span>` : ''}
+                        ${p.grad_year ? `<span style="font-size:9px;color:#94a3b8">'${String(p.grad_year).slice(-2)}</span>` : ''}
+                        ${role ? `<span style="font-size:9px;color:white;background:${roleColor};border-radius:3px;padding:1px 4px;font-weight:600">${role}</span>` : ''}
+                        ${offerColor ? `<span style="font-size:9px;color:white;background:${offerColor};border-radius:3px;padding:1px 4px;font-weight:600">${offerStatus}</span>` : ''}
+                      </div>
+                    </div>
+                  </div>`;
+                }).join('');
 
             return `
               <div style="border-bottom:1px solid ${cc.border}">
                 <div style="background:${cc.light};padding:5px 10px;font-weight:700;font-size:11px;color:${cc.header};border-bottom:1px solid ${cc.border}">
                   ${team.name} <span style="font-weight:400;color:#64748b">(${teamPlayers.length} players)</span>
                 </div>
-                ${rowsHTML}
+                ${cardsHTML}
               </div>`;
           }).join('');
 
