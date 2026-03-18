@@ -103,11 +103,10 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Not Offered Yet': return 'bg-slate-400';
       case 'Considering Offer': return 'bg-yellow-500';
       case 'Accepted Offer': return 'bg-green-500';
       case 'Signed': return 'bg-emerald-700';
-      default: return 'bg-slate-400';
+      default: return 'bg-slate-400'; // Not Offered Yet or null
     }
   };
 
