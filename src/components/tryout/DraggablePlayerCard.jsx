@@ -34,7 +34,7 @@ const ROLE_COLORS = {
   'United Rotation': 'bg-purple-400',
 };
 
-const OFFER_STATUSES = ['N/A', 'Offer Sent', 'Accepted Offer', 'Rejected Offer', 'Considering Offer', 'Roster Finalized', 'Not Offered'];
+const OFFER_STATUSES = ['Not Offered Yet', 'Considering Offer', 'Accepted Offer', 'Signed'];
 
 export default function DraggablePlayerCard({ player, index, isDraggable = true, team, onManualRank }) {
   const navigate = useNavigate();
