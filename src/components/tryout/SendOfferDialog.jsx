@@ -110,6 +110,20 @@ Michigan Jaguars Coaching Staff`);
             />
           </div>
 
+          <div>
+            <Label className="text-sm font-semibold flex items-center gap-1.5 mb-2">
+              <Link className="w-4 h-4 text-blue-500" />
+              Registration URL <span className="text-slate-400 font-normal">(optional)</span>
+            </Label>
+            <Input
+              value={registrationUrl}
+              onChange={(e) => setRegistrationUrl(e.target.value)}
+              placeholder="https://registration.michiganjaguars.com/..."
+              className="text-sm"
+            />
+            <p className="text-xs text-slate-500 mt-1">If provided, this link will be appended to the offer message directing the player to register.</p>
+          </div>
+
           <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-xs text-slate-600">
               <strong>Note:</strong> This message will be sent to all parent contacts associated with {player.full_name}. 
