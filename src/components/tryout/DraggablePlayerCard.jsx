@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, Mail, CheckCircle2, Clock, XCircle, UserPlus, GripVertical } from 'lucide-react';
+import { User, Mail, CheckCircle2, Clock, XCircle, GripVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
