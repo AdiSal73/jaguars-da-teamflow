@@ -187,12 +187,10 @@ export default function PrintRankingsDialog({ open, onClose, players, teams, try
 }
 
 const OFFER_STATUS_COLORS = {
-  'Offer Sent': '#3b82f6',
-  'Accepted Offer': '#22c55e',
-  'Rejected Offer': '#ef4444',
+  'Not Offered Yet': '#94a3b8',
   'Considering Offer': '#eab308',
-  'Roster Finalized': '#8b5cf6',
-  'Not Offered': '#94a3b8',
+  'Accepted Offer': '#22c55e',
+  'Signed': '#059669',
 };
 
 const ROLE_COLOR_HEX = {
