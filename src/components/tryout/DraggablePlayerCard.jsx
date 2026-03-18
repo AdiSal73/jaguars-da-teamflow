@@ -78,7 +78,7 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
     mutationFn: async (message) => {
       const tryoutData = player.tryout || {};
       const offerData = {
-        next_season_status: 'Offer Sent',
+        next_season_status: 'Considering Offer',
         offer_expiration_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       };
       if (tryoutData.id) {
