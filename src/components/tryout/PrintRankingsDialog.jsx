@@ -103,28 +103,21 @@ export default function PrintRankingsDialog({ open, onClose, players, teams }) {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = buildPrintHTML(printData, players);
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
   };
 
   return (
     <>
-      {/* Print-only styles injected globally */}
-      <style>{`
-        @media print {
-          @page { size: landscape; margin: 0.5in; }
-          body * { visibility: hidden !important; }
-          #print-rankings-content, #print-rankings-content * { visibility: visible !important; }
-          #print-rankings-content {
-            position: fixed !important;
-            top: 0; left: 0;
-            width: 100%;
-            background: white !important;
-            z-index: 99999;
-          }
-          .no-print { display: none !important; }
-        }
-      `}</style>
-
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
