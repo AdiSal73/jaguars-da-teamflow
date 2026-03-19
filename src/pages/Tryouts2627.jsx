@@ -1185,6 +1185,12 @@ export default function Tryouts2627() {
             setShowResetDialog(false);
           }}
         />
+
+        <ParentPlayerCSVImportDialog
+          open={showParentCSVDialog}
+          onClose={() => setShowParentCSVDialog(false)}
+          onComplete={() => queryClient.invalidateQueries(['players'])}
+        />
       </div>
     </DragDropContext>
   );
