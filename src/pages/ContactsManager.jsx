@@ -192,7 +192,14 @@ export default function ContactsManager() {
             </h1>
             <p className="text-slate-600 mt-1">Manage all parent contacts, send invitations, and communicate</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={() => setShowCSVImportDialog(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import Parent CSV
+            </Button>
             <Button 
               onClick={handleCreateAllParents}
               disabled={isCreatingParents}
