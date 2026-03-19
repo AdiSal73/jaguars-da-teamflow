@@ -30,6 +30,7 @@ export default function Tryouts2627() {
   const [importProgress, setImportProgress] = useState(null);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [showParentCSVDialog, setShowParentCSVDialog] = useState(false);
   const [mobileTab, setMobileTab] = useState('ga');
 
   // Keep URL in sync with filter state
