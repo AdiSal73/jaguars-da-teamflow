@@ -4,10 +4,11 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Search, Mail, ArrowUpDown, ChevronUp, ChevronDown, Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ParentContactsTable from '../components/contacts/ParentContactsTable';
 import InviteNewParentDialog from '../components/contacts/InviteNewParentDialog';
+import ParentPlayerCSVImportDialog from '../components/contacts/ParentPlayerCSVImportDialog';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
