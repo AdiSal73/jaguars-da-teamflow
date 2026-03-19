@@ -20,6 +20,7 @@ export default function ContactsManager() {
   const [filterAgeGroup, setFilterAgeGroup] = useState('all');
   const [filterLeague, setFilterLeague] = useState('all');
   const [showInviteNewParentDialog, setShowInviteNewParentDialog] = useState(false);
+  const [showCSVImportDialog, setShowCSVImportDialog] = useState(false);
   const [sortField, setSortField] = useState('name');
   const [isCreatingParents, setIsCreatingParents] = useState(false);
   const [sortDirection, setSortDirection] = useState('asc');
