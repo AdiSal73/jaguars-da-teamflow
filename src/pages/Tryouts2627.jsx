@@ -1189,6 +1189,7 @@ export default function Tryouts2627() {
         <ParentPlayerCSVImportDialog
           open={showParentCSVDialog}
           onClose={() => setShowParentCSVDialog(false)}
+          players={players}
           onComplete={() => queryClient.invalidateQueries(['players'])}
         />
       </div>
