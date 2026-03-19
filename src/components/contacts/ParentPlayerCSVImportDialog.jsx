@@ -7,7 +7,7 @@ import { Upload, CheckCircle2, AlertCircle, RefreshCw, Users, FileText, X } from
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-const BATCH_SIZE = 5; // rows per backend call to avoid rate limits
+const BATCH_SIZE = 25; // fetch-once approach means we can process larger batches
 
 function parseCSV(text) {
   const lines = text.trim().split('\n').filter(l => l.trim());
