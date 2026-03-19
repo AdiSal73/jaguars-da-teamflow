@@ -10,11 +10,18 @@ import { toast } from 'sonner';
 const BATCH_SIZE = 5; // rows per backend call to avoid rate limits
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
+  const lines = text.trim().split('\n').filter(l => l.trim());
   if (lines.length < 2) return [];
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  return lines.slice(1).map(line => {
-    // Handle quoted commas
+
+  // Auto-detect delimiter: tab or comma
+  const firstLine = lines[0];
+  const delimiter = firstLine.includes('\t') ? '\t' : ',';
+
+  const splitLine = (line) => {
+    if (delimiter === '\t') {
+      return line.split('\t').map(v => v.trim().replace(/^"|"$/g, ''));
+    }
+    // comma: handle quoted values
     const values = [];
     let current = '';
     let inQuotes = false;
@@ -24,8 +31,14 @@ function parseCSV(text) {
       else { current += char; }
     }
     values.push(current.trim());
+    return values.map(v => v.replace(/^"|"$/g, '').trim());
+  };
+
+  const headers = splitLine(firstLine);
+  return lines.slice(1).map(line => {
+    const values = splitLine(line);
     const row = {};
-    headers.forEach((h, i) => { row[h] = (values[i] || '').replace(/^"|"$/g, '').trim(); });
+    headers.forEach((h, i) => { row[h] = (values[i] || '').trim(); });
     return row;
   }).filter(row => Object.values(row).some(v => v));
 }
