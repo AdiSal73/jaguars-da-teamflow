@@ -13,6 +13,7 @@ import PlayerSearchPanel from '@/components/tryout/PlayerSearchPanel';
 import TeamColumn from '@/components/tryout/TeamColumn';
 import ResetTeamsDialog from '@/components/admin/ResetTeamsDialog';
 import PrintRankingsDialog from '@/components/tryout/PrintRankingsDialog';
+import ParentPlayerCSVImportDialog from '@/components/contacts/ParentPlayerCSVImportDialog';
 import { toast } from 'sonner';
 
 export default function Tryouts2627() {
