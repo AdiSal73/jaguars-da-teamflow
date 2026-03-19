@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer } from 'lucide-react';
+import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
