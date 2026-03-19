@@ -293,6 +293,7 @@ export default function ContactsManager() {
         <ParentPlayerCSVImportDialog
           open={showCSVImportDialog}
           onClose={() => setShowCSVImportDialog(false)}
+          players={players}
           onComplete={() => queryClient.invalidateQueries(['players'])}
         />
       </div>
