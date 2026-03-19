@@ -144,9 +144,14 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, onComplete 
               <FileText className="w-8 h-8 text-blue-500" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-slate-800 mb-1">Upload a CSV file</p>
-              <p className="text-sm text-slate-500">Required columns: <code className="bg-slate-100 px-1 rounded">player_name</code>, <code className="bg-slate-100 px-1 rounded">parent_email</code></p>
-              <p className="text-xs text-slate-400 mt-1">Optional: <code className="bg-slate-100 px-1 rounded">parent_name</code>, <code className="bg-slate-100 px-1 rounded">parent_phone</code></p>
+              <p className="font-semibold text-slate-800 mb-1">Upload a CSV or TSV file</p>
+              <p className="text-sm text-slate-500 mb-2">Supports tab-separated or comma-separated formats</p>
+              <div className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3 text-left space-y-1">
+                <p className="font-semibold text-slate-600 mb-1">Expected columns:</p>
+                <p><code className="bg-slate-200 px-1 rounded">Player Last Name</code> <code className="bg-slate-200 px-1 rounded">Player First Name</code></p>
+                <p><code className="bg-slate-200 px-1 rounded">Parent 1 Name</code> <code className="bg-slate-200 px-1 rounded">Parent 1 Email</code> <code className="bg-slate-200 px-1 rounded">Parent 1 Cell Phone</code></p>
+                <p className="text-slate-400">Up to 3 parents per row (Parent 2, Parent 3…)</p>
+              </div>
             </div>
             <Button
               onClick={() => fileRef.current?.click()}
