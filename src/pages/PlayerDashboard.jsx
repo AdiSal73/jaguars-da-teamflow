@@ -118,13 +118,14 @@ export default function PlayerDashboard() {
     });
     
     // Add parent_emails from player record (if not already registered)
-    (player.parent_emails || []).forEach(email => {
+    (player.parent_emails || []).forEach((email, idx) => {
       if (!parentMap.has(email)) {
-        const playerWithInfo = allPlayers.find(p => (p.parent_emails || []).includes(email));
+        // Use the parallel parent_names array at same index first
+        const nameFromIndex = player.parent_names?.[idx];
         parentMap.set(email, {
-          name: playerWithInfo?.parent_name || email,
+          name: nameFromIndex || player.parent_name || email,
           email: email,
-          phone: playerWithInfo?.phone || 'N/A',
+          phone: player.phone || 'N/A',
           isRegistered: false
         });
       }
