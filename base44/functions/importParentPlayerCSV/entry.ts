@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { playerId, parentEmails, parentName, phone } = await req.json();
+    const { playerId, parentEmails, parentNames, parentName, phone } = await req.json();
 
     if (!playerId || !Array.isArray(parentEmails) || parentEmails.length === 0) {
       return Response.json({ error: 'playerId and parentEmails required' }, { status: 400 });
@@ -17,11 +17,20 @@ Deno.serve(async (req) => {
     // Get current player data
     const player = await base44.asServiceRole.entities.Player.get(playerId);
 
-    // Merge emails
+    // Merge emails and names
     const currentEmails = player.parent_emails || [];
+    const currentNames = player.parent_names || [];
     const mergedEmails = [...new Set([...currentEmails, ...parentEmails])];
+    // Rebuild names array parallel to merged emails
+    const mergedNames = mergedEmails.map(email => {
+      const idx = parentEmails.indexOf(email);
+      if (idx !== -1 && parentNames?.[idx]) return parentNames[idx];
+      const oldIdx = currentEmails.indexOf(email);
+      if (oldIdx !== -1 && currentNames[oldIdx]) return currentNames[oldIdx];
+      return '';
+    });
 
-    const updateData = { parent_emails: mergedEmails };
+    const updateData = { parent_emails: mergedEmails, parent_names: mergedNames };
     if (parentName && !player.parent_name) updateData.parent_name = parentName;
     if (phone && !player.phone) updateData.phone = phone;
 

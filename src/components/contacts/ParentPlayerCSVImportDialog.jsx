@@ -62,7 +62,7 @@ function extractParents(row) {
     const email = (row[`Parent ${n} Email`] || row[`parent_${n}_email`] || (n === 1 ? row['parent_email'] || row['Parent Email'] || '' : '')).trim().toLowerCase();
     const name = (row[`Parent ${n} Name`] || row[`parent_${n}_name`] || (n === 1 ? row['parent_name'] || row['Parent Name'] || '' : '')).trim();
     const phone = (row[`Parent ${n} Cell Phone`] || row[`Parent ${n} Phone`] || (n === 1 ? row['parent_phone'] || '' : '')).trim();
-    if (email) parents.push({ email, name, phone });
+    if (email) parents.push({ email, name: name || '', phone });
   }
   return parents;
 }
@@ -145,6 +145,7 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
     for (let i = 0; i < matched.length; i++) {
       const { player, parents, fullName } = matched[i];
       const parentEmails = parents.map(p => p.email);
+      const parentNames = parents.map(p => p.name || '');
       const parentName = parents[0]?.name || '';
       const phone = parents[0]?.phone || '';
 
@@ -153,6 +154,7 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
           const resp = await base44.functions.invoke('importParentPlayerCSV', {
             playerId: player.id,
             parentEmails,
+            parentNames,
             parentName,
             phone
           });

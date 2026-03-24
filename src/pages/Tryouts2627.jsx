@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer, Users } from 'lucide-react';
+import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer, Users, UserPlus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import TeamColumn from '@/components/tryout/TeamColumn';
 import ResetTeamsDialog from '@/components/admin/ResetTeamsDialog';
 import PrintRankingsDialog from '@/components/tryout/PrintRankingsDialog';
 import ParentPlayerCSVImportDialog from '@/components/contacts/ParentPlayerCSVImportDialog';
+import AddPlayerDialog from '@/components/tryout/AddPlayerDialog';
 import { toast } from 'sonner';
 
 export default function Tryouts2627() {
@@ -31,6 +32,7 @@ export default function Tryouts2627() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [showParentCSVDialog, setShowParentCSVDialog] = useState(false);
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [mobileTab, setMobileTab] = useState('ga');
 
   // Keep URL in sync with filter state
@@ -884,6 +886,14 @@ export default function Tryouts2627() {
                 <span className="hidden md:inline">Reset for 26/27</span>
               </Button>
               <Button
+                onClick={() => setShowAddPlayerDialog(true)}
+                size="sm"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-xs md:text-sm"
+              >
+                <UserPlus className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Add Player</span>
+              </Button>
+              <Button
                 onClick={() => setShowParentCSVDialog(true)}
                 size="sm"
                 variant="outline"
@@ -1191,6 +1201,16 @@ export default function Tryouts2627() {
           onClose={() => setShowParentCSVDialog(false)}
           players={players}
           onComplete={() => queryClient.invalidateQueries(['players'])}
+        />
+
+        <AddPlayerDialog
+          open={showAddPlayerDialog}
+          onClose={() => setShowAddPlayerDialog(false)}
+          teams={teams}
+          onCreated={() => {
+            queryClient.invalidateQueries(['players']);
+            queryClient.refetchQueries(['players']);
+          }}
         />
       </div>
     </DragDropContext>
