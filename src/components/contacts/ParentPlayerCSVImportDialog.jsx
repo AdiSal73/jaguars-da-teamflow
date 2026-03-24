@@ -171,20 +171,32 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
     for (let i = 0; i < matched.length; i++) {
       const { player, parents, displayName, newEmails, newNames, newPhone } = matched[i];
       try {
-        await base44.entities.Player.update(player.id, {
-          parent_emails: newEmails,
-          parent_names:  newNames,
-          parent_name:   newNames[0] || '',
-          phone:         newPhone
-        });
-        success++;
+        let attempts = 0;
+        let lastErr;
+        while (attempts < 4) {
+          try {
+            await base44.entities.Player.update(player.id, {
+              parent_emails: newEmails,
+              parent_names:  newNames,
+              parent_name:   newNames[0] || '',
+              phone:         newPhone
+            });
+            lastErr = null;
+            break;
+          } catch (err) {
+            lastErr = err;
+            attempts++;
+            if (attempts < 4) await sleep(1000 * attempts); // backoff: 1s, 2s, 3s
+          }
+        }
+        if (lastErr) throw lastErr;
         addLog('success', `✅ ${displayName}`);
       } catch (err) {
         errors++;
         addLog('error', `❌ ${displayName}: ${err.message}`);
       }
       setProgress({ processed: i + 1, total, success, errors });
-      await sleep(120); // prevent rate limiting
+      await sleep(300); // prevent rate limiting
     }
 
     setPhase('done');
