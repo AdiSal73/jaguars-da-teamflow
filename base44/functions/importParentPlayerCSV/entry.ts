@@ -1,7 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-// Accepts: { updates: [{ playerId, parentEmails: string[], parentNames: string[], phone: string }] }
-// Simply overwrites parent fields — no merging with old data.
+// Process sequentially with delay to avoid rate limits
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -13,22 +16,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'updates array required' }, { status: 400 });
     }
 
-    const results = await Promise.allSettled(
-      updates.map(({ playerId, parentEmails, parentNames, phone }) =>
-        base44.asServiceRole.entities.Player.update(playerId, {
+    let succeeded = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const { playerId, parentEmails, parentNames, phone } of updates) {
+      try {
+        await base44.asServiceRole.entities.Player.update(playerId, {
           parent_emails: parentEmails,
           parent_names: parentNames,
           parent_name: parentNames?.[0] || '',
           phone: phone || ''
-        })
-      )
-    );
-
-    const succeeded = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
-    const errors = results
-      .filter(r => r.status === 'rejected')
-      .map(r => r.reason?.message || 'Unknown error');
+        });
+        succeeded++;
+      } catch (err) {
+        failed++;
+        errors.push(`${playerId}: ${err.message}`);
+      }
+      // Small delay between updates to avoid rate limits
+      await sleep(50);
+    }
 
     return Response.json({ success: true, succeeded, failed, errors });
   } catch (error) {
