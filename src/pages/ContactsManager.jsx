@@ -53,7 +53,7 @@ export default function ContactsManager() {
         player.parent_emails.forEach((email, idx) => {
           if (email) emailsWithNames.push({
             email: email.toLowerCase().trim(),
-            name: player.parent_names?.[idx] || player.parent_name || ''
+            name: player.parent_names?.[idx] || ''
           });
         });
       }

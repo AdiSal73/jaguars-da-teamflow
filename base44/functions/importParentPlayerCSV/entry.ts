@@ -13,27 +13,15 @@ Deno.serve(async (req) => {
     }
 
     const results = await Promise.allSettled(updates.map(async ({ playerId, parentEmails, parentNames, parentName, phone }) => {
-      const player = await base44.asServiceRole.entities.Player.get(playerId);
-
-      const currentEmails = player.parent_emails || [];
-      const currentNames = player.parent_names || [];
-
-      // Merge: new import data always wins for names
-      const mergedEmails = [...new Set([...currentEmails, ...parentEmails])];
-      const mergedNames = mergedEmails.map(email => {
-        const newIdx = parentEmails.indexOf(email);
-        if (newIdx !== -1 && parentNames?.[newIdx]) return parentNames[newIdx];
-        const oldIdx = currentEmails.indexOf(email);
-        if (oldIdx !== -1 && currentNames[oldIdx]) return currentNames[oldIdx];
-        return '';
-      });
-
-      const updateData = { parent_emails: mergedEmails, parent_names: mergedNames };
-      if (parentName) updateData.parent_name = parentName;
-      if (phone && !player.phone) updateData.phone = phone;
+      const updateData = {
+        parent_emails: parentEmails,
+        parent_names: parentNames || parentEmails.map(() => ''),
+        parent_name: parentName || parentNames?.[0] || '',
+        phone: phone || ''
+      };
 
       await base44.asServiceRole.entities.Player.update(playerId, updateData);
-      return { playerId, player_name: player.full_name, emails_linked: mergedEmails.length };
+      return { playerId, emails_linked: parentEmails.length };
     }));
 
     const succeeded = results.filter(r => r.status === 'fulfilled').map(r => r.value);
