@@ -118,7 +118,7 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
     setProgress({ processed: 0, total, success: 0, errors: 0 });
     addLog('info', `Matching ${total} rows against ${players.length} players...`);
 
-    // Pre-match all rows on the frontend — no DB calls needed
+    // Pre-match all rows on the frontend
     const matched = [];
     const preErrors = [];
     for (const row of itemsToProcess) {
@@ -136,43 +136,40 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
       }
     }
 
-    addLog('info', `Matched ${matched.length} players. ${preErrors.length} unmatched. Starting updates...`);
+    addLog('info', `Matched ${matched.length} players. ${preErrors.length} unmatched. Sending batch update...`);
+    setProgress({ processed: preErrors.length, total, success: 0, errors: preErrors.length });
 
+    const BATCH_SIZE = 50;
     let successCount = 0;
     let errorCount = preErrors.length;
     const newFailedItems = [...preErrors];
 
-    for (let i = 0; i < matched.length; i++) {
-      const { player, parents, fullName } = matched[i];
-      const parentEmails = parents.map(p => p.email);
-      const parentNames = parents.map(p => p.name || '');
-      const parentName = parents[0]?.name || '';
-      const phone = parents[0]?.phone || '';
+    for (let batchStart = 0; batchStart < matched.length; batchStart += BATCH_SIZE) {
+      const batch = matched.slice(batchStart, batchStart + BATCH_SIZE);
+      const updates = batch.map(({ player, parents, fullName }) => ({
+        playerId: player.id,
+        parentEmails: parents.map(p => p.email),
+        parentNames: parents.map(p => p.name || ''),
+        parentName: parents[0]?.name || '',
+        phone: parents[0]?.phone || ''
+      }));
 
       try {
-        await callWithRetry(async () => {
-          const resp = await base44.functions.invoke('importParentPlayerCSV', {
-            playerId: player.id,
-            parentEmails,
-            parentNames,
-            parentName,
-            phone
-          });
-          if (!resp.data?.success) throw new Error(resp.data?.error || 'Update failed');
-        }, 3, 800);
-
-        successCount++;
-        addLog('success', `✅ "${fullName}" → ${parentEmails.join(', ')}`);
+        const resp = await base44.functions.invoke('importParentPlayerCSV', { updates });
+        const data = resp.data;
+        if (data?.succeeded) {
+          successCount += data.succeeded;
+          errorCount += data.failed || 0;
+          addLog('success', `✅ Batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: ${data.succeeded} updated${data.failed ? `, ${data.failed} failed` : ''}`);
+          if (data.errors?.length) data.errors.forEach(e => addLog('error', `❌ ${e}`));
+        }
       } catch (err) {
-        errorCount++;
-        newFailedItems.push({ row: matched[i].row, error: err.message });
-        addLog('error', `❌ "${fullName}": ${err.message}`);
+        errorCount += batch.length;
+        batch.forEach(({ row, fullName }) => newFailedItems.push({ row, error: err.message }));
+        addLog('error', `❌ Batch ${Math.floor(batchStart / BATCH_SIZE) + 1} failed: ${err.message}`);
       }
 
-      setProgress({ processed: i + 1 + preErrors.length, total, success: successCount, errors: errorCount });
-
-      // 200ms gap between each update to stay well under rate limits
-      if (i < matched.length - 1) await new Promise(r => setTimeout(r, 200));
+      setProgress({ processed: Math.min(batchStart + BATCH_SIZE, matched.length) + preErrors.length, total, success: successCount, errors: errorCount });
     }
 
     setFailedItems(newFailedItems);
