@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Upload, CheckCircle2, AlertCircle, Users, FileText, X } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Users, FileText, X, Eye, RefreshCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -42,13 +42,13 @@ function findPlayer(row, players) {
 
   if (firstName && lastName) {
     const match = players.find(p => {
-      const parts = p.full_name?.trim().toLowerCase().split(/\s+/) || [];
+      const parts = (p.full_name || '').trim().toLowerCase().split(/\s+/);
       return parts[0] === firstName && parts[parts.length - 1] === lastName;
     });
     if (match) return match;
   }
   if (fullName) {
-    return players.find(p => p.full_name?.trim().toLowerCase() === fullName) || null;
+    return players.find(p => (p.full_name || '').trim().toLowerCase() === fullName) || null;
   }
   return null;
 }
@@ -80,25 +80,28 @@ function extractParents(row) {
   return parents;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Sleep helper ──────────────────────────────────────────────────────────────
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const BATCH_SIZE = 50;
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ParentPlayerCSVImportDialog({ open, onClose, players = [], onComplete }) {
   const fileRef = useRef(null);
   const logRef  = useRef(null);
 
-  const [phase,      setPhase]      = useState('idle');      // idle | reviewing | processing | done
-  const [rows,       setRows]       = useState([]);
-  const [fileName,   setFileName]   = useState('');
-  const [progress,   setProgress]   = useState({ processed: 0, total: 0, success: 0, errors: 0 });
-  const [logs,       setLogs]       = useState([]);
-  const [failedRows, setFailedRows] = useState([]);
+  const [phase,    setPhase]    = useState('idle');     // idle | reviewing | confirming | processing | done
+  const [rows,     setRows]     = useState([]);
+  const [fileName, setFileName] = useState('');
+  const [preview,  setPreview]  = useState([]);         // matched + unmatched rows
+  const [progress, setProgress] = useState({ processed: 0, total: 0, success: 0, errors: 0 });
+  const [logs,     setLogs]     = useState([]);
 
-  const log = (type, msg) => {
+  const addLog = (type, msg) => {
     setLogs(prev => {
       const next = [...prev, { type, msg }];
-      setTimeout(() => logRef.current?.scrollTo({ top: logRef.current.scrollHeight }), 30);
+      setTimeout(() => {
+        if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+      }, 30);
       return next;
     });
   };
@@ -109,86 +112,90 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = ev => {
-      setRows(parseCSV(ev.target.result));
-      setPhase('reviewing');
+      const parsed = parseCSV(ev.target.result);
+      setRows(parsed);
+      buildPreview(parsed);
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
-  const runImport = async (rowsToRun) => {
+  const buildPreview = (rawRows) => {
+    const results = rawRows.map(row => {
+      const firstName   = (row['Player First Name'] || row['First Name'] || '').trim();
+      const lastName    = (row['Player Last Name']  || row['Last Name']  || '').trim();
+      const displayName = firstName && lastName ? `${firstName} ${lastName}` : (row['player_name'] || row['Player Name'] || '?');
+      const player      = findPlayer(row, players);
+      const parents     = extractParents(row);
+
+      const hasExisting = player && (
+        (player.parent_emails?.length > 0) ||
+        (player.parent_names?.length > 0) ||
+        player.parent_name || player.phone
+      );
+
+      return {
+        displayName,
+        player,
+        parents,
+        hasExisting,
+        existingEmails: player?.parent_emails || [],
+        existingNames:  player?.parent_names  || [],
+        existingPhone:  player?.phone         || '',
+        newEmails:      parents.map(p => p.email),
+        newNames:       parents.map(p => p.name),
+        newPhone:       parents[0]?.phone || '',
+        error: !player
+          ? `No player match for "${displayName}"`
+          : parents.length === 0
+          ? `No parent email for "${displayName}"`
+          : null
+      };
+    });
+    setPreview(results);
+    setPhase('reviewing');
+  };
+
+  const matched    = preview.filter(r => !r.error);
+  const unmatched  = preview.filter(r => !!r.error);
+  const overwrites = matched.filter(r => r.hasExisting);
+  const fresh      = matched.filter(r => !r.hasExisting);
+
+  const runImport = async () => {
     setPhase('processing');
     setLogs([]);
-    setFailedRows([]);
-    const total = rowsToRun.length;
+    const total = matched.length;
     setProgress({ processed: 0, total, success: 0, errors: 0 });
+    let success = 0, errors = 0;
 
-    // ── Pre-match all rows on the client ──────────────────────────────────────
-    const matched  = [];
-    const unmatched = [];
-
-    for (const row of rowsToRun) {
-      const firstName = (row['Player First Name'] || row['First Name'] || '').trim();
-      const lastName  = (row['Player Last Name']  || row['Last Name']  || '').trim();
-      const displayName = firstName && lastName ? `${firstName} ${lastName}` : (row['player_name'] || row['Player Name'] || '?');
-
-      const player  = findPlayer(row, players);
-      const parents = extractParents(row);
-
-      if (!player) {
-        unmatched.push({ row, reason: `No player found: "${displayName}"` });
-        log('error', `❌ No match: "${displayName}"`);
-      } else if (parents.length === 0) {
-        unmatched.push({ row, reason: `No parent email for "${displayName}"` });
-        log('error', `❌ No parent email: "${displayName}"`);
-      } else {
-        matched.push({
-          playerId:     player.id,
-          parentEmails: parents.map(p => p.email),
-          parentNames:  parents.map(p => p.name),
-          phone:        parents[0]?.phone || ''
-        });
-      }
-    }
-
-    log('info', `Matched ${matched.length} / ${total} rows — sending to server…`);
-    setProgress({ processed: unmatched.length, total, success: 0, errors: unmatched.length });
-
-    let successCount = 0;
-    let errorCount   = unmatched.length;
-    const newFailed  = [...unmatched.map(u => u.row)];
-
-    for (let i = 0; i < matched.length; i += BATCH_SIZE) {
-      const batch = matched.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-
+    for (let i = 0; i < matched.length; i++) {
+      const { player, parents, displayName, newEmails, newNames, newPhone } = matched[i];
       try {
-        const resp = await base44.functions.invoke('importParentPlayerCSV', { updates: batch });
-        const data = resp.data;
-        successCount += data.succeeded || 0;
-        errorCount   += data.failed    || 0;
-        if (data.errors?.length) data.errors.forEach(e => log('error', `❌ ${e}`));
-        log('success', `✅ Batch ${batchNum}: ${data.succeeded} updated${data.failed ? `, ${data.failed} failed` : ''}`);
+        await base44.entities.Player.update(player.id, {
+          parent_emails: newEmails,
+          parent_names:  newNames,
+          parent_name:   newNames[0] || '',
+          phone:         newPhone
+        });
+        success++;
+        addLog('success', `✅ ${displayName}`);
       } catch (err) {
-        errorCount += batch.length;
-        log('error', `❌ Batch ${batchNum} failed: ${err.message}`);
+        errors++;
+        addLog('error', `❌ ${displayName}: ${err.message}`);
       }
-
-      setProgress({ processed: Math.min(i + BATCH_SIZE, matched.length) + unmatched.length, total, success: successCount, errors: errorCount });
+      setProgress({ processed: i + 1, total, success, errors });
+      await sleep(120); // prevent rate limiting
     }
 
-    setFailedRows(newFailed);
     setPhase('done');
-    log('info', `Done — ${successCount} succeeded, ${errorCount} failed.`);
-    if (successCount > 0 && onComplete) onComplete();
+    addLog('info', `Done — ${success} updated, ${errors} failed, ${unmatched.length} unmatched.`);
+    if (success > 0 && onComplete) onComplete();
   };
 
   const handleClose = () => {
-    setPhase('idle'); setRows([]); setLogs([]); setFailedRows([]); setFileName('');
+    setPhase('idle'); setRows([]); setPreview([]); setLogs([]); setFileName('');
     onClose();
   };
-
-  const cols = rows[0] ? Object.keys(rows[0]) : [];
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -212,7 +219,7 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
                 <p className="font-semibold text-slate-600 mb-1">Expected columns:</p>
                 <p><code className="bg-slate-200 px-1 rounded">Player First Name</code> <code className="bg-slate-200 px-1 rounded">Player Last Name</code></p>
                 <p><code className="bg-slate-200 px-1 rounded">Parent 1 Email</code> <code className="bg-slate-200 px-1 rounded">Parent 1 Name</code> <code className="bg-slate-200 px-1 rounded">Parent 1 Cell Phone</code></p>
-                <p className="text-slate-400">Repeat for Parent 2, Parent 3…</p>
+                <p className="text-slate-400">Repeat for Parent 2, Parent 3… Also works with TSV (tab-separated).</p>
               </div>
             </div>
             <Button onClick={() => fileRef.current?.click()} className="bg-blue-600 hover:bg-blue-700 gap-2">
@@ -224,39 +231,105 @@ export default function ParentPlayerCSVImportDialog({ open, onClose, players = [
 
         {/* ── REVIEWING ── */}
         {phase === 'reviewing' && (
-          <div className="flex flex-col gap-4 overflow-hidden">
+          <div className="flex flex-col gap-4 overflow-hidden flex-1">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <FileText className="w-4 h-4 text-slate-400" />
-                {fileName}
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-xs">{rows.length} rows</span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => { setPhase('idle'); setRows([]); }}>
+              <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-slate-400" /> {fileName}
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-xs">{rows.length} rows</span>
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => { setPhase('idle'); setRows([]); setPreview([]); }}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-xs text-slate-500">Detected columns: {cols.join(', ')}</p>
-            <div className="overflow-auto max-h-64 rounded-lg border border-slate-200">
-              <table className="w-full text-xs">
+
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+                <div className="text-xs font-semibold text-green-600">New / No Conflict</div>
+                <div className="text-2xl font-bold text-green-700">{fresh.length}</div>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="text-xs font-semibold text-amber-600">Will Overwrite</div>
+                <div className="text-2xl font-bold text-amber-700">{overwrites.length}</div>
+              </div>
+              <div className="p-3 bg-red-50 rounded-xl border border-red-100">
+                <div className="text-xs font-semibold text-red-600">No Match</div>
+                <div className="text-2xl font-bold text-red-700">{unmatched.length}</div>
+              </div>
+            </div>
+
+            {/* Overwrite warning */}
+            {overwrites.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                <strong>⚠️ Overwrite Warning:</strong> {overwrites.length} player(s) already have parent data. Importing will <strong>replace</strong> their existing contacts with the new CSV data.
+              </div>
+            )}
+
+            {/* Preview table */}
+            <div className="overflow-auto max-h-48 rounded-lg border border-slate-200 text-xs flex-1">
+              <table className="w-full">
                 <thead className="bg-slate-50 sticky top-0">
-                  <tr>{cols.map(c => <th key={c} className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">{c}</th>)}</tr>
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600">Player</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600">New Emails</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600">Status</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {rows.slice(0, 15).map((row, i) => (
+                  {preview.map((row, i) => (
                     <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                      {cols.map(c => <td key={c} className="px-3 py-1.5 text-slate-700 whitespace-nowrap max-w-[160px] truncate">{row[c] || '—'}</td>)}
+                      <td className="px-3 py-1.5 font-medium text-slate-800">{row.displayName}</td>
+                      <td className="px-3 py-1.5 text-slate-600">{row.newEmails.join(', ') || '—'}</td>
+                      <td className="px-3 py-1.5">
+                        {row.error
+                          ? <span className="text-red-500">{row.error}</span>
+                          : row.hasExisting
+                          ? <span className="text-amber-600 font-semibold">Overwrite</span>
+                          : <span className="text-green-600">New</span>
+                        }
+                      </td>
                     </tr>
                   ))}
-                  {rows.length > 15 && (
-                    <tr><td colSpan={cols.length} className="px-3 py-2 text-center text-slate-400 italic">…and {rows.length - 15} more rows</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" onClick={() => { setPhase('idle'); setRows([]); }} className="flex-1">Cancel</Button>
-              <Button onClick={() => runImport(rows)} className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2">
-                <Upload className="w-4 h-4" /> Import {rows.length} rows
+
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" onClick={() => { setPhase('idle'); setRows([]); setPreview([]); }} className="flex-1">Cancel</Button>
+              {matched.length > 0 && (
+                <Button onClick={() => setPhase('confirming')} className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2">
+                  <Eye className="w-4 h-4" /> Review & Confirm ({matched.length})
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── CONFIRMING ── */}
+        {phase === 'confirming' && (
+          <div className="flex flex-col gap-4">
+            <div className="bg-slate-900 text-white rounded-xl p-5 space-y-3">
+              <p className="font-bold text-lg">Confirm Import</p>
+              <ul className="space-y-1 text-sm text-slate-300">
+                <li>✅ <strong className="text-white">{fresh.length}</strong> players will get parent contacts added</li>
+                {overwrites.length > 0 && (
+                  <li>⚠️ <strong className="text-amber-400">{overwrites.length}</strong> players will have their existing parent data <strong className="text-amber-400">overwritten</strong></li>
+                )}
+                {unmatched.length > 0 && (
+                  <li>❌ <strong className="text-red-400">{unmatched.length}</strong> rows will be skipped (no player match)</li>
+                )}
+              </ul>
+              {overwrites.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-700 text-xs text-amber-300">
+                  This action cannot be undone. The following players' existing contacts will be replaced:<br />
+                  <span className="text-slate-400">{overwrites.map(r => r.displayName).join(', ')}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setPhase('reviewing')} className="flex-1">Go Back</Button>
+              <Button onClick={runImport} className="flex-1 bg-emerald-600 hover:bg-emerald-700 gap-2">
+                <RefreshCw className="w-4 h-4" /> Yes, Import Now
               </Button>
             </div>
           </div>
