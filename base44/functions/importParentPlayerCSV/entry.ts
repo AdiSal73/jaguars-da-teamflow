@@ -17,21 +17,22 @@ Deno.serve(async (req) => {
     // Get current player data
     const player = await base44.asServiceRole.entities.Player.get(playerId);
 
-    // Merge emails and names
+    // Merge emails and names — new import data always wins over old
     const currentEmails = player.parent_emails || [];
     const currentNames = player.parent_names || [];
     const mergedEmails = [...new Set([...currentEmails, ...parentEmails])];
-    // Rebuild names array parallel to merged emails
+    // Rebuild names: new import names take priority over stored names
     const mergedNames = mergedEmails.map(email => {
-      const idx = parentEmails.indexOf(email);
-      if (idx !== -1 && parentNames?.[idx]) return parentNames[idx];
+      const newIdx = parentEmails.indexOf(email);
+      if (newIdx !== -1 && parentNames?.[newIdx]) return parentNames[newIdx];
       const oldIdx = currentEmails.indexOf(email);
       if (oldIdx !== -1 && currentNames[oldIdx]) return currentNames[oldIdx];
       return '';
     });
 
     const updateData = { parent_emails: mergedEmails, parent_names: mergedNames };
-    if (parentName && !player.parent_name) updateData.parent_name = parentName;
+    // Always update parent_name (first parent) from fresh import data
+    if (parentName) updateData.parent_name = parentName;
     if (phone && !player.phone) updateData.phone = phone;
 
     await base44.asServiceRole.entities.Player.update(playerId, updateData);

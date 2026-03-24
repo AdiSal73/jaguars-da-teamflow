@@ -47,26 +47,29 @@ export default function ContactsManager() {
     const contactMap = new Map();
 
     players.forEach(player => {
-      const emailsToProcess = [];
-      
-      // Add parent_emails array
-      if (player.parent_emails && player.parent_emails.length > 0) {
-        emailsToProcess.push(...player.parent_emails);
+      // Build list of {email, name} pairs using parallel parent_names array
+      const emailsWithNames = [];
+      if (player.parent_emails?.length > 0) {
+        player.parent_emails.forEach((email, idx) => {
+          if (email) emailsWithNames.push({
+            email: email.toLowerCase().trim(),
+            name: player.parent_names?.[idx] || player.parent_name || ''
+          });
+        });
       }
-      
-      // Also add single email field if it exists
-      if (player.email) {
-        emailsToProcess.push(player.email);
+      // Also include legacy single email field
+      if (player.email && !emailsWithNames.find(e => e.email === player.email)) {
+        emailsWithNames.push({ email: player.email, name: player.parent_name || '' });
       }
 
-      emailsToProcess.forEach(email => {
+      emailsWithNames.forEach(({ email, name }) => {
         if (!email) return;
         
         if (!contactMap.has(email)) {
           const userAccount = users.find(u => u.email === email);
           contactMap.set(email, {
             email,
-            full_name: player.parent_name || userAccount?.full_name || '',
+            full_name: name || userAccount?.full_name || '',
             phone: player.phone || userAccount?.phone || '',
             player_ids: [],
             teams: new Set(),
@@ -74,16 +77,16 @@ export default function ContactsManager() {
             user_id: userAccount?.id
           });
         }
-        
+
         const contact = contactMap.get(email);
         if (!contact.player_ids.includes(player.id)) {
           contact.player_ids.push(player.id);
         }
-        
+        // Update name if we have a better one
+        if (name && !contact.full_name) contact.full_name = name;
+
         const team = teams.find(t => t.id === player.team_id);
-        if (team) {
-          contact.teams.add(team.name);
-        }
+        if (team) contact.teams.add(team.name);
       });
     });
 
