@@ -193,6 +193,9 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
                       {isTrappedPlayer(player.date_of_birth) && (
                         <span className="text-[10px] bg-red-500 text-white px-1.5 rounded font-bold">TRAPPED</span>
                       )}
+                      {player.is_tryout_player && (
+                        <span className="text-[10px] bg-purple-600 text-white px-1.5 rounded font-bold">TRYOUT</span>
+                      )}
                     </div>
                   </div>
                   {/* Ranking badge */}
