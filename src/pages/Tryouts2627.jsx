@@ -425,6 +425,8 @@ export default function Tryouts2627() {
       return lastA.localeCompare(lastB);
     };
 
+    const originalPlayers = [...players];
+
     if (sourceTeamId === destTeamId) {
       // --- Reorder within same team ---
       const teamPlayers = updatedPlayers
@@ -434,21 +436,19 @@ export default function Tryouts2627() {
       const fromIdx = teamPlayers.findIndex(p => p.id === draggedPlayerId);
       if (fromIdx === -1) return;
 
-      // Move in array
       const [moved] = teamPlayers.splice(fromIdx, 1);
       teamPlayers.splice(destIndex, 0, moved);
 
-      // Assign clean sequential position orders in memory
       const posMap = Object.fromEntries(teamPlayers.map((p, i) => [p.id, (i + 1) * 1000]));
       updatedPlayers = updatedPlayers.map(p =>
         posMap[p.id] !== undefined ? { ...p, team_position_order: posMap[p.id] } : p
       );
 
-      // Recalculate rankings in memory (no DB) so display updates immediately
+      // Recalculate rankings in memory and update UI immediately
       updatedPlayers = recalculateRankingsInMemory(updatedPlayers, teams);
       queryClient.setQueryData(['players'], updatedPlayers);
 
-      // Only persist the one player that moved (avoid rate limits)
+      // Persist just the dragged player's new position order
       await base44.entities.Player.update(draggedPlayerId, {
         team_position_order: posMap[draggedPlayerId]
       });
@@ -469,7 +469,7 @@ export default function Tryouts2627() {
           : p
       );
 
-      // Recalculate rankings in memory so display updates immediately
+      // Recalculate rankings in memory and update UI immediately
       updatedPlayers = recalculateRankingsInMemory(updatedPlayers, teams);
       queryClient.setQueryData(['players'], updatedPlayers);
 
@@ -479,12 +479,28 @@ export default function Tryouts2627() {
           team_assignments: movedAssignments,
           team_position_order: newPositionOrder
         });
-        toast.success('Player moved — click "Recalculate Rankings" to save rankings');
       } catch (error) {
         toast.error('Failed to move player');
         queryClient.invalidateQueries(['players']);
+        return;
       }
     }
+
+    // Persist all changed age_group_ranking values to DB in the background
+    // This ensures rankings survive a page reload
+    const rankUpdates = updatedPlayers
+      .filter(p => {
+        const orig = originalPlayers.find(op => op.id === p.id);
+        return p.age_group_ranking != null && orig && p.age_group_ranking !== orig.age_group_ranking;
+      })
+      .map(p => ({ playerId: p.id, ranking: p.age_group_ranking }));
+
+    if (rankUpdates.length > 0) {
+      base44.functions.invoke('saveRankings', { updates: rankUpdates })
+        .catch(err => console.warn('Background ranking save failed:', err));
+    }
+
+    toast.success('Player moved and rankings saved');
   };
 
   const retryFailedImports = async () => {
