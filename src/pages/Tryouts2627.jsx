@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer, Users, UserPlus } from 'lucide-react';
+import { RotateCcw, Upload, AlertCircle, CheckCircle2, X, Trash2, RefreshCw, Printer, Users, UserPlus, Search, UserX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import ResetTeamsDialog from '@/components/admin/ResetTeamsDialog';
 import PrintRankingsDialog from '@/components/tryout/PrintRankingsDialog';
 import ParentPlayerCSVImportDialog from '@/components/contacts/ParentPlayerCSVImportDialog';
 import AddPlayerDialog from '@/components/tryout/AddPlayerDialog';
+import UnassignedPlayersDialog from '@/components/tryout/UnassignedPlayersDialog';
 import { toast } from 'sonner';
 
 export default function Tryouts2627() {
@@ -33,6 +34,8 @@ export default function Tryouts2627() {
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [showParentCSVDialog, setShowParentCSVDialog] = useState(false);
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [showUnassignedDialog, setShowUnassignedDialog] = useState(false);
+  const [playerSearch, setPlayerSearch] = useState('');
   const [mobileTab, setMobileTab] = useState('ga');
 
   // Keep URL in sync with filter state
@@ -82,6 +85,29 @@ export default function Tryouts2627() {
       queryClient.invalidateQueries(['tryouts']);
     }
   });
+
+  // All 26/27 team IDs (for detecting unassigned)
+  const team2627Ids = useMemo(() => new Set(
+    teams.filter(t => t.season === '26/27' || t.name?.includes('26/27')).map(t => t.id)
+  ), [teams]);
+
+  // Players with no 26/27 assignment, grouped by age_group
+  const unassignedByAgeGroup = useMemo(() => {
+    const unassigned = players.filter(p => {
+      const hasAssignment = p.team_assignments?.some(a => a.season === '26/27');
+      const hasLegacy = p.current_26_27_team && team2627Ids.has(p.current_26_27_team);
+      return !hasAssignment && !hasLegacy;
+    });
+    const g = {};
+    for (const p of unassigned) {
+      const ag = p.age_group || 'Unknown';
+      if (!g[ag]) g[ag] = [];
+      g[ag].push(p);
+    }
+    return g;
+  }, [players, team2627Ids]);
+
+  const totalUnassigned = Object.values(unassignedByAgeGroup).reduce((s, a) => s + a.length, 0);
 
   // League priority for ranking (lower = higher rank)
   const LEAGUE_PRIORITY = { 'Girls Academy': 1, 'Pre-GA 1': 1, 'Aspire': 2, 'Pre-GA 2': 2, 'DPL': 3, 'Green': 4, 'White': 5, 'Black': 6 };
@@ -174,6 +200,12 @@ export default function Tryouts2627() {
     
     let filteredPlayers = playersWithTryout;
 
+    if (playerSearch) {
+      filteredPlayers = filteredPlayers.filter(p =>
+        p.full_name?.toLowerCase().includes(playerSearch.toLowerCase())
+      );
+    }
+
     if (selectedBirthYear !== 'all') {
       filteredPlayers = filteredPlayers.filter(p => {
         const birthYear = p.date_of_birth ? new Date(p.date_of_birth).getFullYear() : null;
@@ -202,7 +234,7 @@ export default function Tryouts2627() {
       const lastNameB = b.full_name?.split(' ').pop() || '';
       return lastNameA.localeCompare(lastNameB);
     });
-    }, [players, getPlayerTryoutData, selectedBirthYear, selectedGradYear, selectedTryoutStatus]);
+    }, [players, getPlayerTryoutData, selectedBirthYear, selectedGradYear, selectedTryoutStatus, playerSearch]);
 
   // Recalculate age_group_ranking for all players across all age groups.
   // Each age group gets its own sequential ranking starting at 1.
@@ -941,6 +973,20 @@ export default function Tryouts2627() {
                 <span className="hidden md:inline">Print Rankings</span>
               </Button>
               <Button
+                onClick={() => setShowUnassignedDialog(true)}
+                variant="outline"
+                size="sm"
+                className="border-orange-500 text-orange-600 hover:bg-orange-50 text-xs md:text-sm relative"
+              >
+                <UserX className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Unassigned Players</span>
+                {totalUnassigned > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {totalUnassigned > 9 ? '9+' : totalUnassigned}
+                  </span>
+                )}
+              </Button>
+              <Button
                 onClick={() => setShowResetDialog(true)}
                 variant="outline"
                 size="sm"
@@ -982,6 +1028,17 @@ export default function Tryouts2627() {
             accept=".csv"
             onChange={handleCSVImport}
             className="hidden"
+          />
+        </div>
+
+        {/* Name search */}
+        <div className="mb-3 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Search players by name..."
+            value={playerSearch}
+            onChange={e => setPlayerSearch(e.target.value)}
+            className="pl-9 h-10 border-2 shadow-sm"
           />
         </div>
 
@@ -1124,6 +1181,7 @@ export default function Tryouts2627() {
               {teamColumns.girlsAcademy.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-10 italic">No Girls Academy teams</p>
               )}
+              <UnassignedAgeGroupSection unassignedByAgeGroup={unassignedByAgeGroup} teams={teams} queryClient={queryClient} team2627Ids={team2627Ids} />
             </div>
           </div>
 
@@ -1276,7 +1334,106 @@ export default function Tryouts2627() {
             queryClient.refetchQueries(['players']);
           }}
         />
+
+        <UnassignedPlayersDialog
+          open={showUnassignedDialog}
+          onClose={() => setShowUnassignedDialog(false)}
+          players={players}
+          teams={teams}
+        />
       </div>
     </DragDropContext>
+  );
+}
+
+// Inline component: shows unassigned players grouped by age group at bottom of GA column
+function UnassignedAgeGroupSection({ unassignedByAgeGroup, teams, queryClient, team2627Ids }) {
+  const [assigningId, setAssigningId] = useState(null);
+  const [selectedTeams, setSelectedTeams] = useState({});
+  const [expanded, setExpanded] = useState(true);
+
+  const teams2627 = teams
+    .filter(t => t.season === '26/27' || t.name?.includes('26/27'))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  const entries = Object.entries(unassignedByAgeGroup).sort(([a], [b]) => {
+    const n = s => parseInt(s.match(/\d+/)?.[0] || '0');
+    return n(b) - n(a);
+  });
+
+  const total = entries.reduce((s, [, arr]) => s + arr.length, 0);
+  if (total === 0) return null;
+
+  const handleAssign = async (player) => {
+    const teamId = selectedTeams[player.id];
+    if (!teamId) { return; }
+    setAssigningId(player.id);
+    try {
+      const assignments = (player.team_assignments || []).filter(a => a.season !== '26/27');
+      assignments.push({ team_id: teamId, season: '26/27' });
+      await base44.entities.Player.update(player.id, {
+        current_26_27_team: teamId,
+        team_assignments: assignments
+      });
+      queryClient.invalidateQueries(['players']);
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  return (
+    <div className="mt-4 border-2 border-dashed border-orange-300 rounded-xl bg-orange-50">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
+      >
+        <span className="font-bold text-orange-700 flex items-center gap-2">
+          <UserX className="w-4 h-4" />
+          Unassigned Players
+          <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{total}</span>
+        </span>
+        <span className="text-orange-500 text-sm">{expanded ? '▲' : '▼'}</span>
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 space-y-4">
+          {entries.map(([ageGroup, agPlayers]) => (
+            <div key={ageGroup}>
+              <p className="text-xs font-bold text-orange-600 mb-2 uppercase tracking-wide">{ageGroup} · {agPlayers.length}</p>
+              <div className="space-y-1.5">
+                {agPlayers.map(player => (
+                  <div key={player.id} className="flex items-center gap-2 bg-white rounded-lg p-2 border border-orange-200">
+                    <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-orange-700 font-bold text-xs flex-shrink-0">
+                      {player.full_name?.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-slate-800 flex-1 truncate">{player.full_name}</span>
+                    <Select
+                      value={selectedTeams[player.id] || ''}
+                      onValueChange={v => setSelectedTeams(prev => ({ ...prev, [player.id]: v }))}
+                    >
+                      <SelectTrigger className="w-36 h-7 text-xs">
+                        <SelectValue placeholder="Team..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams2627.map(t => (
+                          <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      disabled={!selectedTeams[player.id] || assigningId === player.id}
+                      onClick={() => handleAssign(player)}
+                      className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-xs flex-shrink-0"
+                    >
+                      ✓
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
