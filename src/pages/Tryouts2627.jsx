@@ -408,14 +408,14 @@ export default function Tryouts2627() {
         posMap[p.id] !== undefined ? { ...p, team_position_order: posMap[p.id] } : p
       );
 
-      // Optimistic update immediately
-      queryClient.setQueryData(['players'], updatedPlayers);
-
-      // Persist all position orders
+      // Persist position orders first
       for (const u of posUpdates) {
         await base44.entities.Player.update(u.id, { team_position_order: u.order });
         await new Promise(resolve => setTimeout(resolve, 60));
       }
+
+      // Recalculate age_group_ranking for the whole age group so visual order sticks
+      await recalculateAllRankings(updatedPlayers, teams);
 
     } else {
       // --- Move to different team ---
@@ -425,38 +425,48 @@ export default function Tryouts2627() {
       const movedAssignments = (movingPlayer.team_assignments || []).filter(a => a.season !== '26/27');
       movedAssignments.push({ team_id: destTeamId, season: '26/27' });
 
-      // Get dest team players sorted consistently (same visual sort as getTeamPlayers)
+      // Slot into dest team at drop index
       const destTeamPlayers = updatedPlayers
         .filter(p => isPlayerOnTeam2627(p, destTeamId) && p.id !== draggedPlayerId)
         .sort(visualSort);
 
-      // Calculate position order by slotting between neighbors
-      const prevOrder = destTeamPlayers[destIndex - 1]?.team_position_order ?? 0;
-      const nextOrder = typeof destTeamPlayers[destIndex]?.team_position_order === 'number'
-        ? destTeamPlayers[destIndex].team_position_order
-        : prevOrder + 2000;
-      const newPositionOrder = Math.round((prevOrder + nextOrder) / 2);
+      const newPositionOrder = (destIndex + 1) * 1000;
+      // Shift existing players below drop point to make room
+      const destPosUpdates = destTeamPlayers.map((p, i) => ({
+        id: p.id,
+        order: i < destIndex ? (i + 1) * 1000 : (i + 2) * 1000
+      }));
+      const destPosMap = Object.fromEntries(destPosUpdates.map(u => [u.id, u.order]));
 
-      updatedPlayers = updatedPlayers.map(p =>
-        p.id === draggedPlayerId
-          ? { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments, team_position_order: newPositionOrder }
-          : p
-      );
+      updatedPlayers = updatedPlayers.map(p => {
+        if (p.id === draggedPlayerId)
+          return { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments, team_position_order: newPositionOrder };
+        if (destPosMap[p.id] !== undefined)
+          return { ...p, team_position_order: destPosMap[p.id] };
+        return p;
+      });
 
-      // Optimistic update immediately
+      // Optimistic update immediately so UI feels instant
       queryClient.setQueryData(['players'], updatedPlayers);
 
       try {
+        // Persist the moved player
         await base44.entities.Player.update(draggedPlayerId, {
           current_26_27_team: destTeamId,
           team_assignments: movedAssignments,
           team_position_order: newPositionOrder
         });
+        // Persist shifted dest team players
+        for (const u of destPosUpdates) {
+          await base44.entities.Player.update(u.id, { team_position_order: u.order });
+          await new Promise(resolve => setTimeout(resolve, 60));
+        }
+        // Recalculate rankings for both affected age groups
+        await recalculateAllRankings(updatedPlayers, teams);
         toast.success('Player moved');
       } catch (error) {
         toast.error('Failed to move player');
         queryClient.invalidateQueries(['players']);
-        return;
       }
     }
   };
