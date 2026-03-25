@@ -354,6 +354,44 @@ export default function Tryouts2627() {
     toast.success(`Ranking updated to #${newRank}`);
   };
 
+  // Pure in-memory ranking recalculation — no DB calls, used for instant UI updates
+  const recalculateRankingsInMemory = (pList, tList) => {
+    const teamsByAgeGroup = {};
+    for (const team of tList) {
+      const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
+      if (teamSeason !== '26/27') continue;
+      const ag = team.age_group || 'Unknown';
+      if (!teamsByAgeGroup[ag]) teamsByAgeGroup[ag] = [];
+      teamsByAgeGroup[ag].push(team);
+    }
+    for (const ag of Object.keys(teamsByAgeGroup)) {
+      teamsByAgeGroup[ag].sort((a, b) => {
+        const pa = LEAGUE_PRIORITY[getTeamLeague(a)] || 99;
+        const pb = LEAGUE_PRIORITY[getTeamLeague(b)] || 99;
+        return pa - pb;
+      });
+    }
+    const rankMap = {};
+    for (const [, sortedTeams] of Object.entries(teamsByAgeGroup)) {
+      let rank = 1;
+      for (const team of sortedTeams) {
+        const teamSeason = team.season || (team.name?.includes('26/27') ? '26/27' : null);
+        const teamPlayers = pList.filter(p =>
+          p.team_assignments?.length > 0
+            ? p.team_assignments.some(a => a.team_id === team.id && a.season === teamSeason)
+            : p.current_26_27_team === team.id
+        ).sort((a, b) => {
+          const orderA = typeof a.team_position_order === 'number' ? a.team_position_order : 999999;
+          const orderB = typeof b.team_position_order === 'number' ? b.team_position_order : 999999;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.full_name?.split(' ').pop() || '').localeCompare(b.full_name?.split(' ').pop() || '');
+        });
+        for (const p of teamPlayers) rankMap[p.id] = rank++;
+      }
+    }
+    return pList.map(p => rankMap[p.id] !== undefined ? { ...p, age_group_ranking: rankMap[p.id] } : p);
+  };
+
   // Helper: check if a player is on a given 26/27 team (handles both storage formats)
   const isPlayerOnTeam2627 = (player, teamId) => {
     if (player.team_assignments?.length > 0) {
@@ -400,22 +438,20 @@ export default function Tryouts2627() {
       const [moved] = teamPlayers.splice(fromIdx, 1);
       teamPlayers.splice(destIndex, 0, moved);
 
-      // Assign clean sequential position orders
-      const posUpdates = teamPlayers.map((p, i) => ({ id: p.id, order: (i + 1) * 1000 }));
-      const posMap = Object.fromEntries(posUpdates.map(u => [u.id, u.order]));
-
+      // Assign clean sequential position orders in memory
+      const posMap = Object.fromEntries(teamPlayers.map((p, i) => [p.id, (i + 1) * 1000]));
       updatedPlayers = updatedPlayers.map(p =>
         posMap[p.id] !== undefined ? { ...p, team_position_order: posMap[p.id] } : p
       );
 
-      // Persist position orders first
-      for (const u of posUpdates) {
-        await base44.entities.Player.update(u.id, { team_position_order: u.order });
-        await new Promise(resolve => setTimeout(resolve, 60));
-      }
+      // Recalculate rankings in memory (no DB) so display updates immediately
+      updatedPlayers = recalculateRankingsInMemory(updatedPlayers, teams);
+      queryClient.setQueryData(['players'], updatedPlayers);
 
-      // Recalculate age_group_ranking for the whole age group so visual order sticks
-      await recalculateAllRankings(updatedPlayers, teams);
+      // Only persist the one player that moved (avoid rate limits)
+      await base44.entities.Player.update(draggedPlayerId, {
+        team_position_order: posMap[draggedPlayerId]
+      });
 
     } else {
       // --- Move to different team ---
@@ -425,45 +461,25 @@ export default function Tryouts2627() {
       const movedAssignments = (movingPlayer.team_assignments || []).filter(a => a.season !== '26/27');
       movedAssignments.push({ team_id: destTeamId, season: '26/27' });
 
-      // Slot into dest team at drop index
-      const destTeamPlayers = updatedPlayers
-        .filter(p => isPlayerOnTeam2627(p, destTeamId) && p.id !== draggedPlayerId)
-        .sort(visualSort);
-
       const newPositionOrder = (destIndex + 1) * 1000;
-      // Shift existing players below drop point to make room
-      const destPosUpdates = destTeamPlayers.map((p, i) => ({
-        id: p.id,
-        order: i < destIndex ? (i + 1) * 1000 : (i + 2) * 1000
-      }));
-      const destPosMap = Object.fromEntries(destPosUpdates.map(u => [u.id, u.order]));
 
-      updatedPlayers = updatedPlayers.map(p => {
-        if (p.id === draggedPlayerId)
-          return { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments, team_position_order: newPositionOrder };
-        if (destPosMap[p.id] !== undefined)
-          return { ...p, team_position_order: destPosMap[p.id] };
-        return p;
-      });
+      updatedPlayers = updatedPlayers.map(p =>
+        p.id === draggedPlayerId
+          ? { ...p, current_26_27_team: destTeamId, team_assignments: movedAssignments, team_position_order: newPositionOrder }
+          : p
+      );
 
-      // Optimistic update immediately so UI feels instant
+      // Recalculate rankings in memory so display updates immediately
+      updatedPlayers = recalculateRankingsInMemory(updatedPlayers, teams);
       queryClient.setQueryData(['players'], updatedPlayers);
 
       try {
-        // Persist the moved player
         await base44.entities.Player.update(draggedPlayerId, {
           current_26_27_team: destTeamId,
           team_assignments: movedAssignments,
           team_position_order: newPositionOrder
         });
-        // Persist shifted dest team players
-        for (const u of destPosUpdates) {
-          await base44.entities.Player.update(u.id, { team_position_order: u.order });
-          await new Promise(resolve => setTimeout(resolve, 60));
-        }
-        // Recalculate rankings for both affected age groups
-        await recalculateAllRankings(updatedPlayers, teams);
-        toast.success('Player moved');
+        toast.success('Player moved — click "Recalculate Rankings" to save rankings');
       } catch (error) {
         toast.error('Failed to move player');
         queryClient.invalidateQueries(['players']);
