@@ -354,6 +354,14 @@ export default function Tryouts2627() {
     toast.success(`Ranking updated to #${newRank}`);
   };
 
+  // Helper: check if a player is on a given 26/27 team (handles both storage formats)
+  const isPlayerOnTeam2627 = (player, teamId) => {
+    if (player.team_assignments?.length > 0) {
+      return player.team_assignments.some(a => a.team_id === teamId && a.season === '26/27');
+    }
+    return player.current_26_27_team === teamId;
+  };
+
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
@@ -364,14 +372,26 @@ export default function Tryouts2627() {
     const destTeamId = destination.droppableId.replace('team-', '');
     const destIndex = destination.index;
 
-    // Build updated player list optimistically
     let updatedPlayers = [...players];
+
+    // Sort matching getTeamPlayers visual order: age_group_ranking → team_position_order → last name
+    const visualSort = (a, b) => {
+      const rankA = a.age_group_ranking ?? 999999;
+      const rankB = b.age_group_ranking ?? 999999;
+      if (rankA !== rankB) return rankA - rankB;
+      const orderA = typeof a.team_position_order === 'number' ? a.team_position_order : 999999;
+      const orderB = typeof b.team_position_order === 'number' ? b.team_position_order : 999999;
+      if (orderA !== orderB) return orderA - orderB;
+      const lastA = a.full_name?.split(' ').pop()?.toLowerCase() || '';
+      const lastB = b.full_name?.split(' ').pop()?.toLowerCase() || '';
+      return lastA.localeCompare(lastB);
+    };
 
     if (sourceTeamId === destTeamId) {
       // --- Reorder within same team ---
       const teamPlayers = updatedPlayers
-        .filter(p => p.current_26_27_team === destTeamId)
-        .sort((a, b) => (a.team_position_order ?? 999999) - (b.team_position_order ?? 999999));
+        .filter(p => isPlayerOnTeam2627(p, destTeamId))
+        .sort(visualSort);
 
       const fromIdx = teamPlayers.findIndex(p => p.id === draggedPlayerId);
       if (fromIdx === -1) return;
@@ -380,7 +400,7 @@ export default function Tryouts2627() {
       const [moved] = teamPlayers.splice(fromIdx, 1);
       teamPlayers.splice(destIndex, 0, moved);
 
-      // Assign new position orders
+      // Assign clean sequential position orders
       const posUpdates = teamPlayers.map((p, i) => ({ id: p.id, order: (i + 1) * 1000 }));
       const posMap = Object.fromEntries(posUpdates.map(u => [u.id, u.order]));
 
@@ -388,10 +408,10 @@ export default function Tryouts2627() {
         posMap[p.id] !== undefined ? { ...p, team_position_order: posMap[p.id] } : p
       );
 
-      // Optimistic update
+      // Optimistic update immediately
       queryClient.setQueryData(['players'], updatedPlayers);
 
-      // Persist position orders sequentially to avoid rate limits
+      // Persist all position orders
       for (const u of posUpdates) {
         await base44.entities.Player.update(u.id, { team_position_order: u.order });
         await new Promise(resolve => setTimeout(resolve, 60));
@@ -405,13 +425,16 @@ export default function Tryouts2627() {
       const movedAssignments = (movingPlayer.team_assignments || []).filter(a => a.season !== '26/27');
       movedAssignments.push({ team_id: destTeamId, season: '26/27' });
 
-      // Compute new position order: slot into destIndex among dest team's players
+      // Get dest team players sorted consistently (same visual sort as getTeamPlayers)
       const destTeamPlayers = updatedPlayers
-        .filter(p => p.current_26_27_team === destTeamId && p.id !== draggedPlayerId)
-        .sort((a, b) => (a.team_position_order ?? 999999) - (b.team_position_order ?? 999999));
+        .filter(p => isPlayerOnTeam2627(p, destTeamId) && p.id !== draggedPlayerId)
+        .sort(visualSort);
 
+      // Calculate position order by slotting between neighbors
       const prevOrder = destTeamPlayers[destIndex - 1]?.team_position_order ?? 0;
-      const nextOrder = destTeamPlayers[destIndex]?.team_position_order ?? (prevOrder + 2000);
+      const nextOrder = typeof destTeamPlayers[destIndex]?.team_position_order === 'number'
+        ? destTeamPlayers[destIndex].team_position_order
+        : prevOrder + 2000;
       const newPositionOrder = Math.round((prevOrder + nextOrder) / 2);
 
       updatedPlayers = updatedPlayers.map(p =>
@@ -436,7 +459,6 @@ export default function Tryouts2627() {
         return;
       }
     }
-
   };
 
   const retryFailedImports = async () => {
