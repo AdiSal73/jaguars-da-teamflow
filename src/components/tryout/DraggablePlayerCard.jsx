@@ -69,8 +69,25 @@ export default function DraggablePlayerCard({ player, index, isDraggable = true,
       } else {
         await base44.entities.PlayerTryout.create({ player_id: player.id, player_name: player.full_name, next_season_status: newStatus });
       }
+      // Auto-send email when status changes to 'Considering Offer'
+      if (newStatus === 'Considering Offer' && player.parent_emails?.length > 0) {
+        const teamName = team?.name || 'our team';
+        const expiration = tryoutData.offer_expiration_date ||
+          new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const emailBody = `Dear Parent/Guardian of ${player.full_name},\n\nWe are pleased to inform you that ${player.full_name} has received an offer to join ${teamName} for the 2026-27 season!\n\n📋 OFFER DETAILS\n• Team: ${teamName}\n• Offer Expires: ${expiration}\n\n✅ NEXT STEPS\n1. Review this offer with your family\n2. Log in to your player portal to accept or ask questions\n3. Contact us if you need additional information\n\nWe look forward to having ${player.full_name} on the team!\n\nBest regards,\nMichigan Jaguars Coaching Staff`;
+        for (const email of player.parent_emails) {
+          await base44.integrations.Core.SendEmail({
+            to: email,
+            subject: `🎉 Team Offer for ${player.full_name} — ${teamName}`,
+            body: emailBody
+          });
+        }
+      }
     },
-    onSuccess: () => { queryClient.invalidateQueries(['tryouts']); toast.success('Status updated'); },
+    onSuccess: (_, newStatus) => {
+      queryClient.invalidateQueries(['tryouts']);
+      toast.success(newStatus === 'Considering Offer' ? 'Status updated & offer email sent!' : 'Status updated');
+    },
     onError: () => toast.error('Failed to update status')
   });
 

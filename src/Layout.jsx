@@ -151,7 +151,9 @@ export default function Layout({ children, currentPageName }) {
       icon: TrendingUp,
       roles: ["admin", "director"],
       submenu: [
-        { title: "2026-27 Tryouts", url: createPageUrl("Tryouts2627") },
+        { title: "2026-27 Tryouts (All)", url: createPageUrl("Tryouts2627") },
+        { title: "Girls Tryouts", url: `${createPageUrl("Tryouts2627")}?gender=Female` },
+        { title: "Boys Tryouts", url: `${createPageUrl("Tryouts2627")}?gender=Male` },
         { title: "Position Assignments", url: createPageUrl("PositionAssignments") },
         { title: "Outside Players", url: createPageUrl("TryoutPlayers") },
         { title: "Scouting Pipeline", url: createPageUrl("ScoutingPipeline") },

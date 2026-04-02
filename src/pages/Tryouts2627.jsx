@@ -16,6 +16,7 @@ import PrintRankingsDialog from '@/components/tryout/PrintRankingsDialog';
 import ParentPlayerCSVImportDialog from '@/components/contacts/ParentPlayerCSVImportDialog';
 import AddPlayerDialog from '@/components/tryout/AddPlayerDialog';
 import UnassignedPlayersDialog from '@/components/tryout/UnassignedPlayersDialog';
+import TryoutFunnelChart from '@/components/tryout/TryoutFunnelChart';
 import { toast } from 'sonner';
 
 export default function Tryouts2627() {
@@ -37,6 +38,7 @@ export default function Tryouts2627() {
   const [showUnassignedDialog, setShowUnassignedDialog] = useState(false);
   const [playerSearch, setPlayerSearch] = useState('');
   const [mobileTab, setMobileTab] = useState('ga');
+  const [selectedGender, setSelectedGender] = useState(urlParams.get('gender') || 'all');
 
   // Keep URL in sync with filter state
   const updateFilterURL = (key, value) => {
@@ -146,6 +148,10 @@ export default function Tryouts2627() {
       return teamSeason === '26/27';
     });
 
+    if (selectedGender !== 'all') {
+      filtered = filtered.filter(t => t.gender === selectedGender);
+    }
+
     if (selectedAgeGroup !== 'all') {
       filtered = filtered.filter(t => t.age_group === selectedAgeGroup);
     }
@@ -180,7 +186,7 @@ export default function Tryouts2627() {
     });
 
     return { girlsAcademy: gaTeams, aspire: aspireTeams, dplAndOther };
-    }, [teams, selectedAgeGroup, selectedCoach]);
+    }, [teams, selectedAgeGroup, selectedCoach, selectedGender]);
 
   const getTeamPlayers = useCallback((team) => {
     const effectiveSeason = team.season || (team.name?.includes('26/27') ? '26/27' : team.name?.includes('25/26') ? '25/26' : null);
@@ -1053,9 +1059,27 @@ export default function Tryouts2627() {
           />
         </div>
 
+        <div className="mb-4">
+          <TryoutFunnelChart tryouts={tryouts} players={players} />
+        </div>
+
         <Card className="border-none shadow-xl mb-4 md:mb-6 bg-gradient-to-br from-white via-slate-50 to-emerald-50">
           <CardContent className="p-3 md:p-4 lg:p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
+              <div>
+                <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Gender</label>
+                <Select value={selectedGender} onValueChange={v => { setSelectedGender(v); updateFilterURL('gender', v); }}>
+                  <SelectTrigger className="border-2 h-9 md:h-10 lg:h-12 shadow-sm text-xs md:text-sm">
+                    <SelectValue placeholder="All Genders" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Female">Girls</SelectItem>
+                    <SelectItem value="Male">Boys</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <label className="text-xs md:text-sm font-semibold text-slate-700 mb-1 md:mb-2 block">Age Group</label>
                 <Select value={selectedAgeGroup} onValueChange={v => { setSelectedAgeGroup(v); updateFilterURL('ageGroup', v); }}>
@@ -1136,6 +1160,7 @@ export default function Tryouts2627() {
                     setSelectedBirthYear('all');
                     setSelectedGradYear('all');
                     setSelectedTryoutStatus('all');
+                    setSelectedGender('all');
                     window.history.replaceState(null, '', window.location.pathname);
                   }}
                   className="w-full h-9 md:h-10 lg:h-12 text-xs md:text-sm"
