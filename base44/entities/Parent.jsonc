@@ -1,0 +1,38 @@
+{
+  "name": "Parent",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Parent's full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Parent's email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Parent's phone number"
+    },
+    "player_ids": {
+      "type": "array",
+      "description": "Array of player IDs this parent is associated with",
+      "items": {
+        "type": "string"
+      }
+    },
+    "address": {
+      "type": "string",
+      "description": "Home address"
+    },
+    "emergency_contact": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this parent is an emergency contact"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}

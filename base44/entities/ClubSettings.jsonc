@@ -1,0 +1,34 @@
+{
+  "name": "ClubSettings",
+  "type": "object",
+  "properties": {
+    "setting_type": {
+      "type": "string",
+      "enum": [
+        "team_roles",
+        "positions"
+      ],
+      "description": "Type of setting"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ],
+      "description": "Gender this setting applies to"
+    },
+    "values": {
+      "type": "array",
+      "description": "Array of option values",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "setting_type",
+    "gender",
+    "values"
+  ]
+}

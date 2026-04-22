@@ -1,0 +1,49 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "sender_id": {
+      "type": "string",
+      "description": "User ID of the sender"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "recipient_id": {
+      "type": "string",
+      "description": "User ID of the recipient"
+    },
+    "recipient_name": {
+      "type": "string"
+    },
+    "recipient_email": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "For grouping messages in a thread"
+    },
+    "booking_id": {
+      "type": "string",
+      "description": "Optional reference to a booking"
+    }
+  },
+  "required": [
+    "sender_email",
+    "recipient_email",
+    "content"
+  ]
+}

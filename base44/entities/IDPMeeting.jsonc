@@ -1,0 +1,55 @@
+{
+  "name": "IDPMeeting",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "coach_id": {
+      "type": "string",
+      "description": "Reference to coach"
+    },
+    "coach_name": {
+      "type": "string"
+    },
+    "meeting_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "meeting_time": {
+      "type": "string",
+      "description": "Time of meeting (e.g., 14:00)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Meeting location"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Meeting notes and outcomes"
+    },
+    "goals_discussed": {
+      "type": "array",
+      "description": "Goals discussed in meeting",
+      "items": {
+        "type": "string"
+      }
+    },
+    "action_items": {
+      "type": "array",
+      "description": "Action items from meeting",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "player_id",
+    "coach_id",
+    "meeting_date"
+  ]
+}

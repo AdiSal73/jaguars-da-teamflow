@@ -1,0 +1,70 @@
+{
+  "name": "PhysicalAssessment",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Player's full name"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "Reference to team"
+    },
+    "assessment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sprint": {
+      "type": "number",
+      "description": "20m sprint time in seconds"
+    },
+    "vertical": {
+      "type": "number",
+      "description": "Vertical jump in inches"
+    },
+    "yirt": {
+      "type": "number",
+      "description": "YIRT level"
+    },
+    "shuttle": {
+      "type": "number",
+      "description": "Shuttle run time in seconds"
+    },
+    "speed_score": {
+      "type": "number",
+      "description": "Calculated speed score"
+    },
+    "power_score": {
+      "type": "number",
+      "description": "Calculated power score"
+    },
+    "endurance_score": {
+      "type": "number",
+      "description": "Calculated endurance score"
+    },
+    "agility_score": {
+      "type": "number",
+      "description": "Calculated agility score"
+    },
+    "overall_score": {
+      "type": "number",
+      "description": "Calculated overall score"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "team_id",
+    "assessment_date",
+    "sprint",
+    "vertical",
+    "yirt",
+    "shuttle"
+  ]
+}

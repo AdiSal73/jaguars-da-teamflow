@@ -1,0 +1,65 @@
+{
+  "name": "Announcement",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Announcement title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Announcement content"
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "all",
+        "team",
+        "players",
+        "coaches",
+        "parents"
+      ],
+      "default": "all",
+      "description": "Who should see this announcement"
+    },
+    "target_team_ids": {
+      "type": "array",
+      "description": "Specific teams to target",
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_player_ids": {
+      "type": "array",
+      "description": "Specific players to target",
+      "items": {
+        "type": "string"
+      }
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "default": "normal"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "content",
+    "author_name",
+    "author_email"
+  ]
+}

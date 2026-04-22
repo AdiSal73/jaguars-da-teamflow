@@ -1,0 +1,178 @@
+{
+  "name": "ScoutedPlayer",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Player's full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Player's email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Player's phone number"
+    },
+    "parent_name": {
+      "type": "string",
+      "description": "Parent's name"
+    },
+    "parent_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Parent's email"
+    },
+    "parent_phone": {
+      "type": "string",
+      "description": "Parent's phone number"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of birth"
+    },
+    "grad_year": {
+      "type": "number",
+      "description": "High school graduation year"
+    },
+    "primary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Primary position"
+    },
+    "secondary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Secondary position"
+    },
+    "current_club": {
+      "type": "string",
+      "description": "Current club name"
+    },
+    "current_team": {
+      "type": "string",
+      "description": "Current team name"
+    },
+    "pipeline_stage": {
+      "type": "string",
+      "enum": [
+        "New Lead",
+        "Under Evaluation",
+        "Invited to Tryout",
+        "Offered Spot",
+        "Recruited"
+      ],
+      "default": "New Lead",
+      "description": "Current stage in scouting pipeline"
+    },
+    "scouting_recommendation": {
+      "type": "string",
+      "enum": [
+        "Indispensable Player",
+        "GA Starter",
+        "GA Rotation",
+        "Aspire Starter",
+        "Aspire Rotation",
+        "United Starter",
+        "United Rotation"
+      ],
+      "description": "Scout's recommendation for team role"
+    },
+    "scouting_note": {
+      "type": "string",
+      "description": "Scout's notes and observations"
+    },
+    "scouting_reports": {
+      "type": "array",
+      "description": "Detailed scouting reports",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "scout_name": {
+            "type": "string"
+          },
+          "report": {
+            "type": "string"
+          },
+          "strengths": {
+            "type": "string"
+          },
+          "weaknesses": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          }
+        }
+      }
+    },
+    "video_links": {
+      "type": "array",
+      "description": "Video highlights and game footage",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "full_name",
+    "date_of_birth"
+  ]
+}

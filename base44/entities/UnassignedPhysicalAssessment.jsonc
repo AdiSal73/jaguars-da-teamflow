@@ -1,0 +1,53 @@
+{
+  "name": "UnassignedPhysicalAssessment",
+  "type": "object",
+  "properties": {
+    "player_name": {
+      "type": "string",
+      "description": "Player name from CSV that couldn't be matched"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "Team reference if matched"
+    },
+    "assessment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "sprint": {
+      "type": "number",
+      "description": "20m sprint time in seconds"
+    },
+    "vertical": {
+      "type": "number",
+      "description": "Vertical jump in inches"
+    },
+    "yirt": {
+      "type": "number",
+      "description": "YIRT level"
+    },
+    "shuttle": {
+      "type": "number",
+      "description": "Shuttle run time in seconds"
+    },
+    "speed_score": {
+      "type": "number"
+    },
+    "power_score": {
+      "type": "number"
+    },
+    "endurance_score": {
+      "type": "number"
+    },
+    "agility_score": {
+      "type": "number"
+    },
+    "overall_score": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "player_name",
+    "assessment_date"
+  ]
+}

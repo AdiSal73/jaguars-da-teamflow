@@ -1,0 +1,33 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "display_name": {
+      "type": "string",
+      "description": "Display name shown in the app"
+    },
+    "player_ids": {
+      "type": "array",
+      "description": "Array of player IDs for parent users",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assigned_role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "director",
+        "coach",
+        "parent",
+        "player",
+        "user"
+      ],
+      "description": "Admin-assigned role for the user - takes precedence over platform role"
+    }
+  },
+  "required": [
+    "display_name",
+    "player_ids"
+  ]
+}

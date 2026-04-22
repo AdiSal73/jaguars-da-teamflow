@@ -1,0 +1,92 @@
+{
+  "name": "PlayerProgress",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total gamification points earned"
+    },
+    "level": {
+      "type": "number",
+      "default": 1,
+      "description": "Current player level"
+    },
+    "badges": {
+      "type": "array",
+      "description": "Array of earned badges",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "earned_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "goals",
+              "training",
+              "improvement",
+              "consistency",
+              "achievement"
+            ]
+          }
+        }
+      }
+    },
+    "achievements": {
+      "type": "object",
+      "properties": {
+        "goals_completed": {
+          "type": "number",
+          "default": 0
+        },
+        "modules_completed": {
+          "type": "number",
+          "default": 0
+        },
+        "assessments_taken": {
+          "type": "number",
+          "default": 0
+        },
+        "evaluations_received": {
+          "type": "number",
+          "default": 0
+        },
+        "streak_days": {
+          "type": "number",
+          "default": 0,
+          "description": "Current streak of active days"
+        },
+        "longest_streak": {
+          "type": "number",
+          "default": 0
+        }
+      }
+    },
+    "last_activity_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "player_id"
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "name": "PlayerTryout",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "current_team": {
+      "type": "string"
+    },
+    "primary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Primary position"
+    },
+    "dominant_foot": {
+      "type": "string",
+      "enum": [
+        "Left",
+        "Right",
+        "Both",
+        "Neither"
+      ],
+      "default": "Right"
+    },
+    "team_role": {
+      "type": "string",
+      "enum": [
+        "Indispensable Player",
+        "GA Starter",
+        "GA Rotation",
+        "Aspire Starter",
+        "Aspire Rotation",
+        "United Starter",
+        "United Rotation"
+      ]
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "Move up",
+        "Keep",
+        "Move down"
+      ]
+    },
+    "next_year_team": {
+      "type": "string"
+    },
+    "next_season_status": {
+      "type": "string",
+      "enum": [
+        "Not Offered Yet",
+        "Considering Offer",
+        "Accepted Offer",
+        "Signed"
+      ],
+      "default": "Not Offered Yet",
+      "description": "Tryout offer status"
+    },
+    "registration_status": {
+      "type": "string",
+      "enum": [
+        "Not Signed",
+        "Signed and Paid",
+        "Signed"
+      ],
+      "default": "Not Signed"
+    },
+    "team_ranking": {
+      "type": "number",
+      "description": "Player's ranking within their position/team"
+    },
+    "age_group_ranking": {
+      "type": "number",
+      "description": "Player's ranking within their age group"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "offer_expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the team offer expires"
+    }
+  },
+  "required": [
+    "player_id"
+  ]
+}

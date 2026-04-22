@@ -1,0 +1,58 @@
+{
+  "name": "VideoAnnotation",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "description": "Reference to Video entity"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp in seconds"
+    },
+    "annotation_type": {
+      "type": "string",
+      "enum": [
+        "comment",
+        "highlight",
+        "drawing",
+        "marker"
+      ],
+      "default": "comment"
+    },
+    "content": {
+      "type": "string",
+      "description": "Comment text or drawing data"
+    },
+    "drawing_data": {
+      "type": "object",
+      "description": "SVG/canvas drawing data"
+    },
+    "created_by_id": {
+      "type": "string",
+      "description": "User who created annotation"
+    },
+    "created_by_name": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "coach-only",
+        "shared"
+      ],
+      "default": "shared"
+    },
+    "color": {
+      "type": "string",
+      "description": "Annotation color",
+      "default": "#3B82F6"
+    }
+  },
+  "required": [
+    "video_id",
+    "timestamp",
+    "annotation_type",
+    "created_by_id"
+  ]
+}

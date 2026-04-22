@@ -1,0 +1,51 @@
+{
+  "name": "EmailTemplate",
+  "type": "object",
+  "properties": {
+    "template_name": {
+      "type": "string",
+      "description": "Unique identifier for the template"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Email subject line"
+    },
+    "html_content": {
+      "type": "string",
+      "description": "HTML content of the email"
+    },
+    "text_content": {
+      "type": "string",
+      "description": "Plain text version"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "invite",
+        "reset_password",
+        "welcome",
+        "booking_confirmation",
+        "evaluation_notification",
+        "custom"
+      ],
+      "description": "Type of email template"
+    },
+    "variables": {
+      "type": "array",
+      "description": "Available variables for this template",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "template_name",
+    "subject",
+    "html_content",
+    "template_type"
+  ]
+}

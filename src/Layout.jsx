@@ -186,7 +186,8 @@ export default function Layout({ children, currentPageName }) {
         { title: "Coaching Resources", url: createPageUrl("CoachingResources") },
         { title: "Knowledge Bank", url: createPageUrl("JaguarsKnowledgeBank") },
         { title: "Fitness Resources", url: createPageUrl("FitnessResources") },
-        { title: "PDP 2025", url: createPageUrl("PDPViewer") }
+        { title: "PDP 2025", url: createPageUrl("PDPViewer") },
+        { title: "Pre-GA Platform (U10–U12)", url: createPageUrl("PreGA") }
       ]
     },
     {

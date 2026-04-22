@@ -104,6 +104,7 @@ import TryoutPlayers from './pages/TryoutPlayers';
 import TryoutPoolsByAge from './pages/TryoutPoolsByAge';
 import Tryouts from './pages/Tryouts';
 import Tryouts2627 from './pages/Tryouts2627';
+import PreGA from './pages/PreGA';
 import UserDashboard from './pages/UserDashboard';
 import UserManagement from './pages/UserManagement';
 import __Layout from './Layout.jsx';
@@ -167,6 +168,7 @@ export const PAGES = {
     "TryoutPoolsByAge": TryoutPoolsByAge,
     "Tryouts": Tryouts,
     "Tryouts2627": Tryouts2627,
+    "PreGA": PreGA,
     "UserDashboard": UserDashboard,
     "UserManagement": UserManagement,
 }

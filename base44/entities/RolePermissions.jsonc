@@ -1,0 +1,76 @@
+{
+  "name": "RolePermissions",
+  "type": "object",
+  "properties": {
+    "role_name": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "director",
+        "coach",
+        "user",
+        "parent",
+        "player"
+      ],
+      "description": "Role name"
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permission flags for this role",
+      "properties": {
+        "view_all_players": {
+          "type": "boolean"
+        },
+        "edit_all_players": {
+          "type": "boolean"
+        },
+        "view_all_teams": {
+          "type": "boolean"
+        },
+        "edit_all_teams": {
+          "type": "boolean"
+        },
+        "view_all_assessments": {
+          "type": "boolean"
+        },
+        "create_assessments": {
+          "type": "boolean"
+        },
+        "view_all_evaluations": {
+          "type": "boolean"
+        },
+        "create_evaluations": {
+          "type": "boolean"
+        },
+        "view_all_bookings": {
+          "type": "boolean"
+        },
+        "manage_bookings": {
+          "type": "boolean"
+        },
+        "view_all_training_plans": {
+          "type": "boolean"
+        },
+        "create_training_plans": {
+          "type": "boolean"
+        },
+        "manage_coaches": {
+          "type": "boolean"
+        },
+        "manage_users": {
+          "type": "boolean"
+        },
+        "access_club_management": {
+          "type": "boolean"
+        },
+        "send_messages": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "required": [
+    "role_name",
+    "permissions"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "CommunicationPreferences",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User email this preference belongs to"
+    },
+    "email_notifications_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "notification_types": {
+      "type": "object",
+      "description": "Enabled notification types",
+      "properties": {
+        "evaluations": {
+          "type": "boolean",
+          "default": true
+        },
+        "assessments": {
+          "type": "boolean",
+          "default": true
+        },
+        "bookings": {
+          "type": "boolean",
+          "default": true
+        },
+        "announcements": {
+          "type": "boolean",
+          "default": true
+        },
+        "training_plans": {
+          "type": "boolean",
+          "default": true
+        },
+        "goals": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "email_frequency": {
+      "type": "string",
+      "enum": [
+        "immediate",
+        "daily_digest",
+        "weekly_digest"
+      ],
+      "default": "immediate"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}

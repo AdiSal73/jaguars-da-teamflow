@@ -1,0 +1,159 @@
+{
+  "name": "DevelopmentPathway",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "position": {
+      "type": "string",
+      "description": "Player position"
+    },
+    "current_level": {
+      "type": "string",
+      "enum": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Elite"
+      ],
+      "default": "Beginner"
+    },
+    "skill_matrix": {
+      "type": "array",
+      "description": "Custom skill assessment matrix from knowledge bank",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill_name": {
+            "type": "string"
+          },
+          "current_rating": {
+            "type": "number"
+          },
+          "target_rating": {
+            "type": "number"
+          },
+          "coach_notes": {
+            "type": "string"
+          },
+          "player_self_rating": {
+            "type": "number"
+          },
+          "player_notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "events_camps": {
+      "type": "array",
+      "description": "Events and camps attended",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "event_name": {
+            "type": "string"
+          },
+          "event_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "US ID Camp",
+              "Girls Academy ID Event",
+              "US National Team Camp",
+              "Regional Camp",
+              "College Showcase",
+              "Training Camp",
+              "Other"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "training_modules": {
+      "type": "array",
+      "description": "Recommended training modules",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "resource_link": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "High",
+              "Medium",
+              "Low"
+            ]
+          },
+          "training_type": {
+            "type": "string",
+            "enum": [
+              "Mobility Training",
+              "Technical Training",
+              "Functional Training",
+              "Video Analysis/Tactical Training",
+              "Other"
+            ]
+          },
+          "weekly_sessions": {
+            "type": "number"
+          },
+          "number_of_weeks": {
+            "type": "number"
+          },
+          "session_duration": {
+            "type": "number",
+            "description": "Duration in minutes"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "auto_suggested": {
+            "type": "boolean"
+          },
+          "preventative_measures": {
+            "type": "string",
+            "description": "Injury prevention guidelines and warm-up protocols"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "player_id",
+    "position"
+  ]
+}

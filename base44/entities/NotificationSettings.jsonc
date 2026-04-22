@@ -1,0 +1,46 @@
+{
+  "name": "NotificationSettings",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "format": "email",
+      "description": "User email"
+    },
+    "game_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "training_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "assessment_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "evaluation_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "performance_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "goal_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "training_plan_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "message_notifications": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}

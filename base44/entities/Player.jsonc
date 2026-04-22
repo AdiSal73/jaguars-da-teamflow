@@ -1,0 +1,271 @@
+{
+  "name": "Player",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Player's full name"
+    },
+    "parent_name": {
+      "type": "string"
+    },
+    "parent_names": {
+      "type": "array",
+      "description": "Array of parent names, parallel to parent_emails",
+      "items": {
+        "type": "string"
+      }
+    },
+    "parent_emails": {
+      "type": "array",
+      "description": "Array of parent email addresses linked to this player",
+      "items": {
+        "type": "string",
+        "format": "email"
+      }
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "player_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Optional direct email for the player"
+    },
+    "player_phone": {
+      "type": "string",
+      "description": "Optional direct phone number for the player"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "age_group": {
+      "type": "string",
+      "description": "Calculated age group (e.g., U-15, U-16) based on birth date. Aug 1 - July 31 cutoff."
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ],
+      "description": "Player gender - required"
+    },
+    "grad_year": {
+      "type": "number",
+      "description": "High school graduation year (12th grade=2026, 11th=2027, 10th=2028, etc.)"
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "CW3",
+        "Dearborn",
+        "Downriver",
+        "Genesee",
+        "Huron Valley",
+        "Jackson",
+        "Lansing",
+        "Marshall",
+        "Northville",
+        "Novi",
+        "Rochester Romeo",
+        "West Bloomfield"
+      ],
+      "description": "Branch/location"
+    },
+    "primary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Primary position"
+    },
+    "secondary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Secondary position (optional)"
+    },
+    "preferred_foot": {
+      "type": "string",
+      "enum": [
+        "Left",
+        "Right",
+        "Both"
+      ]
+    },
+    "team_assignments": {
+      "type": "array",
+      "description": "PRIMARY field: Array of team assignments by season. Each entry: {team_id, season}. Use this for all multi-season roster tracking.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "team_id": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "current_25_26_team": {
+      "type": "string",
+      "description": "Player's 25/26 season team ID (convenience field mirroring team_assignments)"
+    },
+    "current_26_27_team": {
+      "type": "string",
+      "description": "Player's 26/27 season team ID (convenience field mirroring team_assignments)"
+    },
+    "age_group_ranking": {
+      "type": "number",
+      "description": "Global ranking within the player's age group across all 26/27 teams. 1 = top player on Girls Academy team, continues through Aspire, DPL, Green, White, Black."
+    },
+    "team_position_order": {
+      "type": "number",
+      "description": "Position/order within their assigned team (for drag-and-drop ordering within a team)"
+    },
+    "is_tryout_player": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this is an outside player trying out for the team"
+    },
+    "tryout_notes": {
+      "type": "string",
+      "description": "Notes about the tryout player"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Most recent comment about the player"
+    },
+    "comment_log": {
+      "type": "array",
+      "description": "Historical log of all comments",
+      "items": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "created_date": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "jersey_number": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number",
+      "description": "Height in cm"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Weight in kg"
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Injured",
+        "Suspended",
+        "Inactive"
+      ],
+      "default": "Active"
+    },
+    "profile_password": {
+      "type": "string",
+      "description": "Password for sharing player profile publicly"
+    },
+    "goals": {
+      "type": "array",
+      "description": "Player's personal goals",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "plan_of_action": {
+            "type": "string"
+          },
+          "suggested_start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "suggested_completion_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completion_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "type": "number",
+            "description": "Progress in percentage (0-100)"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "created_date": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "full_name",
+    "gender"
+  ]
+}

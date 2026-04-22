@@ -1,0 +1,73 @@
+{
+  "name": "TryoutPool",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player if they exist in Player entity"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "player_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "parent_emails": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "email"
+      }
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "age_group": {
+      "type": "string"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ]
+    },
+    "primary_position": {
+      "type": "string"
+    },
+    "current_club": {
+      "type": "string",
+      "description": "Their current club organization"
+    },
+    "current_team": {
+      "type": "string",
+      "description": "Their current/last year's team"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Tryout notes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Invited",
+        "Confirmed",
+        "Declined"
+      ],
+      "default": "Pending"
+    },
+    "next_year_team": {
+      "type": "string",
+      "description": "Team assigned to for next season"
+    }
+  },
+  "required": [
+    "player_name"
+  ]
+}

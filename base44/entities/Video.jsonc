@@ -1,0 +1,105 @@
+{
+  "name": "Video",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Video title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Video description"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the video file"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "URL to video thumbnail"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Video duration in seconds"
+    },
+    "uploaded_by_id": {
+      "type": "string",
+      "description": "User ID who uploaded the video"
+    },
+    "uploaded_by_name": {
+      "type": "string",
+      "description": "Name of uploader"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Player this video is for"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "coach_id": {
+      "type": "string",
+      "description": "Coach who uploaded/shared"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "Team associated with video"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Booking/session reference"
+    },
+    "video_type": {
+      "type": "string",
+      "enum": [
+        "Training",
+        "Match",
+        "Analysis",
+        "Drill",
+        "Evaluation",
+        "Other"
+      ],
+      "default": "Training"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Video tags for categorization"
+    },
+    "shared_with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User IDs who can view this video"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "private",
+        "player",
+        "team",
+        "public"
+      ],
+      "default": "player",
+      "description": "Who can view this video"
+    },
+    "evaluation_notes": {
+      "type": "string",
+      "description": "Overall evaluation notes"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Performance rating"
+    }
+  },
+  "required": [
+    "title",
+    "file_url",
+    "uploaded_by_id"
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "name": "Coach",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "CW3",
+        "Dearborn",
+        "Downriver",
+        "Genesee",
+        "Huron Valley",
+        "Jackson",
+        "Lansing",
+        "Marshall",
+        "Northville",
+        "Novi",
+        "Rochester Romeo",
+        "West Bloomfield"
+      ],
+      "description": "Branch/location of the coach"
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "string"
+    },
+    "testimonials": {
+      "type": "array",
+      "description": "Coach testimonials and success stories",
+      "items": {
+        "type": "object",
+        "properties": {
+          "quote": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "achievement": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "team_ids": {
+      "type": "array",
+      "description": "Array of team IDs this coach is assigned to",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_admin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this coach is also an admin"
+    },
+    "session_duration": {
+      "type": "number",
+      "default": 60,
+      "description": "Default session duration in minutes"
+    },
+    "booking_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "availability_slots": {
+      "type": "array",
+      "description": "Array of availability time slots",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "day_of_week": {
+            "type": "number",
+            "description": "0=Sunday, 1=Monday, 2=Tuesday, etc."
+          },
+          "start_time": {
+            "type": "string",
+            "description": "e.g., 09:00"
+          },
+          "end_time": {
+            "type": "string",
+            "description": "e.g., 17:00"
+          },
+          "location_id": {
+            "type": "string",
+            "description": "Reference to Location entity"
+          },
+          "services": {
+            "type": "array",
+            "description": "Array of service names available in this slot",
+            "items": {
+              "type": "string"
+            }
+          },
+          "buffer_before": {
+            "type": "number",
+            "default": 0
+          },
+          "buffer_after": {
+            "type": "number",
+            "default": 0
+          },
+          "is_recurring": {
+            "type": "boolean",
+            "default": true
+          },
+          "recurring_start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "recurring_end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "specific_dates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "description": "Available services/session types",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "number",
+            "description": "Duration in minutes"
+          },
+          "color": {
+            "type": "string",
+            "description": "Hex color code"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "full_name"
+  ]
+}

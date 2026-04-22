@@ -1,0 +1,170 @@
+{
+  "name": "Evaluation",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "birth_year": {
+      "type": "string"
+    },
+    "team_name": {
+      "type": "string"
+    },
+    "my_goals": {
+      "type": "string"
+    },
+    "evaluator": {
+      "type": "string"
+    },
+    "current_team_status": {
+      "type": "string"
+    },
+    "growth_mindset": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "resilience": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "efficiency_in_execution": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "athleticism": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "team_focus": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "primary_position": {
+      "type": "string"
+    },
+    "preferred_foot": {
+      "type": "string",
+      "enum": [
+        "Left",
+        "Right",
+        "Both"
+      ]
+    },
+    "defending_organized": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_final_third": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_transition": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "pressing": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_set_pieces": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_organized": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_final_third": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_in_transition": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "building_out": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_set_pieces": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "player_strengths": {
+      "type": "string"
+    },
+    "areas_of_growth": {
+      "type": "string"
+    },
+    "training_focus": {
+      "type": "string"
+    },
+    "position_role_1": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Position-specific role 1 rating"
+    },
+    "position_role_2": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Position-specific role 2 rating"
+    },
+    "position_role_3": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Position-specific role 3 rating"
+    },
+    "position_role_4": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Position-specific role 4 rating"
+    },
+    "position_role_1_label": {
+      "type": "string",
+      "description": "Custom label for position role 1"
+    },
+    "position_role_2_label": {
+      "type": "string",
+      "description": "Custom label for position role 2"
+    },
+    "position_role_3_label": {
+      "type": "string",
+      "description": "Custom label for position role 3"
+    },
+    "position_role_4_label": {
+      "type": "string",
+      "description": "Custom label for position role 4"
+    },
+    "overall_score": {
+      "type": "number",
+      "description": "Average of all evaluation scores"
+    }
+  },
+  "required": [
+    "player_id"
+  ]
+}

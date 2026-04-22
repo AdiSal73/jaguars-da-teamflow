@@ -1,0 +1,95 @@
+{
+  "name": "TryoutPlayer",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Player's full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Player's email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Player's phone number"
+    },
+    "parent_name": {
+      "type": "string",
+      "description": "Parent's name"
+    },
+    "parent_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Parent's email"
+    },
+    "parent_phone": {
+      "type": "string",
+      "description": "Parent's phone number"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of birth"
+    },
+    "grad_year": {
+      "type": "number",
+      "description": "High school graduation year"
+    },
+    "primary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Primary position"
+    },
+    "secondary_position": {
+      "type": "string",
+      "enum": [
+        "GK",
+        "Right Outside Back",
+        "Left Outside Back",
+        "Right Centerback",
+        "Left Centerback",
+        "Defensive Midfielder",
+        "Right Winger",
+        "Center Midfielder",
+        "Forward",
+        "Attacking Midfielder",
+        "Left Winger"
+      ],
+      "description": "Secondary position"
+    },
+    "current_club": {
+      "type": "string",
+      "description": "Current club name"
+    },
+    "current_team": {
+      "type": "string",
+      "description": "Current team name"
+    },
+    "scouting_note": {
+      "type": "string",
+      "description": "Scouting notes and observations"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "full_name",
+    "date_of_birth"
+  ]
+}

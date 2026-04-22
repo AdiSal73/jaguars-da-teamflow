@@ -1,0 +1,92 @@
+{
+  "name": "Team",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Team name"
+    },
+    "age_group": {
+      "type": "string",
+      "description": "e.g., U-12, U-15, U-18, Senior"
+    },
+    "league": {
+      "type": "string",
+      "description": "League the team plays in"
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "CW3",
+        "Dearborn",
+        "Downriver",
+        "Genesee",
+        "Huron Valley",
+        "Jackson",
+        "Lansing",
+        "Marshall",
+        "Northville",
+        "Novi",
+        "Rochester Romeo",
+        "West Bloomfield"
+      ],
+      "description": "Branch/location"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female"
+      ],
+      "description": "Team gender - required"
+    },
+    "head_coach_id": {
+      "type": "string",
+      "description": "Reference to coach"
+    },
+    "coach_ids": {
+      "type": "array",
+      "description": "Array of coach IDs assigned to this team",
+      "items": {
+        "type": "string"
+      }
+    },
+    "season": {
+      "type": "string"
+    },
+    "formation_settings": {
+      "type": "object",
+      "description": "Custom formation coordinates",
+      "properties": {
+        "formation_name": {
+          "type": "string"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "age_group",
+    "gender"
+  ]
+}

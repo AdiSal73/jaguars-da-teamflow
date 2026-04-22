@@ -1,0 +1,65 @@
+{
+  "name": "TimeSlot",
+  "type": "object",
+  "properties": {
+    "coach_id": {
+      "type": "string",
+      "description": "Reference to coach"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Specific date for this slot instance"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time (HH:MM format)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time (HH:MM format)"
+    },
+    "location_id": {
+      "type": "string",
+      "description": "Location for this session"
+    },
+    "service_names": {
+      "type": "array",
+      "description": "Available services during this slot",
+      "items": {
+        "type": "string"
+      }
+    },
+    "buffer_before": {
+      "type": "number",
+      "default": 0,
+      "description": "Buffer time before in minutes"
+    },
+    "buffer_after": {
+      "type": "number",
+      "default": 0,
+      "description": "Buffer time after in minutes"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this slot is available for booking"
+    },
+    "recurrence_id": {
+      "type": "string",
+      "description": "Links slots created from the same recurrence pattern"
+    },
+    "is_recurring_instance": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if created from recurrence pattern"
+    }
+  },
+  "required": [
+    "coach_id",
+    "date",
+    "start_time",
+    "end_time",
+    "location_id"
+  ]
+}

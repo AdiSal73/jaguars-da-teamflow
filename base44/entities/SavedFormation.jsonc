@@ -1,0 +1,68 @@
+{
+  "name": "SavedFormation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the saved formation"
+    },
+    "team_id": {
+      "type": "string",
+      "description": "Reference to team this formation belongs to"
+    },
+    "age_group": {
+      "type": "string",
+      "description": "Age group this formation is for"
+    },
+    "base_formation": {
+      "type": "string",
+      "description": "Base formation type (e.g., 4-3-3, 4-4-2)"
+    },
+    "positions": {
+      "type": "array",
+      "description": "Array of position configurations",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "player_assignments": {
+      "type": "array",
+      "description": "Array of player assignments to positions with rankings",
+      "items": {
+        "type": "object",
+        "properties": {
+          "position_id": {
+            "type": "string"
+          },
+          "player_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

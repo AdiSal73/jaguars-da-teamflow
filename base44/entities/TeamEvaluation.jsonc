@@ -1,0 +1,103 @@
+{
+  "name": "TeamEvaluation",
+  "type": "object",
+  "properties": {
+    "team_id": {
+      "type": "string",
+      "description": "Reference to team"
+    },
+    "team_name": {
+      "type": "string"
+    },
+    "evaluator": {
+      "type": "string"
+    },
+    "growth_mindset": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "resilience": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "efficiency_in_execution": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "athleticism": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "team_focus": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_organized": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_final_third": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_transition": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "pressing": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "defending_set_pieces": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_organized": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_final_third": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_in_transition": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "building_out": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "attacking_set_pieces": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "team_strengths": {
+      "type": "string"
+    },
+    "areas_of_growth": {
+      "type": "string"
+    },
+    "training_focus": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "team_id"
+  ]
+}

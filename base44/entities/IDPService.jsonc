@@ -1,0 +1,66 @@
+{
+  "name": "IDPService",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Service name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description"
+    },
+    "full_description": {
+      "type": "string",
+      "description": "Detailed description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Video Analysis",
+        "Skill Building",
+        "Position Training",
+        "Other"
+      ],
+      "default": "Other"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration in minutes"
+    },
+    "price": {
+      "type": "number",
+      "description": "Price in dollars"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Service image URL"
+    },
+    "location": {
+      "type": "string",
+      "description": "Location for the service"
+    },
+    "benefits": {
+      "type": "array",
+      "description": "List of benefits",
+      "items": {
+        "type": "string"
+      }
+    },
+    "color": {
+      "type": "string",
+      "description": "Gradient color (e.g., from-purple-600 to-pink-600)",
+      "default": "from-emerald-600 to-teal-600"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether service is active"
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "duration"
+  ]
+}

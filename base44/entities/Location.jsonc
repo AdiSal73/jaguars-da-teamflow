@@ -1,0 +1,26 @@
+{
+  "name": "Location",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Location name"
+    },
+    "address": {
+      "type": "string",
+      "description": "Location address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Location phone number"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about the location"
+    }
+  },
+  "required": [
+    "name",
+    "address"
+  ]
+}

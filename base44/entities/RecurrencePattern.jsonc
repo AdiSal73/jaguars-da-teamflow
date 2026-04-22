@@ -1,0 +1,62 @@
+{
+  "name": "RecurrencePattern",
+  "type": "object",
+  "properties": {
+    "coach_id": {
+      "type": "string",
+      "description": "Reference to coach"
+    },
+    "day_of_week": {
+      "type": "number",
+      "description": "Day of week (0=Sunday, 6=Saturday)"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time (HH:MM format)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time (HH:MM format)"
+    },
+    "location_id": {
+      "type": "string"
+    },
+    "service_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "buffer_before": {
+      "type": "number",
+      "default": 0
+    },
+    "buffer_after": {
+      "type": "number",
+      "default": 0
+    },
+    "recurrence_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When recurrence starts"
+    },
+    "recurrence_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When recurrence ends (optional)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this pattern is still generating slots"
+    }
+  },
+  "required": [
+    "coach_id",
+    "day_of_week",
+    "start_time",
+    "end_time",
+    "location_id",
+    "recurrence_start_date"
+  ]
+}

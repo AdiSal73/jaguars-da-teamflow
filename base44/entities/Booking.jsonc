@@ -1,0 +1,82 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "coach_id": {
+      "type": "string",
+      "description": "Reference to the coach"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Reference to the player"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Reference to the parent user who booked"
+    },
+    "parent_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email of person who booked (for guest bookings)"
+    },
+    "location_id": {
+      "type": "string",
+      "description": "Reference to the location"
+    },
+    "service_name": {
+      "type": "string",
+      "description": "Name of the service booked"
+    },
+    "booking_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the booking"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time (e.g., 09:00)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time (e.g., 10:00)"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration in minutes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "completed"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes for the booking"
+    },
+    "coach_name": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "google_calendar_event_id": {
+      "type": "string",
+      "description": "Google Calendar event ID for synced bookings"
+    },
+    "video_consultation_link": {
+      "type": "string",
+      "description": "Link for online video consultations (Zoom, Meet, etc.)"
+    }
+  },
+  "required": [
+    "coach_id",
+    "booking_date",
+    "start_time",
+    "service_name"
+  ]
+}

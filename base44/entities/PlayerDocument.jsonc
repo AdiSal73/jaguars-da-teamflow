@@ -1,0 +1,41 @@
+{
+  "name": "PlayerDocument",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Reference to player"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "Medical Report",
+        "Scouting Note",
+        "Other"
+      ],
+      "description": "Type of document"
+    },
+    "title": {
+      "type": "string",
+      "description": "Document title"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the uploaded document"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "upload_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "player_id",
+    "document_type",
+    "title",
+    "file_url"
+  ]
+}
