@@ -19,7 +19,7 @@ const BENEFITS = [
   { icon: Globe, color: 'from-blue-500 to-indigo-600', border: 'border-blue-400', title: 'Regional Competition & GA Events', desc: 'Compete regionally with reduced travel, flexible scheduling, and access to Girls Academy regional events alongside U13–U14 age groups.' },
   { icon: Users, color: 'from-purple-500 to-pink-600', border: 'border-purple-400', title: 'GA-Standard Coaching & Experience', desc: 'Michigan Jaguars Pre-GA teams are coached to Girls Academy standards — the same philosophy used at the elite U13–U19 level.' },
   { icon: Zap, color: 'from-rose-500 to-red-600', border: 'border-rose-400', title: 'Development-First, Low Pressure', desc: 'The platform prioritizes long-term athletic development, ensuring players build the right foundation without burnout or overloaded schedules.' },
-  { icon: Star, color: 'from-amber-500 to-yellow-500', border: 'border-amber-400', title: 'Michigan Jaguars Club Advantage', desc: 'As a Great Lakes conference GA club, Michigan Jaguars is one of the first in the Midwest to offer this exclusive platform — a true advantage for our families.' },
+  { icon: Star, color: 'from-amber-500 to-yellow-500', border: 'border-amber-400', title: 'Michigan Jaguars Club Advantage', desc: 'As a Midwest conference GA club, Michigan Jaguars is one of the first in the Midwest to offer this exclusive platform — a true advantage for our families.' },
 ];
 
 const KEY_POINTS = [
@@ -49,7 +49,7 @@ const QUOTES = [
     avatarBg: 'bg-blue-600',
   },
   {
-    quote: '"This platform is exactly what our U10–U12 players have been waiting for. At Michigan Jaguars, we\'ve always believed that elite development starts long before U13. Being a founding Great Lakes club for the GA U11–U12 platform means our youngest players get the best possible foundation — the Jaguars way, backed by the best league in the country."',
+    quote: '"This platform is exactly what our U10–U12 players have been waiting for. At Michigan Jaguars, we\'ve always believed that elite development starts long before U13. Being a founding Midwest conference club for the GA U11–U12 platform means our youngest players get the best possible foundation — the Jaguars way, backed by the best league in the country."',
     author: 'Mike Scobie',
     title: 'Girls Director — Michigan Jaguars FC',
     accent: 'border-yellow-400 bg-yellow-900/30',
@@ -67,220 +67,238 @@ function generateTrifold() {
 <meta charset="UTF-8"/>
 <title>Michigan Jaguars Pre-GA Trifold 2026-27</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; }
   body {
     font-family:'Inter',sans-serif;
     background:#fff;
-    color:#1e293b;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
-    width:100%;
   }
 
-  /* ── TRIFOLD LAYOUT: 3 equal panels side by side, landscape ── */
-  .trifold {
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
-    width:100%;
-    min-height:100vh;
-    page-break-after:always;
+  /* ── Two A4-landscape pages: outside + inside ── */
+  .page {
+    width:297mm; height:210mm;
+    display:grid; grid-template-columns:99mm 99mm 99mm;
+    overflow:hidden; page-break-after:always;
   }
+  .panel { height:210mm; position:relative; overflow:hidden; display:flex; flex-direction:column; }
 
-  /* PANEL BASE */
-  .panel {
-    padding:32px 26px;
-    position:relative;
-    overflow:hidden;
-    border-right:1px dashed #cbd5e1;
-  }
-  .panel:last-child { border-right:none; }
+  /* ── PAGE 1 OUTSIDE ── */
 
-  /* PANEL 1 — Cover (right-most when folded) */
-  .panel-cover {
-    background:linear-gradient(175deg, #052e16 0%, #064e3b 35%, #065f46 65%, #1e3a8a 100%);
-    color:#fff;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-  }
-  .panel-cover::before {
-    content:'';
-    position:absolute; top:-80px; right:-80px;
-    width:280px; height:280px;
-    background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);
-    border-radius:50%;
-  }
-  .cover-logo-wrap { display:flex; align-items:center; gap:12px; margin-bottom:28px; position:relative; z-index:1; }
-  .cover-logo { width:52px; height:52px; background:#fff; border-radius:12px; padding:6px; object-fit:contain; }
-  .cover-club { font-size:13px; font-weight:900; }
-  .cover-club-sub { font-size:9px; font-weight:600; color:#6ee7b7; margin-top:2px; }
-  .cover-headline { font-size:30px; font-weight:900; line-height:1.1; margin-bottom:14px; position:relative; z-index:1; }
-  .cover-headline span { color:#6ee7b7; }
-  .cover-tagline { font-size:11px; color:rgba(255,255,255,0.75); line-height:1.65; margin-bottom:20px; position:relative; z-index:1; }
-  .cover-photo-hero {
-    width:100%; height:200px; object-fit:cover;
-    border-radius:12px; margin-bottom:20px;
-    position:relative; z-index:1;
-    box-shadow:0 8px 32px rgba(0,0,0,0.4);
-  }
-  .cover-tags { display:flex; flex-wrap:wrap; gap:6px; position:relative; z-index:1; }
-  .cover-tag {
-    background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.25);
-    border-radius:20px; padding:3px 10px; font-size:9px; font-weight:700; letter-spacing:0.5px;
-  }
-  .cover-footer { position:relative; z-index:1; margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.15); font-size:9px; color:rgba(255,255,255,0.55); }
+  /* Panel A — back flap: dark numbered pillars */
+  .pa { background:#0f172a; color:#fff; padding:36px 28px; justify-content:space-between; }
+  .pa-eyebrow { font-size:8.5px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#6ee7b7; margin-bottom:18px; }
+  .pa-tagline { font-size:24px; font-weight:900; line-height:1.1; color:#fff; margin-bottom:14px; }
+  .pa-tagline em { color:#6ee7b7; font-style:normal; display:block; }
+  .pa-body { font-size:9.5px; color:rgba(255,255,255,0.6); line-height:1.75; margin-bottom:22px; }
+  .pillars { display:flex; flex-direction:column; gap:12px; }
+  .pillar { display:flex; gap:12px; align-items:flex-start; }
+  .p-num { font-size:22px; font-weight:900; color:#6ee7b7; line-height:1; flex-shrink:0; width:24px; }
+  .p-txt { font-size:9px; color:rgba(255,255,255,0.72); line-height:1.55; font-weight:500; padding-top:4px; }
+  .pa-foot { font-size:8px; color:rgba(255,255,255,0.3); border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; margin-top:auto; }
 
-  /* PANEL 2 — Middle: About + Benefits */
-  .panel-middle { background:#f8fafc; }
-  .section-label {
-    font-size:10px; font-weight:900; letter-spacing:2px; text-transform:uppercase;
-    color:#10b981; margin-bottom:8px;
-  }
-  .section-title { font-size:16px; font-weight:900; color:#0f172a; margin-bottom:12px; line-height:1.2; }
-  .intro-text { font-size:10.5px; color:#475569; line-height:1.7; margin-bottom:18px; }
-  .divider { height:1px; background:#e2e8f0; margin:18px 0; }
+  /* Panel B — back: full photo top, age chips below */
+  .pb { background:#f8fafc; }
+  .pb-photo { width:100%; height:115mm; object-fit:cover; display:block; }
+  .pb-content { padding:20px 22px; }
+  .lbl { font-size:8.5px; font-weight:900; letter-spacing:2.5px; text-transform:uppercase; color:#10b981; margin-bottom:7px; }
+  .pb-title { font-size:18px; font-weight:900; color:#0f172a; line-height:1.15; margin-bottom:10px; }
+  .pb-body  { font-size:9.5px; color:#475569; line-height:1.65; margin-bottom:14px; }
+  .age-row { display:flex; gap:7px; }
+  .ac { flex:1; border-radius:9px; padding:10px 4px; text-align:center; }
+  .ac.u10 { background:#ede9fe; border:1.5px solid #a78bfa; }
+  .ac.u11 { background:#dbeafe; border:1.5px solid #60a5fa; }
+  .ac.u12 { background:#d1fae5; border:1.5px solid #34d399; }
+  .ac-num { font-size:15px; font-weight:900; display:block; }
+  .ac-num.u10{color:#6d28d9;} .ac-num.u11{color:#1d4ed8;} .ac-num.u12{color:#047857;}
+  .ac-yr { font-size:7px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.4px; }
 
-  .ben-list { display:flex; flex-direction:column; gap:8px; }
-  .ben-item { display:flex; align-items:flex-start; gap:9px; }
-  .ben-dot { width:22px; height:22px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; }
-  .ben-dot.y { background:#fef9c3; }
-  .ben-dot.g { background:#dcfce7; }
-  .ben-dot.b { background:#dbeafe; }
-  .ben-dot.p { background:#f3e8ff; }
-  .ben-dot.r { background:#ffe4e6; }
-  .ben-dot.a { background:#fef3c7; }
-  .ben-content {}
-  .ben-title { font-size:10.5px; font-weight:800; color:#0f172a; margin-bottom:2px; }
-  .ben-desc  { font-size:9.5px; color:#64748b; line-height:1.5; }
+  /* Panel C — FRONT COVER: full-bleed photo with overlay */
+  .pc { background:#052e16; }
+  .pc-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 25%; }
+  .pc-ov { position:absolute; inset:0; background:linear-gradient(165deg,rgba(5,46,22,0.35) 0%,rgba(5,46,22,0.78) 50%,rgba(5,46,22,0.97) 100%); }
+  .pc-in { position:relative; z-index:2; height:100%; padding:26px 24px; display:flex; flex-direction:column; justify-content:space-between; }
+  .pc-logo-row { display:flex; align-items:center; gap:10px; }
+  .pc-logo { width:42px; height:42px; background:#fff; border-radius:9px; padding:5px; object-fit:contain; }
+  .pc-brand-name { font-size:11px; font-weight:900; color:#fff; }
+  .pc-brand-sub  { font-size:7.5px; font-weight:600; color:#6ee7b7; margin-top:1px; }
+  .pc-badge { margin-top:6px; display:inline-block; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); border-radius:5px; padding:2px 8px; font-size:7.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#6ee7b7; }
+  .pc-season { font-size:8.5px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#6ee7b7; margin-bottom:10px; }
+  .pc-title { font-size:44px; font-weight:900; line-height:0.92; color:#fff; margin-bottom:10px; }
+  .pc-title em { color:#6ee7b7; font-style:normal; display:block; }
+  .pc-sub { font-size:9px; color:rgba(255,255,255,0.68); line-height:1.65; }
+  .pc-div { height:1px; background:rgba(255,255,255,0.15); margin-bottom:11px; }
+  .pc-tags { display:flex; flex-wrap:wrap; gap:5px; }
+  .pc-tag { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 8px; font-size:7.5px; font-weight:700; color:rgba(255,255,255,0.78); }
 
-  /* PANEL 3 — Back: Quotes + CTA + Photos */
-  .panel-back { background:#fff; }
-  .photo-pair { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px; }
-  .photo-pair img { width:100%; height:110px; object-fit:cover; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,0.12); }
-  .quote-item { margin-bottom:14px; padding:12px 14px; background:#f1f5f9; border-radius:10px; border-left:3px solid #10b981; }
-  .quote-item.blue  { border-left-color:#3b82f6; }
-  .quote-item.amber { border-left-color:#f59e0b; }
-  .quote-text  { font-size:9.5px; font-style:italic; color:#334155; line-height:1.65; margin-bottom:6px; }
-  .quote-name  { font-size:9.5px; font-weight:800; color:#0f172a; }
-  .quote-role  { font-size:8.5px; color:#94a3b8; }
+  /* ── PAGE 2 INSIDE ── */
 
-  .cta-panel {
-    background:linear-gradient(135deg,#064e3b,#1e3a8a);
-    border-radius:12px; padding:18px; color:#fff; text-align:center; margin-top:14px;
-  }
-  .cta-title { font-size:14px; font-weight:900; margin-bottom:6px; }
-  .cta-sub   { font-size:9.5px; color:rgba(255,255,255,0.78); margin-bottom:12px; line-height:1.55; }
-  .cta-link  { display:inline-block; background:#10b981; color:#fff; font-weight:800; font-size:10px; padding:8px 18px; border-radius:8px; text-decoration:none; letter-spacing:0.3px; }
-  .cta-note  { margin-top:10px; font-size:8.5px; color:rgba(255,255,255,0.55); }
+  /* Panel D — dark + photo + quotes */
+  .pd { background:#0f172a; color:#fff; }
+  .pd-photo { width:100%; height:82mm; object-fit:cover; display:block; }
+  .pd-content { padding:18px 20px; }
+  .qcard { margin-bottom:11px; padding:10px 12px 10px 14px; background:rgba(255,255,255,0.055); border-left:3px solid #10b981; border-radius:0 7px 7px 0; }
+  .qcard.bl { border-left-color:#60a5fa; } .qcard.am { border-left-color:#fbbf24; }
+  .qt { font-size:8.5px; font-style:italic; color:rgba(255,255,255,0.72); line-height:1.65; margin-bottom:5px; }
+  .qa { font-size:8.5px; font-weight:800; color:#fff; }
+  .qr { font-size:7.5px; color:rgba(255,255,255,0.4); margin-top:1px; }
 
-  /* AGE GROUPS */
-  .age-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:18px; }
-  .age-card { border-radius:8px; padding:10px 8px; text-align:center; }
-  .age-card.u10 { background:#f5f3ff; border:1px solid #c4b5fd; }
-  .age-card.u11 { background:#eff6ff; border:1px solid #93c5fd; }
-  .age-card.u12 { background:#ecfdf5; border:1px solid #6ee7b7; }
-  .age-badge { font-size:16px; font-weight:900; display:block; margin-bottom:3px; }
-  .age-badge.u10 { color:#7c3aed; }
-  .age-badge.u11 { color:#2563eb; }
-  .age-badge.u12 { color:#059669; }
-  .age-years { font-size:8px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; }
+  /* Panel E — white benefits + CTA */
+  .pe { background:#fff; border-left:1px solid #e2e8f0; border-right:1px solid #e2e8f0; padding:28px 22px; color:#1e293b; }
+  .pe-title { font-size:19px; font-weight:900; color:#0f172a; line-height:1.1; margin-bottom:16px; }
+  .bens { display:flex; flex-direction:column; gap:9px; }
+  .ben { display:flex; gap:11px; align-items:flex-start; padding:10px 12px; border-radius:9px; border:1px solid #f1f5f9; background:#fafafa; }
+  .b-ico { font-size:17px; flex-shrink:0; line-height:1; margin-top:1px; }
+  .b-ttl { font-size:9.5px; font-weight:800; color:#0f172a; margin-bottom:2px; }
+  .b-dsc { font-size:8px; color:#64748b; line-height:1.5; }
+  .e-cta { margin-top:16px; background:linear-gradient(135deg,#064e3b,#1e3a8a); border-radius:9px; padding:14px; text-align:center; }
+  .e-cta-ttl { font-size:12px; font-weight:900; color:#fff; margin-bottom:4px; }
+  .e-cta-sub { font-size:8px; color:rgba(255,255,255,0.68); margin-bottom:10px; line-height:1.5; }
+  .e-cta-btn { display:inline-block; background:#10b981; color:#fff; font-weight:800; font-size:8.5px; padding:6px 14px; border-radius:6px; text-decoration:none; }
+  .e-cta-note { margin-top:7px; font-size:7px; color:rgba(255,255,255,0.4); }
 
-  @page { size:landscape; margin:10mm; }
-  @media print {
-    body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  }
+  /* Panel F — full-bleed action photo with bottom text */
+  .pf { background:#052e16; }
+  .pf-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .pf-ov { position:absolute; inset:0; background:linear-gradient(180deg,rgba(5,46,22,0.08) 0%,rgba(5,46,22,0.9) 58%); }
+  .pf-in { position:absolute; bottom:0; left:0; right:0; padding:22px 20px; z-index:2; }
+  .pf-lbl { font-size:8.5px; font-weight:900; letter-spacing:2.5px; text-transform:uppercase; color:#6ee7b7; margin-bottom:7px; }
+  .pf-title { font-size:20px; font-weight:900; color:#fff; line-height:1.1; margin-bottom:7px; }
+  .pf-body  { font-size:8.5px; color:rgba(255,255,255,0.68); line-height:1.65; margin-bottom:12px; }
+  .pf-web   { font-size:9.5px; font-weight:800; color:#6ee7b7; }
+
+  @page { size:297mm 210mm; margin:0; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .page { page-break-after:always; } }
 </style>
 </head>
 <body>
 
-<div class="trifold">
+<!-- PAGE 1: OUTSIDE -->
+<div class="page">
 
-  <!-- PANEL 1: COVER -->
-  <div class="panel panel-cover">
+  <!-- A: Back flap -->
+  <div class="panel pa">
     <div>
-      <div class="cover-logo-wrap">
-        <img class="cover-logo" src="${GA_LOGO}" alt="Michigan Jaguars" />
+      <div class="pa-eyebrow">Girls Academy · Midwest Conference</div>
+      <div class="pa-tagline">Building Champions<br/>from the<br/><em>Ground Up</em></div>
+      <div class="pa-body">The Michigan Jaguars Pre-GA Platform gives U10–U12 players the most intentional, structured start to their Girls Academy journey — with elite coaching, regional competition, and a direct pathway to U13 GA play.</div>
+      <div class="pillars">
+        <div class="pillar"><div class="p-num">01</div><div class="p-txt">Girls Academy-certified coaching and standards from day one</div></div>
+        <div class="pillar"><div class="p-num">02</div><div class="p-txt">Structured transition pathway into U13 GA competition</div></div>
+        <div class="pillar"><div class="p-num">03</div><div class="p-txt">Regional play — reduced travel, flexible scheduling</div></div>
+        <div class="pillar"><div class="p-num">04</div><div class="p-txt">Access to GA regional events alongside U13–U14</div></div>
+        <div class="pillar"><div class="p-num">05</div><div class="p-txt">Development-first culture — no burnout, no pressure</div></div>
+      </div>
+    </div>
+    <div class="pa-foot">Michigan Jaguars FC · michiganjaguarsfc.com · 2026–27</div>
+  </div>
+
+  <!-- B: Back -->
+  <div class="panel pb">
+    <img class="pb-photo" src="${PHOTOS.team}" alt="Michigan Jaguars team" />
+    <div class="pb-content">
+      <div class="lbl">Who Is This For?</div>
+      <div class="pb-title">Three Age Groups.<br/>One Vision.</div>
+      <div class="pb-body">Pre-GA is built for U10, U11, and U12 players ready to train and compete inside the Girls Academy ecosystem — the best girls' soccer development platform in the US.</div>
+      <div class="age-row">
+        <div class="ac u10"><span class="ac-num u10">U10</span><div class="ac-yr">Born 2016–17</div></div>
+        <div class="ac u11"><span class="ac-num u11">U11</span><div class="ac-yr">Born 2014–15</div></div>
+        <div class="ac u12"><span class="ac-num u12">U12</span><div class="ac-yr">Born 2013–14</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Front Cover -->
+  <div class="panel pc">
+    <img class="pc-bg" src="${PHOTOS.training1}" alt="Pre-GA training" />
+    <div class="pc-ov"></div>
+    <div class="pc-in">
+      <div class="pc-logo-row">
+        <img class="pc-logo" src="${GA_LOGO}" alt="Michigan Jaguars" />
         <div>
-          <div class="cover-club">Michigan Jaguars FC</div>
-          <div class="cover-club-sub">Girls Academy · Great Lakes Conference</div>
+          <div class="pc-brand-name">Michigan Jaguars FC</div>
+          <div class="pc-brand-sub">Girls Academy · Midwest Conference</div>
+          <div class="pc-badge">2026–27 Launch</div>
         </div>
       </div>
-      <div class="cover-headline">Pre-GA<br/>Platform<br/><span>U10 · U11 · U12</span></div>
-      <div class="cover-tagline">Michigan Jaguars is proud to be part of the Girls Academy's historic U11–U12 platform launch — bringing the nation's premier girls' soccer development to our youngest players in 2026–27.</div>
-      <img class="cover-photo-hero" src="${PHOTOS.training1}" alt="Michigan Jaguars Pre-GA training" />
-      <div class="cover-tags">
-        <span class="cover-tag">Girls Academy Certified</span>
-        <span class="cover-tag">Great Lakes Conference</span>
-        <span class="cover-tag">2026–27 Season</span>
-        <span class="cover-tag">Development First</span>
+      <div>
+        <div class="pc-season">2026 – 2027 Season</div>
+        <div class="pc-title">Pre-GA<br/><em>Platform</em></div>
+        <div class="pc-sub">The Girls Academy comes to U10 · U11 · U12. Michigan Jaguars is a founding Midwest conference GA club — giving our youngest players the best start possible.</div>
       </div>
-    </div>
-    <div class="cover-footer">Michigan Jaguars FC · michiganjaguarsfc.com · 2026–27</div>
-  </div>
-
-  <!-- PANEL 2: ABOUT + BENEFITS -->
-  <div class="panel panel-middle">
-    <div class="section-label">About the Platform</div>
-    <div class="section-title">Girls Academy Launches a Historic U11–U12 Platform</div>
-    <div class="intro-text">The Girls Academy — the premier youth development platform in the US — has launched its U11–U12 platform for 2026–27. Michigan Jaguars, as a founding Great Lakes GA club, is one of the first in the Midwest to offer this. Our Pre-GA teams are fully integrated into the GA ecosystem — same standards, same philosophy, same pathway as our elite U13–U19 teams.</div>
-
-    <div class="age-grid">
-      <div class="age-card u10"><span class="age-badge u10">U10</span><div class="age-years">Born 2016–17</div></div>
-      <div class="age-card u11"><span class="age-badge u11">U11</span><div class="age-years">Born 2014–15</div></div>
-      <div class="age-card u12"><span class="age-badge u12">U12</span><div class="age-years">Born 2013–14</div></div>
-    </div>
-
-    <div class="divider"></div>
-    <div class="section-label">Why Michigan Jaguars Pre-GA?</div>
-    <div class="ben-list">
-      <div class="ben-item"><div class="ben-dot y">🏆</div><div class="ben-content"><div class="ben-title">Girls Academy Environment — Early</div><div class="ben-desc">Players build GA identity and familiarity with the standard before U13 competition begins.</div></div></div>
-      <div class="ben-item"><div class="ben-dot g">🛡️</div><div class="ben-content"><div class="ben-title">Clear Pathway to GA U13+</div><div class="ben-desc">A structured bridge directly into U13 Girls Academy — the most seamless path available.</div></div></div>
-      <div class="ben-item"><div class="ben-dot b">🌎</div><div class="ben-content"><div class="ben-title">Regional Competition & GA Events</div><div class="ben-desc">Regional play with reduced travel and access to GA events alongside U13–U14 age groups.</div></div></div>
-      <div class="ben-item"><div class="ben-dot p">👥</div><div class="ben-content"><div class="ben-title">GA-Standard Coaching</div><div class="ben-desc">Same philosophy and development model used at the elite U13–U19 level.</div></div></div>
-      <div class="ben-item"><div class="ben-dot r">⚡</div><div class="ben-content"><div class="ben-title">Development-First, Low Pressure</div><div class="ben-desc">Long-term athletic development without burnout or overloaded schedules.</div></div></div>
-      <div class="ben-item"><div class="ben-dot a">⭐</div><div class="ben-content"><div class="ben-title">Michigan Jaguars Club Advantage</div><div class="ben-desc">One of the first Midwest clubs to offer this platform — a true advantage for families.</div></div></div>
-    </div>
-  </div>
-
-  <!-- PANEL 3: QUOTES + PHOTOS + CTA -->
-  <div class="panel panel-back">
-    <div class="section-label">In Their Own Words</div>
-
-    <div class="photo-pair">
-      <img src="${PHOTOS.game}" alt="GA game action" />
-      <img src="${PHOTOS.training2}" alt="Training session" />
-    </div>
-
-    <div class="quote-item">
-      <div class="quote-text">"This is an important step forward for the Girls Academy. We are creating a platform that protects the integrity of our pathway while prioritizing what is best for players."</div>
-      <div class="quote-name">Patricia Hughes</div>
-      <div class="quote-role">Girls Academy Commissioner</div>
-    </div>
-    <div class="quote-item blue">
-      <div class="quote-text">"The U-11 and U-12 ages are critical in a player's long-term development. This platform lets us introduce players to the GA environment earlier — without pressure, with clear alignment."</div>
-      <div class="quote-name">Meghan Frey</div>
-      <div class="quote-role">Girls Academy Sporting Director</div>
-    </div>
-    <div class="quote-item amber">
-      <div class="quote-text">"At Michigan Jaguars, elite development starts long before U13. Being a founding Great Lakes GA club means our youngest players get the best foundation — the Jaguars way."</div>
-      <div class="quote-name">Mike Scobie</div>
-      <div class="quote-role">Girls Director — Michigan Jaguars FC</div>
-    </div>
-
-    <div class="cta-panel">
-      <div class="cta-title">Join Michigan Jaguars Pre-GA</div>
-      <div class="cta-sub">Limited spots for U10, U11 &amp; U12 players in 2026–27.<br/>Be part of the Girls Academy from the very beginning.</div>
-      <a class="cta-link" href="https://system.gotsport.com/forms/215777I23">Join Us — Apply Now ›</a>
-      <div class="cta-note">Questions? Contact Mike Scobie, Girls Director · michiganjaguarsfc.com</div>
+      <div>
+        <div class="pc-div"></div>
+        <div class="pc-tags">
+          <span class="pc-tag">Girls Academy Certified</span>
+          <span class="pc-tag">Midwest Conference</span>
+          <span class="pc-tag">Development First</span>
+        </div>
+      </div>
     </div>
   </div>
 
 </div>
 
-<script>
-  window.onload = function() { window.print(); }
-</script>
+<!-- PAGE 2: INSIDE -->
+<div class="page">
+
+  <!-- D: Left — photo + leadership quotes -->
+  <div class="panel pd">
+    <img class="pd-photo" src="${PHOTOS.game}" alt="GA game action" />
+    <div class="pd-content">
+      <div class="lbl" style="color:#6ee7b7">Leadership Voices</div>
+      <div class="qcard">
+        <div class="qt">"This platform protects the integrity of our pathway while prioritizing what is best for players — extending our standards to younger age groups in a thoughtful, intentional way."</div>
+        <div class="qa">Patricia Hughes</div><div class="qr">Girls Academy Commissioner</div>
+      </div>
+      <div class="qcard bl">
+        <div class="qt">"The U-11 and U-12 ages are critical. This lets us introduce players to the GA environment earlier — without pressure, with clear alignment to how we develop players."</div>
+        <div class="qa">Meghan Frey</div><div class="qr">Girls Academy Sporting Director</div>
+      </div>
+      <div class="qcard am">
+        <div class="qt">"At Michigan Jaguars, elite development starts long before U13. Being a founding Midwest conference GA club means our youngest players get the best foundation — the Jaguars way."</div>
+        <div class="qa">Mike Scobie</div><div class="qr">Girls Director — Michigan Jaguars FC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E: Center — benefits + CTA -->
+  <div class="panel pe">
+    <div class="lbl">Why Michigan Jaguars?</div>
+    <div class="pe-title">Six Reasons<br/>to Join Pre-GA</div>
+    <div class="bens">
+      <div class="ben"><div class="b-ico">🏆</div><div><div class="b-ttl">GA Environment — Early</div><div class="b-dsc">Build GA identity and familiarity before U13 competition begins.</div></div></div>
+      <div class="ben"><div class="b-ico">🛡️</div><div><div class="b-ttl">Clear Pathway to GA U13+</div><div class="b-dsc">The most seamless, structured bridge into U13 GA competition.</div></div></div>
+      <div class="ben"><div class="b-ico">🌎</div><div><div class="b-ttl">Regional Competition &amp; GA Events</div><div class="b-dsc">Reduced travel, flexible schedule, access to GA events.</div></div></div>
+      <div class="ben"><div class="b-ico">👥</div><div><div class="b-ttl">GA-Standard Coaching</div><div class="b-dsc">Same philosophy as our elite U13–U19 GA teams.</div></div></div>
+      <div class="ben"><div class="b-ico">⚡</div><div><div class="b-ttl">Development-First Culture</div><div class="b-dsc">Long-term growth without burnout or overloaded schedules.</div></div></div>
+      <div class="ben"><div class="b-ico">⭐</div><div><div class="b-ttl">Midwest Conference Advantage</div><div class="b-dsc">One of the first Midwest GA clubs — an early-mover advantage.</div></div></div>
+    </div>
+    <div class="e-cta">
+      <div class="e-cta-ttl">Ready to Join Us?</div>
+      <div class="e-cta-sub">Limited spots for U10, U11 &amp; U12 in 2026–27.</div>
+      <a class="e-cta-btn" href="https://system.gotsport.com/forms/215777I23">Join Us — Apply Now ›</a>
+      <div class="e-cta-note">Contact Mike Scobie, Girls Director · michiganjaguarsfc.com</div>
+    </div>
+  </div>
+
+  <!-- F: Right — full-bleed action photo -->
+  <div class="panel pf">
+    <img class="pf-bg" src="${PHOTOS.training2}" alt="Michigan Jaguars training" />
+    <div class="pf-ov"></div>
+    <div class="pf-in">
+      <div class="pf-lbl">Our Commitment</div>
+      <div class="pf-title">The Jaguars Way —<br/>From Day One</div>
+      <div class="pf-body">Pre-GA players don't just play soccer — they learn the Girls Academy way of thinking, competing, and developing. Every session is aligned with the GA standard that has produced elite players nationwide.</div>
+      <div class="pf-web">michiganjaguarsfc.com</div>
+    </div>
+  </div>
+
+</div>
+
+<script>window.onload = function() { window.print(); }</script>
 </body>
 </html>`;
 
@@ -372,7 +390,7 @@ function generatePDF() {
   <div class="cover-sub">Michigan Jaguars is proud to be part of the Girls Academy's historic launch of the U11–U12 platform — bringing the nation's premier girls' soccer development environment to our youngest players starting in the 2026–27 season.</div>
   <div class="tags">
     <span class="tag">Girls Academy Certified</span>
-    <span class="tag">Great Lakes Conference</span>
+    <span class="tag">Midwest Conference</span>
     <span class="tag">2026–27 Season</span>
     <span class="tag">Development First</span>
   </div>
@@ -382,7 +400,7 @@ function generatePDF() {
 <div class="body">
   <div class="section-title">What Is the Pre-GA Platform?</div>
   <div class="intro-box">
-    <p>The Girls Academy — the leading youth development platform for girls' soccer in the United States — has officially launched its U11–U12 platform for the 2026–27 season. Michigan Jaguars, as a founding Great Lakes conference Girls Academy club, is one of the first organizations in the Midwest to offer this platform. Our Pre-GA teams (U10, U11, U12) are now fully integrated into the Girls Academy ecosystem.</p>
+    <p>The Girls Academy — the leading youth development platform for girls' soccer in the United States — has officially launched its U11–U12 platform for the 2026–27 season. Michigan Jaguars, as a founding Midwest conference Girls Academy club, is one of the first organizations in the Midwest to offer this platform. Our Pre-GA teams (U10, U11, U12) are now fully integrated into the Girls Academy ecosystem.</p>
   </div>
 
   <div class="section-title">Platform Pillars</div>
@@ -425,7 +443,7 @@ function generatePDF() {
       <div class="quote-role">GA Sporting Director</div>
     </div>
     <div class="quote-box amber">
-      <div class="quote-text">"At Michigan Jaguars, elite development starts long before U13. Being a founding Great Lakes GA club means our youngest players get the best possible foundation — the Jaguars way."</div>
+      <div class="quote-text">"At Michigan Jaguars, elite development starts long before U13. Being a founding Midwest conference GA club means our youngest players get the best possible foundation — the Jaguars way."</div>
       <div class="quote-author">Mike Scobie</div>
       <div class="quote-role">Girls Director — Michigan Jaguars FC</div>
     </div>
@@ -439,7 +457,7 @@ function generatePDF() {
   </div>
 </div>
 
-<div class="footer">Michigan Jaguars FC · Girls Academy Great Lakes Conference · michiganjaguarsfc.com · 2026–27 Season</div>
+<div class="footer">Michigan Jaguars FC · Girls Academy Midwest Conference · michiganjaguarsfc.com · 2026–27 Season</div>
 
 <script>window.onload = function() { window.print(); }</script>
 </body>
@@ -470,7 +488,7 @@ export default function PreGA() {
             <img src={GA_LOGO} alt="Michigan Jaguars" className="w-16 h-16 rounded-2xl bg-white p-2 object-contain shadow-2xl ring-2 ring-emerald-400/30" />
             <div className="h-10 w-px bg-white/20" />
             <div>
-              <div className="text-[11px] font-black tracking-widest uppercase text-emerald-400 mb-0.5">Girls Academy · Great Lakes Conference</div>
+              <div className="text-[11px] font-black tracking-widest uppercase text-emerald-400 mb-0.5">Girls Academy · Midwest Conference</div>
               <div className="text-sm font-bold text-white/70">Michigan Jaguars FC</div>
             </div>
             <Badge className="ml-auto bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold px-3 py-1.5 uppercase tracking-widest">
@@ -489,7 +507,7 @@ export default function PreGA() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">Pre-GA</span>
               </h1>
               <p className="text-white/70 text-lg leading-relaxed mb-8 max-w-lg">
-                U10 · U11 · U12 players now enter the Girls Academy ecosystem from the very beginning — with Michigan Jaguars leading the way in the Great Lakes.
+                U10 · U11 · U12 players now enter the Girls Academy ecosystem from the very beginning — with Michigan Jaguars leading the way in the Midwest.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -552,7 +570,7 @@ export default function PreGA() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
             {[
               { age: 'U10', color: 'from-purple-600 to-indigo-700', border: 'border-purple-300', bg: 'bg-white', text: 'text-purple-700', years: 'Born 2016–2017', desc: 'Build confidence, technical foundation, and love of the game in a GA-certified environment.' },
-              { age: 'U11', color: 'from-blue-600 to-cyan-700', border: 'border-blue-300', bg: 'bg-white', text: 'text-blue-700', years: 'Born 2014–2015', desc: 'Enter the official Girls Academy U11–U12 platform with Michigan Jaguars as a founding Great Lakes club.' },
+              { age: 'U11', color: 'from-blue-600 to-cyan-700', border: 'border-blue-300', bg: 'bg-white', text: 'text-blue-700', years: 'Born 2014–2015', desc: 'Enter the official Girls Academy U11–U12 platform with Michigan Jaguars as a founding Midwest conference club.' },
               { age: 'U12', color: 'from-emerald-600 to-teal-700', border: 'border-emerald-300', bg: 'bg-white', text: 'text-emerald-700', years: 'Born 2013–2014', desc: 'Compete in the new GA platform and position yourself perfectly for U13 Girls Academy competition.' },
             ].map(item => (
               <div key={item.age} className={`rounded-3xl border-2 ${item.border} ${item.bg} p-8 text-center shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2`}>
@@ -580,7 +598,7 @@ export default function PreGA() {
                 Announced April 14, 2026, the Girls Academy is launching a dedicated U11–U12 competitive platform for the 2026–27 season — a landmark moment for girls' youth soccer in the United States.
               </p>
               <p className="text-slate-600 leading-relaxed mb-8 text-base">
-                The Great Lakes conference, which includes Michigan Jaguars, is among the first regions selected for the initial rollout. Jaguars families get early, priority access.
+                The Midwest conference, which includes Michigan Jaguars, is among the first regions selected for the initial rollout. Jaguars families get early, priority access.
               </p>
               <a
                 href="https://girlsacademyleague.com/2026/04/girls-academy-launches-u11-u12-platform"
