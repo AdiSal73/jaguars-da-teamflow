@@ -569,9 +569,9 @@ export default function PreGA() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
             {[
-              { age: 'U10', color: 'from-purple-600 to-indigo-700', border: 'border-purple-300', bg: 'bg-white', text: 'text-purple-700', years: 'Born 2016–2017', desc: 'Build confidence, technical foundation, and love of the game in a GA-certified environment.' },
-              { age: 'U11', color: 'from-blue-600 to-cyan-700', border: 'border-blue-300', bg: 'bg-white', text: 'text-blue-700', years: 'Born 2014–2015', desc: 'Enter the official Girls Academy U11–U12 platform with Michigan Jaguars as a founding Midwest conference club.' },
-              { age: 'U12', color: 'from-emerald-600 to-teal-700', border: 'border-emerald-300', bg: 'bg-white', text: 'text-emerald-700', years: 'Born 2013–2014', desc: 'Compete in the new GA platform and position yourself perfectly for U13 Girls Academy competition.' },
+              { age: 'U10', color: 'from-purple-600 to-indigo-700', border: 'border-purple-300', bg: 'bg-white', text: 'text-purple-700', years: 'Born 2017–2016', desc: 'Build confidence, technical foundation, and love of the game in a GA-certified environment.' },
+              { age: 'U11', color: 'from-blue-600 to-cyan-700', border: 'border-blue-300', bg: 'bg-white', text: 'text-blue-700', years: 'Born 2016–2015', desc: 'Enter the official Girls Academy U11–U12 platform with Michigan Jaguars as a founding Midwest conference club.' },
+              { age: 'U12', color: 'from-emerald-600 to-teal-700', border: 'border-emerald-300', bg: 'bg-white', text: 'text-emerald-700', years: 'Born 2015–2014', desc: 'Compete in the new GA platform and position yourself perfectly for U13 Girls Academy competition.' },
             ].map(item => (
               <div key={item.age} className={`rounded-3xl border-2 ${item.border} ${item.bg} p-8 text-center shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2`}>
                 <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br ${item.color} text-white font-black text-4xl shadow-xl mb-5 ring-4 ring-offset-2 ring-offset-white ${item.border}`}>
