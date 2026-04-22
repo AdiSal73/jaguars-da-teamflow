@@ -36,6 +36,7 @@ export default function Layout({ children, currentPageName }) {
   const isPublicPage = location.pathname === createPageUrl('PublicCoachBooking') || 
                        location.pathname === createPageUrl('Landing') ||
                        location.pathname === createPageUrl('LandingCTA') ||
+                       location.pathname === createPageUrl('PreGA') ||
                        location.pathname === '/';
 
   React.useEffect(() => {
